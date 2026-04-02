@@ -136,7 +136,7 @@
         /* 聊天室网格 */
         .rooms-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 20px;
         }
 
@@ -490,7 +490,7 @@
                     }
                 }
 
-                // 获取所有消息（用于统计）
+                // 获取所有消息（用于统计人数）
                 const messagesRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
                     headers: {
                         'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
@@ -533,16 +533,31 @@
             return allMessages.filter(m => m.roomId === roomId).length;
         }
 
-        // ========== 获取聊天室成员显示 ==========
+        // ========== 获取聊天室的活跃成员（发送过消息的用户） ==========
+        function getActiveMembers(roomId) {
+            const senders = allMessages
+                .filter(m => m.roomId === roomId)
+                .map(m => m.sender);
+            // 去重
+            return [...new Set(senders)];
+        }
+
+        // ========== 获取聊天室成员显示（基于消息发送记录） ==========
         function getRoomMembersDisplay(room) {
+            const activeMembers = getActiveMembers(room.id);
+            
             if (room.type === 'group') {
-                // 群聊：显示所有成员（如果有记录）或显示创建者
-                if (room.members && room.members.length > 0) {
-                    return room.members;
+                // 群聊：基于消息发送记录
+                if (activeMembers.length > 0) {
+                    return activeMembers;
                 }
+                // 如果还没有人发过消息，显示创建者
                 return [room.creator];
             } else {
-                // 私聊：显示聊天双方
+                // 私聊：基于消息发送记录或成员列表
+                if (activeMembers.length > 0) {
+                    return activeMembers;
+                }
                 if (room.members && room.members.length >= 2) {
                     return room.members;
                 }
@@ -582,11 +597,12 @@
                             <p>👤 创建者: ${escapeHtml(room.creator)}</p>
                             ${room.type === 'private' && privateDesc ? `<p>💬 ${escapeHtml(privateDesc)}</p>` : ''}
                             <p>📊 消息总数: ${messageCount} 条</p>
-                            <p>👥 ${room.type === 'group' ? '成员数' : '参与人数'}: ${members.length} 人</p>
+                            <p>👥 ${room.type === 'group' ? '活跃成员数' : '参与人数'}: ${members.length} 人</p>
+                            ${room.type === 'group' && messageCount === 0 ? '<p style="color: #888;">💡 暂无消息，成员列表将显示创建者</p>' : ''}
                             ${room.isBanned ? '<p style="color: #dc3545;">🚫 状态: 已封禁</p>' : '<p style="color: #28a745;">✅ 状态: 正常</p>'}
                         </div>
                         <div class="room-members">
-                            <h4>📋 ${room.type === 'group' ? '成员列表' : '聊天双方'}</h4>
+                            <h4>📋 ${room.type === 'group' ? '活跃成员列表（发送过消息）' : '聊天双方'}</h4>
                             <div class="member-list">
                                 ${members.map(m => `
                                     <span class="member-tag ${m === room.creator ? 'creator' : ''}">
@@ -594,6 +610,8 @@
                                     </span>
                                 `).join('')}
                             </div>
+                            ${room.type === 'group' && members.length === 1 && messageCount === 0 ? 
+                                '<p style="font-size: 11px; color: #888; margin-top: 8px;">⚠️ 暂无其他成员，邀请好友加入群聊吧</p>' : ''}
                         </div>
                         <div class="room-stats">
                             <span>🆔 ID: ${room.id.substring(0, 12)}...</span>
@@ -623,40 +641,42 @@
                 return;
             }
 
-            // 统计每个用户参与的聊天室数量
+            // 统计每个用户参与的聊天室数量（基于消息发送记录）
             const userRoomCount = {};
-            for (const room of allRooms) {
-                const members = room.type === 'group' 
-                    ? (room.members || [room.creator])
-                    : (room.members || [room.creator]);
-                for (const member of members) {
-                    userRoomCount[member] = (userRoomCount[member] || 0) + 1;
+            for (const msg of allMessages) {
+                if (!userRoomCount[msg.sender]) {
+                    userRoomCount[msg.sender] = new Set();
                 }
+                userRoomCount[msg.sender].add(msg.roomId);
             }
 
-            container.innerHTML = allUsers.map(user => `
-                <div class="user-item">
-                    <div class="user-info">
-                        <div class="user-name">
-                            ${escapeHtml(user.username)}
-                            ${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}
-                            ${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}
+            container.innerHTML = allUsers.map(user => {
+                const roomCount = userRoomCount[user.username] ? userRoomCount[user.username].size : 0;
+                return `
+                    <div class="user-item">
+                        <div class="user-info">
+                            <div class="user-name">
+                                ${escapeHtml(user.username)}
+                                ${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}
+                                ${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}
+                            </div>
+                            <div class="user-meta">
+                                注册时间: ${new Date(user.createdAt).toLocaleString()}<br>
+                                参与聊天室: ${roomCount} 个<br>
+                                发送消息: ${allMessages.filter(m => m.sender === user.username).length} 条
+                            </div>
                         </div>
-                        <div class="user-meta">
-                            注册时间: ${new Date(user.createdAt).toLocaleString()}<br>
-                            参与聊天室: ${userRoomCount[user.username] || 0} 个
+                        <div class="actions">
+                            ${user.username !== 'huangzhiyuan' ? `
+                                ${user.isBanned ? 
+                                    `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
+                                    `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`
+                                }
+                            ` : ''}
                         </div>
                     </div>
-                    <div class="actions">
-                        ${user.username !== 'huangzhiyuan' ? `
-                            ${user.isBanned ? 
-                                `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
-                                `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`
-                            }
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // ========== 封禁/解封用户 ==========
