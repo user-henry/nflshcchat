@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* 导航栏 */
         .nav {
             background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
             padding: 15px 30px;
@@ -60,14 +59,12 @@
             color: #ffd700;
         }
 
-        /* 主容器 */
         .container {
             max-width: 1400px;
             margin: 30px auto;
             padding: 0 20px;
         }
 
-        /* 统计卡片 */
         .stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -94,11 +91,11 @@
             margin-top: 8px;
         }
 
-        /* 标签页 */
         .tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .tab-btn {
@@ -117,7 +114,6 @@
             border-color: #ffd700;
         }
 
-        /* 卡片样式 */
         .card {
             background: #16213e;
             border-radius: 12px;
@@ -133,7 +129,6 @@
             border-bottom: 1px solid #2a2a3e;
         }
 
-        /* 聊天室网格 */
         .rooms-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -186,10 +181,6 @@
             color: white;
         }
 
-        .room-info {
-            margin-bottom: 12px;
-        }
-
         .room-info p {
             color: #aaa;
             font-size: 13px;
@@ -236,7 +227,7 @@
             color: #888;
         }
 
-        .ban-btn, .unban-btn {
+        .ban-btn, .unban-btn, .send-notification-btn {
             padding: 8px 16px;
             border: none;
             border-radius: 6px;
@@ -245,6 +236,7 @@
             font-weight: bold;
             transition: transform 0.2s;
             width: 100%;
+            margin-top: 8px;
         }
 
         .ban-btn {
@@ -257,7 +249,12 @@
             color: white;
         }
 
-        .ban-btn:hover, .unban-btn:hover {
+        .send-notification-btn {
+            background: #ffc107;
+            color: #1a1a2e;
+        }
+
+        .ban-btn:hover, .unban-btn:hover, .send-notification-btn:hover {
             transform: translateY(-2px);
         }
 
@@ -314,9 +311,10 @@
         .actions {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .ban-user-btn, .unban-user-btn {
+        .ban-user-btn, .unban-user-btn, .notify-user-btn {
             padding: 6px 16px;
             border: none;
             border-radius: 6px;
@@ -334,6 +332,11 @@
             color: white;
         }
 
+        .notify-user-btn {
+            background: #ffc107;
+            color: #1a1a2e;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -344,6 +347,72 @@
             text-align: center;
             padding: 40px;
             color: #aaa;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 16px;
+            width: 450px;
+            border: 1px solid #ffd700;
+        }
+
+        .modal-content h3 {
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+
+        .modal-content input, .modal-content textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: white;
+            font-family: inherit;
+        }
+
+        .modal-content textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-buttons button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .modal-buttons button:first-child {
+            background: #2a2a3e;
+            color: white;
+        }
+
+        .modal-buttons button:last-child {
+            background: #ffd700;
+            color: #1a1a2e;
         }
 
         @media (max-width: 768px) {
@@ -379,7 +448,6 @@
     </div>
 
     <div class="container">
-        <!-- 统计卡片 -->
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-number" id="totalUsers">0</div>
@@ -399,13 +467,13 @@
             </div>
         </div>
 
-        <!-- 标签页 -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('rooms')">💬 所有聊天室</button>
             <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
+            <button class="tab-btn" onclick="switchTab('notifications')">📨 系统通知</button>
         </div>
 
-        <!-- 聊天室列表（所有聊天室） -->
+        <!-- 聊天室列表 -->
         <div id="roomsTab" class="card">
             <h2>📋 所有聊天室</h2>
             <div id="roomsList" class="rooms-grid">
@@ -420,6 +488,28 @@
                 <div class="loading">加载中...</div>
             </div>
         </div>
+
+        <!-- 系统通知列表 -->
+        <div id="notificationsTab" class="card" style="display: none;">
+            <h2>📨 系统通知记录</h2>
+            <div id="notificationsList" class="user-list">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 发送通知模态框 -->
+    <div id="notifyModal" class="modal">
+        <div class="modal-content">
+            <h3>📨 发送系统通知</h3>
+            <p style="color: #aaa; margin-bottom: 15px;">发送给: <span id="notifyTargetUser" style="color: #ffd700;"></span></p>
+            <input type="text" id="notifyTitle" placeholder="通知标题">
+            <textarea id="notifyMessage" placeholder="通知内容..."></textarea>
+            <div class="modal-buttons">
+                <button onclick="closeNotifyModal()">取消</button>
+                <button onclick="sendSystemNotification()">发送通知</button>
+            </div>
+        </div>
     </div>
 
     <script src="config.js"></script>
@@ -428,8 +518,9 @@
         let allUsers = [];
         let allRooms = [];
         let allMessages = [];
+        let allNotifications = [];
+        let currentNotifyUser = null;
 
-        // ========== 认证检查 ==========
         function checkAdmin() {
             const userStr = sessionStorage.getItem('currentUser');
             if (!userStr) {
@@ -451,17 +542,12 @@
             window.location.href = 'index.html';
         }
 
-        // ========== 加载所有数据 ==========
         async function loadAllData() {
             try {
                 const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
                 
-                // 获取用户
                 const usersRes = await fetch(`${baseUrl}?labels=user&state=open`, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const userIssues = await usersRes.json();
                 allUsers = [];
@@ -473,12 +559,8 @@
                     }
                 }
 
-                // 获取聊天室
                 const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const roomIssues = await roomsRes.json();
                 allRooms = [];
@@ -490,12 +572,8 @@
                     }
                 }
 
-                // 获取所有消息（用于统计人数）
                 const messagesRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const messageIssues = await messagesRes.json();
                 allMessages = [];
@@ -507,18 +585,29 @@
                     }
                 }
 
-                // 更新统计
+                // 加载系统通知
+                const notifRes = await fetch(`${baseUrl}?labels=system_notification&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const notifIssues = await notifRes.json();
+                allNotifications = [];
+                for (const issue of notifIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const notifData = JSON.parse(match[1]);
+                        allNotifications.push({ ...notifData, issueNumber: issue.number });
+                    }
+                }
+
                 updateStats();
                 renderRooms();
                 renderUsers();
+                renderNotifications();
             } catch (error) {
                 console.error('加载数据失败:', error);
-                document.getElementById('roomsList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
-                document.getElementById('usersList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
             }
         }
 
-        // ========== 更新统计 ==========
         function updateStats() {
             const groupRooms = allRooms.filter(r => r.type === 'group');
             const privateRooms = allRooms.filter(r => r.type === 'private');
@@ -528,52 +617,27 @@
             document.getElementById('totalPrivateRooms').textContent = privateRooms.length;
         }
 
-        // ========== 获取聊天室消息数 ==========
         function getMessageCount(roomId) {
             return allMessages.filter(m => m.roomId === roomId).length;
         }
 
-        // ========== 获取聊天室的活跃成员（发送过消息的用户） ==========
         function getActiveMembers(roomId) {
-            const senders = allMessages
-                .filter(m => m.roomId === roomId)
-                .map(m => m.sender);
-            // 去重
+            const senders = allMessages.filter(m => m.roomId === roomId).map(m => m.sender);
             return [...new Set(senders)];
         }
 
-        // ========== 获取聊天室成员显示（基于消息发送记录） ==========
         function getRoomMembersDisplay(room) {
             const activeMembers = getActiveMembers(room.id);
-            
             if (room.type === 'group') {
-                // 群聊：基于消息发送记录
-                if (activeMembers.length > 0) {
-                    return activeMembers;
-                }
-                // 如果还没有人发过消息，显示创建者
+                if (activeMembers.length > 0) return activeMembers;
                 return [room.creator];
             } else {
-                // 私聊：基于消息发送记录或成员列表
-                if (activeMembers.length > 0) {
-                    return activeMembers;
-                }
-                if (room.members && room.members.length >= 2) {
-                    return room.members;
-                }
+                if (activeMembers.length > 0) return activeMembers;
+                if (room.members && room.members.length >= 2) return room.members;
                 return [room.creator, room.members?.[1] || '未知'].filter(Boolean);
             }
         }
 
-        // ========== 获取私聊对象描述 ==========
-        function getPrivateChatDescription(room) {
-            if (room.type !== 'private') return null;
-            const members = getRoomMembersDisplay(room);
-            const otherUser = members.find(m => m !== room.creator);
-            return otherUser ? `与 ${otherUser} 的私聊` : '私聊';
-        }
-
-        // ========== 渲染聊天室列表 ==========
         function renderRooms() {
             const container = document.getElementById('roomsList');
             if (allRooms.length === 0) {
@@ -584,8 +648,6 @@
             container.innerHTML = allRooms.map(room => {
                 const members = getRoomMembersDisplay(room);
                 const messageCount = getMessageCount(room.id);
-                const privateDesc = getPrivateChatDescription(room);
-                
                 return `
                     <div class="room-card">
                         <div class="room-header">
@@ -595,45 +657,29 @@
                         <div class="room-info">
                             <p>📅 创建时间: ${new Date(room.createdAt).toLocaleString()}</p>
                             <p>👤 创建者: ${escapeHtml(room.creator)}</p>
-                            ${room.type === 'private' && privateDesc ? `<p>💬 ${escapeHtml(privateDesc)}</p>` : ''}
                             <p>📊 消息总数: ${messageCount} 条</p>
                             <p>👥 ${room.type === 'group' ? '活跃成员数' : '参与人数'}: ${members.length} 人</p>
-                            ${room.type === 'group' && messageCount === 0 ? '<p style="color: #888;">💡 暂无消息，成员列表将显示创建者</p>' : ''}
                             ${room.isBanned ? '<p style="color: #dc3545;">🚫 状态: 已封禁</p>' : '<p style="color: #28a745;">✅ 状态: 正常</p>'}
                         </div>
                         <div class="room-members">
-                            <h4>📋 ${room.type === 'group' ? '活跃成员列表（发送过消息）' : '聊天双方'}</h4>
+                            <h4>📋 ${room.type === 'group' ? '活跃成员列表' : '聊天双方'}</h4>
                             <div class="member-list">
-                                ${members.map(m => `
-                                    <span class="member-tag ${m === room.creator ? 'creator' : ''}">
-                                        ${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}
-                                    </span>
-                                `).join('')}
+                                ${members.map(m => `<span class="member-tag ${m === room.creator ? 'creator' : ''}">${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}</span>`).join('')}
                             </div>
-                            ${room.type === 'group' && members.length === 1 && messageCount === 0 ? 
-                                '<p style="font-size: 11px; color: #888; margin-top: 8px;">⚠️ 暂无其他成员，邀请好友加入群聊吧</p>' : ''}
-                        </div>
-                        <div class="room-stats">
-                            <span>🆔 ID: ${room.id.substring(0, 12)}...</span>
                         </div>
                         ${room.type === 'group' ? `
-                            <div style="margin-top: 12px;">
+                            <div>
                                 ${room.isBanned ? 
                                     `<button class="unban-btn" onclick="toggleRoomBan('${room.id}', false)">解除封禁群聊</button>` :
                                     `<button class="ban-btn" onclick="toggleRoomBan('${room.id}', true)">封禁群聊</button>`
                                 }
                             </div>
-                        ` : `
-                            <div style="margin-top: 12px;">
-                                <span style="font-size: 12px; color: #888;">💡 私聊无法封禁，只能封禁用户</span>
-                            </div>
-                        `}
+                        ` : '<div style="margin-top: 12px;"><span style="font-size: 12px; color: #888;">💡 私聊无法封禁，只能封禁用户</span></div>'}
                     </div>
                 `;
             }).join('');
         }
 
-        // ========== 渲染用户列表 ==========
         function renderUsers() {
             const container = document.getElementById('usersList');
             if (allUsers.length === 0) {
@@ -641,119 +687,164 @@
                 return;
             }
 
-            // 统计每个用户参与的聊天室数量（基于消息发送记录）
             const userRoomCount = {};
             for (const msg of allMessages) {
-                if (!userRoomCount[msg.sender]) {
-                    userRoomCount[msg.sender] = new Set();
-                }
+                if (!userRoomCount[msg.sender]) userRoomCount[msg.sender] = new Set();
                 userRoomCount[msg.sender].add(msg.roomId);
             }
 
-            container.innerHTML = allUsers.map(user => {
-                const roomCount = userRoomCount[user.username] ? userRoomCount[user.username].size : 0;
-                return `
-                    <div class="user-item">
-                        <div class="user-info">
-                            <div class="user-name">
-                                ${escapeHtml(user.username)}
-                                ${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}
-                                ${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}
-                            </div>
-                            <div class="user-meta">
-                                注册时间: ${new Date(user.createdAt).toLocaleString()}<br>
-                                参与聊天室: ${roomCount} 个<br>
-                                发送消息: ${allMessages.filter(m => m.sender === user.username).length} 条
-                            </div>
+            container.innerHTML = allUsers.map(user => `
+                <div class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">
+                            ${escapeHtml(user.username)}
+                            ${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}
+                            ${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}
                         </div>
-                        <div class="actions">
-                            ${user.username !== 'huangzhiyuan' ? `
-                                ${user.isBanned ? 
-                                    `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
-                                    `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`
-                                }
-                            ` : ''}
+                        <div class="user-meta">
+                            注册时间: ${new Date(user.createdAt).toLocaleString()}<br>
+                            参与聊天室: ${userRoomCount[user.username]?.size || 0} 个<br>
+                            发送消息: ${allMessages.filter(m => m.sender === user.username).length} 条
                         </div>
                     </div>
-                `;
-            }).join('');
+                    <div class="actions">
+                        ${user.username !== 'huangzhiyuan' ? `
+                            <button class="notify-user-btn" onclick="showNotifyModal('${user.username}')">📨 发通知</button>
+                            ${user.isBanned ? 
+                                `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
+                                `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`
+                            }
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // ========== 封禁/解封用户 ==========
-        async function toggleUserBan(username, shouldBan) {
-            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？\n封禁后该用户将无法发送消息。`)) return;
+        function renderNotifications() {
+            const container = document.getElementById('notificationsList');
+            if (allNotifications.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无系统通知记录</div>';
+                return;
+            }
+
+            allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+            container.innerHTML = allNotifications.map(notif => `
+                <div class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">📨 ${escapeHtml(notif.title)}</div>
+                        <div class="user-meta">
+                            发送给: ${escapeHtml(notif.targetUser)}<br>
+                            发送时间: ${new Date(notif.sentAt).toLocaleString()}<br>
+                            内容: ${escapeHtml(notif.content)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function sendSystemNotification() {
+            const title = document.getElementById('notifyTitle').value.trim();
+            const content = document.getElementById('notifyMessage').value.trim();
             
+            if (!title || !content) {
+                alert('请填写通知标题和内容');
+                return;
+            }
+
+            const notificationData = {
+                id: `notif_${Date.now()}`,
+                type: 'system',
+                title: title,
+                content: content,
+                targetUser: currentNotifyUser,
+                sender: 'system',
+                sentAt: new Date().toISOString(),
+                isRead: false
+            };
+
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+                const issueBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `系统通知: ${title}`, body: issueBody, labels: ['system_notification'] })
+                });
+                
+                alert(`通知已发送给 ${currentNotifyUser}`);
+                closeNotifyModal();
+                loadAllData();
+            } catch (error) {
+                alert('发送失败: ' + error.message);
+            }
+        }
+
+        function showNotifyModal(username) {
+            currentNotifyUser = username;
+            document.getElementById('notifyTargetUser').textContent = username;
+            document.getElementById('notifyTitle').value = '';
+            document.getElementById('notifyMessage').value = '';
+            document.getElementById('notifyModal').style.display = 'flex';
+        }
+
+        function closeNotifyModal() {
+            document.getElementById('notifyModal').style.display = 'none';
+            currentNotifyUser = null;
+        }
+
+        async function toggleUserBan(username, shouldBan) {
+            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？`)) return;
             const user = allUsers.find(u => u.username === username);
             if (!user) return;
-
             user.isBanned = shouldBan;
-            user.bannedAt = shouldBan ? new Date().toISOString() : null;
-
             const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(user, null, 2)}\n\`\`\``;
-            
-            try {
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${user.issueNumber}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ body: updatedBody })
-                });
-                alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除封禁`);
-                loadAllData();
-            } catch (error) {
-                alert('操作失败：' + error.message);
-            }
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${user.issueNumber}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: updatedBody })
+            });
+            alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除封禁`);
+            loadAllData();
         }
 
-        // ========== 封禁/解封群聊 ==========
         async function toggleRoomBan(roomId, shouldBan) {
-            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}该群聊吗？\n封禁后所有成员将无法访问。`)) return;
-            
+            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}该群聊吗？`)) return;
             const room = allRooms.find(r => r.id === roomId);
             if (!room) return;
-
             room.isBanned = shouldBan;
-            room.bannedAt = shouldBan ? new Date().toISOString() : null;
-
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
-            
-            try {
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${room.issueNumber}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ body: updatedBody })
-                });
-                alert(shouldBan ? `群聊 "${room.name}" 已被封禁` : `群聊 "${room.name}" 已解除封禁`);
-                loadAllData();
-            } catch (error) {
-                alert('操作失败：' + error.message);
-            }
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${room.issueNumber}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: updatedBody })
+            });
+            alert(shouldBan ? `群聊已被封禁` : `群聊已解除封禁`);
+            loadAllData();
         }
 
-        // ========== 切换标签页 ==========
         function switchTab(tab) {
             const roomsTab = document.getElementById('roomsTab');
             const usersTab = document.getElementById('usersTab');
+            const notificationsTab = document.getElementById('notificationsTab');
             const btns = document.querySelectorAll('.tab-btn');
-            
             btns.forEach(btn => btn.classList.remove('active'));
-            
+            roomsTab.style.display = 'none';
+            usersTab.style.display = 'none';
+            notificationsTab.style.display = 'none';
             if (tab === 'rooms') {
                 roomsTab.style.display = 'block';
-                usersTab.style.display = 'none';
                 btns[0].classList.add('active');
-            } else {
-                roomsTab.style.display = 'none';
+            } else if (tab === 'users') {
                 usersTab.style.display = 'block';
                 btns[1].classList.add('active');
-                renderUsers();
+            } else {
+                notificationsTab.style.display = 'block';
+                btns[2].classList.add('active');
+                renderNotifications();
             }
         }
 
@@ -764,11 +855,9 @@
             return div.innerHTML;
         }
 
-        // 初始化
         currentAdmin = checkAdmin();
         if (currentAdmin) {
             loadAllData();
-            // 每30秒刷新一次数据
             setInterval(loadAllData, 30000);
         }
     </script>
