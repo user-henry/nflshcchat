@@ -5,19 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 聊天室</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; min-height: 100vh; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e;
-            min-height: 100vh;
-        }
-
-        /* 导航栏 */
         .nav {
             background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
             padding: 15px 30px;
@@ -28,13 +18,7 @@
             flex-wrap: wrap;
             border-bottom: 1px solid #ffd700;
         }
-
-        .nav-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo {
             width: 40px;
             height: 40px;
@@ -43,24 +27,58 @@
             background-repeat: no-repeat;
             background-position: center;
         }
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
 
-        .nav h2 {
-            font-size: 20px;
-            color: #ffd700;
+        /* 通知按钮样式 */
+        .notification-btn {
+            position: relative;
+            cursor: pointer;
         }
-
-        .nav a {
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -15px;
+            background: #dc3545;
             color: white;
-            text-decoration: none;
-            margin-left: 20px;
-            transition: color 0.3s;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        .notification-badge.zero {
+            background: #28a745;
         }
 
-        .nav a:hover {
-            color: #ffd700;
+        /* 通知下拉面板 */
+        .notification-panel {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            width: 350px;
+            max-height: 400px;
+            background: #16213e;
+            border-radius: 12px;
+            border: 1px solid #ffd700;
+            z-index: 100;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
+        .notification-panel.show { display: block; }
+        .notification-item {
+            padding: 12px;
+            border-bottom: 1px solid #2a2a3e;
+            cursor: pointer;
+        }
+        .notification-item:hover { background: #1a1a2e; }
+        .notification-item.unread { background: #2a1a3e; }
+        .notification-title { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
+        .notification-content { font-size: 12px; color: #aaa; }
+        .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
 
-        /* 聊天主容器 */
         .chat-container {
             display: flex;
             max-width: 1400px;
@@ -68,11 +86,9 @@
             background: #16213e;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             height: calc(100vh - 80px);
         }
 
-        /* 左侧聊天室列表 */
         .rooms-sidebar {
             width: 300px;
             background: #0f0f1a;
@@ -80,17 +96,8 @@
             flex-direction: column;
             border-right: 1px solid #2a2a3e;
         }
-
-        .rooms-header {
-            padding: 20px;
-            border-bottom: 1px solid #2a2a3e;
-        }
-
-        .rooms-header h3 {
-            color: #ffd700;
-            margin-bottom: 10px;
-        }
-
+        .rooms-header { padding: 20px; border-bottom: 1px solid #2a2a3e; }
+        .rooms-header h3 { color: #ffd700; margin-bottom: 10px; }
         .create-room-btn {
             width: 100%;
             padding: 10px;
@@ -100,602 +107,20 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: transform 0.2s;
         }
-
-        .create-room-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .rooms-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
+        .rooms-list { flex: 1; overflow-y: auto; padding: 10px; }
         .room-item {
             padding: 12px;
             margin-bottom: 8px;
             border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s;
             background: #1a1a2e;
         }
+        .room-item:hover { background: #2a2a3e; transform: translateX(5px); }
+        .room-item.active { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; }
+        .room-name { font-weight: 600; margin-bottom: 4px; }
+        .room-type { font-size: 11px; opacity: 0.7; }
 
-        .room-item:hover {
-            background: #2a2a3e;
-            transform: translateX(5px);
-        }
-
-        .room-item.active {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-        }
-
-        .room-name {
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .room-type {
-            font-size: 11px;
-            opacity: 0.7;
-        }
-
-        .room-banned {
-            opacity: 0.5;
-            text-decoration: line-through;
-        }
-
-        /* 右侧聊天区域 */
-        .chat-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #16213e;
-        }
-
-        .chat-header {
-            padding: 20px;
-            border-bottom: 1px solid #2a2a3e;
-            background: #1a1a2e;
-        }
-
-        .chat-header h3 {
-            color: #ffd700;
-            margin-bottom: 5px;
-        }
-
-        .chat-header p {
-            color: #aaa;
-            font-size: 12px;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .message {
-            display: flex;
-            flex-direction: column;
-            max-width: 70%;
-        }
-
-        .message.own {
-            align-self: flex-end;
-        }
-
-        .message-sender {
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 4px;
-            margin-left: 10px;
-        }
-
-        .message.own .message-sender {
-            text-align: right;
-            margin-right: 10px;
-        }
-
-        .message-bubble {
-            padding: 10px 16px;
-            border-radius: 18px;
-            background: #1a1a2e;
-            color: white;
-            word-wrap: break-word;
-        }
-
-        .message.own .message-bubble {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-        }
-
-        .message-time {
-            font-size: 10px;
-            color: #666;
-            margin-top: 4px;
-            margin-left: 10px;
-        }
-
-        .message.own .message-time {
-            text-align: right;
-            margin-right: 10px;
-        }
-
-        /* 输入区域 */
-        .chat-input-area {
-            padding: 20px;
-            border-top: 1px solid #2a2a3e;
-            background: #1a1a2e;
-            display: flex;
-            gap: 10px;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #2a2a3e;
-            border-radius: 24px;
-            resize: none;
-            font-family: inherit;
-            font-size: 14px;
-            background: #0f0f1a;
-            color: white;
-        }
-
-        .chat-input:focus {
-            outline: none;
-            border-color: #ffd700;
-        }
-
-        .send-btn {
-            padding: 12px 28px;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-            border: none;
-            border-radius: 24px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-
-        .send-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #666;
-        }
-
-        /* 模态框 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: #1a1a2e;
-            padding: 30px;
-            border-radius: 16px;
-            width: 400px;
-            border: 1px solid #ffd700;
-        }
-
-        .modal-content h3 {
-            color: #ffd700;
-            margin-bottom: 20px;
-        }
-
-        .modal-content input, .modal-content select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #2a2a3e;
-            border-radius: 8px;
-            background: #0f0f1a;
-            color: white;
-        }
-
-        .modal-content button {
-            padding: 10px 20px;
-            margin-right: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        @media (max-width: 768px) {
-            .rooms-sidebar { width: 200px; }
-            .message { max-width: 85%; }
-            .chat-container { margin: 10px; height: calc(100vh - 100px); }
-        }
-    </style>
-</head>
-<body>
-    <div class="nav">
-        <div class="nav-left">
-            <div class="logo"></div>
-            <h2>💬 NFLSHC Chat</h2>
-        </div>
-        <div>
-            <span>欢迎，<span id="username"></span></span>
-            <a href="notice.html">📢 公告</a>
-            <a href="#" onclick="logout()">🚪 退出</a>
-        </div>
-    </div>
-
-    <div class="chat-container">
-        <div class="rooms-sidebar">
-            <div class="rooms-header">
-                <h3>聊天室列表</h3>
-                <button class="create-room-btn" onclick="showCreateRoomModal()">+ 创建聊天室</button>
-            </div>
-            <div class="rooms-list" id="roomsList">
-                <div class="empty-state">加载中...</div>
-            </div>
-        </div>
-
-        <div class="chat-main">
-            <div class="chat-header" id="chatHeader">
-                <h3>选择一个聊天室</h3>
-                <p>左侧选择聊天室开始对话</p>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="empty-state">💬 选择一个聊天室开始聊天</div>
-            </div>
-            <div class="chat-input-area" id="chatInputArea" style="display: none;">
-                <textarea class="chat-input" id="messageInput" placeholder="输入消息..." rows="2"></textarea>
-                <button class="send-btn" onclick="sendMessage()">发送</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 创建聊天室模态框 -->
-    <div id="createRoomModal" class="modal">
-        <div class="modal-content">
-            <h3>创建聊天室</h3>
-            <input type="text" id="roomName" placeholder="聊天室名称">
-            <select id="roomType" onchange="togglePrivateUser()">
-                <option value="group">群聊（所有人可见）</option>
-                <option value="private">私聊（指定用户）</option>
-            </select>
-            <input type="text" id="privateUser" placeholder="私聊对象用户名" style="display: none;">
-            <div class="modal-buttons">
-                <button onclick="closeCreateRoomModal()">取消</button>
-                <button onclick="createRoom()" style="background: #ffd700;">创建</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="config.js"></script>
-    <script>
-        let currentUser = null;
-        let currentRoom = null;
-        let allRooms = [];
-        let messages = {};
-        let pollInterval = null;
-
-        // ========== 辅助函数 ==========
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = 'index.html';
-        }
-
-        function showMessage(msg, type) {
-            // 简单提示
-            alert(msg);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function togglePrivateUser() {
-            const type = document.getElementById('roomType').value;
-            const privateUserInput = document.getElementById('privateUser');
-            privateUserInput.style.display = type === 'private' ? 'block' : 'none';
-        }
-
-        function showCreateRoomModal() {
-            document.getElementById('createRoomModal').style.display = 'flex';
-        }
-
-        function closeCreateRoomModal() {
-            document.getElementById('createRoomModal').style.display = 'none';
-            document.getElementById('roomName').value = '';
-            document.getElementById('privateUser').value = '';
-        }
-
-        // ========== 用户认证 ==========
-        function checkAuth() {
-            const userStr = sessionStorage.getItem('currentUser');
-            if (!userStr) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            const user = JSON.parse(userStr);
-            document.getElementById('username').textContent = user.username;
-            return user;
-        }
-
-        // ========== 加载聊天室列表 ==========
-        async function loadRooms() {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                const issues = await response.json();
-                allRooms = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const roomData = JSON.parse(match[1]);
-                        // 过滤私聊：只显示用户参与的私聊
-                        if (roomData.type === 'private') {
-                            if (roomData.members && (roomData.members.includes(currentUser.username) || roomData.creator === currentUser.username)) {
-                                allRooms.push({ ...roomData, issueNumber: issue.number });
-                            }
-                        } else {
-                            // 群聊：显示未被封禁的
-                            if (!roomData.isBanned) {
-                                allRooms.push({ ...roomData, issueNumber: issue.number });
-                            }
-                        }
-                    }
-                }
-                renderRooms();
-            } catch (error) {
-                console.error('加载聊天室失败:', error);
-            }
-        }
-
-        function renderRooms() {
-            const container = document.getElementById('roomsList');
-            if (allRooms.length === 0) {
-                container.innerHTML = '<div class="empty-state">暂无聊天室<br>点击上方按钮创建</div>';
-                return;
-            }
-            container.innerHTML = allRooms.map(room => `
-                <div class="room-item ${currentRoom && currentRoom.id === room.id ? 'active' : ''}" onclick="selectRoom('${room.id}')">
-                    <div class="room-name">${escapeHtml(room.name)}</div>
-                    <div class="room-type">${room.type === 'group' ? '👥 群聊' : '🔒 私聊'}</div>
-                </div>
-            `).join('');
-        }
-
-        // ========== 选择聊天室 ==========
-        async function selectRoom(roomId) {
-            currentRoom = allRooms.find(r => r.id === roomId);
-            if (!currentRoom) return;
-
-            // 检查群聊是否被封禁
-            if (currentRoom.isBanned) {
-                showMessage('该群聊已被封禁', 'error');
-                return;
-            }
-
-            document.getElementById('chatHeader').innerHTML = `
-                <h3>${escapeHtml(currentRoom.name)}</h3>
-                <p>${currentRoom.type === 'group' ? '群聊 · 所有人可见' : '私聊 · 仅你们两人可见'}</p>
-            `;
-            document.getElementById('chatInputArea').style.display = 'flex';
-
-            await loadMessages(roomId);
-            startPolling();
-        }
-
-        // ========== 加载消息 ==========
-        async function loadMessages(roomId) {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open`;
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                const issues = await response.json();
-                const roomMessages = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (msgData.roomId === roomId) {
-                            roomMessages.push({ ...msgData, issueNumber: issue.number });
-                        }
-                    }
-                }
-                roomMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                messages[roomId] = roomMessages;
-                renderMessages(roomId);
-            } catch (error) {
-                console.error('加载消息失败:', error);
-            }
-        }
-
-        function renderMessages(roomId) {
-            const container = document.getElementById('chatMessages');
-            const roomMessages = messages[roomId] || [];
-            if (roomMessages.length === 0) {
-                container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
-                return;
-            }
-            container.innerHTML = roomMessages.map(msg => `
-                <div class="message ${msg.sender === currentUser.username ? 'own' : ''}">
-                    <div class="message-sender">${escapeHtml(msg.sender)}</div>
-                    <div class="message-bubble">${escapeHtml(msg.content)}</div>
-                    <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-                </div>
-            `).join('');
-            container.scrollTop = container.scrollHeight;
-        }
-
-        // ========== 发送消息 ==========
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const content = input.value.trim();
-            if (!content || !currentRoom) return;
-
-            // 检查用户是否被封禁
-            const isBanned = await checkUserBanned(currentUser.username);
-            if (isBanned) {
-                showMessage('您的账号已被封禁，无法发送消息', 'error');
-                return;
-            }
-
-            const messageData = {
-                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                roomId: currentRoom.id,
-                sender: currentUser.username,
-                content: content,
-                timestamp: new Date().toISOString()
-            };
-
-            try {
-                const issueTitle = `Message: ${messageData.id}`;
-                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: issueTitle, body: issueBody, labels: ['chatmessage'] })
-                });
-                input.value = '';
-                await loadMessages(currentRoom.id);
-            } catch (error) {
-                console.error('发送失败:', error);
-                showMessage('发送失败：' + error.message, 'error');
-            }
-        }
-
-        // ========== 检查用户是否被封禁 ==========
-        async function checkUserBanned(username) {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                const issues = await response.json();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        if (userData.username === username) {
-                            return userData.isBanned || false;
-                        }
-                    }
-                }
-                return false;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        // ========== 创建聊天室 ==========
-        async function createRoom() {
-            const name = document.getElementById('roomName').value.trim();
-            const type = document.getElementById('roomType').value;
-            const privateUser = document.getElementById('privateUser').value.trim();
-
-            if (!name) {
-                showMessage('请输入聊天室名称', 'error');
-                return;
-            }
-            if (type === 'private' && !privateUser) {
-                showMessage('请输入私聊对象用户名', 'error');
-                return;
-            }
-
-            const roomData = {
-                id: `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                name: name,
-                type: type,
-                creator: currentUser.username,
-                members: type === 'private' ? [currentUser.username, privateUser] : [],
-                isBanned: false,
-                createdAt: new Date().toISOString()
-            };
-
-            try {
-                const issueTitle = `ChatRoom: ${roomData.id}`;
-                const issueBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(roomData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: issueTitle, body: issueBody, labels: ['chatroom'] })
-                });
-                closeCreateRoomModal();
-                await loadRooms();
-                showMessage('聊天室创建成功', 'success');
-            } catch (error) {
-                showMessage('创建失败：' + error.message, 'error');
-            }
-        }
-
-        // ========== 轮询新消息 ==========
-        function startPolling() {
-            if (pollInterval) clearInterval(pollInterval);
-            pollInterval = setInterval(() => {
-                if (currentRoom && !currentRoom.isBanned) {
-                    loadMessages(currentRoom.id);
-                }
-            }, 3000);
-        }
-
-        // ========== 初始化 ==========
-        currentUser = checkAuth();
-        if (currentUser) {
-            loadRooms();
-        }
-
-        // 回车发送
-        document.addEventListener('DOMContentLoaded', function() {
-            const input = document.getElementById('messageInput');
-            if (input) {
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                });
-            }
-        });
-    </script>
-</body>
-</html>
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; }
+        .chat-header { padding: 20px; border-bottom: 1px solid #2a2a3e; background: #1a1a2e; }
+       
