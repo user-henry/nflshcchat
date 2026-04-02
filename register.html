@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 注册</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .register-container {
+            max-width: 400px;
+            width: 100%;
+            padding: 40px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #1a1a2e; margin-bottom: 20px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .message { margin-top: 15px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1>📝 注册账号</h1>
+        <input type="text" id="username" placeholder="用户名">
+        <input type="email" id="email" placeholder="邮箱">
+        <input type="password" id="password" placeholder="密码（至少6位）">
+        <input type="password" id="confirm" placeholder="确认密码">
+        <button onclick="register()">注册</button>
+        <div id="message" class="message"></div>
+    </div>
+    <script src="config.js"></script>
+    <script>
+        async function register() {
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm').value;
+            const msg = document.getElementById('message');
+            if (!username || !email || !password) {
+                msg.innerHTML = '<span style="color: red;">请填写所有字段</span>';
+                return;
+            }
+            if (password !== confirm) {
+                msg.innerHTML = '<span style="color: red;">两次密码不一致</span>';
+                return;
+            }
+            if (password.length < 6) {
+                msg.innerHTML = '<span style="color: red;">密码至少6位</span>';
+                return;
+            }
+            try {
+                // 检查用户是否存在
+                const checkUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user`;
+                const checkRes = await fetch(checkUrl, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await checkRes.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const user = JSON.parse(match[1]);
+                        if (user.username === username) {
+                            msg.innerHTML = '<span style="color: red;">用户名已存在</span>';
+                            return;
+                        }
+                    }
+                }
+                // 创建用户
+                const userData = { username, email, password, createdAt: new Date().toISOString(), isBanned: false };
+                const issueBody = `用户信息\n\`\`\`json\n${JSON.stringify(userData, null, 2)}\n\`\`\``;
+                const createUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+                const res = await fetch(createUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `User: ${username}`, body: issueBody, labels: ['user'] })
+                });
+                if (res.ok) {
+                    msg.innerHTML = '<span style="color: green;">注册成功！正在跳转...</span>';
+                    setTimeout(() => window.location.href = 'index.html', 1500);
+                } else {
+                    const err = await res.json();
+                    msg.innerHTML = `<span style="color: red;">注册失败: ${err.message}</span>`;
+                }
+            } catch (error) {
+                msg.innerHTML = `<span style="color: red;">注册失败: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

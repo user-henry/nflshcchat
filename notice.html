@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 公告</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .notice-item { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .notice-title { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+        .notice-meta { font-size: 12px; color: #666; margin-bottom: 15px; }
+        .admin-bar { background: #1a1a2e; color: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; }
+        .admin-bar a { color: white; text-decoration: none; margin-right: 20px; }
+        textarea, input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ddd; }
+        button { background: #ffd700; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-bar">
+            <a href="chat.html">💬 聊天</a>
+            <a href="index.html">🚪 退出</a>
+        </div>
+        <div id="notices">加载中...</div>
+        <div id="adminPanel" style="display: none;">
+            <h3>发布新公告</h3>
+            <input type="text" id="title" placeholder="标题">
+            <textarea id="content" rows="5" placeholder="内容"></textarea>
+            <button onclick="publishNotice()">发布</button>
+        </div>
+    </div>
+    <script src="config.js"></script>
+    <script>
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+        if (currentUser.isAdmin) document.getElementById('adminPanel').style.display = 'block';
+        // 加载并渲染公告，管理员可删除
+        async function loadNotices() { /* 从 GitHub Issues 读取 labels=notice */ }
+        loadNotices();
+    </script>
+</body>
+</html>

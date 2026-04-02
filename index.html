@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 登录</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            padding: 40px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background-image: url('logo.png'); /* 请替换为您的实际 Logo 链接 */
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        h1 { color: #1a1a2e; margin-bottom: 10px; }
+        h2 { color: #666; font-size: 18px; margin-bottom: 30px; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        input:focus { outline: none; border-color: #ffd700; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,215,0,0.3); }
+        a { color: #ffd700; text-decoration: none; }
+        .message { margin-top: 15px; font-size: 14px; min-height: 40px; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo"></div>
+        <h1>💬 NFLSHC Chat</h1>
+        <h2>登录</h2>
+        <input type="text" id="username" placeholder="用户名">
+        <input type="password" id="password" placeholder="密码">
+        <button onclick="login()">登录</button>
+        <p style="margin-top: 20px;">没有账号？ <a href="#" onclick="showRegister()">立即注册</a></p>
+        <div id="message" class="message"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        async function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const msgDiv = document.getElementById('message');
+            if (!username || !password) {
+                msgDiv.innerHTML = '<span style="color: red;">请填写用户名和密码</span>';
+                return;
+            }
+            // 管理员登录
+            if (username === 'huangzhiyuan' && password === '15240254891') {
+                sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: true }));
+                msgDiv.innerHTML = '<span style="color: green;">管理员登录成功，正在跳转...</span>';
+                setTimeout(() => window.location.href = 'admin.html', 1000);
+                return;
+            }
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                let found = null;
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const user = JSON.parse(match[1]);
+                        if (user.username === username && user.password === password) {
+                            found = user;
+                            break;
+                        }
+                    }
+                }
+                if (found && !found.isBanned) {
+                    sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: false }));
+                    msgDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
+                    setTimeout(() => window.location.href = 'chat.html', 1000);
+                } else if (found && found.isBanned) {
+                    msgDiv.innerHTML = '<span style="color: red;">账号已被封禁</span>';
+                } else {
+                    msgDiv.innerHTML = '<span style="color: red;">用户名或密码错误</span>';
+                }
+            } catch (error) {
+                msgDiv.innerHTML = `<span style="color: red;">登录失败: ${error.message}</span>`;
+            }
+        }
+        function showRegister() {
+            window.location.href = 'register.html';
+        }
+    </script>
+</body>
+</html>

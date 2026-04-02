@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 管理后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h2 { margin-bottom: 20px; color: #1a1a2e; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .ban-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        .unban-btn { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+        .nav { background: #1a1a2e; color: white; padding: 15px; margin-bottom: 20px; border-radius: 12px; }
+        .nav a { color: white; text-decoration: none; margin-right: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <strong>👑 管理员后台</strong>
+            <a href="chat.html">💬 聊天</a>
+            <a href="notice.html">📢 公告</a>
+            <a href="index.html">🚪 退出</a>
+        </div>
+        <div class="card">
+            <h2>👥 用户管理</h2>
+            <div id="usersList">加载中...</div>
+        </div>
+        <div class="card">
+            <h2>🏠 群聊管理</h2>
+            <div id="roomsList">加载中...</div>
+        </div>
+    </div>
+    <script src="config.js"></script>
+    <script>
+        async function fetchData() {
+            // 获取所有用户和群聊，渲染表格，提供封禁/解封按钮
+            // 具体实现类似之前的化石项目
+        }
+        fetchData();
+    </script>
+</body>
+</html>
