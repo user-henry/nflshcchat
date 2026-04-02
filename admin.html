@@ -62,7 +62,7 @@
 
         /* 主容器 */
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 30px auto;
             padding: 0 20px;
         }
@@ -70,7 +70,7 @@
         /* 统计卡片 */
         .stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -94,6 +94,29 @@
             margin-top: 8px;
         }
 
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            background: #16213e;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #ffd700;
+            color: #1a1a2e;
+            border-color: #ffd700;
+        }
+
         /* 卡片样式 */
         .card {
             background: #16213e;
@@ -110,70 +133,118 @@
             border-bottom: 1px solid #2a2a3e;
         }
 
-        /* 表格样式 */
-        .user-list, .room-list {
-            max-height: 400px;
-            overflow-y: auto;
+        /* 聊天室网格 */
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
         }
 
-        .user-item, .room-item {
+        .room-card {
             background: #1a1a2e;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 12px;
+            border-radius: 12px;
+            padding: 18px;
+            border: 1px solid #2a2a3e;
+            transition: transform 0.2s;
+        }
+
+        .room-card:hover {
+            transform: translateY(-3px);
+            border-color: #ffd700;
+        }
+
+        .room-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 12px;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 8px;
         }
 
-        .user-info, .room-info {
-            flex: 1;
-        }
-
-        .user-name, .room-name {
+        .room-name {
+            font-size: 18px;
             font-weight: bold;
             color: #ffd700;
-            margin-bottom: 5px;
         }
 
-        .user-meta, .room-meta {
-            font-size: 12px;
+        .room-type {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: #2a2a3e;
             color: #aaa;
         }
 
-        .admin-badge {
-            background: #ffd700;
-            color: #1a1a2e;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            margin-left: 8px;
-        }
-
-        .banned-badge {
+        .room-type.private {
             background: #dc3545;
             color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            margin-left: 8px;
         }
 
-        .actions {
+        .room-type.group {
+            background: #28a745;
+            color: white;
+        }
+
+        .room-info {
+            margin-bottom: 12px;
+        }
+
+        .room-info p {
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .room-members {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 12px 0;
+        }
+
+        .room-members h4 {
+            color: #ffd700;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .member-list {
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 6px;
         }
 
-        .ban-btn, .unban-btn, .delete-btn {
-            padding: 6px 16px;
+        .member-tag {
+            background: #2a2a3e;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            color: #ddd;
+        }
+
+        .member-tag.creator {
+            background: #ffd700;
+            color: #1a1a2e;
+        }
+
+        .room-stats {
+            display: flex;
+            gap: 15px;
+            margin: 12px 0;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .ban-btn, .unban-btn {
+            padding: 8px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
             font-weight: bold;
             transition: transform 0.2s;
+            width: 100%;
         }
 
         .ban-btn {
@@ -186,13 +257,81 @@
             color: white;
         }
 
-        .delete-btn {
-            background: #ffc107;
+        .ban-btn:hover, .unban-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 用户列表 */
+        .user-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .user-meta {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .admin-badge, .banned-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+
+        .admin-badge {
+            background: #ffd700;
             color: #1a1a2e;
         }
 
-        .ban-btn:hover, .unban-btn:hover, .delete-btn:hover {
-            transform: translateY(-2px);
+        .banned-badge {
+            background: #dc3545;
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .ban-user-btn, .unban-user-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .ban-user-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .unban-user-btn {
+            background: #28a745;
+            color: white;
         }
 
         .empty-state {
@@ -201,7 +340,6 @@
             color: #666;
         }
 
-        /* 加载动画 */
         .loading {
             text-align: center;
             padding: 40px;
@@ -210,10 +348,13 @@
 
         @media (max-width: 768px) {
             .stats {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 15px;
             }
-            .user-item, .room-item {
+            .rooms-grid {
+                grid-template-columns: 1fr;
+            }
+            .user-item {
                 flex-direction: column;
                 align-items: flex-start;
             }
@@ -246,26 +387,36 @@
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="totalRooms">0</div>
-                <div class="stat-label">聊天室数</div>
+                <div class="stat-label">聊天室总数</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="bannedUsers">0</div>
-                <div class="stat-label">已封禁用户</div>
+                <div class="stat-number" id="totalGroupRooms">0</div>
+                <div class="stat-label">群聊数量</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalPrivateRooms">0</div>
+                <div class="stat-label">私聊数量</div>
             </div>
         </div>
 
-        <!-- 用户管理 -->
-        <div class="card">
-            <h2>👥 用户管理</h2>
-            <div id="usersList" class="user-list">
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('rooms')">💬 所有聊天室</button>
+            <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
+        </div>
+
+        <!-- 聊天室列表（所有聊天室） -->
+        <div id="roomsTab" class="card">
+            <h2>📋 所有聊天室</h2>
+            <div id="roomsList" class="rooms-grid">
                 <div class="loading">加载中...</div>
             </div>
         </div>
 
-        <!-- 群聊管理 -->
-        <div class="card">
-            <h2>🏠 群聊管理</h2>
-            <div id="roomsList" class="room-list">
+        <!-- 用户列表 -->
+        <div id="usersTab" class="card" style="display: none;">
+            <h2>👥 用户管理</h2>
+            <div id="usersList" class="user-list">
                 <div class="loading">加载中...</div>
             </div>
         </div>
@@ -276,6 +427,7 @@
         let currentAdmin = null;
         let allUsers = [];
         let allRooms = [];
+        let allMessages = [];
 
         // ========== 认证检查 ==========
         function checkAdmin() {
@@ -299,8 +451,8 @@
             window.location.href = 'index.html';
         }
 
-        // ========== 加载数据 ==========
-        async function loadData() {
+        // ========== 加载所有数据 ==========
+        async function loadAllData() {
             try {
                 const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
                 
@@ -338,18 +490,129 @@
                     }
                 }
 
-                // 更新统计
-                document.getElementById('totalUsers').textContent = allUsers.length;
-                document.getElementById('totalRooms').textContent = allRooms.filter(r => r.type === 'group').length;
-                document.getElementById('bannedUsers').textContent = allUsers.filter(u => u.isBanned).length;
+                // 获取所有消息（用于统计）
+                const messagesRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const messageIssues = await messagesRes.json();
+                allMessages = [];
+                for (const issue of messageIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const msgData = JSON.parse(match[1]);
+                        allMessages.push(msgData);
+                    }
+                }
 
-                renderUsers();
+                // 更新统计
+                updateStats();
                 renderRooms();
+                renderUsers();
             } catch (error) {
                 console.error('加载数据失败:', error);
-                document.getElementById('usersList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
                 document.getElementById('roomsList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
+                document.getElementById('usersList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
             }
+        }
+
+        // ========== 更新统计 ==========
+        function updateStats() {
+            const groupRooms = allRooms.filter(r => r.type === 'group');
+            const privateRooms = allRooms.filter(r => r.type === 'private');
+            document.getElementById('totalUsers').textContent = allUsers.length;
+            document.getElementById('totalRooms').textContent = allRooms.length;
+            document.getElementById('totalGroupRooms').textContent = groupRooms.length;
+            document.getElementById('totalPrivateRooms').textContent = privateRooms.length;
+        }
+
+        // ========== 获取聊天室消息数 ==========
+        function getMessageCount(roomId) {
+            return allMessages.filter(m => m.roomId === roomId).length;
+        }
+
+        // ========== 获取聊天室成员显示 ==========
+        function getRoomMembersDisplay(room) {
+            if (room.type === 'group') {
+                // 群聊：显示所有成员（如果有记录）或显示创建者
+                if (room.members && room.members.length > 0) {
+                    return room.members;
+                }
+                return [room.creator];
+            } else {
+                // 私聊：显示聊天双方
+                if (room.members && room.members.length >= 2) {
+                    return room.members;
+                }
+                return [room.creator, room.members?.[1] || '未知'].filter(Boolean);
+            }
+        }
+
+        // ========== 获取私聊对象描述 ==========
+        function getPrivateChatDescription(room) {
+            if (room.type !== 'private') return null;
+            const members = getRoomMembersDisplay(room);
+            const otherUser = members.find(m => m !== room.creator);
+            return otherUser ? `与 ${otherUser} 的私聊` : '私聊';
+        }
+
+        // ========== 渲染聊天室列表 ==========
+        function renderRooms() {
+            const container = document.getElementById('roomsList');
+            if (allRooms.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无聊天室</div>';
+                return;
+            }
+
+            container.innerHTML = allRooms.map(room => {
+                const members = getRoomMembersDisplay(room);
+                const messageCount = getMessageCount(room.id);
+                const privateDesc = getPrivateChatDescription(room);
+                
+                return `
+                    <div class="room-card">
+                        <div class="room-header">
+                            <span class="room-name">${escapeHtml(room.name)}</span>
+                            <span class="room-type ${room.type}">${room.type === 'group' ? '👥 群聊' : '🔒 私聊'}</span>
+                        </div>
+                        <div class="room-info">
+                            <p>📅 创建时间: ${new Date(room.createdAt).toLocaleString()}</p>
+                            <p>👤 创建者: ${escapeHtml(room.creator)}</p>
+                            ${room.type === 'private' && privateDesc ? `<p>💬 ${escapeHtml(privateDesc)}</p>` : ''}
+                            <p>📊 消息总数: ${messageCount} 条</p>
+                            <p>👥 ${room.type === 'group' ? '成员数' : '参与人数'}: ${members.length} 人</p>
+                            ${room.isBanned ? '<p style="color: #dc3545;">🚫 状态: 已封禁</p>' : '<p style="color: #28a745;">✅ 状态: 正常</p>'}
+                        </div>
+                        <div class="room-members">
+                            <h4>📋 ${room.type === 'group' ? '成员列表' : '聊天双方'}</h4>
+                            <div class="member-list">
+                                ${members.map(m => `
+                                    <span class="member-tag ${m === room.creator ? 'creator' : ''}">
+                                        ${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="room-stats">
+                            <span>🆔 ID: ${room.id.substring(0, 12)}...</span>
+                        </div>
+                        ${room.type === 'group' ? `
+                            <div style="margin-top: 12px;">
+                                ${room.isBanned ? 
+                                    `<button class="unban-btn" onclick="toggleRoomBan('${room.id}', false)">解除封禁群聊</button>` :
+                                    `<button class="ban-btn" onclick="toggleRoomBan('${room.id}', true)">封禁群聊</button>`
+                                }
+                            </div>
+                        ` : `
+                            <div style="margin-top: 12px;">
+                                <span style="font-size: 12px; color: #888;">💡 私聊无法封禁，只能封禁用户</span>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
         }
 
         // ========== 渲染用户列表 ==========
@@ -358,6 +621,17 @@
             if (allUsers.length === 0) {
                 container.innerHTML = '<div class="empty-state">暂无用户</div>';
                 return;
+            }
+
+            // 统计每个用户参与的聊天室数量
+            const userRoomCount = {};
+            for (const room of allRooms) {
+                const members = room.type === 'group' 
+                    ? (room.members || [room.creator])
+                    : (room.members || [room.creator]);
+                for (const member of members) {
+                    userRoomCount[member] = (userRoomCount[member] || 0) + 1;
+                }
             }
 
             container.innerHTML = allUsers.map(user => `
@@ -369,14 +643,15 @@
                             ${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}
                         </div>
                         <div class="user-meta">
-                            注册时间: ${new Date(user.createdAt).toLocaleString()}
+                            注册时间: ${new Date(user.createdAt).toLocaleString()}<br>
+                            参与聊天室: ${userRoomCount[user.username] || 0} 个
                         </div>
                     </div>
                     <div class="actions">
                         ${user.username !== 'huangzhiyuan' ? `
                             ${user.isBanned ? 
-                                `<button class="unban-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
-                                `<button class="ban-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`
+                                `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
+                                `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`
                             }
                         ` : ''}
                     </div>
@@ -384,40 +659,9 @@
             `).join('');
         }
 
-        // ========== 渲染群聊列表 ==========
-        function renderRooms() {
-            const container = document.getElementById('roomsList');
-            const groupRooms = allRooms.filter(r => r.type === 'group');
-            
-            if (groupRooms.length === 0) {
-                container.innerHTML = '<div class="empty-state">暂无群聊</div>';
-                return;
-            }
-
-            container.innerHTML = groupRooms.map(room => `
-                <div class="room-item">
-                    <div class="room-info">
-                        <div class="room-name">
-                            ${escapeHtml(room.name)}
-                            ${room.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}
-                        </div>
-                        <div class="room-meta">
-                            创建者: ${escapeHtml(room.creator)} · 创建于 ${new Date(room.createdAt).toLocaleDateString()}
-                        </div>
-                    </div>
-                    <div class="actions">
-                        ${room.isBanned ? 
-                            `<button class="unban-btn" onclick="toggleRoomBan('${room.id}', false)">解除封禁</button>` :
-                            `<button class="ban-btn" onclick="toggleRoomBan('${room.id}', true)">封禁群聊</button>`
-                        }
-                    </div>
-                </div>
-            `).join('');
-        }
-
         // ========== 封禁/解封用户 ==========
         async function toggleUserBan(username, shouldBan) {
-            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？`)) return;
+            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？\n封禁后该用户将无法发送消息。`)) return;
             
             const user = allUsers.find(u => u.username === username);
             if (!user) return;
@@ -438,7 +682,7 @@
                     body: JSON.stringify({ body: updatedBody })
                 });
                 alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除封禁`);
-                loadData();
+                loadAllData();
             } catch (error) {
                 alert('操作失败：' + error.message);
             }
@@ -446,7 +690,7 @@
 
         // ========== 封禁/解封群聊 ==========
         async function toggleRoomBan(roomId, shouldBan) {
-            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}该群聊吗？封禁后所有成员将无法访问。`)) return;
+            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}该群聊吗？\n封禁后所有成员将无法访问。`)) return;
             
             const room = allRooms.find(r => r.id === roomId);
             if (!room) return;
@@ -467,9 +711,29 @@
                     body: JSON.stringify({ body: updatedBody })
                 });
                 alert(shouldBan ? `群聊 "${room.name}" 已被封禁` : `群聊 "${room.name}" 已解除封禁`);
-                loadData();
+                loadAllData();
             } catch (error) {
                 alert('操作失败：' + error.message);
+            }
+        }
+
+        // ========== 切换标签页 ==========
+        function switchTab(tab) {
+            const roomsTab = document.getElementById('roomsTab');
+            const usersTab = document.getElementById('usersTab');
+            const btns = document.querySelectorAll('.tab-btn');
+            
+            btns.forEach(btn => btn.classList.remove('active'));
+            
+            if (tab === 'rooms') {
+                roomsTab.style.display = 'block';
+                usersTab.style.display = 'none';
+                btns[0].classList.add('active');
+            } else {
+                roomsTab.style.display = 'none';
+                usersTab.style.display = 'block';
+                btns[1].classList.add('active');
+                renderUsers();
             }
         }
 
@@ -483,9 +747,9 @@
         // 初始化
         currentAdmin = checkAdmin();
         if (currentAdmin) {
-            loadData();
+            loadAllData();
             // 每30秒刷新一次数据
-            setInterval(loadData, 30000);
+            setInterval(loadAllData, 30000);
         }
     </script>
 </body>
