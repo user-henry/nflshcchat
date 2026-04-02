@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 登录</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -15,6 +20,7 @@
             align-items: center;
             padding: 20px;
         }
+
         .login-container {
             max-width: 400px;
             width: 100%;
@@ -24,17 +30,28 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             text-align: center;
         }
+
         .logo {
             width: 80px;
             height: 80px;
             margin: 0 auto 20px;
-            background-image: url('logo.png'); /* 请替换为您的实际 Logo 链接 */
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
         }
-        h1 { color: #1a1a2e; margin-bottom: 10px; }
-        h2 { color: #666; font-size: 18px; margin-bottom: 30px; }
+
+        h1 {
+            color: #1a1a2e;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+
         input {
             width: 100%;
             padding: 12px;
@@ -42,8 +59,15 @@
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 16px;
+            transition: all 0.3s;
         }
-        input:focus { outline: none; border-color: #ffd700; }
+
+        input:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.2);
+        }
+
         button {
             width: 100%;
             padding: 12px;
@@ -54,74 +78,336 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.3s;
         }
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,215,0,0.3); }
-        a { color: #ffd700; text-decoration: none; }
-        .message { margin-top: 15px; font-size: 14px; min-height: 40px; }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,215,0,0.3);
+        }
+
+        p {
+            margin-top: 20px;
+            color: #666;
+        }
+
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 14px;
+            min-height: 40px;
+        }
+
+        /* 通知按钮样式 */
+        .notification-area {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .notification-btn {
+            position: relative;
+            cursor: pointer;
+            background: rgba(255,255,255,0.2);
+            padding: 10px 15px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .notification-badge.zero {
+            background: #28a745;
+        }
+
+        /* 通知面板 */
+        .notification-panel {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            width: 350px;
+            max-height: 450px;
+            background: #16213e;
+            border-radius: 12px;
+            border: 1px solid #ffd700;
+            z-index: 1000;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .notification-panel.show {
+            display: block;
+        }
+
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #2a2a3e;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .notification-item:hover {
+            background: #1a1a2e;
+        }
+
+        .notification-item.unread {
+            background: #2a1a3e;
+            border-left: 3px solid #ffd700;
+        }
+
+        .notification-title {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .notification-content {
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.4;
+        }
+
+        .notification-time {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .notification-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ffd700;
+            color: #ffd700;
+            font-weight: bold;
+            background: #0f0f1a;
+        }
     </style>
 </head>
 <body>
+    <!-- 通知区域 -->
+    <div class="notification-area">
+        <div class="notification-btn" onclick="toggleNotificationPanel(event)">
+            🔔 通知
+            <span id="notificationCount" class="notification-badge zero">0</span>
+        </div>
+        <div id="notificationPanel" class="notification-panel">
+            <div class="notification-header">📨 系统通知</div>
+            <div id="notificationList" style="padding: 0;">加载中...</div>
+        </div>
+    </div>
+
     <div class="login-container">
         <div class="logo"></div>
         <h1>💬 NFLSHC Chat</h1>
-        <h2>登录</h2>
-        <input type="text" id="username" placeholder="用户名">
+        <h2>用户登录</h2>
+        
+        <input type="text" id="username" placeholder="用户名" autocomplete="off">
         <input type="password" id="password" placeholder="密码">
         <button onclick="login()">登录</button>
-        <p style="margin-top: 20px;">没有账号？ <a href="#" onclick="showRegister()">立即注册</a></p>
+        
+        <p>没有账号？ <a href="#" onclick="showRegister()">立即注册</a></p>
         <div id="message" class="message"></div>
     </div>
 
     <script src="config.js"></script>
     <script>
-        async function login() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const msgDiv = document.getElementById('message');
-            if (!username || !password) {
-                msgDiv.innerHTML = '<span style="color: red;">请填写用户名和密码</span>';
-                return;
-            }
-            // 管理员登录
-            if (username === 'huangzhiyuan' && password === '15240254891') {
-                sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: true }));
-                msgDiv.innerHTML = '<span style="color: green;">管理员登录成功，正在跳转...</span>';
-                setTimeout(() => window.location.href = 'admin.html', 1000);
-                return;
-            }
+        let allNotifications = [];
+
+        // ========== 通知功能 ==========
+        async function loadNotifications(username) {
+            if (!username) return;
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
                 });
-                const issues = await res.json();
-                let found = null;
+                const issues = await response.json();
+                allNotifications = [];
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
-                        const user = JSON.parse(match[1]);
-                        if (user.username === username && user.password === password) {
-                            found = user;
+                        const notif = JSON.parse(match[1]);
+                        if (notif.targetUser === username) {
+                            allNotifications.push({ ...notif, issueNumber: issue.number });
+                        }
+                    }
+                }
+                updateNotificationUI();
+            } catch (error) {
+                console.error('加载通知失败:', error);
+            }
+        }
+
+        function updateNotificationUI() {
+            const unreadCount = allNotifications.filter(n => !n.isRead).length;
+            const badge = document.getElementById('notificationCount');
+            if (badge) {
+                badge.textContent = unreadCount;
+                badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
+            }
+            
+            const container = document.getElementById('notificationList');
+            if (!container) return;
+            
+            if (allNotifications.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>';
+                return;
+            }
+            
+            allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+            container.innerHTML = allNotifications.map(n => `
+                <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead('${n.id}')">
+                    <div class="notification-title">📨 ${escapeHtml(n.title)}</div>
+                    <div class="notification-content">${escapeHtml(n.content)}</div>
+                    <div class="notification-time">${new Date(n.sentAt).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        async function markAsRead(notificationId) {
+            const notif = allNotifications.find(n => n.id === notificationId);
+            if (!notif || notif.isRead) return;
+            
+            notif.isRead = true;
+            const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
+            
+            try {
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ body: updatedBody })
+                });
+                await loadNotifications(currentUsername);
+            } catch (error) {
+                console.error('标记已读失败:', error);
+            }
+        }
+
+        let currentUsername = null;
+
+        function toggleNotificationPanel(event) {
+            event.stopPropagation();
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('show');
+        }
+
+        // 点击其他地方关闭通知面板
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('notificationPanel');
+            const btn = document.querySelector('.notification-btn');
+            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('show');
+            }
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== 登录功能 ==========
+        async function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            if (!username || !password) {
+                messageDiv.innerHTML = '<span style="color: red;">请填写用户名和密码</span>';
+                return;
+            }
+            
+            // 管理员登录
+            if (username === 'huangzhiyuan' && password === '15240254891') {
+                sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: true }));
+                currentUsername = username;
+                messageDiv.innerHTML = '<span style="color: green;">管理员登录成功，正在跳转...</span>';
+                setTimeout(() => window.location.href = 'admin.html', 1000);
+                return;
+            }
+            
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                let foundUser = null;
+                
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        if (userData.username === username && userData.password === password) {
+                            foundUser = userData;
                             break;
                         }
                     }
                 }
-                if (found && !found.isBanned) {
+                
+                if (foundUser) {
+                    if (foundUser.isBanned) {
+                        messageDiv.innerHTML = '<span style="color: red;">账号已被封禁，请联系管理员</span>';
+                        return;
+                    }
+                    
                     sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: false }));
-                    msgDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
+                    currentUsername = username;
+                    messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
                     setTimeout(() => window.location.href = 'chat.html', 1000);
-                } else if (found && found.isBanned) {
-                    msgDiv.innerHTML = '<span style="color: red;">账号已被封禁</span>';
                 } else {
-                    msgDiv.innerHTML = '<span style="color: red;">用户名或密码错误</span>';
+                    messageDiv.innerHTML = '<span style="color: red;">用户名或密码错误</span>';
                 }
             } catch (error) {
-                msgDiv.innerHTML = `<span style="color: red;">登录失败: ${error.message}</span>`;
+                messageDiv.innerHTML = `<span style="color: red;">登录失败: ${error.message}</span>`;
             }
         }
+
         function showRegister() {
             window.location.href = 'register.html';
         }
+
+        // 回车提交
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
     </script>
 </body>
 </html>
