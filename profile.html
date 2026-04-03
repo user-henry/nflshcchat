@@ -115,6 +115,8 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
         }
         .message {
             margin-top: 15px;
@@ -158,15 +160,34 @@
                 headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
             });
             const issues = await res.json();
+            
             for (const issue of issues) {
                 const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                 if (match) {
-                    const user = JSON.parse(match[1]);
-                    if (user.username === username) {
-                        return { ...user, issueNumber: issue.number };
+                    try {
+                        const user = JSON.parse(match[1]);
+                        if (user.username === username) {
+                            return { ...user, issueNumber: issue.number };
+                        }
+                    } catch (e) {
+                        console.error('解析用户数据失败:', e);
                     }
                 }
             }
+            
+            // 备用查找：通过 issue title
+            for (const issue of issues) {
+                if (issue.title === `User: ${username}`) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const user = JSON.parse(match[1]);
+                            return { ...user, issueNumber: issue.number };
+                        } catch (e) {}
+                    }
+                }
+            }
+            
             return null;
         }
 
@@ -236,6 +257,11 @@
             const isOwnProfile = (currentUser.username === viewUser.username);
             const isAdminUser = viewUser.username === 'huangzhiyuan';
             
+            if (!viewUser) {
+                container.innerHTML = '<div class="loading" style="color: #dc3545;">❌ 用户不存在或数据加载失败</div>';
+                return;
+            }
+            
             const statusText = viewUser.isOnline ? '在线' : '离线';
             const statusClass = viewUser.isOnline ? 'online' : 'offline';
             const lastSeenText = viewUser.lastSeen ? new Date(viewUser.lastSeen).toLocaleString() : '未知';
@@ -268,7 +294,7 @@
                                     userRooms.map(room => `<span class="room-tag">${escapeHtml(room.name)} (${room.type === 'group' ? '群聊' : '私聊'})</span>`).join('')}
                             </div>
                         </div>
-                        ${isOwnProfile && !isAdminUser ? `
+                        ${isOwnProfile ? `
                             <div class="edit-form">
                                 <h3>✏️ 编辑个人资料</h3>
                                 <textarea id="editBio" placeholder="个人简介">${escapeHtml(viewUser.bio || '')}</textarea>
@@ -279,16 +305,8 @@
                             </div>
                         ` : ''}
                         ${isOwnProfile && isAdminUser ? `
-                            <div class="edit-form">
-                                <h3>✏️ 编辑个人资料</h3>
-                                <textarea id="editBio" placeholder="个人简介">${escapeHtml(viewUser.bio || '')}</textarea>
-                                <input type="password" id="editPassword" placeholder="新密码（留空则不修改）">
-                                <input type="password" id="editConfirmPassword" placeholder="确认新密码">
-                                <button class="btn" onclick="updateProfile()">保存修改</button>
-                                <div id="editMessage" class="message" style="display: none;"></div>
-                                <div style="margin-top: 15px;">
-                                    <a href="admin-profile.html" class="btn" style="display: inline-block; text-decoration: none;">👑 进入管理员中心</a>
-                                </div>
+                            <div style="margin-top: 15px; text-align: center;">
+                                <a href="admin-profile.html" class="btn">👑 进入管理员中心</a>
                             </div>
                         ` : ''}
                     </div>
@@ -353,7 +371,7 @@
             await loadRoomsAndMessages();
             viewUser = await loadUserData(targetUser);
             if (!viewUser) {
-                document.getElementById('container').innerHTML = '<div class="loading">用户不存在</div>';
+                document.getElementById('container').innerHTML = '<div class="loading" style="color: #dc3545;">❌ 用户不存在或数据加载失败</div>';
                 return;
             }
             await renderProfile();
