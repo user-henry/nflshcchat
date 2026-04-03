@@ -61,59 +61,6 @@
         a:hover { text-decoration: underline; }
         .message { margin-top: 15px; font-size: 14px; min-height: 40px; }
         
-        .notification-area { position: fixed; top: 20px; right: 20px; z-index: 100; }
-        .notification-btn {
-            position: relative;
-            cursor: pointer;
-            background: rgba(255,255,255,0.2);
-            padding: 10px 15px;
-            border-radius: 30px;
-            backdrop-filter: blur(10px);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: white;
-        }
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 10px;
-            min-width: 18px;
-            text-align: center;
-        }
-        .notification-badge.zero { background: #28a745; }
-        .notification-panel {
-            position: fixed;
-            top: 70px;
-            right: 20px;
-            width: 350px;
-            max-height: 450px;
-            background: #16213e;
-            border-radius: 12px;
-            border: 1px solid #ffd700;
-            z-index: 1000;
-            overflow-y: auto;
-            display: none;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        }
-        .notification-panel.show { display: block; }
-        .notification-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #2a2a3e;
-            cursor: pointer;
-        }
-        .notification-item:hover { background: #1a1a2e; }
-        .notification-item.unread { background: #2a1a3e; border-left: 3px solid #ffd700; }
-        .notification-title { font-weight: bold; color: #ffd700; margin-bottom: 5px; font-size: 14px; }
-        .notification-content { font-size: 12px; color: #aaa; }
-        .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
-        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; }
-        
         .modal {
             display: none;
             position: fixed;
@@ -143,17 +90,6 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
-    <div class="notification-area">
-        <div class="notification-btn" onclick="toggleNotificationPanel(event)">
-            🔔 通知
-            <span id="notificationCount" class="notification-badge zero">0</span>
-        </div>
-        <div id="notificationPanel" class="notification-panel">
-            <div class="notification-header">📨 系统通知</div>
-            <div id="notificationList" style="padding: 0;">加载中...</div>
-        </div>
-    </div>
-
     <div class="login-container">
         <div class="logo"></div>
         <h1>💬 NFLSHC Chat</h1>
@@ -186,8 +122,6 @@
         const EMAILJS_TEMPLATE_ID = 'template_03vba8b';
         
         let emailJSInitialized = false;
-        let allNotifications = [];
-        let currentUsername = null;
 
         // 初始化 EmailJS
         function initEmailJS() {
@@ -199,77 +133,6 @@
         }
         
         window.addEventListener('load', initEmailJS);
-
-        // 通知功能
-        async function loadNotifications(username) {
-            if (!username) return;
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await response.json();
-                allNotifications = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const notif = JSON.parse(match[1]);
-                        if (notif.targetUser === username) {
-                            allNotifications.push({ ...notif, issueNumber: issue.number });
-                        }
-                    }
-                }
-                updateNotificationUI();
-            } catch (error) { console.error('加载通知失败:', error); }
-        }
-
-        function updateNotificationUI() {
-            const unreadCount = allNotifications.filter(n => !n.isRead).length;
-            const badge = document.getElementById('notificationCount');
-            if (badge) {
-                badge.textContent = unreadCount;
-                badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
-            }
-            const container = document.getElementById('notificationList');
-            if (!container) return;
-            if (allNotifications.length === 0) {
-                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>';
-                return;
-            }
-            allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
-            container.innerHTML = allNotifications.map(n => `
-                <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead('${n.id}')">
-                    <div class="notification-title">📨 ${escapeHtml(n.title)}</div>
-                    <div class="notification-content">${escapeHtml(n.content)}</div>
-                    <div class="notification-time">${new Date(n.sentAt).toLocaleString()}</div>
-                </div>
-            `).join('');
-        }
-
-        async function markAsRead(notificationId) {
-            const notif = allNotifications.find(n => n.id === notificationId);
-            if (!notif || notif.isRead) return;
-            notif.isRead = true;
-            const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            await loadNotifications(currentUsername);
-        }
-
-        function toggleNotificationPanel(event) {
-            event.stopPropagation();
-            document.getElementById('notificationPanel').classList.toggle('show');
-        }
-        document.addEventListener('click', function(e) {
-            const panel = document.getElementById('notificationPanel');
-            const btn = document.querySelector('.notification-btn');
-            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
-                panel.classList.remove('show');
-            }
-        });
 
         // 忘记密码
         function showForgotPassword() {
@@ -327,7 +190,6 @@
                 
                 msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 发送邮件中...</span>';
                 
-                // ✅ 关键修复：添加 email 参数，匹配模板中的 {{email}}
                 const templateParams = {
                     username: username,
                     password: foundUser.password,
@@ -341,28 +203,6 @@
                 );
                 
                 if (mailResponse.status === 200) {
-                    // 创建系统通知
-                    const notificationData = {
-                        id: `notif_${Date.now()}`,
-                        type: 'system',
-                        title: '📧 密码重置邮件已发送',
-                        content: `您的密码已发送到注册邮箱 ${email}，请查收。`,
-                        targetUser: username,
-                        sender: 'system',
-                        sentAt: new Date().toISOString(),
-                        isRead: false
-                    };
-                    const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ title: `系统通知: 密码重置`, body: notifBody, labels: ['system_notification'] })
-                    });
-                    
                     msgDiv.innerHTML = '<span style="color: #28a745;">✅ 密码已发送到您的邮箱，请查收</span>';
                     setTimeout(() => closeForgotModal(), 2000);
                 } else {
@@ -385,7 +225,6 @@
             }
             if (username === 'huangzhiyuan' && password === '15240254891') {
                 sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: true }));
-                currentUsername = username;
                 messageDiv.innerHTML = '<span style="color: green;">管理员登录成功，正在跳转...</span>';
                 setTimeout(() => window.location.href = 'admin.html', 1000);
                 return;
@@ -413,7 +252,6 @@
                         return;
                     }
                     sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: false }));
-                    currentUsername = username;
                     messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
                     setTimeout(() => window.location.href = 'chat.html', 1000);
                 } else {
