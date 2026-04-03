@@ -167,6 +167,14 @@
             font-weight: bold;
             display: inline-block;
         }
+        .message-bubble .mention-all {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
         
         .recall-btn {
             position: absolute;
@@ -277,7 +285,7 @@
             <div class="chat-header" id="chatHeader"><h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p></div>
             <div class="chat-messages" id="chatMessages"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
             <div class="chat-input-area" id="chatInputArea" style="display: none;">
-                <textarea class="chat-input" id="messageInput" placeholder="输入消息... (使用 @用户名 可以提到某人)" rows="2"></textarea>
+                <textarea class="chat-input" id="messageInput" placeholder="输入消息... (使用 @用户名 可以提到某人，@所有人 可以通知全体成员)" rows="2"></textarea>
                 <button class="send-btn" onclick="sendMessage()">发送</button>
             </div>
         </div>
@@ -537,6 +545,9 @@
             if (roomMessages.length === 0) { container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>'; return; }
             container.innerHTML = roomMessages.map(msg => {
                 let contentHtml = escapeHtml(msg.content);
+                // 高亮 @所有人
+                contentHtml = contentHtml.replace(/@所有人/g, '<span class="mention-all">@所有人</span>');
+                // 高亮 @用户名
                 const mentionPattern = /@(\w+)/g;
                 contentHtml = contentHtml.replace(mentionPattern, (match, username) => {
                     if (username === currentUser.username) return `<span class="mention">${match}</span>`;
@@ -574,7 +585,23 @@
             await loadMessages();
         }
 
-        // ========== 发送消息（含去重逻辑） ==========
+        // ========== 获取群聊活跃成员（用于 @所有人） ==========
+        function getGroupActiveMembers(roomId) {
+            // 获取在该群聊中发送过消息的所有用户
+            const senders = allMessages
+                .filter(m => m.roomId === roomId && !m.isRecalled)
+                .map(m => m.sender);
+            // 去重
+            const uniqueMembers = [...new Set(senders)];
+            // 确保创建者也在列表中（即使没发过消息）
+            const room = allRooms.find(r => r.id === roomId);
+            if (room && room.creator && !uniqueMembers.includes(room.creator)) {
+                uniqueMembers.push(room.creator);
+            }
+            return uniqueMembers;
+        }
+
+        // ========== 发送消息（含 @所有人 功能） ==========
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
@@ -584,18 +611,14 @@
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
             
             // ========== 消息去重逻辑 ==========
-            // 获取当前房间中当前用户发送的消息列表
             const currentRoomMessages = allMessages
                 .filter(m => m.roomId === currentRoom.id && m.sender === currentUser.username && !m.isRecalled)
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             
-            // 检查上一条消息（最新的那条）
             if (currentRoomMessages.length > 0) {
                 const lastMessage = currentRoomMessages[0];
                 if (lastMessage.content === content) {
-                    // 如果内容相同，删除上一条消息
                     if (confirm('您发送的消息与上一条完全相同，是否覆盖上一条消息？')) {
-                        // 删除旧消息
                         lastMessage.isRecalled = true;
                         const updatedBody = `聊天消息\n\`\`\`json\n${JSON.stringify(lastMessage, null, 2)}\n\`\`\``;
                         await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${lastMessage.issueNumber}`, {
@@ -605,21 +628,38 @@
                         });
                         console.log('已删除重复的旧消息');
                     } else {
-                        return; // 用户取消，不发送
+                        return;
                     }
                 }
             }
             // ========== 去重逻辑结束 ==========
             
+            // ========== @所有人 检测 ==========
+            const hasMentionAll = content.includes('@所有人');
+            let mentionedUsers = [];
+            
+            // 提取 @用户名
             const mentionPattern = /@(\w+)/g;
-            const mentions = [...content.matchAll(mentionPattern)].map(m => m[1]);
+            const userMentions = [...content.matchAll(mentionPattern)].map(m => m[1]);
+            mentionedUsers.push(...userMentions);
+            
+            // 如果包含 @所有人，获取群聊中所有活跃成员
+            if (hasMentionAll && currentRoom.type === 'group') {
+                const allMembers = getGroupActiveMembers(currentRoom.id);
+                // 排除自己
+                const otherMembers = allMembers.filter(m => m !== currentUser.username);
+                mentionedUsers.push(...otherMembers);
+                // 去重
+                mentionedUsers = [...new Set(mentionedUsers)];
+            }
             
             const messageData = {
                 id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 roomId: currentRoom.id,
                 sender: currentUser.username,
                 content: content,
-                mentions: mentions,
+                mentions: mentionedUsers,
+                hasMentionAll: hasMentionAll,
                 timestamp: new Date().toISOString(),
                 isRecalled: false
             };
@@ -631,11 +671,18 @@
                     body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
                 });
                 
-                for (const mentionedUser of mentions) {
+                // 发送通知给被@的用户
+                for (const mentionedUser of mentionedUsers) {
                     if (mentionedUser === currentUser.username) continue;
                     const userExists = await checkUserExists(mentionedUser);
                     if (userExists || isSystemAdmin(mentionedUser)) {
-                        await sendMentionNotification(mentionedUser, currentUser.username, currentRoom.name, currentRoom.id);
+                        let notificationTitle = '📢 有人@了你';
+                        let notificationContent = `${currentUser.username} 在群聊「${currentRoom.name}」中提到了你`;
+                        if (mentionedUser === '所有人') {
+                            notificationTitle = '📢 群聊全员通知';
+                            notificationContent = `${currentUser.username} 在群聊「${currentRoom.name}」中@了所有人`;
+                        }
+                        await sendMentionNotification(mentionedUser, currentUser.username, currentRoom.name, currentRoom.id, notificationTitle, notificationContent);
                     }
                 }
                 input.value = '';
@@ -643,12 +690,12 @@
             } catch (error) { alert('发送失败：' + error.message); }
         }
 
-        async function sendMentionNotification(mentionedUser, sender, roomName, roomId) {
+        async function sendMentionNotification(mentionedUser, sender, roomName, roomId, customTitle, customContent) {
             const notificationData = {
                 id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
                 type: 'mention',
-                title: `📢 有人@了你`,
-                content: `${sender} 在群聊「${roomName}」中提到了你，快去看看！`,
+                title: customTitle || `📢 有人@了你`,
+                content: customContent || `${sender} 在群聊「${roomName}」中提到了你，快去看看！`,
                 targetUser: mentionedUser,
                 sender: sender,
                 roomId: roomId,
@@ -705,6 +752,7 @@
                 </h3>
                 ${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}
                 ${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}
+                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">💡 输入 @用户名 可以提到某人，输入 @所有人 可以通知全体成员</p>
             `;
             document.getElementById('chatInputArea').style.display = 'flex';
             await loadMessages();
