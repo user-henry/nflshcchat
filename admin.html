@@ -252,7 +252,6 @@
         <div id="usersTab" class="card" style="display: none;">
             <h2>👥 用户管理</h2>
             <div id="usersList" class="user-list"><div class="loading">加载中...</div></div>
-            <!-- 清除多余账号按钮 -->
             <div style="margin-top: 25px; text-align: center; padding-top: 20px; border-top: 1px solid #2a2a3e;">
                 <button id="cleanDuplicateUsersBtn" class="clean-btn" onclick="cleanDuplicateUsers()">
                     🧹 清除多余账号
@@ -364,15 +363,50 @@
         function getMessageCount(roomId) { return allMessages.filter(m => m.roomId === roomId).length; }
         function getActiveMembers(roomId) { return [...new Set(allMessages.filter(m => m.roomId === roomId).map(m => m.sender))]; }
         
+        // ========== 修复：私聊聊天双方显示 ==========
         function getRoomMembersDisplay(room) {
+            // 优先从消息记录中获取活跃成员
             const activeMembers = getActiveMembers(room.id);
+            
             if (room.type === 'group') {
+                // 群聊：使用活跃成员，如果没有则显示创建者
                 if (activeMembers.length > 0) return activeMembers;
                 return [room.creator];
             } else {
-                if (activeMembers.length > 0) return activeMembers;
-                if (room.members && room.members.length >= 2) return room.members;
-                return [room.creator, room.members?.[1] || '未知'].filter(Boolean);
+                // 私聊：需要显示双方
+                // 方法1：从活跃成员中获取（如果双方都发过消息）
+                if (activeMembers.length >= 2) {
+                    return activeMembers;
+                }
+                // 方法2：从 members 字段获取（创建时保存的双方）
+                if (room.members && room.members.length >= 2) {
+                    return room.members;
+                }
+                // 方法3：从创建者和私聊对象推断
+                if (room.privateWith) {
+                    return [room.creator, room.privateWith];
+                }
+                // 方法4：从房间名称推断（私聊房间名称通常是 "A 和 B 的私聊"）
+                const nameMatch = room.name.match(/(.+?)\s+和\s+(.+?)\s+的私聊/);
+                if (nameMatch) {
+                    return [nameMatch[1], nameMatch[2]];
+                }
+                // 方法5：如果只有活跃成员，尝试找到另一个用户
+                if (activeMembers.length === 1) {
+                    const singleMember = activeMembers[0];
+                    // 查找另一个用户（从消息中找不同发送者）
+                    const otherSenders = [...new Set(allMessages.filter(m => m.roomId === room.id && m.sender !== singleMember).map(m => m.sender))];
+                    if (otherSenders.length > 0) {
+                        return [singleMember, otherSenders[0]];
+                    }
+                    // 如果房间有成员记录但只有一个人，补充创建者
+                    if (room.members && room.members.length === 1) {
+                        return [singleMember, room.creator];
+                    }
+                    return [singleMember, '未知用户'];
+                }
+                // 最后兜底
+                return [room.creator, '私聊对象'];
             }
         }
 
@@ -397,7 +431,9 @@
                         </div>
                         <div class="room-members">
                             <h4>📋 ${room.type === 'group' ? '活跃成员列表' : '聊天双方'}</h4>
-                            <div class="member-list">${members.map(m => `<span class="member-tag ${m === room.creator ? 'creator' : ''}">${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}</span>`).join('')}</div>
+                            <div class="member-list">
+                                ${members.map(m => `<span class="member-tag ${m === room.creator ? 'creator' : ''}">${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}</span>`).join('')}
+                            </div>
                         </div>
                         ${room.type === 'group' ? `
                             <div>${room.isBanned ? 
@@ -472,7 +508,6 @@
                 });
                 const issues = await response.json();
 
-                // 按用户名分组
                 const userMap = new Map();
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
@@ -493,7 +528,6 @@
                     }
                 }
 
-                // 找出需要删除的重复账号
                 const toDelete = [];
                 for (const [username, users] of userMap.entries()) {
                     if (users.length > 1) {
