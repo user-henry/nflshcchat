@@ -19,23 +19,12 @@
             border-bottom: 1px solid #ffd700;
         }
         .nav-left { display: flex; align-items: center; gap: 15px; }
-        .logo {
-            width: 40px;
-            height: 40px;
-            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-        }
+        .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
         .nav h2 { font-size: 20px; color: #ffd700; }
         .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
         .nav a:hover { color: #ffd700; }
 
-        /* 通知按钮样式 */
-        .notification-btn {
-            position: relative;
-            cursor: pointer;
-        }
+        .notification-btn { position: relative; cursor: pointer; }
         .notification-badge {
             position: absolute;
             top: -8px;
@@ -48,11 +37,7 @@
             min-width: 18px;
             text-align: center;
         }
-        .notification-badge.zero {
-            background: #28a745;
-        }
-
-        /* 通知下拉面板 */
+        .notification-badge.zero { background: #28a745; }
         .notification-panel {
             position: absolute;
             top: 60px;
@@ -68,16 +53,13 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
         .notification-panel.show { display: block; }
-        .notification-item {
-            padding: 12px;
-            border-bottom: 1px solid #2a2a3e;
-            cursor: pointer;
-        }
+        .notification-item { padding: 12px; border-bottom: 1px solid #2a2a3e; cursor: pointer; }
         .notification-item:hover { background: #1a1a2e; }
-        .notification-item.unread { background: #2a1a3e; }
+        .notification-item.unread { background: #2a1a3e; border-left: 3px solid #ffd700; }
         .notification-title { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
         .notification-content { font-size: 12px; color: #aaa; }
         .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
+        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; }
 
         .chat-container {
             display: flex;
@@ -88,7 +70,6 @@
             overflow: hidden;
             height: calc(100vh - 80px);
         }
-
         .rooms-sidebar {
             width: 300px;
             background: #0f0f1a;
@@ -131,12 +112,15 @@
         .message.own .message-sender { text-align: right; margin-right: 10px; }
         .message-bubble { padding: 10px 16px; border-radius: 18px; background: #1a1a2e; color: white; word-wrap: break-word; }
         .message.own .message-bubble { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; }
+        .message-bubble .mention { background: #2ecc71; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-weight: bold; display: inline-block; }
+        .message.own .message-bubble .mention { background: #27ae60; color: white; }
         .message-time { font-size: 10px; color: #666; margin-top: 4px; margin-left: 10px; }
         .chat-input-area { padding: 20px; border-top: 1px solid #2a2a3e; background: #1a1a2e; display: flex; gap: 10px; }
-        .chat-input { flex: 1; padding: 12px; border: 1px solid #2a2a3e; border-radius: 24px; background: #0f0f1a; color: white; }
+        .chat-input { flex: 1; padding: 12px; border: 1px solid #2a2a3e; border-radius: 24px; background: #0f0f1a; color: white; resize: none; }
         .chat-input:focus { outline: none; border-color: #ffd700; }
         .send-btn { padding: 12px 28px; background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; border: none; border-radius: 24px; cursor: pointer; font-weight: bold; }
         .empty-state { text-align: center; padding: 60px; color: #666; }
+        
         .modal {
             display: none;
             position: fixed;
@@ -165,28 +149,24 @@
         }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
         .modal-buttons button { padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        
         @media (max-width: 768px) { .rooms-sidebar { width: 200px; } .message { max-width: 85%; } }
     </style>
 </head>
 <body>
     <div class="nav">
-        <div class="nav-left">
-            <div class="logo"></div>
-            <h2>💬 NFLSHC Chat</h2>
-        </div>
+        <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
         <div>
             <span>欢迎，<span id="username"></span></span>
-            <span class="notification-btn" onclick="toggleNotificationPanel()">
-                🔔 <span id="notificationCount" class="notification-badge">0</span>
-            </span>
+            <span class="notification-btn" onclick="toggleNotificationPanel(event)">🔔 <span id="notificationCount" class="notification-badge zero">0</span></span>
+            <a href="suggestions.html">💡 意见反馈</a>
             <a href="notice.html">📢 公告</a>
             <a href="#" onclick="logout()">🚪 退出</a>
         </div>
-    </div>
-
-    <!-- 通知面板 -->
-    <div id="notificationPanel" class="notification-panel">
-        <div id="notificationList" style="padding: 10px;">加载中...</div>
+        <div id="notificationPanel" class="notification-panel">
+            <div class="notification-header">📨 系统通知</div>
+            <div id="notificationList" style="padding: 0;">加载中...</div>
+        </div>
     </div>
 
     <div class="chat-container">
@@ -202,7 +182,7 @@
             <div class="chat-header" id="chatHeader"><h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p></div>
             <div class="chat-messages" id="chatMessages"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
             <div class="chat-input-area" id="chatInputArea" style="display: none;">
-                <textarea class="chat-input" id="messageInput" placeholder="输入消息..." rows="2"></textarea>
+                <textarea class="chat-input" id="messageInput" placeholder="输入消息... (使用 @用户名 可以提到某人)" rows="2"></textarea>
                 <button class="send-btn" onclick="sendMessage()">发送</button>
             </div>
         </div>
@@ -235,10 +215,7 @@
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
         function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-        function togglePrivateUser() {
-            const type = document.getElementById('roomType').value;
-            document.getElementById('privateUser').style.display = type === 'private' ? 'block' : 'none';
-        }
+        function togglePrivateUser() { const type = document.getElementById('roomType').value; document.getElementById('privateUser').style.display = type === 'private' ? 'block' : 'none'; }
 
         function checkAuth() {
             const userStr = sessionStorage.getItem('currentUser');
@@ -248,22 +225,18 @@
             return user;
         }
 
-        // ========== 通知功能 ==========
+        // 通知功能
         async function loadNotifications() {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 allNotifications = [];
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
                         const notif = JSON.parse(match[1]);
-                        if (notif.targetUser === currentUser.username) {
-                            allNotifications.push({ ...notif, issueNumber: issue.number });
-                        }
+                        if (notif.targetUser === currentUser.username) allNotifications.push({ ...notif, issueNumber: issue.number });
                     }
                 }
                 updateNotificationUI();
@@ -275,12 +248,8 @@
             const badge = document.getElementById('notificationCount');
             badge.textContent = unreadCount;
             badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
-            
             const container = document.getElementById('notificationList');
-            if (allNotifications.length === 0) {
-                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>';
-                return;
-            }
+            if (allNotifications.length === 0) { container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>'; return; }
             allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
             container.innerHTML = allNotifications.map(n => `
                 <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead('${n.id}')">
@@ -298,37 +267,24 @@
             const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
                 method: 'PATCH',
-                headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             await loadNotifications();
         }
 
-        function toggleNotificationPanel() {
-            const panel = document.getElementById('notificationPanel');
-            panel.classList.toggle('show');
-        }
-
-        // 点击其他地方关闭通知面板
+        function toggleNotificationPanel(event) { event.stopPropagation(); document.getElementById('notificationPanel').classList.toggle('show'); }
         document.addEventListener('click', function(e) {
             const panel = document.getElementById('notificationPanel');
             const btn = document.querySelector('.notification-btn');
-            if (!panel.contains(e.target) && !btn.contains(e.target)) {
-                panel.classList.remove('show');
-            }
+            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('show');
         });
 
-        // ========== 聊天室功能 ==========
+        // 聊天室功能
         async function loadRooms() {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 allRooms = [];
                 for (const issue of issues) {
@@ -350,10 +306,7 @@
 
         function renderRooms() {
             const container = document.getElementById('roomsList');
-            if (allRooms.length === 0) {
-                container.innerHTML = '<div class="empty-state">暂无聊天室<br>点击上方按钮创建</div>';
-                return;
-            }
+            if (allRooms.length === 0) { container.innerHTML = '<div class="empty-state">暂无聊天室<br>点击上方按钮创建</div>'; return; }
             container.innerHTML = allRooms.map(room => `
                 <div class="room-item ${currentRoom && currentRoom.id === room.id ? 'active' : ''}" onclick="selectRoom('${room.id}')">
                     <div class="room-name">${escapeHtml(room.name)}</div>
@@ -375,9 +328,7 @@
         async function loadMessages(roomId) {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 const roomMessages = [];
                 for (const issue of issues) {
@@ -396,17 +347,22 @@
         function renderMessages(roomId) {
             const container = document.getElementById('chatMessages');
             const roomMessages = messages[roomId] || [];
-            if (roomMessages.length === 0) {
-                container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
-                return;
-            }
-            container.innerHTML = roomMessages.map(msg => `
-                <div class="message ${msg.sender === currentUser.username ? 'own' : ''}">
-                    <div class="message-sender">${escapeHtml(msg.sender)}</div>
-                    <div class="message-bubble">${escapeHtml(msg.content)}</div>
-                    <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-                </div>
-            `).join('');
+            if (roomMessages.length === 0) { container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>'; return; }
+            container.innerHTML = roomMessages.map(msg => {
+                let contentHtml = escapeHtml(msg.content);
+                const mentionPattern = /@(\w+)/g;
+                contentHtml = contentHtml.replace(mentionPattern, (match, username) => {
+                    if (username === currentUser.username) return `<span class="mention">${match}</span>`;
+                    return match;
+                });
+                return `
+                    <div class="message ${msg.sender === currentUser.username ? 'own' : ''}">
+                        <div class="message-sender">${escapeHtml(msg.sender)}</div>
+                        <div class="message-bubble">${contentHtml}</div>
+                        <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+                    </div>
+                `;
+            }).join('');
             container.scrollTop = container.scrollHeight;
         }
 
@@ -416,35 +372,62 @@
             if (!content || !currentRoom) return;
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
+            
+            const mentionPattern = /@(\w+)/g;
+            const mentions = [...content.matchAll(mentionPattern)].map(m => m[1]);
+            
             const messageData = {
                 id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 roomId: currentRoom.id,
                 sender: currentUser.username,
                 content: content,
+                mentions: mentions,
                 timestamp: new Date().toISOString()
             };
             try {
                 const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
                 });
+                
+                for (const mentionedUser of mentions) {
+                    if (mentionedUser === currentUser.username) continue;
+                    const userExists = await checkUserExists(mentionedUser);
+                    if (userExists) {
+                        await sendMentionNotification(mentionedUser, currentUser.username, currentRoom.name, currentRoom.id);
+                    }
+                }
                 input.value = '';
                 await loadMessages(currentRoom.id);
             } catch (error) { alert('发送失败：' + error.message); }
         }
 
+        async function sendMentionNotification(mentionedUser, sender, roomName, roomId) {
+            const notificationData = {
+                id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                type: 'mention',
+                title: `📢 有人@了你`,
+                content: `${sender} 在群聊「${roomName}」中提到了你，快去看看！`,
+                targetUser: mentionedUser,
+                sender: sender,
+                roomId: roomId,
+                sentAt: new Date().toISOString(),
+                isRead: false
+            };
+            const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                method: 'POST',
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: `系统通知: @${mentionedUser}`, body: notifBody, labels: ['system_notification'] })
+            });
+        }
+
         async function checkUserBanned(username) {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
@@ -457,33 +440,37 @@
             } catch (error) { return false; }
         }
 
+        async function checkUserExists(username) {
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await res.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        if (userData.username === username) return true;
+                    }
+                }
+                return false;
+            } catch (error) { return false; }
+        }
+
         async function createRoom() {
             const name = document.getElementById('roomName').value.trim();
             const type = document.getElementById('roomType').value;
             const privateUser = document.getElementById('privateUser').value.trim();
             if (!name) { alert('请输入聊天室名称'); return; }
-            
-            // 私聊验证：检查用户是否存在且未被封禁
             if (type === 'private') {
                 if (!privateUser) { alert('请输入私聊对象用户名'); return; }
                 if (privateUser === currentUser.username) { alert('不能与自己私聊'); return; }
-                // 检查用户是否存在
                 const userExists = await checkUserExists(privateUser);
                 if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
-                // 检查用户是否被封禁
                 const isBanned = await checkUserBanned(privateUser);
                 if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
-                // 检查是否已有私聊房间
-                const existingRoom = allRooms.find(r => r.type === 'private' && 
-                    r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
-                if (existingRoom) {
-                    alert(`已存在与 ${privateUser} 的私聊房间`);
-                    closeCreateRoomModal();
-                    selectRoom(existingRoom.id);
-                    return;
-                }
+                const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
+                if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
             }
-            
             const roomData = {
                 id: `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 name: name,
@@ -497,35 +484,13 @@
                 const issueBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(roomData, null, 2)}\n\`\`\``;
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `ChatRoom: ${roomData.id}`, body: issueBody, labels: ['chatroom'] })
                 });
                 closeCreateRoomModal();
                 await loadRooms();
                 alert('聊天室创建成功');
             } catch (error) { alert('创建失败：' + error.message); }
-        }
-
-        async function checkUserExists(username) {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await res.json();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        if (userData.username === username) return true;
-                    }
-                }
-                return false;
-            } catch (error) { return false; }
         }
 
         function startPolling() {
@@ -537,11 +502,7 @@
         }
 
         function showCreateRoomModal() { document.getElementById('createRoomModal').style.display = 'flex'; }
-        function closeCreateRoomModal() {
-            document.getElementById('createRoomModal').style.display = 'none';
-            document.getElementById('roomName').value = '';
-            document.getElementById('privateUser').value = '';
-        }
+        function closeCreateRoomModal() { document.getElementById('createRoomModal').style.display = 'none'; document.getElementById('roomName').value = ''; document.getElementById('privateUser').value = ''; }
 
         currentUser = checkAuth();
         if (currentUser) {
