@@ -125,30 +125,83 @@
         .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; }
         .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .message { display: flex; flex-direction: column; max-width: 70%; position: relative; }
+        
+        /* 消息样式 - 撤回按钮在气泡内部 */
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+            position: relative;
+        }
         .message.own { align-self: flex-end; }
-        .message-sender { font-size: 12px; color: #aaa; margin-bottom: 4px; margin-left: 10px; cursor: pointer; }
+        .message-sender {
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 4px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
         .message-sender:hover { text-decoration: underline; color: #ffd700; }
         .message.own .message-sender { text-align: right; margin-right: 10px; }
-        .message-bubble { padding: 10px 16px; border-radius: 18px; background: #1a1a2e; color: white; word-wrap: break-word; position: relative; }
-        .message.own .message-bubble { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; }
-        .message-bubble .mention { background: #2ecc71; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-weight: bold; display: inline-block; }
-        .message-time { font-size: 10px; color: #666; margin-top: 4px; margin-left: 10px; }
+        
+        /* 消息气泡容器 - 相对定位，用于放置撤回按钮 */
+        .message-bubble-wrapper {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+        }
+        .message-bubble {
+            padding: 10px 16px;
+            border-radius: 18px;
+            background: #1a1a2e;
+            color: white;
+            word-wrap: break-word;
+        }
+        .message.own .message-bubble {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+        }
+        .message-bubble .mention {
+            background: #2ecc71;
+            color: #1a1a2e;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        /* 撤回按钮 - 悬浮在气泡右上角 */
         .recall-btn {
             position: absolute;
-            right: -60px;
-            top: 0;
+            top: -12px;
+            right: -8px;
             background: #dc3545;
             color: white;
             border: none;
             padding: 4px 10px;
-            border-radius: 6px;
+            border-radius: 20px;
             font-size: 10px;
             cursor: pointer;
-            display: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .message:hover .recall-btn { display: block; }
-        .message.own .recall-btn { right: auto; left: -60px; }
+        .message.own .recall-btn {
+            right: -8px;
+            left: auto;
+        }
+        .message-bubble-wrapper:hover .recall-btn {
+            opacity: 1;
+        }
+        
+        .message-time {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+            margin-left: 10px;
+        }
+        .message.own .message-time { text-align: right; margin-right: 10px; }
         
         .chat-input-area { padding: 20px; border-top: 1px solid #2a2a3e; background: #1a1a2e; display: flex; gap: 10px; }
         .chat-input { flex: 1; padding: 12px; border: 1px solid #2a2a3e; border-radius: 24px; background: #0f0f1a; color: white; resize: none; }
@@ -191,7 +244,10 @@
         .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
-        @media (max-width: 768px) { .rooms-sidebar { width: 220px; } .message { max-width: 85%; } .recall-btn { right: -50px; } }
+        @media (max-width: 768px) {
+            .rooms-sidebar { width: 220px; }
+            .message { max-width: 85%; }
+        }
     </style>
 </head>
 <body>
@@ -334,17 +390,10 @@
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         
-        // 网站 Logo URL
         const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
         
-        // 检查是否为系统管理员
         function isSystemAdmin(username) {
             return username === 'huangzhiyuan';
-        }
-        
-        // 获取用户头像（固定为网站 Logo）
-        function getUserAvatar(username) {
-            return SITE_LOGO;
         }
         
         function togglePrivateUser() {
@@ -500,9 +549,11 @@
                 return `
                     <div class="message ${msg.sender === currentUser.username ? 'own' : ''}" data-msg-id="${msg.id}">
                         <div class="message-sender" onclick="viewProfile('${escapeHtml(msg.sender)}')">${escapeHtml(msg.sender)}</div>
-                        <div class="message-bubble">${contentHtml}</div>
+                        <div class="message-bubble-wrapper">
+                            <div class="message-bubble">${contentHtml}</div>
+                            ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
+                        </div>
                         <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-                        ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
                     </div>
                 `;
             }).join('');
