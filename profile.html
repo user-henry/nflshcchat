@@ -64,15 +64,6 @@
             font-size: 14px;
             margin-left: 10px;
         }
-        .online-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .online-status.online { background: #28a745; color: white; }
-        .online-status.offline { background: #6c757d; color: white; }
         
         .profile-body { padding: 30px; }
         .info-section { margin-bottom: 25px; }
@@ -152,9 +143,29 @@
         let allRooms = [];
         let allMessages = [];
 
+        // 网站 Logo URL
+        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
+        
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        
+        function isSystemAdmin(username) {
+            return username === 'huangzhiyuan';
+        }
 
         async function loadUserData(username) {
+            // 系统管理员特判
+            if (isSystemAdmin(username)) {
+                return {
+                    username: 'huangzhiyuan',
+                    email: 'admin@nflshc.com',
+                    bio: '平台创始人及系统管理员，负责网站的维护和管理。',
+                    createdAt: new Date().toISOString(),
+                    isBanned: false,
+                    avatar: SITE_LOGO,
+                    isAdmin: true
+                };
+            }
+            
             const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
             const res = await fetch(url, {
                 headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -167,6 +178,8 @@
                     try {
                         const user = JSON.parse(match[1]);
                         if (user.username === username) {
+                            // 头像改为网站 Logo
+                            user.avatar = SITE_LOGO;
                             return { ...user, issueNumber: issue.number };
                         }
                     } catch (e) {
@@ -175,13 +188,14 @@
                 }
             }
             
-            // 备用查找：通过 issue title
+            // 备用查找
             for (const issue of issues) {
                 if (issue.title === `User: ${username}`) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
                         try {
                             const user = JSON.parse(match[1]);
+                            user.avatar = SITE_LOGO;
                             return { ...user, issueNumber: issue.number };
                         } catch (e) {}
                     }
@@ -262,21 +276,13 @@
                 return;
             }
             
-            const statusText = viewUser.isOnline ? '在线' : '离线';
-            const statusClass = viewUser.isOnline ? 'online' : 'offline';
-            const lastSeenText = viewUser.lastSeen ? new Date(viewUser.lastSeen).toLocaleString() : '未知';
-            
             const userRooms = getUserRooms(viewUser.username);
             
             container.innerHTML = `
                 <div class="profile-card">
                     <div class="profile-header">
-                        <div class="avatar" style="background-image: url('${viewUser.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${viewUser.username}`}')"></div>
+                        <div class="avatar" style="background-image: url('${SITE_LOGO}')"></div>
                         <h1>${escapeHtml(viewUser.username)} ${isAdminUser ? '<span class="admin-badge">👑 系统管理员</span>' : ''}</h1>
-                        <div>
-                            <span class="online-status ${statusClass}">${statusText}</span>
-                            ${!viewUser.isOnline ? `<span style="font-size: 12px; color: #aaa; margin-left: 10px;">最后活跃: ${lastSeenText}</span>` : ''}
-                        </div>
                     </div>
                     <div class="profile-body">
                         <div class="info-section">
