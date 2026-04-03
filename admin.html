@@ -160,6 +160,20 @@
         .unban-user-btn, .unban-btn { background: #28a745; color: white; }
         .notify-user-btn { background: #ffc107; color: #1a1a2e; }
         
+        .clean-btn {
+            background: #dc3545;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .clean-btn:hover { transform: translateY(-2px); background: #c82333; }
+        .clean-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
         .empty-state { text-align: center; padding: 40px; color: #666; }
         .loading { text-align: center; padding: 40px; color: #aaa; }
         
@@ -238,6 +252,15 @@
         <div id="usersTab" class="card" style="display: none;">
             <h2>👥 用户管理</h2>
             <div id="usersList" class="user-list"><div class="loading">加载中...</div></div>
+            <!-- 清除多余账号按钮 -->
+            <div style="margin-top: 25px; text-align: center; padding-top: 20px; border-top: 1px solid #2a2a3e;">
+                <button id="cleanDuplicateUsersBtn" class="clean-btn" onclick="cleanDuplicateUsers()">
+                    🧹 清除多余账号
+                </button>
+                <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
+                    此操作将删除因重复注册产生的相同用户名账号，仅保留最新创建的一个。
+                </p>
+            </div>
         </div>
 
         <div id="notificationsTab" class="card" style="display: none;">
@@ -427,6 +450,117 @@
             `).join('');
         }
 
+        // ========== 清除多余账号功能 ==========
+        async function cleanDuplicateUsers() {
+            const button = document.getElementById('cleanDuplicateUsersBtn');
+            
+            if (!confirm('⚠️ 警告：此操作将删除所有重复注册的账号（相同用户名仅保留最新创建的一个），且不可恢复。\n\n是否继续？')) {
+                return;
+            }
+
+            const originalText = button.innerText;
+            button.innerText = '⏳ 处理中...';
+            button.disabled = true;
+
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+
+                // 按用户名分组
+                const userMap = new Map();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const userData = JSON.parse(match[1]);
+                            const username = userData.username;
+                            const createdAt = new Date(userData.createdAt);
+                            if (!userMap.has(username)) {
+                                userMap.set(username, []);
+                            }
+                            userMap.get(username).push({
+                                issueNumber: issue.number,
+                                createdAt: createdAt,
+                                userData: userData
+                            });
+                        } catch (e) {}
+                    }
+                }
+
+                // 找出需要删除的重复账号
+                const toDelete = [];
+                for (const [username, users] of userMap.entries()) {
+                    if (users.length > 1) {
+                        users.sort((a, b) => b.createdAt - a.createdAt);
+                        const keep = users[0];
+                        const duplicates = users.slice(1);
+                        for (const dup of duplicates) {
+                            toDelete.push({
+                                issueNumber: dup.issueNumber,
+                                username: username,
+                                createdAt: dup.createdAt
+                            });
+                        }
+                        console.log(`用户 "${username}" 共有 ${users.length} 个账号，保留 ${keep.createdAt.toLocaleString()}，删除 ${duplicates.length} 个`);
+                    }
+                }
+
+                if (toDelete.length === 0) {
+                    alert('✅ 没有发现重复注册的账号，无需清理。');
+                    button.innerText = originalText;
+                    button.disabled = false;
+                    return;
+                }
+
+                if (!confirm(`发现 ${toDelete.length} 个重复账号，确定要删除吗？此操作不可恢复！`)) {
+                    button.innerText = originalText;
+                    button.disabled = false;
+                    return;
+                }
+
+                let deletedCount = 0;
+                let failedCount = 0;
+                for (const dup of toDelete) {
+                    try {
+                        const deleteUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${dup.issueNumber}`;
+                        const deleteResponse = await fetch(deleteUrl, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ state: 'closed' })
+                        });
+                        if (deleteResponse.ok) {
+                            deletedCount++;
+                        } else {
+                            failedCount++;
+                        }
+                    } catch (error) {
+                        failedCount++;
+                    }
+                }
+
+                alert(`🎉 清理完成！\n\n成功删除: ${deletedCount} 个重复账号\n失败: ${failedCount} 个`);
+                await loadAllData();
+                
+            } catch (error) {
+                console.error('清理重复账号失败:', error);
+                alert('❌ 清理失败：' + error.message);
+            } finally {
+                button.innerText = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // ========== 系统通知功能 ==========
         async function sendSystemNotification() {
             const title = document.getElementById('notifyTitle').value.trim();
             const content = document.getElementById('notifyMessage').value.trim();
