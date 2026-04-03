@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 管理员资料</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+        }
+        .nav {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ffd700;
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+        
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .profile-card {
+            background: #16213e;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #ffd700;
+        }
+        .profile-header {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+        .admin-crown {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+        }
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid white;
+            margin: 0 auto 15px;
+            background-size: cover;
+            background-position: center;
+        }
+        .profile-header h1 { color: #1a1a2e; margin-bottom: 5px; }
+        .admin-title {
+            display: inline-block;
+            background: #1a1a2e;
+            color: #ffd700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .profile-body { padding: 30px; }
+        .info-section { margin-bottom: 25px; }
+        .info-section h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+        .info-section p { color: #ddd; line-height: 1.6; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .stat-number { font-size: 28px; font-weight: bold; color: #ffd700; }
+        .stat-label { font-size: 12px; color: #aaa; }
+        
+        .btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .message.success { background: rgba(40,167,69,0.2); color: #28a745; }
+        .message.error { background: rgba(220,53,69,0.2); color: #dc3545; }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>👑 NFLSHC Chat 管理员中心</h2></div>
+        <div>
+            <span>欢迎，管理员 <span id="adminName"></span></span>
+            <a href="admin.html">⚙️ 管理后台</a>
+            <a href="chat.html">💬 聊天</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container" id="container">
+        <div class="loading">加载中...</div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let currentAdmin = null;
+        let allUsers = [];
+        let allRooms = [];
+        let allMessages = [];
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        async function loadData() {
+            try {
+                const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+                
+                const usersRes = await fetch(`${baseUrl}?labels=user&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const userIssues = await usersRes.json();
+                allUsers = [];
+                for (const issue of userIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        allUsers.push({ ...userData, issueNumber: issue.number });
+                    }
+                }
+
+                const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const roomIssues = await roomsRes.json();
+                allRooms = [];
+                for (const issue of roomIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const roomData = JSON.parse(match[1]);
+                        allRooms.push({ ...roomData, issueNumber: issue.number });
+                    }
+                }
+
+                const msgRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const msgIssues = await msgRes.json();
+                allMessages = [];
+                for (const issue of msgIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        allMessages.push(JSON.parse(match[1]));
+                    }
+                }
+                
+                renderProfile();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('container').innerHTML = '<div class="loading">加载失败，请刷新重试</div>';
+            }
+        }
+
+        function renderProfile() {
+            const adminUser = allUsers.find(u => u.username === 'huangzhiyuan');
+            if (!adminUser) {
+                document.getElementById('container').innerHTML = '<div class="loading">管理员数据不存在</div>';
+                return;
+            }
+            
+            const totalUsers = allUsers.length;
+            const totalRooms = allRooms.length;
+            const totalMessages = allMessages.length;
+            const bannedUsers = allUsers.filter(u => u.isBanned).length;
+            
+            document.getElementById('container').innerHTML = `
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="admin-crown">👑</div>
+                        <div class="avatar" style="background-image: url('${adminUser.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${adminUser.username}`}')"></div>
+                        <h1>${escapeHtml(adminUser.username)}</h1>
+                        <span class="admin-title">系统管理员 · 超级管理员</span>
+                    </div>
+                    <div class="profile-body">
+                        <div class="info-section">
+                            <h3>📊 平台统计</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-number">${totalUsers}</div>
+                                    <div class="stat-label">总用户数</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${totalRooms}</div>
+                                    <div class="stat-label">聊天室数</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${totalMessages}</div>
+                                    <div class="stat-label">总消息数</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${bannedUsers}</div>
+                                    <div class="stat-label">已封禁用户</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${allRooms.filter(r => r.type === 'group').length}</div>
+                                    <div class="stat-label">群聊数量</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-number">${allRooms.filter(r => r.type === 'private').length}</div>
+                                    <div class="stat-label">私聊数量</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="info-section">
+                            <h3>📝 个人简介</h3>
+                            <p>${escapeHtml(adminUser.bio || '平台创始人及系统管理员，负责网站的维护和管理。')}</p>
+                        </div>
+                        <div class="info-section">
+                            <h3>🔧 管理权限</h3>
+                            <p>✅ 封禁/解封用户<br>✅ 封禁/解封群聊<br>✅ 查看所有聊天室<br>✅ 发布系统公告<br>✅ 审核用户建议<br>✅ 发送系统通知</p>
+                        </div>
+                        <div class="info-section">
+                            <h3>📅 注册时间</h3>
+                            <p>${new Date(adminUser.createdAt).toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function init() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return; }
+            const user = JSON.parse(userStr);
+            if (!user.isAdmin) { window.location.href = 'profile.html'; return; }
+            document.getElementById('adminName').textContent = user.username;
+            await loadData();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
