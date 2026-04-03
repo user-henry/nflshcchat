@@ -189,11 +189,27 @@
         const EMAILJS_SERVICE_ID = 'service_6iugtla';
         const EMAILJS_TEMPLATE_ID = 'template_03vba8b';
         
-        // 初始化 EmailJS
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-
+        // 全局变量
+        let emailJSInitialized = false;
         let allNotifications = [];
         let currentUsername = null;
+
+        // ========== 初始化 EmailJS ==========
+        function initEmailJS() {
+            if (typeof emailjs !== 'undefined' && !emailJSInitialized) {
+                emailjs.init(EMAILJS_PUBLIC_KEY);
+                emailJSInitialized = true;
+                console.log('✅ EmailJS 初始化成功');
+            } else if (typeof emailjs === 'undefined') {
+                console.log('⏳ 等待 EmailJS 加载...');
+                setTimeout(initEmailJS, 500);
+            }
+        }
+
+        // 等待页面和 SDK 加载完成
+        window.addEventListener('load', function() {
+            initEmailJS();
+        });
 
         // ========== 通知功能 ==========
         async function loadNotifications(username) {
@@ -285,6 +301,14 @@
             
             if (!username || !email) {
                 msgDiv.innerHTML = '<span style="color: #dc3545;">请填写用户名和邮箱</span>';
+                return;
+            }
+            
+            // 确保 EmailJS 已初始化
+            if (!emailJSInitialized) {
+                msgDiv.innerHTML = '<span style="color: #dc3545;">邮件服务正在初始化，请稍后再试</span>';
+                initEmailJS();
+                setTimeout(() => sendPasswordReset(), 1000);
                 return;
             }
             
