@@ -5,19 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 公告</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #1a1a2e;
             min-height: 100vh;
         }
-
-        /* 导航栏 */
         .nav {
             background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
             padding: 15px 30px;
@@ -28,13 +21,7 @@
             flex-wrap: wrap;
             border-bottom: 1px solid #ffd700;
         }
-
-        .nav-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo {
             width: 40px;
             height: 40px;
@@ -43,35 +30,12 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-
-        .nav h2 {
-            font-size: 20px;
-            color: #ffd700;
-        }
-
-        .nav a {
-            color: white;
-            text-decoration: none;
-            margin-left: 20px;
-            transition: color 0.3s;
-        }
-
-        .nav a:hover {
-            color: #ffd700;
-        }
-
-        /* 主容器 */
-        .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        /* 公告列表 */
-        .notice-list {
-            margin-bottom: 30px;
-        }
-
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+        
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .notice-list { margin-bottom: 30px; }
         .notice-item {
             background: #16213e;
             border-radius: 12px;
@@ -80,32 +44,10 @@
             border: 1px solid #2a2a3e;
             transition: transform 0.2s;
         }
-
-        .notice-item:hover {
-            transform: translateY(-3px);
-        }
-
-        .notice-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #ffd700;
-            margin-bottom: 10px;
-        }
-
-        .notice-meta {
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #2a2a3e;
-        }
-
-        .notice-content {
-            color: #ddd;
-            line-height: 1.6;
-            white-space: pre-wrap;
-        }
-
+        .notice-item:hover { transform: translateY(-3px); }
+        .notice-title { font-size: 20px; font-weight: bold; color: #ffd700; margin-bottom: 10px; }
+        .notice-meta { font-size: 12px; color: #aaa; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3e; }
+        .notice-content { color: #ddd; line-height: 1.6; white-space: pre-wrap; }
         .delete-notice-btn {
             background: #dc3545;
             color: white;
@@ -115,14 +57,7 @@
             cursor: pointer;
             font-size: 12px;
             margin-top: 15px;
-            transition: transform 0.2s;
         }
-
-        .delete-notice-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        /* 发布公告区域（仅管理员可见） */
         .admin-panel {
             background: #16213e;
             border-radius: 12px;
@@ -130,14 +65,8 @@
             border: 1px solid #ffd700;
             margin-top: 20px;
         }
-
-        .admin-panel h3 {
-            color: #ffd700;
-            margin-bottom: 20px;
-        }
-
-        .admin-panel input,
-        .admin-panel textarea {
+        .admin-panel h3 { color: #ffd700; margin-bottom: 20px; }
+        .admin-panel input, .admin-panel textarea {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
@@ -147,13 +76,7 @@
             color: white;
             font-family: inherit;
         }
-
-        .admin-panel input:focus,
-        .admin-panel textarea:focus {
-            outline: none;
-            border-color: #ffd700;
-        }
-
+        .admin-panel textarea { resize: vertical; min-height: 150px; }
         .admin-panel button {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
@@ -162,67 +85,32 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: transform 0.2s;
         }
-
-        .admin-panel button:hover {
-            transform: translateY(-2px);
-        }
-
         .message {
             margin-top: 15px;
             padding: 10px;
             border-radius: 8px;
             text-align: center;
         }
-
-        .message.success {
-            background: rgba(40, 167, 69, 0.2);
-            color: #28a745;
-            border: 1px solid #28a745;
-        }
-
-        .message.error {
-            background: rgba(220, 53, 69, 0.2);
-            color: #dc3545;
-            border: 1px solid #dc3545;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #666;
-            background: #16213e;
-            border-radius: 12px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #aaa;
-        }
+        .message.success { background: rgba(46,204,113,0.2); color: #2ecc71; }
+        .message.error { background: rgba(231,76,60,0.2); color: #e74c3c; }
+        .empty-state { text-align: center; padding: 60px; color: #666; background: #16213e; border-radius: 12px; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
     </style>
 </head>
 <body>
     <div class="nav">
-        <div class="nav-left">
-            <div class="logo"></div>
-            <h2>📢 NFLSHC Chat 公告</h2>
-        </div>
+        <div class="nav-left"><div class="logo"></div><h2>📢 NFLSHC Chat 公告</h2></div>
         <div>
             <span>欢迎，<span id="username"></span></span>
             <a href="chat.html">💬 聊天</a>
+            <a href="suggestions.html">💡 意见反馈</a>
             <a href="#" onclick="logout()">🚪 退出</a>
         </div>
     </div>
 
     <div class="container">
-        <!-- 公告列表 -->
-        <div id="noticeList" class="notice-list">
-            <div class="loading">加载中...</div>
-        </div>
-
-        <!-- 发布公告区域（仅管理员可见） -->
+        <div id="noticeList" class="notice-list"><div class="loading">加载中...</div></div>
         <div id="adminPanel" class="admin-panel" style="display: none;">
             <h3>📝 发布新公告</h3>
             <input type="text" id="noticeTitle" placeholder="公告标题">
@@ -237,32 +125,20 @@
         let currentUser = null;
         let allNotices = [];
 
-        // ========== 认证检查 ==========
         function checkAuth() {
             const userStr = sessionStorage.getItem('currentUser');
-            if (!userStr) {
-                window.location.href = 'index.html';
-                return null;
-            }
+            if (!userStr) { window.location.href = 'index.html'; return null; }
             const user = JSON.parse(userStr);
             document.getElementById('username').textContent = user.username;
             return user;
         }
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = 'index.html';
-        }
-
-        // ========== 加载公告 ==========
         async function loadNotices() {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=notice&state=open`;
                 const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 allNotices = [];
@@ -273,50 +149,35 @@
                         allNotices.push({ ...noticeData, issueNumber: issue.number });
                     }
                 }
-                // 按时间倒序排列（最新的在前）
                 allNotices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 renderNotices();
-            } catch (error) {
-                console.error('加载公告失败:', error);
-                document.getElementById('noticeList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
-            }
+            } catch (error) { console.error('加载公告失败:', error); }
         }
 
-        // ========== 渲染公告列表 ==========
         function renderNotices() {
             const container = document.getElementById('noticeList');
             if (allNotices.length === 0) {
                 container.innerHTML = '<div class="empty-state">📭 暂无公告</div>';
                 return;
             }
-
             container.innerHTML = allNotices.map(notice => `
                 <div class="notice-item">
                     <div class="notice-title">📢 ${escapeHtml(notice.title)}</div>
-                    <div class="notice-meta">
-                        发布于 ${new Date(notice.createdAt).toLocaleString()} 
-                        by ${escapeHtml(notice.author || '管理员')}
-                        ${currentUser && currentUser.isAdmin ? `<button class="delete-notice-btn" onclick="deleteNotice(${notice.issueNumber})">删除公告</button>` : ''}
-                    </div>
+                    <div class="notice-meta">发布于 ${new Date(notice.createdAt).toLocaleString()} by ${escapeHtml(notice.author || '管理员')}${currentUser && currentUser.isAdmin ? `<button class="delete-notice-btn" onclick="deleteNotice(${notice.issueNumber})">删除公告</button>` : ''}</div>
                     <div class="notice-content">${escapeHtml(notice.content).replace(/\n/g, '<br>')}</div>
                 </div>
             `).join('');
         }
 
-        // ========== 发布公告（仅管理员） ==========
         async function publishNotice() {
             const title = document.getElementById('noticeTitle').value.trim();
             const content = document.getElementById('noticeContent').value.trim();
             const msgDiv = document.getElementById('publishMessage');
-            
             if (!title || !content) {
-                msgDiv.style.display = 'block';
-                msgDiv.className = 'message error';
-                msgDiv.innerHTML = '请填写标题和内容';
-                setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
+                msgDiv.style.display = 'block'; msgDiv.className = 'message error'; msgDiv.innerHTML = '请填写标题和内容';
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
                 return;
             }
-
             const noticeData = {
                 id: `notice_${Date.now()}`,
                 title: title,
@@ -324,52 +185,30 @@
                 author: currentUser.username,
                 createdAt: new Date().toISOString()
             };
-
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
                 const issueBody = `公告信息\n\`\`\`json\n${JSON.stringify(noticeData, null, 2)}\n\`\`\``;
-                
-                const response = await fetch(url, {
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        title: `公告: ${title}`,
-                        body: issueBody,
-                        labels: ['notice']
-                    })
+                    body: JSON.stringify({ title: `公告: ${title}`, body: issueBody, labels: ['notice'] })
                 });
-
-                if (response.ok) {
-                    msgDiv.style.display = 'block';
-                    msgDiv.className = 'message success';
-                    msgDiv.innerHTML = '✅ 公告发布成功！';
-                    document.getElementById('noticeTitle').value = '';
-                    document.getElementById('noticeContent').value = '';
-                    await loadNotices();
-                    setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
-                } else {
-                    const error = await response.json();
-                    msgDiv.style.display = 'block';
-                    msgDiv.className = 'message error';
-                    msgDiv.innerHTML = `发布失败: ${error.message}`;
-                    setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
-                }
+                msgDiv.style.display = 'block'; msgDiv.className = 'message success'; msgDiv.innerHTML = '✅ 公告发布成功！';
+                document.getElementById('noticeTitle').value = '';
+                document.getElementById('noticeContent').value = '';
+                await loadNotices();
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
             } catch (error) {
-                msgDiv.style.display = 'block';
-                msgDiv.className = 'message error';
-                msgDiv.innerHTML = `发布失败: ${error.message}`;
-                setTimeout(() => { msgDiv.style.display = 'none'; }, 3000);
+                msgDiv.style.display = 'block'; msgDiv.className = 'message error'; msgDiv.innerHTML = `发布失败: ${error.message}`;
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
             }
         }
 
-        // ========== 删除公告（仅管理员） ==========
         async function deleteNotice(issueNumber) {
             if (!confirm('确定要删除这条公告吗？此操作不可恢复！')) return;
-            
             try {
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
                     method: 'PATCH',
@@ -382,26 +221,15 @@
                 });
                 alert('公告已删除');
                 await loadNotices();
-            } catch (error) {
-                alert('删除失败：' + error.message);
-            }
+            } catch (error) { alert('删除失败：' + error.message); }
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
-        // ========== 初始化 ==========
         currentUser = checkAuth();
         if (currentUser) {
             loadNotices();
-            // 如果是管理员，显示发布面板
-            if (currentUser.isAdmin) {
-                document.getElementById('adminPanel').style.display = 'block';
-            }
+            if (currentUser.isAdmin) document.getElementById('adminPanel').style.display = 'block';
         }
     </script>
 </body>
