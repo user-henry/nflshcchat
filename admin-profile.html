@@ -138,7 +138,6 @@
         let allRooms = [];
         let allMessages = [];
         
-        // 网站 Logo URL
         const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
@@ -256,10 +255,6 @@
                         <div class="info-section">
                             <h3>🔧 管理权限</h3>
                             <p>✅ 封禁/解封用户<br>✅ 封禁/解封群聊<br>✅ 查看所有聊天室<br>✅ 发布系统公告<br>✅ 审核用户建议<br>✅ 发送系统通知</p>
-                        </div>
-                        <div class="info-section">
-                            <h3>📅 注册时间</h3>
-                            <p>${new Date(adminUser.createdAt).toLocaleString()}</p>
                         </div>
                         <div style="text-align: center; margin-top: 20px;">
                             <a href="admin.html" class="btn">⚙️ 进入管理后台</a>
