@@ -24,6 +24,7 @@
         .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
         .nav a:hover { color: #ffd700; }
         .online-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #28a745; margin-left: 8px; }
+        .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
 
         .notification-btn { position: relative; cursor: pointer; }
         .notification-badge {
@@ -112,8 +113,18 @@
             background: #1a1a2e;
         }
         .chat-header h3 { color: #ffd700; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .chat-header .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; }
-        .chat-header .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
+        .settings-btn {
+            background: #2a2a3e;
+            border: none;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .settings-btn:hover { background: #ffd700; color: #1a1a2e; }
+        .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; }
+        .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .message { display: flex; flex-direction: column; max-width: 70%; position: relative; }
         .message.own { align-self: flex-end; }
@@ -124,7 +135,6 @@
         .message.own .message-bubble { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; }
         .message-bubble .mention { background: #2ecc71; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-weight: bold; display: inline-block; }
         .message-time { font-size: 10px; color: #666; margin-top: 4px; margin-left: 10px; }
-        .message-recall { font-size: 11px; color: #888; font-style: italic; }
         .recall-btn {
             position: absolute;
             right: -60px;
@@ -189,7 +199,7 @@
     <div class="nav">
         <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
         <div>
-            <span>欢迎，<span id="username"></span><span id="onlineDot" class="online-dot"></span></span>
+            <span>欢迎，<span id="username"></span><span id="onlineDot" class="online-dot"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
             <a href="profile.html">👤 个人资料</a>
             <span class="notification-btn" onclick="toggleNotificationPanel(event)">🔔 <span id="notificationCount" class="notification-badge zero">0</span></span>
             <a href="suggestions.html">💡 意见反馈</a>
@@ -318,7 +328,11 @@
         let pendingJoinRoom = null;
 
         // ========== 辅助函数 ==========
-        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function logout() { 
+            updateOnlineStatus(false);
+            sessionStorage.clear(); 
+            window.location.href = 'index.html'; 
+        }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         
@@ -339,6 +353,9 @@
             if (!userStr) { window.location.href = 'index.html'; return null; }
             const user = JSON.parse(userStr);
             document.getElementById('username').textContent = user.username;
+            if (user.isAdmin) {
+                document.getElementById('adminBadge').style.display = 'inline-block';
+            }
             return user;
         }
 
@@ -593,7 +610,7 @@
             document.getElementById('chatHeader').innerHTML = `
                 <h3>
                     ${escapeHtml(currentRoom.name)}
-                    <button class="verify-code" onclick="showRoomSettings()">⚙️ 群设置</button>
+                    ${currentRoom.type === 'group' ? `<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>` : ''}
                 </h3>
                 ${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}
                 ${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}
@@ -616,14 +633,15 @@
             document.getElementById('editVerifyCode').value = currentRoom.verifyCode || '';
             document.getElementById('editVerifyGroup').style.display = (currentRoom.joinType === 'verify') ? 'block' : 'none';
             
-            const adminListDiv = document.getElementById('adminList');
             const admins = currentRoom.admins || [];
-            adminListDiv.innerHTML = admines.map(admin => `
+            const adminListDiv = document.getElementById('adminList');
+            adminListDiv.innerHTML = admins.map(admin => `
                 <div style="display: flex; justify-content: space-between; padding: 5px 0;">
                     <span>${escapeHtml(admin)}</span>
                     ${isOwner && admin !== currentRoom.creator ? `<button onclick="removeAdmin('${admin}')" style="background: #dc3545; padding: 2px 8px;">移除</button>` : ''}
                 </div>
             `).join('');
+            if (admins.length === 0) adminListDiv.innerHTML = '<div style="padding: 5px; color: #aaa;">暂无管理员</div>';
             
             document.getElementById('adminOnlySettings').style.display = canEdit ? 'block' : 'none';
             document.getElementById('normalUserSettings').style.display = canEdit ? 'none' : 'block';
@@ -681,6 +699,7 @@
         }
         
         async function removeAdmin(username) {
+            if (!confirm(`确定要移除 ${username} 的管理员权限吗？`)) return;
             currentRoom.admins = currentRoom.admins.filter(a => a !== username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
@@ -694,6 +713,10 @@
         
         async function leaveRoom() {
             if (!confirm('确定要退出该群聊吗？')) return;
+            // 从群聊中移除用户（简单实现：从members中删除）
+            if (currentRoom.members) {
+                currentRoom.members = currentRoom.members.filter(m => m !== currentUser.username);
+            }
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
                 method: 'PATCH',
