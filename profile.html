@@ -143,7 +143,6 @@
         let allRooms = [];
         let allMessages = [];
 
-        // 网站 Logo URL
         const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
         
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
@@ -178,7 +177,6 @@
                     try {
                         const user = JSON.parse(match[1]);
                         if (user.username === username) {
-                            // 头像改为网站 Logo
                             user.avatar = SITE_LOGO;
                             return { ...user, issueNumber: issue.number };
                         }
@@ -188,7 +186,6 @@
                 }
             }
             
-            // 备用查找
             for (const issue of issues) {
                 if (issue.title === `User: ${username}`) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
@@ -289,10 +286,12 @@
                             <h3>📝 个人简介</h3>
                             <p>${escapeHtml(viewUser.bio || '这个人很懒，什么都没有写。')}</p>
                         </div>
+                        ${!isAdminUser ? `
                         <div class="info-section">
                             <h3>📅 注册时间</h3>
                             <p>${new Date(viewUser.createdAt).toLocaleString()}</p>
                         </div>
+                        ` : ''}
                         <div class="info-section">
                             <h3>💬 参与的聊天室</h3>
                             <div class="rooms-list">
