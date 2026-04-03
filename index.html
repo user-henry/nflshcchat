@@ -142,8 +142,42 @@
         .modal-buttons button { width: auto; padding: 8px 20px; }
         .modal-buttons button:first-child { background: #2a2a3e; color: white; }
     </style>
-    <!-- 引入 EmailJS SDK -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <!-- 使用多个备用 CDN 加载 EmailJS -->
+    <script>
+        // 备用 CDN 列表
+        const emailJSCDN = [
+            'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js',
+            'https://unpkg.com/@emailjs/browser@4/dist/email.min.js'
+        ];
+        
+        function loadEmailJS(cdnIndex) {
+            if (cdnIndex >= emailJSCDN.length) {
+                console.error('所有 EmailJS CDN 加载失败');
+                window.emailJSError = true;
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = emailJSCDN[cdnIndex];
+            script.onload = function() {
+                console.log('EmailJS 加载成功:', emailJSCDN[cdnIndex]);
+                window.emailJSError = false;
+                if (typeof emailjs !== 'undefined') {
+                    emailjs.init('A-3y5AHO_oj3PQU5l');
+                    window.emailJSReady = true;
+                    console.log('EmailJS 初始化成功');
+                }
+            };
+            script.onerror = function() {
+                console.log('EmailJS CDN 加载失败:', emailJSCDN[cdnIndex]);
+                loadEmailJS(cdnIndex + 1);
+            };
+            document.head.appendChild(script);
+        }
+        
+        window.emailJSReady = false;
+        window.emailJSError = false;
+        loadEmailJS(0);
+    </script>
 </head>
 <body>
     <div class="notification-area">
@@ -185,31 +219,29 @@
     <script src="config.js"></script>
     <script>
         // ========== EmailJS 配置 ==========
-        const EMAILJS_PUBLIC_KEY = 'A-3y5AHO_oj3PQU5l';
         const EMAILJS_SERVICE_ID = 'service_6iugtla';
         const EMAILJS_TEMPLATE_ID = 'template_03vba8b';
         
         // 全局变量
-        let emailJSInitialized = false;
         let allNotifications = [];
         let currentUsername = null;
 
-        // ========== 初始化 EmailJS ==========
-        function initEmailJS() {
-            if (typeof emailjs !== 'undefined' && !emailJSInitialized) {
-                emailjs.init(EMAILJS_PUBLIC_KEY);
-                emailJSInitialized = true;
-                console.log('✅ EmailJS 初始化成功');
-            } else if (typeof emailjs === 'undefined') {
-                console.log('⏳ 等待 EmailJS 加载...');
-                setTimeout(initEmailJS, 500);
+        // 等待 EmailJS 就绪
+        function waitForEmailJS(callback, maxWait = 10000) {
+            const startTime = Date.now();
+            function check() {
+                if (window.emailJSReady && typeof emailjs !== 'undefined') {
+                    callback(true);
+                } else if (window.emailJSError) {
+                    callback(false, '邮件服务加载失败，请刷新页面重试');
+                } else if (Date.now() - startTime > maxWait) {
+                    callback(false, '邮件服务加载超时，请检查网络后刷新重试');
+                } else {
+                    setTimeout(check, 200);
+                }
             }
+            check();
         }
-
-        // 等待页面和 SDK 加载完成
-        window.addEventListener('load', function() {
-            initEmailJS();
-        });
 
         // ========== 通知功能 ==========
         async function loadNotifications(username) {
@@ -304,15 +336,11 @@
                 return;
             }
             
-            // 确保 EmailJS 已初始化
-            if (!emailJSInitialized) {
-                msgDiv.innerHTML = '<span style="color: #dc3545;">邮件服务正在初始化，请稍后再试</span>';
-                initEmailJS();
-                setTimeout(() => sendPasswordReset(), 1000);
-                return;
-            }
+            // 显示加载状态
+            msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 验证中...</span>';
             
             try {
+                // 验证用户信息
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const response = await fetch(url, {
                     headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -335,50 +363,66 @@
                     return;
                 }
                 
-                // 使用 EmailJS 发送邮件
-                const templateParams = {
-                    username: username,
-                    password: foundUser.password,
-                    to_email: email
-                };
+                // 等待 EmailJS 就绪
+                msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 准备邮件服务...</span>';
                 
-                const mailResponse = await emailjs.send(
-                    EMAILJS_SERVICE_ID,
-                    EMAILJS_TEMPLATE_ID,
-                    templateParams
-                );
-                
-                if (mailResponse.status === 200) {
-                    // 创建系统通知
-                    const notificationData = {
-                        id: `notif_${Date.now()}`,
-                        type: 'system',
-                        title: '📧 密码重置邮件已发送',
-                        content: `您的密码已发送到注册邮箱 ${email}，请查收。`,
-                        targetUser: username,
-                        sender: 'system',
-                        sentAt: new Date().toISOString(),
-                        isRead: false
-                    };
-                    const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ title: `系统通知: 密码重置`, body: notifBody, labels: ['system_notification'] })
-                    });
+                waitForEmailJS(async (ready, errorMsg) => {
+                    if (!ready) {
+                        msgDiv.innerHTML = `<span style="color: #dc3545;">${errorMsg || '邮件服务不可用'}</span>`;
+                        return;
+                    }
                     
-                    msgDiv.innerHTML = '<span style="color: #28a745;">✅ 密码已发送到您的邮箱，请查收</span>';
-                    setTimeout(() => closeForgotModal(), 2000);
-                } else {
-                    msgDiv.innerHTML = '<span style="color: #dc3545;">邮件发送失败，请稍后重试</span>';
-                }
+                    msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 发送邮件中...</span>';
+                    
+                    try {
+                        const templateParams = {
+                            username: username,
+                            password: foundUser.password,
+                            to_email: email
+                        };
+                        
+                        const mailResponse = await emailjs.send(
+                            EMAILJS_SERVICE_ID,
+                            EMAILJS_TEMPLATE_ID,
+                            templateParams
+                        );
+                        
+                        if (mailResponse.status === 200) {
+                            // 创建系统通知
+                            const notificationData = {
+                                id: `notif_${Date.now()}`,
+                                type: 'system',
+                                title: '📧 密码重置邮件已发送',
+                                content: `您的密码已发送到注册邮箱 ${email}，请查收。`,
+                                targetUser: username,
+                                sender: 'system',
+                                sentAt: new Date().toISOString(),
+                                isRead: false
+                            };
+                            const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
+                            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ title: `系统通知: 密码重置`, body: notifBody, labels: ['system_notification'] })
+                            });
+                            
+                            msgDiv.innerHTML = '<span style="color: #28a745;">✅ 密码已发送到您的邮箱，请查收</span>';
+                            setTimeout(() => closeForgotModal(), 2000);
+                        } else {
+                            msgDiv.innerHTML = '<span style="color: #dc3545;">邮件发送失败，请稍后重试</span>';
+                        }
+                    } catch (error) {
+                        console.error('EmailJS 发送错误:', error);
+                        msgDiv.innerHTML = `<span style="color: #dc3545;">发送失败: ${error.message || '请稍后重试'}</span>`;
+                    }
+                });
             } catch (error) {
-                console.error('发送失败:', error);
-                msgDiv.innerHTML = `<span style="color: #dc3545;">发送失败: ${error.message}</span>`;
+                console.error('验证失败:', error);
+                msgDiv.innerHTML = `<span style="color: #dc3545;">验证失败: ${error.message}</span>`;
             }
         }
 
