@@ -56,6 +56,14 @@
             background-position: center;
         }
         .profile-header h1 { color: #1a1a2e; margin-bottom: 5px; }
+        .admin-badge {
+            background: #1a1a2e;
+            color: #ffd700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
         .online-status {
             display: inline-block;
             padding: 4px 12px;
@@ -108,7 +116,6 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .btn-danger { background: #dc3545; color: white; }
         .message {
             margin-top: 15px;
             padding: 10px;
@@ -139,7 +146,7 @@
     <script src="config.js"></script>
     <script>
         let currentUser = null;
-        let viewUser = null;  // 正在查看的用户
+        let viewUser = null;
         let allRooms = [];
         let allMessages = [];
 
@@ -227,6 +234,7 @@
         async function renderProfile() {
             const container = document.getElementById('container');
             const isOwnProfile = (currentUser.username === viewUser.username);
+            const isAdminUser = viewUser.username === 'huangzhiyuan';
             
             const statusText = viewUser.isOnline ? '在线' : '离线';
             const statusClass = viewUser.isOnline ? 'online' : 'offline';
@@ -238,7 +246,7 @@
                 <div class="profile-card">
                     <div class="profile-header">
                         <div class="avatar" style="background-image: url('${viewUser.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${viewUser.username}`}')"></div>
-                        <h1>${escapeHtml(viewUser.username)}</h1>
+                        <h1>${escapeHtml(viewUser.username)} ${isAdminUser ? '<span class="admin-badge">👑 系统管理员</span>' : ''}</h1>
                         <div>
                             <span class="online-status ${statusClass}">${statusText}</span>
                             ${!viewUser.isOnline ? `<span style="font-size: 12px; color: #aaa; margin-left: 10px;">最后活跃: ${lastSeenText}</span>` : ''}
@@ -260,14 +268,27 @@
                                     userRooms.map(room => `<span class="room-tag">${escapeHtml(room.name)} (${room.type === 'group' ? '群聊' : '私聊'})</span>`).join('')}
                             </div>
                         </div>
-                        ${isOwnProfile ? `
+                        ${isOwnProfile && !isAdminUser ? `
                             <div class="edit-form">
                                 <h3>✏️ 编辑个人资料</h3>
-                                <input type="text" id="editBio" placeholder="个人简介" value="${escapeHtml(viewUser.bio || '')}">
+                                <textarea id="editBio" placeholder="个人简介">${escapeHtml(viewUser.bio || '')}</textarea>
                                 <input type="password" id="editPassword" placeholder="新密码（留空则不修改）">
                                 <input type="password" id="editConfirmPassword" placeholder="确认新密码">
                                 <button class="btn" onclick="updateProfile()">保存修改</button>
                                 <div id="editMessage" class="message" style="display: none;"></div>
+                            </div>
+                        ` : ''}
+                        ${isOwnProfile && isAdminUser ? `
+                            <div class="edit-form">
+                                <h3>✏️ 编辑个人资料</h3>
+                                <textarea id="editBio" placeholder="个人简介">${escapeHtml(viewUser.bio || '')}</textarea>
+                                <input type="password" id="editPassword" placeholder="新密码（留空则不修改）">
+                                <input type="password" id="editConfirmPassword" placeholder="确认新密码">
+                                <button class="btn" onclick="updateProfile()">保存修改</button>
+                                <div id="editMessage" class="message" style="display: none;"></div>
+                                <div style="margin-top: 15px;">
+                                    <a href="admin-profile.html" class="btn" style="display: inline-block; text-decoration: none;">👑 进入管理员中心</a>
+                                </div>
                             </div>
                         ` : ''}
                     </div>
