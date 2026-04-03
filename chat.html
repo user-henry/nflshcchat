@@ -23,7 +23,6 @@
         .nav h2 { font-size: 20px; color: #ffd700; }
         .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
         .nav a:hover { color: #ffd700; }
-        .online-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #28a745; margin-left: 8px; }
         .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
 
         .notification-btn { position: relative; cursor: pointer; }
@@ -199,7 +198,7 @@
     <div class="nav">
         <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
         <div>
-            <span>欢迎，<span id="username"></span><span id="onlineDot" class="online-dot"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
+            <span>欢迎，<span id="username"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
             <a href="profile.html">👤 个人资料</a>
             <span class="notification-btn" onclick="toggleNotificationPanel(event)">🔔 <span id="notificationCount" class="notification-badge zero">0</span></span>
             <a href="suggestions.html">💡 意见反馈</a>
@@ -329,12 +328,24 @@
 
         // ========== 辅助函数 ==========
         function logout() { 
-            updateOnlineStatus(false);
             sessionStorage.clear(); 
             window.location.href = 'index.html'; 
         }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
+        
+        // 网站 Logo URL
+        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
+        
+        // 检查是否为系统管理员
+        function isSystemAdmin(username) {
+            return username === 'huangzhiyuan';
+        }
+        
+        // 获取用户头像（固定为网站 Logo）
+        function getUserAvatar(username) {
+            return SITE_LOGO;
+        }
         
         function togglePrivateUser() {
             const type = document.getElementById('roomType').value;
@@ -347,7 +358,7 @@
             document.getElementById('verifyCodeGroup').style.display = this.value === 'verify' ? 'block' : 'none';
         });
 
-        // ========== 认证和在线状态 ==========
+        // ========== 认证 ==========
         function checkAuth() {
             const userStr = sessionStorage.getItem('currentUser');
             if (!userStr) { window.location.href = 'index.html'; return null; }
@@ -357,33 +368,6 @@
                 document.getElementById('adminBadge').style.display = 'inline-block';
             }
             return user;
-        }
-
-        async function updateOnlineStatus(isOnline) {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await res.json();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        if (userData.username === currentUser.username) {
-                            userData.isOnline = isOnline;
-                            userData.lastSeen = new Date().toISOString();
-                            const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(userData, null, 2)}\n\`\`\``;
-                            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issue.number}`, {
-                                method: 'PATCH',
-                                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ body: updatedBody })
-                            });
-                            break;
-                        }
-                    }
-                }
-            } catch (error) { console.error('更新在线状态失败:', error); }
         }
 
         // ========== 通知功能 ==========
@@ -573,7 +557,7 @@
                 for (const mentionedUser of mentions) {
                     if (mentionedUser === currentUser.username) continue;
                     const userExists = await checkUserExists(mentionedUser);
-                    if (userExists) {
+                    if (userExists || isSystemAdmin(mentionedUser)) {
                         await sendMentionNotification(mentionedUser, currentUser.username, currentRoom.name, currentRoom.id);
                     }
                 }
@@ -603,14 +587,44 @@
         }
 
         async function selectRoom(roomId) {
-            currentRoom = allRooms.find(r => r.id === roomId);
-            if (!currentRoom) return;
-            if (currentRoom.isBanned) { alert('该群聊已被封禁'); return; }
+            const room = allRooms.find(r => r.id === roomId);
+            if (!room) return;
             
+            if (room.isBanned) { 
+                alert('该群聊已被封禁'); 
+                return; 
+            }
+            
+            if (room.type === 'private') {
+                currentRoom = room;
+                document.getElementById('chatHeader').innerHTML = `
+                    <h3>${escapeHtml(currentRoom.name)}</h3>
+                    <p>私聊 · 仅你们两人可见</p>
+                `;
+                document.getElementById('chatInputArea').style.display = 'flex';
+                await loadMessages();
+                startPolling();
+                return;
+            }
+            
+            if (room.joinType === 'verify') {
+                const isMember = room.members && room.members.includes(currentUser.username);
+                if (!isMember) {
+                    pendingJoinRoom = room;
+                    document.getElementById('joinRoomName').innerHTML = `加入群聊「${escapeHtml(room.name)}」<br><span style="font-size: 12px; color: #aaa;">该群聊需要验证码才能加入</span>`;
+                    document.getElementById('joinVerifySection').style.display = 'block';
+                    document.getElementById('joinVerifyCode').value = '';
+                    document.getElementById('joinMessage').innerHTML = '';
+                    document.getElementById('joinRoomModal').style.display = 'flex';
+                    return;
+                }
+            }
+            
+            currentRoom = room;
             document.getElementById('chatHeader').innerHTML = `
                 <h3>
                     ${escapeHtml(currentRoom.name)}
-                    ${currentRoom.type === 'group' ? `<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>` : ''}
+                    <button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>
                 </h3>
                 ${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}
                 ${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}
@@ -684,6 +698,10 @@
         async function addAdmin() {
             const username = document.getElementById('addAdminUser').value.trim();
             if (!username) return;
+            if (isSystemAdmin(username)) {
+                alert('系统管理员不能被添加为群管理员');
+                return;
+            }
             if (!currentRoom.admins) currentRoom.admins = [];
             if (currentRoom.admins.includes(username)) { alert('已是管理员'); return; }
             currentRoom.admins.push(username);
@@ -713,7 +731,6 @@
         
         async function leaveRoom() {
             if (!confirm('确定要退出该群聊吗？')) return;
-            // 从群聊中移除用户（简单实现：从members中删除）
             if (currentRoom.members) {
                 currentRoom.members = currentRoom.members.filter(m => m !== currentUser.username);
             }
@@ -742,12 +759,17 @@
             if (type === 'private') {
                 if (!privateUser) { alert('请输入私聊对象用户名'); return; }
                 if (privateUser === currentUser.username) { alert('不能与自己私聊'); return; }
-                const userExists = await checkUserExists(privateUser);
-                if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
-                const isBanned = await checkUserBanned(privateUser);
-                if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
-                const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
-                if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
+                if (isSystemAdmin(privateUser)) {
+                    const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
+                    if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
+                } else {
+                    const userExists = await checkUserExists(privateUser);
+                    if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
+                    const isBanned = await checkUserBanned(privateUser);
+                    if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
+                    const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
+                    if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
+                }
             }
             
             const joinType = document.getElementById('joinType').value;
@@ -781,32 +803,23 @@
         }
 
         // ========== 加入群聊 ==========
-        async function joinGroup(room) {
-            if (room.joinType === 'verify') {
-                pendingJoinRoom = room;
-                document.getElementById('joinRoomName').textContent = `加入 ${room.name}`;
-                document.getElementById('joinVerifySection').style.display = 'block';
-                document.getElementById('joinVerifyCode').value = '';
-                document.getElementById('joinMessage').innerHTML = '';
-                document.getElementById('joinRoomModal').style.display = 'flex';
-            } else {
-                await doJoinRoom(room);
-            }
-        }
-        
         async function confirmJoinRoom() {
             const enteredCode = document.getElementById('joinVerifyCode').value.trim();
             if (enteredCode !== pendingJoinRoom.verifyCode) {
-                document.getElementById('joinMessage').innerHTML = '<span style="color: #dc3545;">验证码错误</span>';
+                document.getElementById('joinMessage').innerHTML = '<span style="color: #dc3545;">❌ 验证码错误</span>';
                 return;
             }
             await doJoinRoom(pendingJoinRoom);
             closeJoinRoomModal();
+            await selectRoom(pendingJoinRoom.id);
         }
         
         async function doJoinRoom(room) {
             if (!room.members) room.members = [];
-            if (room.members.includes(currentUser.username)) { alert('已在群聊中'); return; }
+            if (room.members.includes(currentUser.username)) {
+                alert('您已在群聊中');
+                return;
+            }
             room.members.push(currentUser.username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${room.issueNumber}`, {
@@ -814,7 +827,7 @@
                 headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
-            alert(`已加入 ${room.name}`);
+            alert(`✅ 已成功加入群聊「${room.name}」`);
             await loadRooms();
         }
         
@@ -824,6 +837,7 @@
 
         // ========== 用户相关 ==========
         async function checkUserBanned(username) {
+            if (isSystemAdmin(username)) return false;
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
@@ -840,6 +854,7 @@
         }
 
         async function checkUserExists(username) {
+            if (isSystemAdmin(username)) return true;
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
@@ -855,7 +870,9 @@
             } catch (error) { return false; }
         }
 
-        function viewProfile(username) { window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank'); }
+        function viewProfile(username) { 
+            window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank'); 
+        }
 
         function startPolling() {
             if (pollInterval) clearInterval(pollInterval);
@@ -869,12 +886,11 @@
         window.onload = async function() {
             currentUser = checkAuth();
             if (!currentUser) return;
-            await updateOnlineStatus(true);
+            
             await loadRooms();
             await loadNotifications();
             startPolling();
             
-            window.addEventListener('beforeunload', () => updateOnlineStatus(false));
             document.addEventListener('DOMContentLoaded', function() {
                 const input = document.getElementById('messageInput');
                 if (input) input.addEventListener('keypress', function(e) {
