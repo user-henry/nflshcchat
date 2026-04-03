@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 个人资料</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+        }
+        .nav {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ffd700;
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+        
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .profile-card {
+            background: #16213e;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #2a2a3e;
+        }
+        .profile-header {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            padding: 40px;
+            text-align: center;
+        }
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid white;
+            margin: 0 auto 15px;
+            background-size: cover;
+            background-position: center;
+        }
+        .profile-header h1 { color: #1a1a2e; margin-bottom: 5px; }
+        .online-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .online-status.online { background: #28a745; color: white; }
+        .online-status.offline { background: #6c757d; color: white; }
+        
+        .profile-body { padding: 30px; }
+        .info-section { margin-bottom: 25px; }
+        .info-section h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+        .info-section p { color: #ddd; line-height: 1.6; }
+        .rooms-list { margin-top: 10px; }
+        .room-tag {
+            display: inline-block;
+            background: #2a2a3e;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 13px;
+            color: #ffd700;
+        }
+        
+        .edit-form { margin-top: 30px; padding-top: 20px; border-top: 1px solid #2a2a3e; }
+        .edit-form h3 { color: #ffd700; margin-bottom: 15px; }
+        .edit-form input, .edit-form textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: white;
+            font-family: inherit;
+        }
+        .edit-form textarea { resize: vertical; min-height: 100px; }
+        .btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-danger { background: #dc3545; color: white; }
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .message.success { background: rgba(40,167,69,0.2); color: #28a745; }
+        .message.error { background: rgba(220,53,69,0.2); color: #dc3545; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="suggestions.html">💡 意见反馈</a>
+            <a href="notice.html">📢 公告</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container" id="container">
+        <div class="loading">加载中...</div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let currentUser = null;
+        let viewUser = null;  // 正在查看的用户
+        let allRooms = [];
+        let allMessages = [];
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        async function loadUserData(username) {
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await res.json();
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    const user = JSON.parse(match[1]);
+                    if (user.username === username) {
+                        return { ...user, issueNumber: issue.number };
+                    }
+                }
+            }
+            return null;
+        }
+
+        async function loadRoomsAndMessages() {
+            const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+            const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const roomIssues = await roomsRes.json();
+            allRooms = [];
+            for (const issue of roomIssues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    const room = JSON.parse(match[1]);
+                    allRooms.push({ ...room, issueNumber: issue.number });
+                }
+            }
+            
+            const msgRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const msgIssues = await msgRes.json();
+            allMessages = [];
+            for (const issue of msgIssues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    allMessages.push(JSON.parse(match[1]));
+                }
+            }
+        }
+
+        function getUserRooms(username) {
+            const userRooms = [];
+            for (const room of allRooms) {
+                if (room.type === 'private') {
+                    if (room.members && room.members.includes(username)) {
+                        userRooms.push(room);
+                    }
+                } else if (!room.isBanned) {
+                    const activeMembers = [...new Set(allMessages.filter(m => m.roomId === room.id).map(m => m.sender))];
+                    if (activeMembers.includes(username) || room.creator === username) {
+                        userRooms.push(room);
+                    }
+                }
+            }
+            return userRooms;
+        }
+
+        async function updateUserProfile(updates) {
+            const user = viewUser;
+            Object.assign(user, updates);
+            user.updatedAt = new Date().toISOString();
+            const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(user, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${user.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ body: updatedBody })
+            });
+        }
+
+        async function renderProfile() {
+            const container = document.getElementById('container');
+            const isOwnProfile = (currentUser.username === viewUser.username);
+            
+            const statusText = viewUser.isOnline ? '在线' : '离线';
+            const statusClass = viewUser.isOnline ? 'online' : 'offline';
+            const lastSeenText = viewUser.lastSeen ? new Date(viewUser.lastSeen).toLocaleString() : '未知';
+            
+            const userRooms = getUserRooms(viewUser.username);
+            
+            container.innerHTML = `
+                <div class="profile-card">
+                    <div class="profile-header">
+                        <div class="avatar" style="background-image: url('${viewUser.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${viewUser.username}`}')"></div>
+                        <h1>${escapeHtml(viewUser.username)}</h1>
+                        <div>
+                            <span class="online-status ${statusClass}">${statusText}</span>
+                            ${!viewUser.isOnline ? `<span style="font-size: 12px; color: #aaa; margin-left: 10px;">最后活跃: ${lastSeenText}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="profile-body">
+                        <div class="info-section">
+                            <h3>📝 个人简介</h3>
+                            <p>${escapeHtml(viewUser.bio || '这个人很懒，什么都没有写。')}</p>
+                        </div>
+                        <div class="info-section">
+                            <h3>📅 注册时间</h3>
+                            <p>${new Date(viewUser.createdAt).toLocaleString()}</p>
+                        </div>
+                        <div class="info-section">
+                            <h3>💬 参与的聊天室</h3>
+                            <div class="rooms-list">
+                                ${userRooms.length === 0 ? '<p style="color: #aaa;">暂无参与的聊天室</p>' : 
+                                    userRooms.map(room => `<span class="room-tag">${escapeHtml(room.name)} (${room.type === 'group' ? '群聊' : '私聊'})</span>`).join('')}
+                            </div>
+                        </div>
+                        ${isOwnProfile ? `
+                            <div class="edit-form">
+                                <h3>✏️ 编辑个人资料</h3>
+                                <input type="text" id="editBio" placeholder="个人简介" value="${escapeHtml(viewUser.bio || '')}">
+                                <input type="password" id="editPassword" placeholder="新密码（留空则不修改）">
+                                <input type="password" id="editConfirmPassword" placeholder="确认新密码">
+                                <button class="btn" onclick="updateProfile()">保存修改</button>
+                                <div id="editMessage" class="message" style="display: none;"></div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function updateProfile() {
+            const newBio = document.getElementById('editBio').value.trim();
+            const newPassword = document.getElementById('editPassword').value;
+            const confirmPassword = document.getElementById('editConfirmPassword').value;
+            const msgDiv = document.getElementById('editMessage');
+            
+            if (newPassword && newPassword !== confirmPassword) {
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.innerHTML = '两次密码不一致';
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+                return;
+            }
+            
+            const updates = { bio: newBio || '这个人很懒，什么都没有写。' };
+            if (newPassword) {
+                updates.password = newPassword;
+            }
+            
+            try {
+                await updateUserProfile(updates);
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message success';
+                msgDiv.innerHTML = '✅ 个人资料已更新';
+                if (newPassword) {
+                    sessionStorage.setItem('currentUser', JSON.stringify({ username: currentUser.username, isAdmin: currentUser.isAdmin }));
+                }
+                viewUser = await loadUserData(currentUser.username);
+                renderProfile();
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+            } catch (error) {
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.innerHTML = `更新失败: ${error.message}`;
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function init() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return; }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('username').textContent = currentUser.username;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetUser = urlParams.get('user') || currentUser.username;
+            
+            await loadRoomsAndMessages();
+            viewUser = await loadUserData(targetUser);
+            if (!viewUser) {
+                document.getElementById('container').innerHTML = '<div class="loading">用户不存在</div>';
+                return;
+            }
+            await renderProfile();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
