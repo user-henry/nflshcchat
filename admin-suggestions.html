@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 建议审核</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+        }
+        .nav {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ffd700;
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+        
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid #2a2a3e;
+        }
+        .stat-number { font-size: 36px; font-weight: bold; color: #ffd700; }
+        .stat-label { color: #aaa; margin-top: 8px; }
+        
+        .card { background: #16213e; border-radius: 12px; padding: 25px; border: 1px solid #2a2a3e; }
+        .card h2 { color: #ffd700; margin-bottom: 20px; }
+        
+        .suggestion-item {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffd700;
+        }
+        .suggestion-title { font-size: 18px; font-weight: bold; color: #ffd700; margin-bottom: 10px; }
+        .suggestion-content { color: #aaa; margin-bottom: 15px; line-height: 1.5; }
+        .suggestion-meta { font-size: 12px; color: #666; margin-bottom: 15px; }
+        .admin-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .status-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .status-btn.pending { background: #f39c12; color: #1a1a2e; }
+        .status-btn.in-progress { background: #3498db; color: white; }
+        .status-btn.completed { background: #2ecc71; color: #1a1a2e; }
+        .status-btn.rejected { background: #e74c3c; color: white; }
+        .admin-note {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            background: #0f0f1a;
+            color: white;
+            font-family: inherit;
+        }
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        
+        @media (max-width: 768px) {
+            .stats { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>👑 建议审核后台</h2></div>
+        <div>
+            <span>欢迎，管理员 <span id="adminName"></span></span>
+            <a href="admin.html">🏠 管理后台</a>
+            <a href="chat.html">💬 聊天</a>
+            <a href="notice.html">📢 公告</a>
+            <a href="index.html" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="stats">
+            <div class="stat-card"><div class="stat-number" id="pendingCount">0</div><div class="stat-label">待审核</div></div>
+            <div class="stat-card"><div class="stat-number" id="inProgressCount">0</div><div class="stat-label">处理中</div></div>
+            <div class="stat-card"><div class="stat-number" id="completedCount">0</div><div class="stat-label">已完成</div></div>
+            <div class="stat-card"><div class="stat-number" id="rejectedCount">0</div><div class="stat-label">已驳回</div></div>
+        </div>
+
+        <div class="card">
+            <h2>📋 用户建议列表</h2>
+            <div id="suggestionsList">
+                <div class="empty-state">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let currentAdmin = null;
+        let allSuggestions = [];
+
+        function checkAdmin() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            if (!user.isAdmin) { alert('无权访问'); window.location.href = 'chat.html'; return null; }
+            document.getElementById('adminName').textContent = user.username;
+            return user;
+        }
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        async function loadSuggestions() {
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=suggestion&state=open`;
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await response.json();
+                allSuggestions = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const sug = JSON.parse(match[1]);
+                        allSuggestions.push({ ...sug, issueNumber: issue.number });
+                    }
+                }
+                allSuggestions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                updateStats();
+                renderSuggestions();
+            } catch (error) {
+                console.error('加载建议失败:', error);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('pendingCount').textContent = allSuggestions.filter(s => s.status === 'pending').length;
+            document.getElementById('inProgressCount').textContent = allSuggestions.filter(s => s.status === 'in-progress').length;
+            document.getElementById('completedCount').textContent = allSuggestions.filter(s => s.status === 'completed').length;
+            document.getElementById('rejectedCount').textContent = allSuggestions.filter(s => s.status === 'rejected').length;
+        }
+
+        function renderSuggestions() {
+            const container = document.getElementById('suggestionsList');
+            if (allSuggestions.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无建议</div>';
+                return;
+            }
+            
+            const statusMap = {
+                'pending': { text: '待审核', class: 'pending' },
+                'in-progress': { text: '处理中', class: 'in-progress' },
+                'completed': { text: '已完成', class: 'completed' },
+                'rejected': { text: '已驳回', class: 'rejected' }
+            };
+            
+            container.innerHTML = allSuggestions.map(sug => `
+                <div class="suggestion-item">
+                    <div class="suggestion-title">📝 ${escapeHtml(sug.title)}</div>
+                    <div class="suggestion-content">${escapeHtml(sug.content)}</div>
+                    <div class="suggestion-meta">
+                        提交者: ${escapeHtml(sug.author)} · 提交时间: ${new Date(sug.createdAt).toLocaleString()}
+                        ${sug.updatedAt !== sug.createdAt ? ` · 最后更新: ${new Date(sug.updatedAt).toLocaleString()}` : ''}
+                    </div>
+                    <div class="admin-actions">
+                        <button class="status-btn pending" onclick="updateSuggestionStatus('${sug.id}', 'pending')">⏳ 待审核</button>
+                        <button class="status-btn in-progress" onclick="updateSuggestionStatus('${sug.id}', 'in-progress')">🔄 处理中</button>
+                        <button class="status-btn completed" onclick="updateSuggestionStatus('${sug.id}', 'completed')">✅ 已完成</button>
+                        <button class="status-btn rejected" onclick="updateSuggestionStatus('${sug.id}', 'rejected')">❌ 已驳回</button>
+                    </div>
+                    <textarea id="note_${sug.id}" class="admin-note" placeholder="添加备注（可选）" rows="2">${escapeHtml(sug.adminNote || '')}</textarea>
+                    <div style="margin-top: 10px;">
+                        <span class="status ${statusMap[sug.status]?.class || 'pending'}">当前: ${statusMap[sug.status]?.text || '待审核'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function updateSuggestionStatus(suggestionId, newStatus) {
+            const suggestion = allSuggestions.find(s => s.id === suggestionId);
+            if (!suggestion) return;
+            
+            const noteTextarea = document.getElementById(`note_${suggestionId}`);
+            const adminNote = noteTextarea ? noteTextarea.value.trim() : '';
+            
+            suggestion.status = newStatus;
+            suggestion.updatedAt = new Date().toISOString();
+            if (adminNote) suggestion.adminNote = adminNote;
+            
+            const updatedBody = `网站建议\n\`\`\`json\n${JSON.stringify(suggestion, null, 2)}\n\`\`\``;
+            
+            try {
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${suggestion.issueNumber}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ body: updatedBody })
+                });
+                
+                // 通知用户状态变更
+                const statusText = { 'pending': '待审核', 'in-progress': '处理中', 'completed': '已完成', 'rejected': '已驳回' };
+                const notificationData = {
+                    id: `notif_${Date.now()}`,
+                    type: 'suggestion_update',
+                    title: `📋 建议状态更新`,
+                    content: `您提交的建议「${suggestion.title}」状态已更新为「${statusText[newStatus]}」${adminNote ? `，备注：${adminNote}` : ''}`,
+                    targetUser: suggestion.author,
+                    sender: 'system',
+                    sentAt: new Date().toISOString(),
+                    isRead: false
+                };
+                const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `系统通知: 建议状态更新`, body: notifBody, labels: ['system_notification'] })
+                });
+                
+                alert(`建议状态已更新为「${statusText[newStatus]}」`);
+                loadSuggestions();
+            } catch (error) {
+                alert('更新失败：' + error.message);
+            }
+        }
+
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        currentAdmin = checkAdmin();
+        if (currentAdmin) loadSuggestions();
+    </script>
+</body>
+</html>

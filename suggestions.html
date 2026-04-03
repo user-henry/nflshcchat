@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 意见反馈</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+        }
+        .nav {
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ffd700;
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+        
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid #2a2a3e;
+        }
+        .card h2 { color: #ffd700; margin-bottom: 20px; }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: white;
+            font-family: inherit;
+        }
+        textarea { resize: vertical; min-height: 120px; }
+        button {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .suggestion-list { margin-top: 30px; }
+        .suggestion-item {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffd700;
+        }
+        .suggestion-title { font-weight: bold; color: #ffd700; margin-bottom: 8px; }
+        .suggestion-content { color: #aaa; margin-bottom: 8px; }
+        .suggestion-meta { font-size: 11px; color: #666; margin-bottom: 8px; }
+        .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status.pending { background: #f39c12; color: #1a1a2e; }
+        .status.in-progress { background: #3498db; color: white; }
+        .status.completed { background: #2ecc71; color: #1a1a2e; }
+        .status.rejected { background: #e74c3c; color: white; }
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; }
+        .message.success { background: rgba(46,204,113,0.2); color: #2ecc71; }
+        .message.error { background: rgba(231,76,60,0.2); color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="notice.html">📢 公告</a>
+            <a href="suggestions.html">💡 意见反馈</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>💡 提交网站修改建议</h2>
+            <input type="text" id="suggestionTitle" placeholder="建议标题">
+            <textarea id="suggestionContent" placeholder="请详细描述您的建议..."></textarea>
+            <button onclick="submitSuggestion()">提交建议</button>
+            <div id="submitMessage" class="message" style="display: none;"></div>
+        </div>
+
+        <div class="card">
+            <h2>📋 所有用户建议</h2>
+            <div id="suggestionsList" class="suggestion-list">
+                <div class="empty-state">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        let currentUser = null;
+
+        function checkAuth() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            document.getElementById('username').textContent = user.username;
+            return user;
+        }
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        async function submitSuggestion() {
+            const title = document.getElementById('suggestionTitle').value.trim();
+            const content = document.getElementById('suggestionContent').value.trim();
+            const msgDiv = document.getElementById('submitMessage');
+            
+            if (!title || !content) {
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.innerHTML = '请填写标题和内容';
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+                return;
+            }
+            
+            const suggestionData = {
+                id: `sug_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                title: title,
+                content: content,
+                author: currentUser.username,
+                status: 'pending',  // pending, in-progress, completed, rejected
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                adminNote: ''
+            };
+            
+            try {
+                const issueBody = `网站建议\n\`\`\`json\n${JSON.stringify(suggestionData, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `建议: ${title}`, body: issueBody, labels: ['suggestion'] })
+                });
+                
+                // 通知管理员
+                const adminNotif = {
+                    id: `notif_${Date.now()}`,
+                    type: 'suggestion',
+                    title: '💡 新建议待审核',
+                    content: `${currentUser.username} 提交了新建议：「${title}」，请前往后台审核。`,
+                    targetUser: 'huangzhiyuan',
+                    sender: currentUser.username,
+                    sentAt: new Date().toISOString(),
+                    isRead: false
+                };
+                const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(adminNotif, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `系统通知: 新建议`, body: notifBody, labels: ['system_notification'] })
+                });
+                
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message success';
+                msgDiv.innerHTML = '✅ 建议提交成功，管理员会尽快审核！';
+                document.getElementById('suggestionTitle').value = '';
+                document.getElementById('suggestionContent').value = '';
+                loadSuggestions();
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+            } catch (error) {
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.innerHTML = `提交失败: ${error.message}`;
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+            }
+        }
+
+        async function loadSuggestions() {
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=suggestion&state=open`;
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await response.json();
+                const suggestions = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const sug = JSON.parse(match[1]);
+                        suggestions.push({ ...sug, issueNumber: issue.number });
+                    }
+                }
+                suggestions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                renderSuggestions(suggestions);
+            } catch (error) {
+                console.error('加载建议失败:', error);
+            }
+        }
+
+        function renderSuggestions(suggestions) {
+            const container = document.getElementById('suggestionsList');
+            if (suggestions.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无建议，成为第一个提交建议的人吧！</div>';
+                return;
+            }
+            
+            const statusMap = {
+                'pending': { text: '待审核', class: 'pending' },
+                'in-progress': { text: '处理中', class: 'in-progress' },
+                'completed': { text: '已完成', class: 'completed' },
+                'rejected': { text: '已驳回', class: 'rejected' }
+            };
+            
+            container.innerHTML = suggestions.map(sug => `
+                <div class="suggestion-item">
+                    <div class="suggestion-title">📝 ${escapeHtml(sug.title)}</div>
+                    <div class="suggestion-content">${escapeHtml(sug.content)}</div>
+                    <div class="suggestion-meta">
+                        提交者: ${escapeHtml(sug.author)} · 提交时间: ${new Date(sug.createdAt).toLocaleString()}
+                        ${sug.updatedAt !== sug.createdAt ? ` · 最后更新: ${new Date(sug.updatedAt).toLocaleString()}` : ''}
+                    </div>
+                    <div>
+                        <span class="status ${statusMap[sug.status]?.class || 'pending'}">${statusMap[sug.status]?.text || '待审核'}</span>
+                        ${sug.adminNote ? `<span style="margin-left: 10px; font-size: 12px; color: #888;">备注: ${escapeHtml(sug.adminNote)}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        currentUser = checkAuth();
+        if (currentUser) loadSuggestions();
+    </script>
+</body>
+</html>
