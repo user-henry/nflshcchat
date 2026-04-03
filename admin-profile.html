@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFLSHC Chat - 管理员资料</title>
+    <title>NFLSHC Chat - 管理员中心</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -105,16 +105,10 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
         }
         .loading { text-align: center; padding: 40px; color: #aaa; }
-        .message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .message.success { background: rgba(40,167,69,0.2); color: #28a745; }
-        .message.error { background: rgba(220,53,69,0.2); color: #dc3545; }
         
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: 1fr; gap: 10px; }
@@ -128,6 +122,7 @@
             <span>欢迎，管理员 <span id="adminName"></span></span>
             <a href="admin.html">⚙️ 管理后台</a>
             <a href="chat.html">💬 聊天</a>
+            <a href="profile.html">👤 我的资料</a>
             <a href="#" onclick="logout()">🚪 退出</a>
         </div>
     </div>
@@ -142,11 +137,25 @@
         let allUsers = [];
         let allRooms = [];
         let allMessages = [];
+        
+        // 网站 Logo URL
+        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
         async function loadData() {
             try {
+                // 系统管理员特判：直接构造数据，不从 GitHub Issues 查找
+                const adminUser = {
+                    username: 'huangzhiyuan',
+                    email: 'admin@nflshc.com',
+                    bio: '平台创始人及系统管理员，负责网站的维护和管理。',
+                    createdAt: new Date().toISOString(),
+                    isBanned: false,
+                    avatar: SITE_LOGO,
+                    isAdmin: true
+                };
+                
                 const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
                 
                 const usersRes = await fetch(`${baseUrl}?labels=user&state=open`, {
@@ -187,30 +196,26 @@
                     }
                 }
                 
-                renderProfile();
+                renderProfile(adminUser);
             } catch (error) {
                 console.error('加载数据失败:', error);
                 document.getElementById('container').innerHTML = '<div class="loading">加载失败，请刷新重试</div>';
             }
         }
 
-        function renderProfile() {
-            const adminUser = allUsers.find(u => u.username === 'huangzhiyuan');
-            if (!adminUser) {
-                document.getElementById('container').innerHTML = '<div class="loading">管理员数据不存在</div>';
-                return;
-            }
-            
+        function renderProfile(adminUser) {
             const totalUsers = allUsers.length;
             const totalRooms = allRooms.length;
             const totalMessages = allMessages.length;
             const bannedUsers = allUsers.filter(u => u.isBanned).length;
+            const groupRooms = allRooms.filter(r => r.type === 'group').length;
+            const privateRooms = allRooms.filter(r => r.type === 'private').length;
             
             document.getElementById('container').innerHTML = `
                 <div class="profile-card">
                     <div class="profile-header">
                         <div class="admin-crown">👑</div>
-                        <div class="avatar" style="background-image: url('${adminUser.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${adminUser.username}`}')"></div>
+                        <div class="avatar" style="background-image: url('${SITE_LOGO}')"></div>
                         <h1>${escapeHtml(adminUser.username)}</h1>
                         <span class="admin-title">系统管理员 · 超级管理员</span>
                     </div>
@@ -235,18 +240,18 @@
                                     <div class="stat-label">已封禁用户</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-number">${allRooms.filter(r => r.type === 'group').length}</div>
+                                    <div class="stat-number">${groupRooms}</div>
                                     <div class="stat-label">群聊数量</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-number">${allRooms.filter(r => r.type === 'private').length}</div>
+                                    <div class="stat-number">${privateRooms}</div>
                                     <div class="stat-label">私聊数量</div>
                                 </div>
                             </div>
                         </div>
                         <div class="info-section">
                             <h3>📝 个人简介</h3>
-                            <p>${escapeHtml(adminUser.bio || '平台创始人及系统管理员，负责网站的维护和管理。')}</p>
+                            <p>${escapeHtml(adminUser.bio)}</p>
                         </div>
                         <div class="info-section">
                             <h3>🔧 管理权限</h3>
@@ -255,6 +260,9 @@
                         <div class="info-section">
                             <h3>📅 注册时间</h3>
                             <p>${new Date(adminUser.createdAt).toLocaleString()}</p>
+                        </div>
+                        <div style="text-align: center; margin-top: 20px;">
+                            <a href="admin.html" class="btn">⚙️ 进入管理后台</a>
                         </div>
                     </div>
                 </div>
