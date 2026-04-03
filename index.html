@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 登录</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -20,7 +15,6 @@
             align-items: center;
             padding: 20px;
         }
-
         .login-container {
             max-width: 400px;
             width: 100%;
@@ -30,7 +24,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             text-align: center;
         }
-
         .logo {
             width: 80px;
             height: 80px;
@@ -40,18 +33,8 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-
-        h1 {
-            color: #1a1a2e;
-            margin-bottom: 10px;
-        }
-
-        h2 {
-            color: #666;
-            font-size: 18px;
-            margin-bottom: 30px;
-        }
-
+        h1 { color: #1a1a2e; margin-bottom: 10px; }
+        h2 { color: #666; font-size: 18px; margin-bottom: 30px; }
         input {
             width: 100%;
             padding: 12px;
@@ -59,15 +42,8 @@
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 16px;
-            transition: all 0.3s;
         }
-
-        input:focus {
-            outline: none;
-            border-color: #ffd700;
-            box-shadow: 0 0 0 3px rgba(255,215,0,0.2);
-        }
-
+        input:focus { outline: none; border-color: #ffd700; }
         button {
             width: 100%;
             padding: 12px;
@@ -78,43 +54,15 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s;
         }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255,215,0,0.3);
-        }
-
-        p {
-            margin-top: 20px;
-            color: #666;
-        }
-
-        a {
-            color: #ffd700;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .message {
-            margin-top: 15px;
-            font-size: 14px;
-            min-height: 40px;
-        }
-
-        /* 通知按钮样式 */
-        .notification-area {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-
+        button:hover { transform: translateY(-2px); }
+        p { margin-top: 20px; color: #666; }
+        a { color: #ffd700; text-decoration: none; font-weight: bold; cursor: pointer; }
+        a:hover { text-decoration: underline; }
+        .message { margin-top: 15px; font-size: 14px; min-height: 40px; }
+        
+        /* 通知样式 */
+        .notification-area { position: fixed; top: 20px; right: 20px; z-index: 100; }
         .notification-btn {
             position: relative;
             cursor: pointer;
@@ -127,7 +75,6 @@
             gap: 8px;
             color: white;
         }
-
         .notification-badge {
             position: absolute;
             top: -5px;
@@ -140,12 +87,7 @@
             min-width: 18px;
             text-align: center;
         }
-
-        .notification-badge.zero {
-            background: #28a745;
-        }
-
-        /* 通知面板 */
+        .notification-badge.zero { background: #28a745; }
         .notification-panel {
             position: fixed;
             top: 70px;
@@ -160,57 +102,50 @@
             display: none;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
-
-        .notification-panel.show {
-            display: block;
-        }
-
+        .notification-panel.show { display: block; }
         .notification-item {
             padding: 12px 15px;
             border-bottom: 1px solid #2a2a3e;
             cursor: pointer;
-            transition: background 0.2s;
         }
-
-        .notification-item:hover {
+        .notification-item:hover { background: #1a1a2e; }
+        .notification-item.unread { background: #2a1a3e; border-left: 3px solid #ffd700; }
+        .notification-title { font-weight: bold; color: #ffd700; margin-bottom: 5px; font-size: 14px; }
+        .notification-content { font-size: 12px; color: #aaa; }
+        .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
+        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; }
+        
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 16px;
+            width: 400px;
+            border: 1px solid #ffd700;
+        }
+        .modal-content h3 { color: #ffd700; margin-bottom: 20px; }
+        .modal-content input {
             background: #1a1a2e;
+            color: white;
+            border: 1px solid #2a2a3e;
         }
-
-        .notification-item.unread {
-            background: #2a1a3e;
-            border-left: 3px solid #ffd700;
-        }
-
-        .notification-title {
-            font-weight: bold;
-            color: #ffd700;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-
-        .notification-content {
-            font-size: 12px;
-            color: #aaa;
-            line-height: 1.4;
-        }
-
-        .notification-time {
-            font-size: 10px;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .notification-header {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ffd700;
-            color: #ffd700;
-            font-weight: bold;
-            background: #0f0f1a;
-        }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-buttons button { width: auto; padding: 8px 20px; }
+        .modal-buttons button:first-child { background: #2a2a3e; color: white; }
     </style>
+    <!-- 引入 EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
-    <!-- 通知区域 -->
     <div class="notification-area">
         <div class="notification-btn" onclick="toggleNotificationPanel(event)">
             🔔 通知
@@ -226,18 +161,39 @@
         <div class="logo"></div>
         <h1>💬 NFLSHC Chat</h1>
         <h2>用户登录</h2>
-        
         <input type="text" id="username" placeholder="用户名" autocomplete="off">
         <input type="password" id="password" placeholder="密码">
         <button onclick="login()">登录</button>
-        
-        <p>没有账号？ <a href="#" onclick="showRegister()">立即注册</a></p>
+        <p><a onclick="showForgotPassword()">忘记密码？</a> | <a onclick="showRegister()">立即注册</a></p>
         <div id="message" class="message"></div>
+    </div>
+
+    <!-- 忘记密码弹窗 -->
+    <div id="forgotModal" class="modal">
+        <div class="modal-content">
+            <h3>🔐 找回密码</h3>
+            <input type="text" id="forgotUsername" placeholder="用户名">
+            <input type="email" id="forgotEmail" placeholder="注册邮箱">
+            <div class="modal-buttons">
+                <button onclick="closeForgotModal()">取消</button>
+                <button onclick="sendPasswordReset()" style="background: #ffd700;">发送重置邮件</button>
+            </div>
+            <div id="forgotMessage" style="margin-top: 15px; font-size: 12px; color: #aaa;"></div>
+        </div>
     </div>
 
     <script src="config.js"></script>
     <script>
+        // ========== EmailJS 配置 ==========
+        const EMAILJS_PUBLIC_KEY = 'A-3y5AHO_oj3PQU5l';
+        const EMAILJS_SERVICE_ID = 'service_6iugtla';
+        const EMAILJS_TEMPLATE_ID = 'template_03vba8b';
+        
+        // 初始化 EmailJS
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+
         let allNotifications = [];
+        let currentUsername = null;
 
         // ========== 通知功能 ==========
         async function loadNotifications(username) {
@@ -245,10 +201,7 @@
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
                 const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 allNotifications = [];
@@ -262,9 +215,7 @@
                     }
                 }
                 updateNotificationUI();
-            } catch (error) {
-                console.error('加载通知失败:', error);
-            }
+            } catch (error) { console.error('加载通知失败:', error); }
         }
 
         function updateNotificationUI() {
@@ -274,15 +225,12 @@
                 badge.textContent = unreadCount;
                 badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
             }
-            
             const container = document.getElementById('notificationList');
             if (!container) return;
-            
             if (allNotifications.length === 0) {
                 container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>';
                 return;
             }
-            
             allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
             container.innerHTML = allNotifications.map(n => `
                 <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead('${n.id}')">
@@ -296,35 +244,20 @@
         async function markAsRead(notificationId) {
             const notif = allNotifications.find(n => n.id === notificationId);
             if (!notif || notif.isRead) return;
-            
             notif.isRead = true;
             const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
-            
-            try {
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ body: updatedBody })
-                });
-                await loadNotifications(currentUsername);
-            } catch (error) {
-                console.error('标记已读失败:', error);
-            }
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: updatedBody })
+            });
+            await loadNotifications(currentUsername);
         }
-
-        let currentUsername = null;
 
         function toggleNotificationPanel(event) {
             event.stopPropagation();
-            const panel = document.getElementById('notificationPanel');
-            panel.classList.toggle('show');
+            document.getElementById('notificationPanel').classList.toggle('show');
         }
-
-        // 点击其他地方关闭通知面板
         document.addEventListener('click', function(e) {
             const panel = document.getElementById('notificationPanel');
             const btn = document.querySelector('.notification-btn');
@@ -333,11 +266,96 @@
             }
         });
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        // ========== 忘记密码（使用 EmailJS） ==========
+        function showForgotPassword() {
+            document.getElementById('forgotModal').style.display = 'flex';
+            document.getElementById('forgotUsername').value = '';
+            document.getElementById('forgotEmail').value = '';
+            document.getElementById('forgotMessage').innerHTML = '';
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgotModal').style.display = 'none';
+        }
+
+        async function sendPasswordReset() {
+            const username = document.getElementById('forgotUsername').value.trim();
+            const email = document.getElementById('forgotEmail').value.trim();
+            const msgDiv = document.getElementById('forgotMessage');
+            
+            if (!username || !email) {
+                msgDiv.innerHTML = '<span style="color: #dc3545;">请填写用户名和邮箱</span>';
+                return;
+            }
+            
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await response.json();
+                let foundUser = null;
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        if (userData.username === username && userData.email === email) {
+                            foundUser = userData;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!foundUser) {
+                    msgDiv.innerHTML = '<span style="color: #dc3545;">用户名或邮箱不匹配</span>';
+                    return;
+                }
+                
+                // 使用 EmailJS 发送邮件
+                const templateParams = {
+                    username: username,
+                    password: foundUser.password,
+                    to_email: email
+                };
+                
+                const mailResponse = await emailjs.send(
+                    EMAILJS_SERVICE_ID,
+                    EMAILJS_TEMPLATE_ID,
+                    templateParams
+                );
+                
+                if (mailResponse.status === 200) {
+                    // 创建系统通知
+                    const notificationData = {
+                        id: `notif_${Date.now()}`,
+                        type: 'system',
+                        title: '📧 密码重置邮件已发送',
+                        content: `您的密码已发送到注册邮箱 ${email}，请查收。`,
+                        targetUser: username,
+                        sender: 'system',
+                        sentAt: new Date().toISOString(),
+                        isRead: false
+                    };
+                    const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
+                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ title: `系统通知: 密码重置`, body: notifBody, labels: ['system_notification'] })
+                    });
+                    
+                    msgDiv.innerHTML = '<span style="color: #28a745;">✅ 密码已发送到您的邮箱，请查收</span>';
+                    setTimeout(() => closeForgotModal(), 2000);
+                } else {
+                    msgDiv.innerHTML = '<span style="color: #dc3545;">邮件发送失败，请稍后重试</span>';
+                }
+            } catch (error) {
+                console.error('发送失败:', error);
+                msgDiv.innerHTML = `<span style="color: #dc3545;">发送失败: ${error.message}</span>`;
+            }
         }
 
         // ========== 登录功能 ==========
@@ -345,13 +363,10 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const messageDiv = document.getElementById('message');
-            
             if (!username || !password) {
                 messageDiv.innerHTML = '<span style="color: red;">请填写用户名和密码</span>';
                 return;
             }
-            
-            // 管理员登录
             if (username === 'huangzhiyuan' && password === '15240254891') {
                 sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: true }));
                 currentUsername = username;
@@ -359,18 +374,13 @@
                 setTimeout(() => window.location.href = 'admin.html', 1000);
                 return;
             }
-            
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 let foundUser = null;
-                
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
@@ -381,13 +391,11 @@
                         }
                     }
                 }
-                
                 if (foundUser) {
                     if (foundUser.isBanned) {
                         messageDiv.innerHTML = '<span style="color: red;">账号已被封禁，请联系管理员</span>';
                         return;
                     }
-                    
                     sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: false }));
                     currentUsername = username;
                     messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
@@ -400,11 +408,9 @@
             }
         }
 
-        function showRegister() {
-            window.location.href = 'register.html';
-        }
-
-        // 回车提交
+        function showRegister() { window.location.href = 'register.html'; }
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') login();
         });
