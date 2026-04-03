@@ -5,18 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 管理员后台</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #1a1a2e;
             min-height: 100vh;
         }
-
         .nav {
             background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
             padding: 15px 30px;
@@ -27,13 +21,7 @@
             flex-wrap: wrap;
             border-bottom: 1px solid #ffd700;
         }
-
-        .nav-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo {
             width: 40px;
             height: 40px;
@@ -42,36 +30,17 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-
-        .nav h2 {
-            font-size: 20px;
-            color: #ffd700;
-        }
-
-        .nav a {
-            color: white;
-            text-decoration: none;
-            margin-left: 20px;
-            transition: color 0.3s;
-        }
-
-        .nav a:hover {
-            color: #ffd700;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+        
+        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
         .stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
-
         .stat-card {
             background: #16213e;
             border-radius: 12px;
@@ -79,25 +48,15 @@
             text-align: center;
             border: 1px solid #2a2a3e;
         }
-
-        .stat-number {
-            font-size: 36px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
-        .stat-label {
-            color: #aaa;
-            margin-top: 8px;
-        }
-
+        .stat-number { font-size: 36px; font-weight: bold; color: #ffd700; }
+        .stat-label { color: #aaa; margin-top: 8px; }
+        
         .tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
-
         .tab-btn {
             padding: 10px 24px;
             background: #16213e;
@@ -107,13 +66,8 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-
-        .tab-btn.active {
-            background: #ffd700;
-            color: #1a1a2e;
-            border-color: #ffd700;
-        }
-
+        .tab-btn.active { background: #ffd700; color: #1a1a2e; border-color: #ffd700; }
+        
         .card {
             background: #16213e;
             border-radius: 12px;
@@ -121,20 +75,13 @@
             margin-bottom: 30px;
             border: 1px solid #2a2a3e;
         }
-
-        .card h2 {
-            color: #ffd700;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #2a2a3e;
-        }
-
+        .card h2 { color: #ffd700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3e; }
+        
         .rooms-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 20px;
         }
-
         .room-card {
             background: #1a1a2e;
             border-radius: 12px;
@@ -142,12 +89,7 @@
             border: 1px solid #2a2a3e;
             transition: transform 0.2s;
         }
-
-        .room-card:hover {
-            transform: translateY(-3px);
-            border-color: #ffd700;
-        }
-
+        .room-card:hover { transform: translateY(-3px); border-color: #ffd700; }
         .room-header {
             display: flex;
             justify-content: space-between;
@@ -156,56 +98,23 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-
-        .room-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffd700;
-        }
-
+        .room-name { font-size: 18px; font-weight: bold; color: #ffd700; }
         .room-type {
             font-size: 11px;
             padding: 3px 10px;
             border-radius: 20px;
-            background: #2a2a3e;
-            color: #aaa;
         }
-
-        .room-type.private {
-            background: #dc3545;
-            color: white;
-        }
-
-        .room-type.group {
-            background: #28a745;
-            color: white;
-        }
-
-        .room-info p {
-            color: #aaa;
-            font-size: 13px;
-            margin-bottom: 6px;
-        }
-
+        .room-type.private { background: #dc3545; color: white; }
+        .room-type.group { background: #28a745; color: white; }
+        .room-info p { color: #aaa; font-size: 13px; margin-bottom: 6px; }
         .room-members {
             background: #0f0f1a;
             border-radius: 8px;
             padding: 10px;
             margin: 12px 0;
         }
-
-        .room-members h4 {
-            color: #ffd700;
-            font-size: 12px;
-            margin-bottom: 8px;
-        }
-
-        .member-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
+        .room-members h4 { color: #ffd700; font-size: 12px; margin-bottom: 8px; }
+        .member-list { display: flex; flex-wrap: wrap; gap: 6px; }
         .member-tag {
             background: #2a2a3e;
             padding: 3px 10px;
@@ -213,57 +122,9 @@
             font-size: 11px;
             color: #ddd;
         }
-
-        .member-tag.creator {
-            background: #ffd700;
-            color: #1a1a2e;
-        }
-
-        .room-stats {
-            display: flex;
-            gap: 15px;
-            margin: 12px 0;
-            font-size: 12px;
-            color: #888;
-        }
-
-        .ban-btn, .unban-btn, .send-notification-btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-            transition: transform 0.2s;
-            width: 100%;
-            margin-top: 8px;
-        }
-
-        .ban-btn {
-            background: #dc3545;
-            color: white;
-        }
-
-        .unban-btn {
-            background: #28a745;
-            color: white;
-        }
-
-        .send-notification-btn {
-            background: #ffc107;
-            color: #1a1a2e;
-        }
-
-        .ban-btn:hover, .unban-btn:hover, .send-notification-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        /* 用户列表 */
-        .user-list {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
+        .member-tag.creator { background: #ffd700; color: #1a1a2e; }
+        
+        .user-list { max-height: 500px; overflow-y: auto; }
         .user-item {
             background: #1a1a2e;
             border-radius: 10px;
@@ -275,94 +136,42 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-
-        .user-info {
-            flex: 1;
-        }
-
-        .user-name {
-            font-weight: bold;
-            color: #ffd700;
-            margin-bottom: 5px;
-        }
-
-        .user-meta {
-            font-size: 12px;
-            color: #aaa;
-        }
-
+        .user-info { flex: 1; }
+        .user-name { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
+        .user-meta { font-size: 12px; color: #aaa; }
         .admin-badge, .banned-badge {
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 11px;
             margin-left: 8px;
         }
-
-        .admin-badge {
-            background: #ffd700;
-            color: #1a1a2e;
-        }
-
-        .banned-badge {
-            background: #dc3545;
-            color: white;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .ban-user-btn, .unban-user-btn, .notify-user-btn {
+        .admin-badge { background: #ffd700; color: #1a1a2e; }
+        .banned-badge { background: #dc3545; color: white; }
+        
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .ban-user-btn, .unban-user-btn, .notify-user-btn, .ban-btn, .unban-btn {
             padding: 6px 16px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
         }
-
-        .ban-user-btn {
-            background: #dc3545;
-            color: white;
-        }
-
-        .unban-user-btn {
-            background: #28a745;
-            color: white;
-        }
-
-        .notify-user-btn {
-            background: #ffc107;
-            color: #1a1a2e;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #aaa;
-        }
-
-        /* 模态框 */
+        .ban-user-btn, .ban-btn { background: #dc3545; color: white; }
+        .unban-user-btn, .unban-btn { background: #28a745; color: white; }
+        .notify-user-btn { background: #ffc107; color: #1a1a2e; }
+        
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
+        
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.8);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
-
         .modal-content {
             background: #16213e;
             padding: 30px;
@@ -370,12 +179,7 @@
             width: 450px;
             border: 1px solid #ffd700;
         }
-
-        .modal-content h3 {
-            color: #ffd700;
-            margin-bottom: 20px;
-        }
-
+        .modal-content h3 { color: #ffd700; margin-bottom: 20px; }
         .modal-content input, .modal-content textarea {
             width: 100%;
             padding: 12px;
@@ -386,61 +190,26 @@
             color: white;
             font-family: inherit;
         }
-
-        .modal-content textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .modal-buttons button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .modal-buttons button:first-child {
-            background: #2a2a3e;
-            color: white;
-        }
-
-        .modal-buttons button:last-child {
-            background: #ffd700;
-            color: #1a1a2e;
-        }
-
+        .modal-content textarea { resize: vertical; min-height: 100px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-buttons button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        .modal-buttons button:first-child { background: #2a2a3e; color: white; }
+        .modal-buttons button:last-child { background: #ffd700; color: #1a1a2e; }
+        
         @media (max-width: 768px) {
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-            .rooms-grid {
-                grid-template-columns: 1fr;
-            }
-            .user-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .actions {
-                align-self: flex-end;
-            }
+            .stats { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+            .rooms-grid { grid-template-columns: 1fr; }
+            .user-item { flex-direction: column; align-items: flex-start; }
+            .actions { align-self: flex-end; }
         }
     </style>
 </head>
 <body>
     <div class="nav">
-        <div class="nav-left">
-            <div class="logo"></div>
-            <h2>👑 NFLSHC Chat 管理后台</h2>
-        </div>
+        <div class="nav-left"><div class="logo"></div><h2>👑 NFLSHC Chat 管理后台</h2></div>
         <div>
             <span>欢迎，管理员 <span id="adminName"></span></span>
+            <a href="admin-suggestions.html">💡 建议审核</a>
             <a href="chat.html">💬 聊天</a>
             <a href="notice.html">📢 公告</a>
             <a href="index.html" onclick="logout()">🚪 退出</a>
@@ -449,22 +218,10 @@
 
     <div class="container">
         <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number" id="totalUsers">0</div>
-                <div class="stat-label">总用户数</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="totalRooms">0</div>
-                <div class="stat-label">聊天室总数</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="totalGroupRooms">0</div>
-                <div class="stat-label">群聊数量</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="totalPrivateRooms">0</div>
-                <div class="stat-label">私聊数量</div>
-            </div>
+            <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div class="stat-label">总用户数</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalRooms">0</div><div class="stat-label">聊天室总数</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalGroupRooms">0</div><div class="stat-label">群聊数量</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalPrivateRooms">0</div><div class="stat-label">私聊数量</div></div>
         </div>
 
         <div class="tabs">
@@ -473,32 +230,22 @@
             <button class="tab-btn" onclick="switchTab('notifications')">📨 系统通知</button>
         </div>
 
-        <!-- 聊天室列表 -->
         <div id="roomsTab" class="card">
             <h2>📋 所有聊天室</h2>
-            <div id="roomsList" class="rooms-grid">
-                <div class="loading">加载中...</div>
-            </div>
+            <div id="roomsList" class="rooms-grid"><div class="loading">加载中...</div></div>
         </div>
 
-        <!-- 用户列表 -->
         <div id="usersTab" class="card" style="display: none;">
             <h2>👥 用户管理</h2>
-            <div id="usersList" class="user-list">
-                <div class="loading">加载中...</div>
-            </div>
+            <div id="usersList" class="user-list"><div class="loading">加载中...</div></div>
         </div>
 
-        <!-- 系统通知列表 -->
         <div id="notificationsTab" class="card" style="display: none;">
             <h2>📨 系统通知记录</h2>
-            <div id="notificationsList" class="user-list">
-                <div class="loading">加载中...</div>
-            </div>
+            <div id="notificationsList" class="user-list"><div class="loading">加载中...</div></div>
         </div>
     </div>
 
-    <!-- 发送通知模态框 -->
     <div id="notifyModal" class="modal">
         <div class="modal-content">
             <h3>📨 发送系统通知</h3>
@@ -523,24 +270,13 @@
 
         function checkAdmin() {
             const userStr = sessionStorage.getItem('currentUser');
-            if (!userStr) {
-                window.location.href = 'index.html';
-                return null;
-            }
+            if (!userStr) { window.location.href = 'index.html'; return null; }
             const user = JSON.parse(userStr);
-            if (!user.isAdmin) {
-                alert('无权访问管理员后台');
-                window.location.href = 'chat.html';
-                return null;
-            }
+            if (!user.isAdmin) { alert('无权访问管理员后台'); window.location.href = 'chat.html'; return null; }
             document.getElementById('adminName').textContent = user.username;
             return user;
         }
-
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = 'index.html';
-        }
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
         async function loadAllData() {
             try {
@@ -553,10 +289,7 @@
                 allUsers = [];
                 for (const issue of userIssues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        allUsers.push({ ...userData, issueNumber: issue.number });
-                    }
+                    if (match) { const userData = JSON.parse(match[1]); allUsers.push({ ...userData, issueNumber: issue.number }); }
                 }
 
                 const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
@@ -566,10 +299,7 @@
                 allRooms = [];
                 for (const issue of roomIssues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const roomData = JSON.parse(match[1]);
-                        allRooms.push({ ...roomData, issueNumber: issue.number });
-                    }
+                    if (match) { const roomData = JSON.parse(match[1]); allRooms.push({ ...roomData, issueNumber: issue.number }); }
                 }
 
                 const messagesRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
@@ -579,13 +309,9 @@
                 allMessages = [];
                 for (const issue of messageIssues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        allMessages.push(msgData);
-                    }
+                    if (match) { allMessages.push(JSON.parse(match[1])); }
                 }
 
-                // 加载系统通知
                 const notifRes = await fetch(`${baseUrl}?labels=system_notification&state=open`, {
                     headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
@@ -593,19 +319,14 @@
                 allNotifications = [];
                 for (const issue of notifIssues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const notifData = JSON.parse(match[1]);
-                        allNotifications.push({ ...notifData, issueNumber: issue.number });
-                    }
+                    if (match) { allNotifications.push(JSON.parse(match[1])); }
                 }
 
                 updateStats();
                 renderRooms();
                 renderUsers();
                 renderNotifications();
-            } catch (error) {
-                console.error('加载数据失败:', error);
-            }
+            } catch (error) { console.error('加载数据失败:', error); }
         }
 
         function updateStats() {
@@ -617,15 +338,9 @@
             document.getElementById('totalPrivateRooms').textContent = privateRooms.length;
         }
 
-        function getMessageCount(roomId) {
-            return allMessages.filter(m => m.roomId === roomId).length;
-        }
-
-        function getActiveMembers(roomId) {
-            const senders = allMessages.filter(m => m.roomId === roomId).map(m => m.sender);
-            return [...new Set(senders)];
-        }
-
+        function getMessageCount(roomId) { return allMessages.filter(m => m.roomId === roomId).length; }
+        function getActiveMembers(roomId) { return [...new Set(allMessages.filter(m => m.roomId === roomId).map(m => m.sender))]; }
+        
         function getRoomMembersDisplay(room) {
             const activeMembers = getActiveMembers(room.id);
             if (room.type === 'group') {
@@ -640,11 +355,7 @@
 
         function renderRooms() {
             const container = document.getElementById('roomsList');
-            if (allRooms.length === 0) {
-                container.innerHTML = '<div class="empty-state">暂无聊天室</div>';
-                return;
-            }
-
+            if (allRooms.length === 0) { container.innerHTML = '<div class="empty-state">暂无聊天室</div>'; return; }
             container.innerHTML = allRooms.map(room => {
                 const members = getRoomMembersDisplay(room);
                 const messageCount = getMessageCount(room.id);
@@ -663,16 +374,12 @@
                         </div>
                         <div class="room-members">
                             <h4>📋 ${room.type === 'group' ? '活跃成员列表' : '聊天双方'}</h4>
-                            <div class="member-list">
-                                ${members.map(m => `<span class="member-tag ${m === room.creator ? 'creator' : ''}">${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}</span>`).join('')}
-                            </div>
+                            <div class="member-list">${members.map(m => `<span class="member-tag ${m === room.creator ? 'creator' : ''}">${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}</span>`).join('')}</div>
                         </div>
                         ${room.type === 'group' ? `
-                            <div>
-                                ${room.isBanned ? 
-                                    `<button class="unban-btn" onclick="toggleRoomBan('${room.id}', false)">解除封禁群聊</button>` :
-                                    `<button class="ban-btn" onclick="toggleRoomBan('${room.id}', true)">封禁群聊</button>`
-                                }
+                            <div>${room.isBanned ? 
+                                `<button class="unban-btn" onclick="toggleRoomBan('${room.id}', false)">解除封禁群聊</button>` :
+                                `<button class="ban-btn" onclick="toggleRoomBan('${room.id}', true)">封禁群聊</button>`}
                             </div>
                         ` : '<div style="margin-top: 12px;"><span style="font-size: 12px; color: #888;">💡 私聊无法封禁，只能封禁用户</span></div>'}
                     </div>
@@ -682,38 +389,24 @@
 
         function renderUsers() {
             const container = document.getElementById('usersList');
-            if (allUsers.length === 0) {
-                container.innerHTML = '<div class="empty-state">暂无用户</div>';
-                return;
-            }
-
+            if (allUsers.length === 0) { container.innerHTML = '<div class="empty-state">暂无用户</div>'; return; }
             const userRoomCount = {};
             for (const msg of allMessages) {
                 if (!userRoomCount[msg.sender]) userRoomCount[msg.sender] = new Set();
                 userRoomCount[msg.sender].add(msg.roomId);
             }
-
             container.innerHTML = allUsers.map(user => `
                 <div class="user-item">
                     <div class="user-info">
-                        <div class="user-name">
-                            ${escapeHtml(user.username)}
-                            ${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}
-                            ${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}
-                        </div>
-                        <div class="user-meta">
-                            注册时间: ${new Date(user.createdAt).toLocaleString()}<br>
-                            参与聊天室: ${userRoomCount[user.username]?.size || 0} 个<br>
-                            发送消息: ${allMessages.filter(m => m.sender === user.username).length} 条
-                        </div>
+                        <div class="user-name">${escapeHtml(user.username)}${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}</div>
+                        <div class="user-meta">注册时间: ${new Date(user.createdAt).toLocaleString()}<br>参与聊天室: ${userRoomCount[user.username]?.size || 0} 个<br>发送消息: ${allMessages.filter(m => m.sender === user.username).length} 条</div>
                     </div>
                     <div class="actions">
                         ${user.username !== 'huangzhiyuan' ? `
                             <button class="notify-user-btn" onclick="showNotifyModal('${user.username}')">📨 发通知</button>
                             ${user.isBanned ? 
                                 `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
-                                `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`
-                            }
+                                `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`}
                         ` : ''}
                     </div>
                 </div>
@@ -722,21 +415,13 @@
 
         function renderNotifications() {
             const container = document.getElementById('notificationsList');
-            if (allNotifications.length === 0) {
-                container.innerHTML = '<div class="empty-state">暂无系统通知记录</div>';
-                return;
-            }
-
+            if (allNotifications.length === 0) { container.innerHTML = '<div class="empty-state">暂无系统通知记录</div>'; return; }
             allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
             container.innerHTML = allNotifications.map(notif => `
                 <div class="user-item">
                     <div class="user-info">
                         <div class="user-name">📨 ${escapeHtml(notif.title)}</div>
-                        <div class="user-meta">
-                            发送给: ${escapeHtml(notif.targetUser)}<br>
-                            发送时间: ${new Date(notif.sentAt).toLocaleString()}<br>
-                            内容: ${escapeHtml(notif.content)}
-                        </div>
+                        <div class="user-meta">发送给: ${escapeHtml(notif.targetUser)}<br>发送时间: ${new Date(notif.sentAt).toLocaleString()}<br>内容: ${escapeHtml(notif.content)}</div>
                     </div>
                 </div>
             `).join('');
@@ -745,12 +430,7 @@
         async function sendSystemNotification() {
             const title = document.getElementById('notifyTitle').value.trim();
             const content = document.getElementById('notifyMessage').value.trim();
-            
-            if (!title || !content) {
-                alert('请填写通知标题和内容');
-                return;
-            }
-
+            if (!title || !content) { alert('请填写通知标题和内容'); return; }
             const notificationData = {
                 id: `notif_${Date.now()}`,
                 type: 'system',
@@ -761,40 +441,21 @@
                 sentAt: new Date().toISOString(),
                 isRead: false
             };
-
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
                 const issueBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
-                await fetch(url, {
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `系统通知: ${title}`, body: issueBody, labels: ['system_notification'] })
                 });
-                
                 alert(`通知已发送给 ${currentNotifyUser}`);
                 closeNotifyModal();
                 loadAllData();
-            } catch (error) {
-                alert('发送失败: ' + error.message);
-            }
+            } catch (error) { alert('发送失败: ' + error.message); }
         }
 
-        function showNotifyModal(username) {
-            currentNotifyUser = username;
-            document.getElementById('notifyTargetUser').textContent = username;
-            document.getElementById('notifyTitle').value = '';
-            document.getElementById('notifyMessage').value = '';
-            document.getElementById('notifyModal').style.display = 'flex';
-        }
-
-        function closeNotifyModal() {
-            document.getElementById('notifyModal').style.display = 'none';
-            currentNotifyUser = null;
-        }
+        function showNotifyModal(username) { currentNotifyUser = username; document.getElementById('notifyTargetUser').textContent = username; document.getElementById('notifyTitle').value = ''; document.getElementById('notifyMessage').value = ''; document.getElementById('notifyModal').style.display = 'flex'; }
+        function closeNotifyModal() { document.getElementById('notifyModal').style.display = 'none'; currentNotifyUser = null; }
 
         async function toggleUserBan(username, shouldBan) {
             if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？`)) return;
@@ -835,31 +496,15 @@
             roomsTab.style.display = 'none';
             usersTab.style.display = 'none';
             notificationsTab.style.display = 'none';
-            if (tab === 'rooms') {
-                roomsTab.style.display = 'block';
-                btns[0].classList.add('active');
-            } else if (tab === 'users') {
-                usersTab.style.display = 'block';
-                btns[1].classList.add('active');
-            } else {
-                notificationsTab.style.display = 'block';
-                btns[2].classList.add('active');
-                renderNotifications();
-            }
+            if (tab === 'rooms') { roomsTab.style.display = 'block'; btns[0].classList.add('active'); }
+            else if (tab === 'users') { usersTab.style.display = 'block'; btns[1].classList.add('active'); }
+            else { notificationsTab.style.display = 'block'; btns[2].classList.add('active'); renderNotifications(); }
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
         currentAdmin = checkAdmin();
-        if (currentAdmin) {
-            loadAllData();
-            setInterval(loadAllData, 30000);
-        }
+        if (currentAdmin) { loadAllData(); setInterval(loadAllData, 30000); }
     </script>
 </body>
 </html>
