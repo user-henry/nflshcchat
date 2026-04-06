@@ -264,6 +264,25 @@
             opacity: 1;
         }
         
+        .favorite-btn {
+            position: absolute;
+            bottom: -8px;
+            right: -8px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+        .message-bubble-wrapper:hover .favorite-btn {
+            opacity: 1;
+        }
+        
         .message-time {
             font-size: 10px;
             color: #666;
@@ -373,7 +392,6 @@
             .message { max-width: 85%; }
         }
     </style>
-    <!-- 引入 marked.js 用于 Markdown 渲染 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
@@ -382,6 +400,11 @@
         <div>
             <span>欢迎，<span id="username"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
             <a href="profile.html">👤 个人资料</a>
+            <a href="stats.html">📊 统计</a>
+            <a href="export.html">📤 导出</a>
+            <a href="favorites.html">⭐ 收藏</a>
+            <a href="search.html">🔍 搜索</a>
+            <a href="settings.html">⚙️ 设置</a>
             <span class="notification-btn" onclick="toggleNotificationPanel(event)">🔔 <span id="notificationCount" class="notification-badge zero">0</span></span>
             <a href="suggestions.html">💡 意见反馈</a>
             <a href="notice.html">📢 公告</a>
@@ -517,113 +540,72 @@
         let allNotifications = [];
         let pendingJoinRoom = null;
 
-        // 配置 marked 选项
         if (typeof marked !== 'undefined') {
-            marked.setOptions({
-                breaks: true,
-                gfm: true,
-                headerIds: false,
-                mangle: false
-            });
+            marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
         }
 
-        // ========== 辅助函数 ==========
-        function logout() { 
-            sessionStorage.clear(); 
-            window.location.href = 'index.html'; 
-        }
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         
-        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
+        function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
         
-        function isSystemAdmin(username) {
-            return username === 'huangzhiyuan';
-        }
-        
-        // 修复后的 Markdown 渲染函数（正确处理 @ 语法，使用不会被 Markdown 解析的占位符）
         function renderMarkdown(content) {
             if (!content) return '';
-            
-            // 步骤1：使用零宽字符占位符保护 @ 语法，避免被 Markdown 解析器破坏
-            // 零宽字符不会影响 Markdown 解析，也不会被显示
             const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
             const mentions = [];
             let tempContent = content.replace(mentionPattern, (match) => {
                 mentions.push(match);
                 return `\u200B\u200BMENTION_${mentions.length - 1}\u200B\u200B`;
             });
-            
-            // 步骤2：渲染 Markdown
             let html = tempContent;
             if (typeof marked !== 'undefined') {
                 try {
                     html = marked.parse(tempContent);
-                    if (html && typeof html.then === 'function') {
-                        html = tempContent;
-                    }
-                } catch (e) {
-                    console.error('Markdown 渲染失败:', e);
-                    html = tempContent;
-                }
+                    if (html && typeof html.then === 'function') html = tempContent;
+                } catch (e) { html = tempContent; }
             }
-            
-            // 步骤3：基础格式处理（备用）
             html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-            
-            // 步骤4：恢复 @ 语法并添加高亮样式（同时移除零宽字符）
             for (let i = 0; i < mentions.length; i++) {
                 const mention = mentions[i];
                 const mentionClass = mention === '@所有人' ? 'mention-all' : 'mention';
-                // 匹配包含零宽字符的占位符
                 const regex = new RegExp(`\u200B\u200BMENTION_${i}\u200B\u200B`, 'g');
                 html = html.replace(regex, `<span class="${mentionClass}">${mention}</span>`);
             }
-            
             return html;
         }
         
-        // 实时预览函数
         function updatePreview() {
             const input = document.getElementById('messageInput');
             const previewDiv = document.getElementById('previewContent');
             if (input && previewDiv) {
                 const rawText = input.value;
-                if (rawText.trim() === '') {
-                    previewDiv.innerHTML = '';
-                } else {
-                    previewDiv.innerHTML = renderMarkdown(rawText);
-                }
+                previewDiv.innerHTML = rawText.trim() === '' ? '' : renderMarkdown(rawText);
             }
         }
         
         function togglePrivateUser() {
             const type = document.getElementById('roomType').value;
-            const isPrivate = type === 'private';
-            document.getElementById('privateUser').style.display = isPrivate ? 'block' : 'none';
-            document.getElementById('groupSettings').style.display = isPrivate ? 'none' : 'block';
+            document.getElementById('privateUser').style.display = type === 'private' ? 'block' : 'none';
+            document.getElementById('groupSettings').style.display = type === 'private' ? 'none' : 'block';
         }
         document.getElementById('roomType').addEventListener('change', togglePrivateUser);
         document.getElementById('joinType').addEventListener('change', function() {
             document.getElementById('verifyCodeGroup').style.display = this.value === 'verify' ? 'block' : 'none';
         });
 
-        // ========== 认证 ==========
         function checkAuth() {
             const userStr = sessionStorage.getItem('currentUser');
             if (!userStr) { window.location.href = 'index.html'; return null; }
             const user = JSON.parse(userStr);
             document.getElementById('username').textContent = user.username;
-            if (user.isAdmin) {
-                document.getElementById('adminBadge').style.display = 'inline-block';
-            }
+            if (user.isAdmin) document.getElementById('adminBadge').style.display = 'inline-block';
             return user;
         }
 
-        // ========== 通知功能 ==========
         async function loadNotifications() {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
@@ -678,7 +660,6 @@
             if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('show');
         });
 
-        // ========== 聊天室功能 ==========
         async function loadRooms() {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
@@ -707,10 +688,7 @@
             if (allRooms.length === 0) { container.innerHTML = '<div class="empty-state">暂无聊天室<br>点击上方按钮创建</div>'; return; }
             container.innerHTML = allRooms.map(room => `
                 <div class="room-item ${currentRoom && currentRoom.id === room.id ? 'active' : ''}" onclick="selectRoom('${room.id}')">
-                    <div class="room-name">
-                        ${escapeHtml(room.name)}
-                        ${room.joinType === 'verify' ? '<span class="room-verify-badge">🔐 验证码</span>' : ''}
-                    </div>
+                    <div class="room-name">${escapeHtml(room.name)}${room.joinType === 'verify' ? '<span class="room-verify-badge">🔐 验证码</span>' : ''}</div>
                     <div class="room-type">${room.type === 'group' ? '👥 群聊' : '🔒 私聊'}</div>
                 </div>
             `).join('');
@@ -738,6 +716,37 @@
             } catch (error) { console.error('加载消息失败:', error); }
         }
 
+        async function favoriteMessage(messageId) {
+            const msg = allMessages.find(m => m.id === messageId);
+            if (!msg) { alert('消息不存在'); return; }
+            
+            const favoriteData = {
+                id: `fav_${Date.now()}`,
+                messageId: msg.id,
+                roomId: msg.roomId,
+                sender: msg.sender,
+                content: msg.content,
+                user: currentUser.username,
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                const issueBody = `收藏消息\n\`\`\`json\n${JSON.stringify(favoriteData, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `Favorite: ${favoriteData.id}`, body: issueBody, labels: ['favorite'] })
+                });
+                alert('⭐ 已收藏');
+            } catch (error) {
+                alert('收藏失败：' + error.message);
+            }
+        }
+
         function renderMessages(roomId) {
             const container = document.getElementById('chatMessages');
             const roomMessages = messages[roomId] || [];
@@ -751,6 +760,7 @@
                         <div class="message-bubble-wrapper">
                             <div class="message-bubble">${renderedHtml}</div>
                             ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
+                            <button class="favorite-btn" onclick="favoriteMessage('${msg.id}')">⭐</button>
                         </div>
                         <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
                     </div>
@@ -762,10 +772,7 @@
         async function recallMessage(messageId) {
             const msg = allMessages.find(m => m.id === messageId);
             if (!msg || msg.sender !== currentUser.username) return;
-            if (Date.now() - new Date(msg.timestamp).getTime() > 120000) {
-                alert('只能撤回2分钟内的消息');
-                return;
-            }
+            if (Date.now() - new Date(msg.timestamp).getTime() > 120000) { alert('只能撤回2分钟内的消息'); return; }
             msg.isRecalled = true;
             const updatedBody = `聊天消息\n\`\`\`json\n${JSON.stringify(msg, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${msg.issueNumber}`, {
@@ -777,14 +784,10 @@
         }
 
         function getGroupActiveMembers(roomId) {
-            const senders = allMessages
-                .filter(m => m.roomId === roomId && !m.isRecalled)
-                .map(m => m.sender);
+            const senders = allMessages.filter(m => m.roomId === roomId && !m.isRecalled).map(m => m.sender);
             const uniqueMembers = [...new Set(senders)];
             const room = allRooms.find(r => r.id === roomId);
-            if (room && room.creator && !uniqueMembers.includes(room.creator)) {
-                uniqueMembers.push(room.creator);
-            }
+            if (room && room.creator && !uniqueMembers.includes(room.creator)) uniqueMembers.push(room.creator);
             return uniqueMembers;
         }
 
@@ -796,10 +799,7 @@
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
             
-            const currentRoomMessages = allMessages
-                .filter(m => m.roomId === currentRoom.id && m.sender === currentUser.username && !m.isRecalled)
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
+            const currentRoomMessages = allMessages.filter(m => m.roomId === currentRoom.id && m.sender === currentUser.username && !m.isRecalled).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             if (currentRoomMessages.length > 0) {
                 const lastMessage = currentRoomMessages[0];
                 if (lastMessage.content === content) {
@@ -811,9 +811,7 @@
                             headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                             body: JSON.stringify({ body: updatedBody })
                         });
-                    } else {
-                        return;
-                    }
+                    } else { return; }
                 }
             }
             
@@ -822,7 +820,6 @@
             const mentionPattern = /@([a-zA-Z0-9_\u4e00-\u9fa5]+)/g;
             const userMentions = [...content.matchAll(mentionPattern)].map(m => m[1]);
             mentionedUsers.push(...userMentions);
-            
             if (hasMentionAll && currentRoom.type === 'group') {
                 const allMembers = getGroupActiveMembers(currentRoom.id);
                 const otherMembers = allMembers.filter(m => m !== currentUser.username);
@@ -847,18 +844,11 @@
                     headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
                 });
-                
                 for (const mentionedUser of mentionedUsers) {
                     if (mentionedUser === currentUser.username) continue;
                     const userExists = await checkUserExists(mentionedUser);
                     if (userExists || isSystemAdmin(mentionedUser)) {
-                        let notificationTitle = '📢 有人@了你';
-                        let notificationContent = `${currentUser.username} 在群聊「${currentRoom.name}」中提到了你`;
-                        if (mentionedUser === '所有人') {
-                            notificationTitle = '📢 群聊全员通知';
-                            notificationContent = `${currentUser.username} 在群聊「${currentRoom.name}」中@了所有人`;
-                        }
-                        await sendMentionNotification(mentionedUser, currentUser.username, currentRoom.name, currentRoom.id, notificationTitle, notificationContent);
+                        await sendMentionNotification(mentionedUser, currentUser.username, currentRoom.name, currentRoom.id);
                     }
                 }
                 input.value = '';
@@ -867,12 +857,12 @@
             } catch (error) { alert('发送失败：' + error.message); }
         }
 
-        async function sendMentionNotification(mentionedUser, sender, roomName, roomId, customTitle, customContent) {
+        async function sendMentionNotification(mentionedUser, sender, roomName, roomId) {
             const notificationData = {
                 id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
                 type: 'mention',
-                title: customTitle || `📢 有人@了你`,
-                content: customContent || `${sender} 在群聊「${roomName}」中提到了你，快去看看！`,
+                title: `📢 有人@了你`,
+                content: `${sender} 在群聊「${roomName}」中提到了你，快去看看！`,
                 targetUser: mentionedUser,
                 sender: sender,
                 roomId: roomId,
@@ -890,25 +880,15 @@
         async function selectRoom(roomId) {
             const room = allRooms.find(r => r.id === roomId);
             if (!room) return;
-            
-            if (room.isBanned) { 
-                alert('该群聊已被封禁'); 
-                return; 
-            }
-            
+            if (room.isBanned) { alert('该群聊已被封禁'); return; }
             if (room.type === 'private') {
                 currentRoom = room;
-                document.getElementById('chatHeader').innerHTML = `
-                    <h3>${escapeHtml(currentRoom.name)}</h3>
-                    <p>私聊 · 仅你们两人可见</p>
-                    <div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>
-                `;
+                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}</h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
                 document.getElementById('inputContainer').style.display = 'block';
                 await loadMessages();
                 startPolling();
                 return;
             }
-            
             if (room.joinType === 'verify') {
                 const isMember = room.members && room.members.includes(currentUser.username);
                 if (!isMember) {
@@ -921,45 +901,27 @@
                     return;
                 }
             }
-            
             currentRoom = room;
-            document.getElementById('chatHeader').innerHTML = `
-                <h3>
-                    ${escapeHtml(currentRoom.name)}
-                    <button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>
-                </h3>
-                ${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}
-                ${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}
-                <div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>
-            `;
+            document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
             document.getElementById('inputContainer').style.display = 'block';
             await loadMessages();
             startPolling();
         }
 
-        // ========== 群管理功能 ==========
         function showRoomSettings() {
             if (currentRoom.type !== 'group') { alert('只有群聊可以设置'); return; }
             const isOwner = currentRoom.creator === currentUser.username;
             const isAdmin = currentRoom.admins && currentRoom.admins.includes(currentUser.username);
             const canEdit = isOwner || isAdmin;
-            
             document.getElementById('settingsRoomName').textContent = currentRoom.name;
             document.getElementById('roomAnnouncement').value = currentRoom.announcement || '';
             document.getElementById('editJoinType').value = currentRoom.joinType || 'public';
             document.getElementById('editVerifyCode').value = currentRoom.verifyCode || '';
             document.getElementById('editVerifyGroup').style.display = (currentRoom.joinType === 'verify') ? 'block' : 'none';
-            
             const admins = currentRoom.admins || [];
             const adminListDiv = document.getElementById('adminList');
-            adminListDiv.innerHTML = admins.map(admin => `
-                <div style="display: flex; justify-content: space-between; padding: 5px 0;">
-                    <span>${escapeHtml(admin)}</span>
-                    ${isOwner && admin !== currentRoom.creator ? `<button onclick="removeAdmin('${admin}')" style="background: #dc3545; padding: 2px 8px;">移除</button>` : ''}
-                </div>
-            `).join('');
+            adminListDiv.innerHTML = admins.map(admin => `<div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>${escapeHtml(admin)}</span>${isOwner && admin !== currentRoom.creator ? `<button onclick="removeAdmin('${admin}')" style="background: #dc3545; padding: 2px 8px;">移除</button>` : ''}</div>`).join('');
             if (admins.length === 0) adminListDiv.innerHTML = '<div style="padding: 5px; color: #aaa;">暂无管理员</div>';
-            
             document.getElementById('adminOnlySettings').style.display = canEdit ? 'block' : 'none';
             document.getElementById('normalUserSettings').style.display = canEdit ? 'none' : 'block';
             document.getElementById('saveSettingsBtn').style.display = canEdit ? 'block' : 'none';
@@ -967,26 +929,17 @@
         }
 
         function closeRoomSettingsModal() { document.getElementById('roomSettingsModal').style.display = 'none'; }
-        
-        function generateRandomCode() {
-            const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-            document.getElementById('editVerifyCode').value = code;
-        }
+        function generateRandomCode() { const code = Math.random().toString(36).substring(2, 10).toUpperCase(); document.getElementById('editVerifyCode').value = code; }
         
         async function saveRoomSettings() {
             const announcement = document.getElementById('roomAnnouncement').value.trim();
             const joinType = document.getElementById('editJoinType').value;
             const verifyCode = document.getElementById('editVerifyCode').value.trim();
-            
             currentRoom.announcement = announcement;
             currentRoom.joinType = joinType;
-            if (joinType === 'verify') {
-                currentRoom.verifyCode = verifyCode || generateRandomCode();
-            } else {
-                currentRoom.verifyCode = null;
-            }
+            if (joinType === 'verify') currentRoom.verifyCode = verifyCode || generateRandomCode();
+            else currentRoom.verifyCode = null;
             currentRoom.updatedAt = new Date().toISOString();
-            
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
                 method: 'PATCH',
@@ -1001,10 +954,7 @@
         async function addAdmin() {
             const username = document.getElementById('addAdminUser').value.trim();
             if (!username) return;
-            if (isSystemAdmin(username)) {
-                alert('系统管理员不能被添加为群管理员');
-                return;
-            }
+            if (isSystemAdmin(username)) { alert('系统管理员不能被添加为群管理员'); return; }
             if (!currentRoom.admins) currentRoom.admins = [];
             if (currentRoom.admins.includes(username)) { alert('已是管理员'); return; }
             currentRoom.admins.push(username);
@@ -1034,9 +984,7 @@
         
         async function leaveRoom() {
             if (!confirm('确定要退出该群聊吗？')) return;
-            if (currentRoom.members) {
-                currentRoom.members = currentRoom.members.filter(m => m !== currentUser.username);
-            }
+            if (currentRoom.members) currentRoom.members = currentRoom.members.filter(m => m !== currentUser.username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
                 method: 'PATCH',
@@ -1057,38 +1005,25 @@
             const type = document.getElementById('roomType').value;
             const privateUser = document.getElementById('privateUser').value.trim();
             if (!name) { alert('请输入聊天室名称'); return; }
-            
             if (type === 'private') {
                 if (!privateUser) { alert('请输入私聊对象用户名'); return; }
                 if (privateUser === currentUser.username) { alert('不能与自己私聊'); return; }
-                if (isSystemAdmin(privateUser)) {
-                    const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
-                    if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
-                } else {
-                    const userExists = await checkUserExists(privateUser);
-                    if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
-                    const isBanned = await checkUserBanned(privateUser);
-                    if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
-                    const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
-                    if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
-                }
+                const userExists = await checkUserExists(privateUser);
+                if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
+                const isBanned = await checkUserBanned(privateUser);
+                if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
+                const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
+                if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
             }
-            
             const joinType = document.getElementById('joinType').value;
             const customVerifyCode = document.getElementById('customVerifyCode').value.trim();
             const verifyCode = (joinType === 'verify') ? (customVerifyCode || generateRandomCode()) : null;
-            
             const roomData = {
                 id: `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                name: name,
-                type: type,
-                creator: currentUser.username,
+                name: name, type: type, creator: currentUser.username,
                 members: type === 'private' ? [currentUser.username, privateUser] : [],
-                admins: [],
-                joinType: type === 'group' ? joinType : null,
-                verifyCode: verifyCode,
-                announcement: '',
-                isBanned: false,
+                admins: [], joinType: type === 'group' ? joinType : null,
+                verifyCode: verifyCode, announcement: '', isBanned: false,
                 createdAt: new Date().toISOString()
             };
             try {
@@ -1106,10 +1041,7 @@
 
         async function confirmJoinRoom() {
             const enteredCode = document.getElementById('joinVerifyCode').value.trim();
-            if (enteredCode !== pendingJoinRoom.verifyCode) {
-                document.getElementById('joinMessage').innerHTML = '<span style="color: #dc3545;">❌ 验证码错误</span>';
-                return;
-            }
+            if (enteredCode !== pendingJoinRoom.verifyCode) { document.getElementById('joinMessage').innerHTML = '<span style="color: #dc3545;">❌ 验证码错误</span>'; return; }
             await doJoinRoom(pendingJoinRoom);
             closeJoinRoomModal();
             await selectRoom(pendingJoinRoom.id);
@@ -1117,10 +1049,7 @@
         
         async function doJoinRoom(room) {
             if (!room.members) room.members = [];
-            if (room.members.includes(currentUser.username)) {
-                alert('您已在群聊中');
-                return;
-            }
+            if (room.members.includes(currentUser.username)) { alert('您已在群聊中'); return; }
             room.members.push(currentUser.username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${room.issueNumber}`, {
@@ -1170,10 +1099,7 @@
             } catch (error) { return false; }
         }
 
-        function viewProfile(username) { 
-            window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank'); 
-        }
-
+        function viewProfile(username) { window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank'); }
         function startPolling() {
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(async () => {
@@ -1182,23 +1108,17 @@
             }, 3000);
         }
 
-        // ========== 初始化 ==========
         window.onload = async function() {
             currentUser = checkAuth();
             if (!currentUser) return;
-            
             await loadRooms();
             await loadNotifications();
             startPolling();
-            
             const input = document.getElementById('messageInput');
             if (input) {
                 input.addEventListener('input', updatePreview);
                 input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
                 });
             }
         };
