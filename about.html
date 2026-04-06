@@ -164,19 +164,7 @@
         <div>
             <span>欢迎，<span id="username"></span></span>
             <a href="chat.html">💬 聊天</a>
-            <a href="stats.html">📊 统计</a>
-            <a href="export.html">📤 导出</a>
-            <a href="favorites.html">⭐ 收藏</a>
-            <a href="search.html">🔍 搜索</a>
-            <a href="about.html">ℹ️ 关于</a>
-            <span class="notification-btn" onclick="toggleNotificationPanel(event)">🔔 <span id="notificationCount" class="notification-badge zero">0</span></span>
-            <a href="suggestions.html">💡 意见反馈</a>
-            <a href="notice.html">📢 公告</a>
             <a href="#" onclick="logout()">🚪 退出</a>
-        </div>
-        <div id="notificationPanel" class="notification-panel">
-            <div class="notification-header">📨 系统通知</div>
-            <div id="notificationList" style="padding: 0;">加载中...</div>
         </div>
     </div>
 
@@ -231,11 +219,6 @@
                     <p>使用 @用户名 或 @所有人 通知其他成员</p>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🎨</div>
-                    <h4>多主题切换</h4>
-                    <p>暗色、浅色、蓝色、紫色、绿色多种主题</p>
-                </div>
-                <div class="feature-item">
                     <div class="feature-icon">🔒</div>
                     <h4>隐私保护</h4>
                     <p>数据存储在 GitHub Issues，完全透明可控</p>
@@ -271,9 +254,9 @@
             - 新增消息搜索功能<br>
             - 新增聊天记录导出功能<br>
             - 新增群聊统计面板（词云、趋势图、排行榜）<br>
-            - 新增多主题切换功能<br>
             - 新增 @所有人 通知功能<br>
-            - 优化 UI 界面和移动端适配<br>
+            - 优化 UI 界面（改进颜色搭配、圆角、阴影、间距等视觉元素）<br>
+            - 移动端适配（响应式设计，在不同屏幕尺寸下正常显示）<br>
             - 修复多个已知 Bug</p>
             <p><strong>v1.0.0 (2026年3月)</strong><br>
             - 基础聊天功能（群聊/私聊）<br>
@@ -301,7 +284,6 @@
     <script src="config.js"></script>
     <script>
         let currentUser = null;
-        let allNotifications = [];
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
@@ -314,86 +296,7 @@
             return user;
         }
 
-        async function loadNotifications() {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await res.json();
-                allNotifications = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const notif = JSON.parse(match[1]);
-                        if (notif.targetUser === currentUser.username) {
-                            allNotifications.push({ ...notif, issueNumber: issue.number });
-                        }
-                    }
-                }
-                updateNotificationUI();
-            } catch (error) { console.error('加载通知失败:', error); }
-        }
-
-        function updateNotificationUI() {
-            const unreadCount = allNotifications.filter(n => !n.isRead).length;
-            const badge = document.getElementById('notificationCount');
-            if (badge) {
-                badge.textContent = unreadCount;
-                badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
-            }
-            const container = document.getElementById('notificationList');
-            if (!container) return;
-            if (allNotifications.length === 0) {
-                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>';
-                return;
-            }
-            allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
-            container.innerHTML = allNotifications.map(n => `
-                <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead('${n.id}')">
-                    <div class="notification-title">📨 ${escapeHtml(n.title)}</div>
-                    <div class="notification-content">${escapeHtml(n.content)}</div>
-                    <div class="notification-time">${new Date(n.sentAt).toLocaleString()}</div>
-                </div>
-            `).join('');
-        }
-
-        async function markAsRead(notificationId) {
-            const notif = allNotifications.find(n => n.id === notificationId);
-            if (!notif || notif.isRead) return;
-            notif.isRead = true;
-            const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            await loadNotifications();
-        }
-
-        function toggleNotificationPanel(event) {
-            event.stopPropagation();
-            const panel = document.getElementById('notificationPanel');
-            if (panel) panel.classList.toggle('show');
-        }
-
-        document.addEventListener('click', function(e) {
-            const panel = document.getElementById('notificationPanel');
-            const btn = document.querySelector('.notification-btn');
-            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
-                panel.classList.remove('show');
-            }
-        });
-
         currentUser = checkAuth();
-        if (currentUser) {
-            loadNotifications();
-            setInterval(loadNotifications, 30000);
-        }
     </script>
 </body>
 </html>
