@@ -151,7 +151,7 @@
         function renderFavorites(favorites) {
             const container = document.getElementById('favoritesList');
             if (favorites.length === 0) {
-                container.innerHTML = '<div class="empty-state">⭐ 暂无收藏，在聊天中点击消息右上角的⭐按钮即可收藏</div>';
+                container.innerHTML = '<div class="empty-state">⭐ 暂无收藏，在聊天中点击消息右下角的⭐按钮即可收藏</div>';
                 return;
             }
             container.innerHTML = favorites.map(fav => `
