@@ -541,17 +541,17 @@
             return username === 'huangzhiyuan';
         }
         
-        // 修复后的 Markdown 渲染函数（正确处理 @ 语法）
+        // 修复后的 Markdown 渲染函数（正确处理 @ 语法，使用不会被 Markdown 解析的占位符）
         function renderMarkdown(content) {
             if (!content) return '';
             
-            // 步骤1：保护 @语法 不被 Markdown 解析器破坏
-            // 匹配 @用户名 或 @所有人
+            // 步骤1：使用零宽字符占位符保护 @ 语法，避免被 Markdown 解析器破坏
+            // 零宽字符不会影响 Markdown 解析，也不会被显示
             const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
             const mentions = [];
             let tempContent = content.replace(mentionPattern, (match) => {
                 mentions.push(match);
-                return `__PROTECTED_MENTION_${mentions.length - 1}__`;
+                return `\u200B\u200BMENTION_${mentions.length - 1}\u200B\u200B`;
             });
             
             // 步骤2：渲染 Markdown
@@ -559,7 +559,6 @@
             if (typeof marked !== 'undefined') {
                 try {
                     html = marked.parse(tempContent);
-                    // 如果返回 Promise，使用同步版本
                     if (html && typeof html.then === 'function') {
                         html = tempContent;
                     }
@@ -575,11 +574,12 @@
             html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
             
-            // 步骤4：恢复 @语法 并添加高亮样式
+            // 步骤4：恢复 @ 语法并添加高亮样式（同时移除零宽字符）
             for (let i = 0; i < mentions.length; i++) {
                 const mention = mentions[i];
                 const mentionClass = mention === '@所有人' ? 'mention-all' : 'mention';
-                const regex = new RegExp(`__PROTECTED_MENTION_${i}__`, 'g');
+                // 匹配包含零宽字符的占位符
+                const regex = new RegExp(`\u200B\u200BMENTION_${i}\u200B\u200B`, 'g');
                 html = html.replace(regex, `<span class="${mentionClass}">${mention}</span>`);
             }
             
