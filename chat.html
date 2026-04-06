@@ -154,10 +154,65 @@
             background: #1a1a2e;
             color: white;
             word-wrap: break-word;
+            line-height: 1.5;
         }
         .message.own .message-bubble {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
+        }
+        /* Markdown 样式 */
+        .message-bubble code {
+            background: rgba(0,0,0,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+        .message-bubble pre {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+        .message-bubble pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .message-bubble a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+        .message-bubble a:hover {
+            text-decoration: underline;
+        }
+        .message-bubble blockquote {
+            border-left: 3px solid #ffd700;
+            margin: 8px 0;
+            padding-left: 12px;
+            color: #ccc;
+        }
+        .message-bubble ul, .message-bubble ol {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .message-bubble h1, .message-bubble h2, .message-bubble h3 {
+            margin: 8px 0;
+        }
+        .message-bubble h1 { font-size: 1.4em; }
+        .message-bubble h2 { font-size: 1.2em; }
+        .message-bubble h3 { font-size: 1.1em; }
+        .message-bubble table {
+            border-collapse: collapse;
+            margin: 8px 0;
+        }
+        .message-bubble th, .message-bubble td {
+            border: 1px solid #555;
+            padding: 4px 8px;
+        }
+        .message-bubble img {
+            max-width: 100%;
+            border-radius: 8px;
         }
         .message-bubble .mention {
             background: #2ecc71;
@@ -254,6 +309,8 @@
             .message { max-width: 85%; }
         }
     </style>
+    <!-- 引入 marked.js 用于 Markdown 渲染 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="nav">
@@ -285,7 +342,7 @@
             <div class="chat-header" id="chatHeader"><h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p></div>
             <div class="chat-messages" id="chatMessages"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
             <div class="chat-input-area" id="chatInputArea" style="display: none;">
-                <textarea class="chat-input" id="messageInput" placeholder="输入消息... (使用 @用户名 可以提到某人，@所有人 可以通知全体成员)" rows="2"></textarea>
+                <textarea class="chat-input" id="messageInput" placeholder="输入消息... (支持 Markdown 格式，使用 @用户名 可以提到某人，@所有人 可以通知全体成员)" rows="2"></textarea>
                 <button class="send-btn" onclick="sendMessage()">发送</button>
             </div>
         </div>
@@ -387,6 +444,16 @@
         let allNotifications = [];
         let pendingJoinRoom = null;
 
+        // 配置 marked 选项
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                headerIds: false,
+                mangle: false
+            });
+        }
+
         // ========== 辅助函数 ==========
         function logout() { 
             sessionStorage.clear(); 
@@ -399,6 +466,42 @@
         
         function isSystemAdmin(username) {
             return username === 'huangzhiyuan';
+        }
+        
+        // Markdown 渲染函数（保留 @ 高亮）
+        function renderMarkdown(content) {
+            if (!content) return '';
+            // 先提取 @用户名 和 @所有人，避免被 Markdown 转义
+            const mentionPattern = /(@\w+|@所有人)/g;
+            const mentions = [];
+            let tempContent = content.replace(mentionPattern, (match) => {
+                mentions.push(match);
+                return `__MENTION_${mentions.length - 1}__`;
+            });
+            
+            // 渲染 Markdown
+            let html = tempContent;
+            if (typeof marked !== 'undefined') {
+                html = marked.parse(tempContent);
+                if (html && typeof html.then === 'function') {
+                    // 如果是异步，同步处理
+                    html = tempContent;
+                }
+            }
+            // 简单的行内代码处理（如果 marked 不可用）
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            
+            // 恢复 @ 高亮
+            for (let i = 0; i < mentions.length; i++) {
+                const mention = mentions[i];
+                const mentionClass = mention === '@所有人' ? 'mention-all' : 'mention';
+                html = html.replace(`__MENTION_${i}__`, `<span class="${mentionClass}">${mention}</span>`);
+            }
+            
+            return html;
         }
         
         function togglePrivateUser() {
@@ -544,21 +647,14 @@
             const roomMessages = messages[roomId] || [];
             if (roomMessages.length === 0) { container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>'; return; }
             container.innerHTML = roomMessages.map(msg => {
-                let contentHtml = escapeHtml(msg.content);
-                // 高亮 @所有人
-                contentHtml = contentHtml.replace(/@所有人/g, '<span class="mention-all">@所有人</span>');
-                // 高亮 @用户名
-                const mentionPattern = /@(\w+)/g;
-                contentHtml = contentHtml.replace(mentionPattern, (match, username) => {
-                    if (username === currentUser.username) return `<span class="mention">${match}</span>`;
-                    return match;
-                });
+                // 使用 Markdown 渲染消息内容
+                const renderedHtml = renderMarkdown(msg.content);
                 const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
                 return `
                     <div class="message ${msg.sender === currentUser.username ? 'own' : ''}" data-msg-id="${msg.id}">
                         <div class="message-sender" onclick="viewProfile('${escapeHtml(msg.sender)}')">${escapeHtml(msg.sender)}</div>
                         <div class="message-bubble-wrapper">
-                            <div class="message-bubble">${contentHtml}</div>
+                            <div class="message-bubble">${renderedHtml}</div>
                             ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
                         </div>
                         <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
@@ -587,13 +683,10 @@
 
         // ========== 获取群聊活跃成员（用于 @所有人） ==========
         function getGroupActiveMembers(roomId) {
-            // 获取在该群聊中发送过消息的所有用户
             const senders = allMessages
                 .filter(m => m.roomId === roomId && !m.isRecalled)
                 .map(m => m.sender);
-            // 去重
             const uniqueMembers = [...new Set(senders)];
-            // 确保创建者也在列表中（即使没发过消息）
             const room = allRooms.find(r => r.id === roomId);
             if (room && room.creator && !uniqueMembers.includes(room.creator)) {
                 uniqueMembers.push(room.creator);
@@ -601,7 +694,7 @@
             return uniqueMembers;
         }
 
-        // ========== 发送消息（含 @所有人 功能） ==========
+        // ========== 发送消息（含 @所有人 功能 + Markdown） ==========
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
@@ -610,7 +703,7 @@
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
             
-            // ========== 消息去重逻辑 ==========
+            // 消息去重逻辑
             const currentRoomMessages = allMessages
                 .filter(m => m.roomId === currentRoom.id && m.sender === currentUser.username && !m.isRecalled)
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -632,24 +725,18 @@
                     }
                 }
             }
-            // ========== 去重逻辑结束 ==========
             
-            // ========== @所有人 检测 ==========
+            // @所有人 检测
             const hasMentionAll = content.includes('@所有人');
             let mentionedUsers = [];
-            
-            // 提取 @用户名
             const mentionPattern = /@(\w+)/g;
             const userMentions = [...content.matchAll(mentionPattern)].map(m => m[1]);
             mentionedUsers.push(...userMentions);
             
-            // 如果包含 @所有人，获取群聊中所有活跃成员
             if (hasMentionAll && currentRoom.type === 'group') {
                 const allMembers = getGroupActiveMembers(currentRoom.id);
-                // 排除自己
                 const otherMembers = allMembers.filter(m => m !== currentUser.username);
                 mentionedUsers.push(...otherMembers);
-                // 去重
                 mentionedUsers = [...new Set(mentionedUsers)];
             }
             
@@ -671,7 +758,6 @@
                     body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
                 });
                 
-                // 发送通知给被@的用户
                 for (const mentionedUser of mentionedUsers) {
                     if (mentionedUser === currentUser.username) continue;
                     const userExists = await checkUserExists(mentionedUser);
@@ -752,7 +838,7 @@
                 </h3>
                 ${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}
                 ${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}
-                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">💡 输入 @用户名 可以提到某人，输入 @所有人 可以通知全体成员</p>
+                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），使用 @用户名 可以提到某人，@所有人 可以通知全体成员</p>
             `;
             document.getElementById('chatInputArea').style.display = 'flex';
             await loadMessages();
