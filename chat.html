@@ -124,6 +124,15 @@
         .settings-btn:hover { background: #ffd700; color: #1a1a2e; }
         .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; }
         .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
+        .markdown-hint {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+            padding: 4px 8px;
+            background: #0f0f1a;
+            border-radius: 6px;
+            display: inline-block;
+        }
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         
         .message {
@@ -263,10 +272,65 @@
         }
         .message.own .message-time { text-align: right; margin-right: 10px; }
         
-        .chat-input-area { padding: 20px; border-top: 1px solid #2a2a3e; background: #1a1a2e; display: flex; gap: 10px; }
-        .chat-input { flex: 1; padding: 12px; border: 1px solid #2a2a3e; border-radius: 24px; background: #0f0f1a; color: white; resize: none; }
+        /* 输入区域 + 预览区域 */
+        .input-container {
+            padding: 20px;
+            border-top: 1px solid #2a2a3e;
+            background: #1a1a2e;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #2a2a3e;
+            border-radius: 24px;
+            background: #0f0f1a;
+            color: white;
+            resize: none;
+            font-family: inherit;
+        }
         .chat-input:focus { outline: none; border-color: #ffd700; }
-        .send-btn { padding: 12px 28px; background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; border: none; border-radius: 24px; cursor: pointer; font-weight: bold; }
+        .send-btn {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .preview-area {
+            background: #0f0f1a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+        .preview-label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .preview-content {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 60px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .preview-content p { margin: 0 0 5px 0; }
+        .preview-content:empty::before {
+            content: "输入内容后将在此显示预览效果";
+            color: #666;
+            font-style: italic;
+        }
         .empty-state { text-align: center; padding: 60px; color: #666; }
         
         .modal {
@@ -341,9 +405,18 @@
         <div class="chat-main">
             <div class="chat-header" id="chatHeader"><h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p></div>
             <div class="chat-messages" id="chatMessages"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
-            <div class="chat-input-area" id="chatInputArea" style="display: none;">
-                <textarea class="chat-input" id="messageInput" placeholder="输入消息... (支持 Markdown 格式，使用 @用户名 可以提到某人，@所有人 可以通知全体成员)" rows="2"></textarea>
-                <button class="send-btn" onclick="sendMessage()">发送</button>
+            <div class="input-container" id="inputContainer" style="display: none;">
+                <div class="input-area">
+                    <textarea class="chat-input" id="messageInput" placeholder="输入文字…" rows="2"></textarea>
+                    <button class="send-btn" onclick="sendMessage()">发送</button>
+                </div>
+                <div class="preview-area">
+                    <div class="preview-label">
+                        <span>👁️ 实时预览</span>
+                        <span style="font-size: 10px;">(支持 Markdown)</span>
+                    </div>
+                    <div class="preview-content" id="previewContent"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -471,7 +544,7 @@
         // Markdown 渲染函数（保留 @ 高亮）
         function renderMarkdown(content) {
             if (!content) return '';
-            // 先提取 @用户名 和 @所有人，避免被 Markdown 转义
+            
             const mentionPattern = /(@\w+|@所有人)/g;
             const mentions = [];
             let tempContent = content.replace(mentionPattern, (match) => {
@@ -479,29 +552,46 @@
                 return `__MENTION_${mentions.length - 1}__`;
             });
             
-            // 渲染 Markdown
             let html = tempContent;
             if (typeof marked !== 'undefined') {
-                html = marked.parse(tempContent);
-                if (html && typeof html.then === 'function') {
-                    // 如果是异步，同步处理
+                try {
+                    html = marked.parse(tempContent);
+                    if (html && typeof html.then === 'function') {
+                        html = tempContent;
+                    }
+                } catch (e) {
+                    console.error('Markdown 渲染失败:', e);
                     html = tempContent;
                 }
             }
-            // 简单的行内代码处理（如果 marked 不可用）
+            
             html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
             
-            // 恢复 @ 高亮
             for (let i = 0; i < mentions.length; i++) {
                 const mention = mentions[i];
                 const mentionClass = mention === '@所有人' ? 'mention-all' : 'mention';
-                html = html.replace(`__MENTION_${i}__`, `<span class="${mentionClass}">${mention}</span>`);
+                const regex = new RegExp(`__MENTION_${i}__`, 'g');
+                html = html.replace(regex, `<span class="${mentionClass}">${mention}</span>`);
             }
             
             return html;
+        }
+        
+        // 实时预览函数
+        function updatePreview() {
+            const input = document.getElementById('messageInput');
+            const previewDiv = document.getElementById('previewContent');
+            if (input && previewDiv) {
+                const rawText = input.value;
+                if (rawText.trim() === '') {
+                    previewDiv.innerHTML = '';
+                } else {
+                    previewDiv.innerHTML = renderMarkdown(rawText);
+                }
+            }
         }
         
         function togglePrivateUser() {
@@ -647,7 +737,6 @@
             const roomMessages = messages[roomId] || [];
             if (roomMessages.length === 0) { container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>'; return; }
             container.innerHTML = roomMessages.map(msg => {
-                // 使用 Markdown 渲染消息内容
                 const renderedHtml = renderMarkdown(msg.content);
                 const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
                 return `
@@ -681,7 +770,6 @@
             await loadMessages();
         }
 
-        // ========== 获取群聊活跃成员（用于 @所有人） ==========
         function getGroupActiveMembers(roomId) {
             const senders = allMessages
                 .filter(m => m.roomId === roomId && !m.isRecalled)
@@ -694,7 +782,6 @@
             return uniqueMembers;
         }
 
-        // ========== 发送消息（含 @所有人 功能 + Markdown） ==========
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
@@ -703,7 +790,6 @@
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
             
-            // 消息去重逻辑
             const currentRoomMessages = allMessages
                 .filter(m => m.roomId === currentRoom.id && m.sender === currentUser.username && !m.isRecalled)
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -719,14 +805,12 @@
                             headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                             body: JSON.stringify({ body: updatedBody })
                         });
-                        console.log('已删除重复的旧消息');
                     } else {
                         return;
                     }
                 }
             }
             
-            // @所有人 检测
             const hasMentionAll = content.includes('@所有人');
             let mentionedUsers = [];
             const mentionPattern = /@(\w+)/g;
@@ -772,6 +856,7 @@
                     }
                 }
                 input.value = '';
+                updatePreview();
                 await loadMessages();
             } catch (error) { alert('发送失败：' + error.message); }
         }
@@ -810,8 +895,9 @@
                 document.getElementById('chatHeader').innerHTML = `
                     <h3>${escapeHtml(currentRoom.name)}</h3>
                     <p>私聊 · 仅你们两人可见</p>
+                    <div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>
                 `;
-                document.getElementById('chatInputArea').style.display = 'flex';
+                document.getElementById('inputContainer').style.display = 'block';
                 await loadMessages();
                 startPolling();
                 return;
@@ -838,9 +924,9 @@
                 </h3>
                 ${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}
                 ${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}
-                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），使用 @用户名 可以提到某人，@所有人 可以通知全体成员</p>
+                <div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>
             `;
-            document.getElementById('chatInputArea').style.display = 'flex';
+            document.getElementById('inputContainer').style.display = 'block';
             await loadMessages();
             startPolling();
         }
@@ -956,11 +1042,10 @@
             await loadRooms();
             currentRoom = null;
             document.getElementById('chatHeader').innerHTML = '<h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p>';
-            document.getElementById('chatInputArea').style.display = 'none';
+            document.getElementById('inputContainer').style.display = 'none';
             document.getElementById('chatMessages').innerHTML = '<div class="empty-state">💬 选择一个聊天室开始聊天</div>';
         }
 
-        // ========== 创建聊天室 ==========
         async function createRoom() {
             const name = document.getElementById('roomName').value.trim();
             const type = document.getElementById('roomType').value;
@@ -1013,7 +1098,6 @@
             } catch (error) { alert('创建失败：' + error.message); }
         }
 
-        // ========== 加入群聊 ==========
         async function confirmJoinRoom() {
             const enteredCode = document.getElementById('joinVerifyCode').value.trim();
             if (enteredCode !== pendingJoinRoom.verifyCode) {
@@ -1046,7 +1130,6 @@
         function showCreateRoomModal() { document.getElementById('createRoomModal').style.display = 'flex'; }
         function closeCreateRoomModal() { document.getElementById('createRoomModal').style.display = 'none'; document.getElementById('roomName').value = ''; document.getElementById('privateUser').value = ''; document.getElementById('customVerifyCode').value = ''; }
 
-        // ========== 用户相关 ==========
         async function checkUserBanned(username) {
             if (isSystemAdmin(username)) return false;
             try {
@@ -1102,12 +1185,16 @@
             await loadNotifications();
             startPolling();
             
-            document.addEventListener('DOMContentLoaded', function() {
-                const input = document.getElementById('messageInput');
-                if (input) input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+            const input = document.getElementById('messageInput');
+            if (input) {
+                input.addEventListener('input', updatePreview);
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
                 });
-            });
+            }
         };
     </script>
 </body>
