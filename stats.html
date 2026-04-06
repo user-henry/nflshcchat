@@ -172,7 +172,6 @@
         <div>
             <span>欢迎，<span id="username"></span></span>
             <a href="chat.html">💬 聊天</a>
-            <a href="settings.html">⚙️ 设置</a>
             <a href="#" onclick="logout()">🚪 退出</a>
         </div>
     </div>
@@ -290,12 +289,10 @@
                     }
                 }
 
-                // 基础统计
                 const totalMessages = allMessages.length;
                 const members = [...new Set(allMessages.map(m => m.sender))];
                 const totalMembers = members.length;
                 
-                // 日期统计
                 const dateMap = new Map();
                 const hourMap = new Array(24).fill(0);
                 const wordMap = new Map();
@@ -307,7 +304,6 @@
                     const hour = new Date(msg.timestamp).getHours();
                     hourMap[hour]++;
                     
-                    // 分词（简单处理）
                     const words = msg.content.split(/[\s，,。！？；：""''（）【】《》]+/);
                     words.forEach(word => {
                         if (word.length >= 2 && !word.startsWith('@') && !word.includes('http')) {
@@ -324,7 +320,6 @@
                 document.getElementById('avgDaily').textContent = avgDaily.toFixed(1);
                 document.getElementById('activeDays').textContent = activeDays;
                 
-                // 趋势图（最近30天）
                 const last30Days = [];
                 const last30Counts = [];
                 for (let i = 29; i >= 0; i--) {
@@ -343,7 +338,6 @@
                     options: { responsive: true, maintainAspectRatio: true }
                 });
                 
-                // 时段分布图
                 if (hourChart) hourChart.destroy();
                 const hourCtx = document.getElementById('hourChart').getContext('2d');
                 hourChart = new Chart(hourCtx, {
@@ -352,7 +346,6 @@
                     options: { responsive: true, maintainAspectRatio: true }
                 });
                 
-                // 词云
                 const sortedWords = [...wordMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50);
                 const maxCount = sortedWords[0]?.[1] || 1;
                 const wordcloudDiv = document.getElementById('wordcloud');
@@ -361,7 +354,6 @@
                     return `<span style="font-size: ${size}px; color: hsl(${Math.random() * 360}, 70%, 50%); margin: 5px;">${escapeHtml(word)}</span>`;
                 }).join('');
                 
-                // 发言排行榜
                 const rankMap = new Map();
                 allMessages.forEach(msg => {
                     rankMap.set(msg.sender, (rankMap.get(msg.sender) || 0) + 1);
