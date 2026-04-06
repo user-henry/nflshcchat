@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 消息搜索</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
+        
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .search-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .search-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .search-input input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            font-size: 16px;
+        }
+        .search-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .search-filters select, .search-filters input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .result-item {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--accent-color);
+        }
+        .result-room { font-size: 12px; color: var(--accent-color); margin-bottom: 5px; }
+        .result-sender { font-weight: bold; margin-bottom: 5px; }
+        .result-content { color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
+        .result-content mark { background: #f39c12; color: #1a1a2e; padding: 0 2px; border-radius: 3px; }
+        .result-time { font-size: 11px; color: #666; }
+        .empty-state { text-align: center; padding: 60px; color: var(--text-secondary); }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+    </style>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>🔍 NFLSHC Chat 消息搜索</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="settings.html">⚙️ 设置</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-card">
+            <div class="search-input">
+                <input type="text" id="keyword" placeholder="输入搜索关键词..." onkeypress="if(event.key==='Enter') search()">
+                <button class="btn" onclick="search()">🔍 搜索</button>
+            </div>
+            <div class="search-filters">
+                <select id="roomFilter">
+                    <option value="">所有聊天室</option>
+                </select>
+                <select id="senderFilter">
+                    <option value="">所有发送者</option>
+                </select>
+                <input type="date" id="startDate" placeholder="开始日期">
+                <input type="date" id="endDate" placeholder="结束日期">
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allRooms = [];
+        let allMessages = [];
+        let allSenders = new Set();
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function highlightKeyword(text, keyword) {
+            if (!keyword) return escapeHtml(text);
+            const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return escapeHtml(text).replace(regex, '<mark>$1</mark>');
+        }
+
+        function checkAuth() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            document.getElementById('username').textContent = user.username;
+            return user;
+        }
+
+        async function loadData() {
+            try {
+                const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+                
+                const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const roomIssues = await roomsRes.json();
+                allRooms = [];
+                for (const issue of roomIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const roomData = JSON.parse(match[1]);
+                        if (roomData.members?.includes(currentUser.username) || roomData.creator === currentUser.username) {
+                            allRooms.push(roomData);
+                        }
+                    }
+                }
+                
+                const msgRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const msgIssues = await msgRes.json();
+                allMessages = [];
+                allSenders.clear();
+                for (const issue of msgIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const msgData = JSON.parse(match[1]);
+                        if (!msgData.isRecalled) {
+                            allMessages.push(msgData);
+                            allSenders.add(msgData.sender);
+                        }
+                    }
+                }
+                
+                const roomSelect = document.getElementById('roomFilter');
+                roomSelect.innerHTML = '<option value="">所有聊天室</option>' + 
+                    allRooms.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+                
+                const senderSelect = document.getElementById('senderFilter');
+                senderSelect.innerHTML = '<option value="">所有发送者</option>' + 
+                    [...allSenders].map(s => `<option value="${s}">${escapeHtml(s)}</option>`).join('');
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+
+        function getRoomName(roomId) {
+            const room = allRooms.find(r => r.id === roomId);
+            return room ? room.name : '未知聊天室';
+        }
+
+        function search() {
+            const keyword = document.getElementById('keyword').value.trim();
+            const roomId = document.getElementById('roomFilter').value;
+            const sender = document.getElementById('senderFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            let results = [...allMessages];
+            
+            if (keyword) {
+                results = results.filter(m => m.content.toLowerCase().includes(keyword.toLowerCase()));
+            }
+            if (roomId) {
+                results = results.filter(m => m.roomId === roomId);
+            }
+            if (sender) {
+                results = results.filter(m => m.sender === sender);
+            }
+            if (startDate) {
+                const start = new Date(startDate);
+                results = results.filter(m => new Date(m.timestamp) >= start);
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59);
+                results = results.filter(m => new Date(m.timestamp) <= end);
+            }
+            
+            results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            renderResults(results, keyword);
+        }
+
+        function renderResults(results, keyword) {
+            const container = document.getElementById('results');
+            if (results.length === 0) {
+                container.innerHTML = '<div class="empty-state">🔍 没有找到相关消息</div>';
+                return;
+            }
+            container.innerHTML = results.map(msg => `
+                <div class="result-item">
+                    <div class="result-room">📁 ${escapeHtml(getRoomName(msg.roomId))}</div>
+                    <div class="result-sender">${escapeHtml(msg.sender)}</div>
+                    <div class="result-content">${highlightKeyword(msg.content, keyword)}</div>
+                    <div class="result-time">${new Date(msg.timestamp).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        currentUser = checkAuth();
+        if (currentUser) loadData();
+    </script>
+</body>
+</html>

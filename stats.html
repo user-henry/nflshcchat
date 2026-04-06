@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 群聊统计</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
+        
+        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        
+        .room-selector {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .room-selector select {
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            font-size: 16px;
+            width: 300px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        .stat-number { font-size: 36px; font-weight: bold; color: var(--accent-color); }
+        .stat-label { color: var(--text-secondary); margin-top: 8px; }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .chart-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .chart-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        canvas { max-width: 100%; height: auto; }
+        
+        .wordcloud-container {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+        }
+        .wordcloud-container h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .wordcloud {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            padding: 20px;
+            min-height: 300px;
+        }
+        .wordcloud span {
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+        .wordcloud span:hover {
+            transform: scale(1.1);
+            color: var(--accent-color);
+        }
+        
+        .rank-list {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .rank-list h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-number {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        .rank-name { flex: 1; margin-left: 15px; font-weight: 500; }
+        .rank-count { color: var(--accent-color); font-weight: bold; }
+        
+        .loading { text-align: center; padding: 60px; color: var(--text-secondary); }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+            .charts-container { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>📊 NFLSHC Chat 统计</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="settings.html">⚙️ 设置</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="room-selector">
+            <label>选择群聊：</label>
+            <select id="roomSelect" onchange="loadStats()">
+                <option value="">-- 请选择群聊 --</option>
+            </select>
+        </div>
+
+        <div id="statsContent" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-number" id="totalMessages">0</div><div class="stat-label">总消息数</div></div>
+                <div class="stat-card"><div class="stat-number" id="totalMembers">0</div><div class="stat-label">活跃成员数</div></div>
+                <div class="stat-card"><div class="stat-number" id="avgDaily">0</div><div class="stat-label">日均消息</div></div>
+                <div class="stat-card"><div class="stat-number" id="activeDays">0</div><div class="stat-label">活跃天数</div></div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>📈 消息趋势（最近30天）</h3>
+                    <canvas id="trendChart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>⏰ 时段分布</h3>
+                    <canvas id="hourChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="wordcloud-container">
+                <h3>☁️ 高频词汇云</h3>
+                <div id="wordcloud" class="wordcloud"></div>
+            </div>
+
+            <div class="rank-list">
+                <h3>🏆 发言排行榜</h3>
+                <div id="rankList"></div>
+            </div>
+        </div>
+        <div id="loading" class="loading">加载中...</div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allRooms = [];
+        let allMessages = [];
+        let trendChart = null;
+        let hourChart = null;
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function checkAuth() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            document.getElementById('username').textContent = user.username;
+            return user;
+        }
+
+        async function loadRooms() {
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                allRooms = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const roomData = JSON.parse(match[1]);
+                        if (roomData.type === 'group') {
+                            allRooms.push(roomData);
+                        }
+                    }
+                }
+                const select = document.getElementById('roomSelect');
+                select.innerHTML = '<option value="">-- 请选择群聊 --</option>' + 
+                    allRooms.map(room => `<option value="${room.id}">${escapeHtml(room.name)}</option>`).join('');
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('加载聊天室失败:', error);
+                document.getElementById('loading').innerHTML = '加载失败，请刷新重试';
+            }
+        }
+
+        async function loadStats() {
+            const roomId = document.getElementById('roomSelect').value;
+            if (!roomId) {
+                document.getElementById('statsContent').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('statsContent').style.display = 'block';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('statsContent').style.opacity = '0.5';
+
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                allMessages = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const msgData = JSON.parse(match[1]);
+                        if (msgData.roomId === roomId && !msgData.isRecalled) {
+                            allMessages.push(msgData);
+                        }
+                    }
+                }
+
+                // 基础统计
+                const totalMessages = allMessages.length;
+                const members = [...new Set(allMessages.map(m => m.sender))];
+                const totalMembers = members.length;
+                
+                // 日期统计
+                const dateMap = new Map();
+                const hourMap = new Array(24).fill(0);
+                const wordMap = new Map();
+                
+                allMessages.forEach(msg => {
+                    const date = new Date(msg.timestamp).toLocaleDateString();
+                    dateMap.set(date, (dateMap.get(date) || 0) + 1);
+                    
+                    const hour = new Date(msg.timestamp).getHours();
+                    hourMap[hour]++;
+                    
+                    // 分词（简单处理）
+                    const words = msg.content.split(/[\s，,。！？；：""''（）【】《》]+/);
+                    words.forEach(word => {
+                        if (word.length >= 2 && !word.startsWith('@') && !word.includes('http')) {
+                            wordMap.set(word, (wordMap.get(word) || 0) + 1);
+                        }
+                    });
+                });
+                
+                const activeDays = dateMap.size;
+                const avgDaily = totalMessages / Math.max(activeDays, 1);
+                
+                document.getElementById('totalMessages').textContent = totalMessages;
+                document.getElementById('totalMembers').textContent = totalMembers;
+                document.getElementById('avgDaily').textContent = avgDaily.toFixed(1);
+                document.getElementById('activeDays').textContent = activeDays;
+                
+                // 趋势图（最近30天）
+                const last30Days = [];
+                const last30Counts = [];
+                for (let i = 29; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const dateStr = d.toLocaleDateString();
+                    last30Days.push(`${d.getMonth()+1}/${d.getDate()}`);
+                    last30Counts.push(dateMap.get(dateStr) || 0);
+                }
+                
+                if (trendChart) trendChart.destroy();
+                const trendCtx = document.getElementById('trendChart').getContext('2d');
+                trendChart = new Chart(trendCtx, {
+                    type: 'line',
+                    data: { labels: last30Days, datasets: [{ label: '消息数', data: last30Counts, borderColor: '#ffd700', backgroundColor: 'rgba(255,215,0,0.1)', fill: true }] },
+                    options: { responsive: true, maintainAspectRatio: true }
+                });
+                
+                // 时段分布图
+                if (hourChart) hourChart.destroy();
+                const hourCtx = document.getElementById('hourChart').getContext('2d');
+                hourChart = new Chart(hourCtx, {
+                    type: 'bar',
+                    data: { labels: [...Array(24).keys()].map(i => `${i}:00`), datasets: [{ label: '消息数', data: hourMap, backgroundColor: '#ffd700' }] },
+                    options: { responsive: true, maintainAspectRatio: true }
+                });
+                
+                // 词云
+                const sortedWords = [...wordMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50);
+                const maxCount = sortedWords[0]?.[1] || 1;
+                const wordcloudDiv = document.getElementById('wordcloud');
+                wordcloudDiv.innerHTML = sortedWords.map(([word, count]) => {
+                    const size = 12 + (count / maxCount) * 28;
+                    return `<span style="font-size: ${size}px; color: hsl(${Math.random() * 360}, 70%, 50%); margin: 5px;">${escapeHtml(word)}</span>`;
+                }).join('');
+                
+                // 发言排行榜
+                const rankMap = new Map();
+                allMessages.forEach(msg => {
+                    rankMap.set(msg.sender, (rankMap.get(msg.sender) || 0) + 1);
+                });
+                const sortedRank = [...rankMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+                const rankDiv = document.getElementById('rankList');
+                rankDiv.innerHTML = sortedRank.map(([name, count], idx) => `
+                    <div class="rank-item">
+                        <div class="rank-number">${idx + 1}</div>
+                        <div class="rank-name">${escapeHtml(name)}</div>
+                        <div class="rank-count">${count} 条</div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('statsContent').style.opacity = '1';
+                document.getElementById('loading').style.display = 'none';
+            } catch (error) {
+                console.error('加载统计失败:', error);
+                document.getElementById('loading').innerHTML = '加载失败，请刷新重试';
+                document.getElementById('statsContent').style.opacity = '1';
+            }
+        }
+
+        currentUser = checkAuth();
+        if (currentUser) loadRooms();
+    </script>
+</body>
+</html>

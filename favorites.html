@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 我的收藏</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
+        
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .favorite-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s;
+        }
+        .favorite-item:hover { transform: translateX(5px); border-color: var(--accent-color); }
+        .favorite-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .favorite-room { font-size: 12px; color: var(--accent-color); }
+        .favorite-sender { font-weight: bold; margin-bottom: 5px; }
+        .favorite-content { color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5; }
+        .favorite-time { font-size: 11px; color: #666; }
+        .delete-favorite {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .empty-state { text-align: center; padding: 60px; color: var(--text-secondary); }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        
+        @media (max-width: 768px) {
+            .favorite-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>⭐ NFLSHC Chat 我的收藏</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="settings.html">⚙️ 设置</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="favoritesList" class="loading">加载中...</div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allRooms = [];
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function checkAuth() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            document.getElementById('username').textContent = user.username;
+            return user;
+        }
+
+        async function loadRooms() {
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await res.json();
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    const roomData = JSON.parse(match[1]);
+                    allRooms.push(roomData);
+                }
+            }
+        }
+
+        function getRoomName(roomId) {
+            const room = allRooms.find(r => r.id === roomId);
+            return room ? room.name : '未知聊天室';
+        }
+
+        async function loadFavorites() {
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=favorite&state=open`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                const favorites = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const fav = JSON.parse(match[1]);
+                        if (fav.user === currentUser.username) {
+                            favorites.push({ ...fav, issueNumber: issue.number });
+                        }
+                    }
+                }
+                favorites.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                renderFavorites(favorites);
+            } catch (error) {
+                console.error('加载收藏失败:', error);
+                document.getElementById('favoritesList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
+            }
+        }
+
+        function renderFavorites(favorites) {
+            const container = document.getElementById('favoritesList');
+            if (favorites.length === 0) {
+                container.innerHTML = '<div class="empty-state">⭐ 暂无收藏，在聊天中点击消息右上角的⭐按钮即可收藏</div>';
+                return;
+            }
+            container.innerHTML = favorites.map(fav => `
+                <div class="favorite-item">
+                    <div class="favorite-header">
+                        <div class="favorite-room">📁 ${escapeHtml(getRoomName(fav.roomId))}</div>
+                        <button class="delete-favorite" onclick="deleteFavorite(${fav.issueNumber})">🗑️ 删除</button>
+                    </div>
+                    <div class="favorite-sender">${escapeHtml(fav.sender)}</div>
+                    <div class="favorite-content">${escapeHtml(fav.content)}</div>
+                    <div class="favorite-time">收藏时间: ${new Date(fav.createdAt).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteFavorite(issueNumber) {
+            if (!confirm('确定要删除这条收藏吗？')) return;
+            try {
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ state: 'closed' })
+                });
+                alert('已删除');
+                loadFavorites();
+            } catch (error) {
+                alert('删除失败：' + error.message);
+            }
+        }
+
+        currentUser = checkAuth();
+        if (currentUser) {
+            loadRooms().then(() => loadFavorites());
+        }
+    </script>
+</body>
+</html>

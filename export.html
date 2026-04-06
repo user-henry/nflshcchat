@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 数据导出</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
+        
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .card h2 {
+            color: var(--accent-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .export-option {
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .export-option h3 { margin-bottom: 5px; }
+        .export-option p { font-size: 12px; color: var(--text-secondary); }
+        .btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        select, input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+    </style>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>📤 NFLSHC Chat 数据导出</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="settings.html">⚙️ 设置</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>📋 选择导出范围</h2>
+            <div class="export-option">
+                <div>
+                    <h3>导出所有聊天记录</h3>
+                    <p>导出您参与的所有群聊和私聊记录（JSON格式）</p>
+                </div>
+                <button class="btn" onclick="exportAll()">导出全部</button>
+            </div>
+            <div class="export-option">
+                <div>
+                    <h3>导出指定聊天室</h3>
+                    <p>选择要导出的聊天室</p>
+                </div>
+                <select id="roomSelect">
+                    <option value="">-- 加载中 --</option>
+                </select>
+                <button class="btn" onclick="exportRoom()">导出</button>
+            </div>
+            <div class="export-option">
+                <div>
+                    <h3>导出为HTML格式</h3>
+                    <p>生成可读性好的HTML文件，包含样式</p>
+                </div>
+                <select id="htmlRoomSelect">
+                    <option value="">-- 加载中 --</option>
+                </select>
+                <button class="btn" onclick="exportAsHTML()">导出HTML</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📅 按时间导出</h2>
+            <div class="export-option">
+                <div>
+                    <h3>自定义时间范围</h3>
+                    <p>导出指定时间段的消息</p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="date" id="startDate">
+                    <input type="date" id="endDate">
+                    <button class="btn" onclick="exportByDate()">导出</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="progressCard" class="card" style="display: none;">
+            <h2>⏳ 导出进度</h2>
+            <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+            <div id="progressText" style="text-align: center; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allRooms = [];
+        let allMessages = [];
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function checkAuth() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            document.getElementById('username').textContent = user.username;
+            return user;
+        }
+
+        async function loadRooms() {
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                allRooms = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const roomData = JSON.parse(match[1]);
+                        if (roomData.members?.includes(currentUser.username) || roomData.creator === currentUser.username) {
+                            allRooms.push(roomData);
+                        }
+                    }
+                }
+                const options = '<option value="">-- 选择聊天室 --</option>' + 
+                    allRooms.map(room => `<option value="${room.id}">${escapeHtml(room.name)}</option>`).join('');
+                document.getElementById('roomSelect').innerHTML = options;
+                document.getElementById('htmlRoomSelect').innerHTML = options;
+            } catch (error) {
+                console.error('加载聊天室失败:', error);
+            }
+        }
+
+        async function loadAllMessages() {
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await res.json();
+            allMessages = [];
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    const msgData = JSON.parse(match[1]);
+                    if (msgData.sender === currentUser.username) {
+                        allMessages.push(msgData);
+                    }
+                }
+            }
+            return allMessages;
+        }
+
+        function showProgress(percent, text) {
+            const card = document.getElementById('progressCard');
+            card.style.display = 'block';
+            document.getElementById('progressFill').style.width = `${percent}%`;
+            document.getElementById('progressText').innerHTML = text;
+            if (percent >= 100) {
+                setTimeout(() => { card.style.display = 'none'; }, 2000);
+            }
+        }
+
+        function downloadFile(content, filename, type = 'application/json') {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        async function exportAll() {
+            showProgress(10, '正在加载消息...');
+            const messages = await loadAllMessages();
+            showProgress(50, `已加载 ${messages.length} 条消息`);
+            const exportData = {
+                exportTime: new Date().toISOString(),
+                user: currentUser.username,
+                totalMessages: messages.length,
+                messages: messages.map(m => ({
+                    roomId: m.roomId,
+                    content: m.content,
+                    timestamp: m.timestamp,
+                    isRecalled: m.isRecalled
+                }))
+            };
+            showProgress(100, '导出完成！');
+            downloadFile(JSON.stringify(exportData, null, 2), `chat_export_${Date.now()}.json`);
+        }
+
+        async function exportRoom() {
+            const roomId = document.getElementById('roomSelect').value;
+            if (!roomId) { alert('请选择聊天室'); return; }
+            const room = allRooms.find(r => r.id === roomId);
+            if (!room) return;
+            
+            showProgress(10, '正在加载消息...');
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await res.json();
+            const roomMessages = [];
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    const msgData = JSON.parse(match[1]);
+                    if (msgData.roomId === roomId && !msgData.isRecalled) {
+                        roomMessages.push(msgData);
+                    }
+                }
+            }
+            showProgress(70, `已加载 ${roomMessages.length} 条消息`);
+            const exportData = {
+                exportTime: new Date().toISOString(),
+                roomName: room.name,
+                roomId: roomId,
+                totalMessages: roomMessages.length,
+                messages: roomMessages
+            };
+            showProgress(100, '导出完成！');
+            downloadFile(JSON.stringify(exportData, null, 2), `${room.name}_export_${Date.now()}.json`);
+        }
+
+        async function exportAsHTML() {
+            const roomId = document.getElementById('htmlRoomSelect').value;
+            if (!roomId) { alert('请选择聊天室'); return; }
+            const room = allRooms.find(r => r.id === roomId);
+            if (!room) return;
+            
+            showProgress(10, '正在加载消息...');
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await res.json();
+            const roomMessages = [];
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    const msgData = JSON.parse(match[1]);
+                    if (msgData.roomId === roomId && !msgData.isRecalled) {
+                        roomMessages.push(msgData);
+                    }
+                }
+            }
+            roomMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            showProgress(70, `生成HTML中...`);
+            
+            const htmlContent = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>${room.name} 聊天记录导出</title>
+<style>
+body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
+h1 { color: #333; border-bottom: 2px solid #ffd700; }
+.message { margin-bottom: 15px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.sender { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
+.content { color: #333; line-height: 1.5; }
+.time { font-size: 11px; color: #999; margin-top: 5px; }
+</style>
+</head>
+<body>
+<h1>📋 ${escapeHtml(room.name)} 聊天记录</h1>
+<p>导出时间: ${new Date().toLocaleString()} | 消息总数: ${roomMessages.length}</p>
+${roomMessages.map(msg => `
+<div class="message">
+    <div class="sender">${escapeHtml(msg.sender)}</div>
+    <div class="content">${escapeHtml(msg.content)}</div>
+    <div class="time">${new Date(msg.timestamp).toLocaleString()}</div>
+</div>
+`).join('')}
+</body>
+</html>`;
+            showProgress(100, '导出完成！');
+            downloadFile(htmlContent, `${room.name}_export_${Date.now()}.html`, 'text/html');
+        }
+
+        async function exportByDate() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            if (!startDate || !endDate) { alert('请选择开始和结束日期'); return; }
+            
+            showProgress(10, '正在加载消息...');
+            const messages = await loadAllMessages();
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59);
+            
+            const filtered = messages.filter(m => {
+                const msgDate = new Date(m.timestamp);
+                return msgDate >= start && msgDate <= end;
+            });
+            showProgress(80, `找到 ${filtered.length} 条消息`);
+            const exportData = {
+                exportTime: new Date().toISOString(),
+                user: currentUser.username,
+                startDate, endDate,
+                totalMessages: filtered.length,
+                messages: filtered
+            };
+            showProgress(100, '导出完成！');
+            downloadFile(JSON.stringify(exportData, null, 2), `chat_export_${startDate}_${endDate}.json`);
+        }
+
+        currentUser = checkAuth();
+        if (currentUser) loadRooms();
+    </script>
+</body>
+</html>
