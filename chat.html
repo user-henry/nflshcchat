@@ -541,21 +541,25 @@
             return username === 'huangzhiyuan';
         }
         
-        // Markdown 渲染函数（保留 @ 高亮）
+        // 修复后的 Markdown 渲染函数（正确处理 @ 语法）
         function renderMarkdown(content) {
             if (!content) return '';
             
-            const mentionPattern = /(@\w+|@所有人)/g;
+            // 步骤1：保护 @语法 不被 Markdown 解析器破坏
+            // 匹配 @用户名 或 @所有人
+            const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
             const mentions = [];
             let tempContent = content.replace(mentionPattern, (match) => {
                 mentions.push(match);
-                return `__MENTION_${mentions.length - 1}__`;
+                return `__PROTECTED_MENTION_${mentions.length - 1}__`;
             });
             
+            // 步骤2：渲染 Markdown
             let html = tempContent;
             if (typeof marked !== 'undefined') {
                 try {
                     html = marked.parse(tempContent);
+                    // 如果返回 Promise，使用同步版本
                     if (html && typeof html.then === 'function') {
                         html = tempContent;
                     }
@@ -565,15 +569,17 @@
                 }
             }
             
+            // 步骤3：基础格式处理（备用）
             html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
             html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
             html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
             
+            // 步骤4：恢复 @语法 并添加高亮样式
             for (let i = 0; i < mentions.length; i++) {
                 const mention = mentions[i];
                 const mentionClass = mention === '@所有人' ? 'mention-all' : 'mention';
-                const regex = new RegExp(`__MENTION_${i}__`, 'g');
+                const regex = new RegExp(`__PROTECTED_MENTION_${i}__`, 'g');
                 html = html.replace(regex, `<span class="${mentionClass}">${mention}</span>`);
             }
             
@@ -813,7 +819,7 @@
             
             const hasMentionAll = content.includes('@所有人');
             let mentionedUsers = [];
-            const mentionPattern = /@(\w+)/g;
+            const mentionPattern = /@([a-zA-Z0-9_\u4e00-\u9fa5]+)/g;
             const userMentions = [...content.matchAll(mentionPattern)].map(m => m[1]);
             mentionedUsers.push(...userMentions);
             
