@@ -47,7 +47,71 @@
         .notice-item:hover { transform: translateY(-3px); }
         .notice-title { font-size: 20px; font-weight: bold; color: #ffd700; margin-bottom: 10px; }
         .notice-meta { font-size: 12px; color: #aaa; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3e; }
-        .notice-content { color: #ddd; line-height: 1.6; white-space: pre-wrap; }
+        .notice-content {
+            color: #ddd;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+        /* Markdown 样式 */
+        .notice-content code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+        .notice-content pre {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+        .notice-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .notice-content a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+        .notice-content a:hover {
+            text-decoration: underline;
+        }
+        .notice-content blockquote {
+            border-left: 3px solid #ffd700;
+            margin: 12px 0;
+            padding-left: 16px;
+            color: #bbb;
+        }
+        .notice-content ul, .notice-content ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+        .notice-content h1, .notice-content h2, .notice-content h3 {
+            margin: 16px 0 8px 0;
+        }
+        .notice-content h1 { font-size: 1.6em; border-bottom: 1px solid #2a2a3e; padding-bottom: 8px; }
+        .notice-content h2 { font-size: 1.4em; }
+        .notice-content h3 { font-size: 1.2em; }
+        .notice-content table {
+            border-collapse: collapse;
+            margin: 12px 0;
+            width: 100%;
+        }
+        .notice-content th, .notice-content td {
+            border: 1px solid #2a2a3e;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .notice-content th {
+            background: #1a1a2e;
+            color: #ffd700;
+        }
+        .notice-content img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
         .delete-notice-btn {
             background: #dc3545;
             color: white;
@@ -56,7 +120,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
-            margin-top: 15px;
+            margin-left: 10px;
         }
         .admin-panel {
             background: #16213e;
@@ -76,7 +140,7 @@
             color: white;
             font-family: inherit;
         }
-        .admin-panel textarea { resize: vertical; min-height: 150px; }
+        .admin-panel textarea { resize: vertical; min-height: 200px; }
         .admin-panel button {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
@@ -96,7 +160,53 @@
         .message.error { background: rgba(231,76,60,0.2); color: #e74c3c; }
         .empty-state { text-align: center; padding: 60px; color: #666; background: #16213e; border-radius: 12px; }
         .loading { text-align: center; padding: 40px; color: #aaa; }
+        
+        /* 预览区域 */
+        .preview-area {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #2a2a3e;
+        }
+        .preview-label {
+            font-size: 12px;
+            color: #ffd700;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+        .preview-content {
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #ddd;
+            line-height: 1.6;
+        }
+        .preview-content:empty::before {
+            content: "输入内容后将在此显示预览效果";
+            color: #666;
+            font-style: italic;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            padding: 8px 16px;
+            background: #2a2a3e;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: #ffd700;
+            color: #1a1a2e;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="nav">
@@ -112,9 +222,20 @@
     <div class="container">
         <div id="noticeList" class="notice-list"><div class="loading">加载中...</div></div>
         <div id="adminPanel" class="admin-panel" style="display: none;">
-            <h3>📝 发布新公告</h3>
-            <input type="text" id="noticeTitle" placeholder="公告标题">
-            <textarea id="noticeContent" rows="6" placeholder="公告内容..."></textarea>
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchEditorTab('write')">✍️ 编写</button>
+                <button class="tab-btn" onclick="switchEditorTab('preview')">👁️ 预览</button>
+            </div>
+            <div id="writeTab">
+                <input type="text" id="noticeTitle" placeholder="公告标题">
+                <textarea id="noticeContent" rows="8" placeholder="公告内容（支持 Markdown 格式）&#10;&#10;支持语法：&#10;- **粗体**、*斜体*、~~删除线~~&#10;- 链接：[文字](url)&#10;- 代码：`code` 或 ```代码块```&#10;- 列表、表格、引用等"></textarea>
+            </div>
+            <div id="previewTab" style="display: none;">
+                <div class="preview-area">
+                    <div class="preview-label">📄 预览效果</div>
+                    <div class="preview-content" id="previewContent"></div>
+                </div>
+            </div>
             <button onclick="publishNotice()">发布公告</button>
             <div id="publishMessage" class="message" style="display: none;"></div>
         </div>
@@ -125,14 +246,57 @@
         let currentUser = null;
         let allNotices = [];
 
-        function checkAuth() {
-            const userStr = sessionStorage.getItem('currentUser');
-            if (!userStr) { window.location.href = 'index.html'; return null; }
-            const user = JSON.parse(userStr);
-            document.getElementById('username').textContent = user.username;
-            return user;
+        // 配置 marked
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                breaks: true,
+                gfm: true,
+                headerIds: false,
+                mangle: false
+            });
         }
+
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+
+        function renderMarkdown(content) {
+            if (!content) return '';
+            if (typeof marked !== 'undefined') {
+                try {
+                    return marked.parse(content);
+                } catch (e) {
+                    console.error('Markdown 渲染失败:', e);
+                    return escapeHtml(content);
+                }
+            }
+            return escapeHtml(content);
+        }
+
+        function updatePreview() {
+            const content = document.getElementById('noticeContent').value;
+            const previewDiv = document.getElementById('previewContent');
+            if (previewDiv) {
+                previewDiv.innerHTML = renderMarkdown(content);
+            }
+        }
+
+        function switchEditorTab(tab) {
+            const writeTab = document.getElementById('writeTab');
+            const previewTab = document.getElementById('previewTab');
+            const btns = document.querySelectorAll('.tab-btn');
+            
+            btns.forEach(btn => btn.classList.remove('active'));
+            
+            if (tab === 'write') {
+                writeTab.style.display = 'block';
+                previewTab.style.display = 'none';
+                btns[0].classList.add('active');
+            } else {
+                writeTab.style.display = 'none';
+                previewTab.style.display = 'block';
+                btns[1].classList.add('active');
+                updatePreview();
+            }
+        }
 
         async function loadNotices() {
             try {
@@ -163,8 +327,11 @@
             container.innerHTML = allNotices.map(notice => `
                 <div class="notice-item">
                     <div class="notice-title">📢 ${escapeHtml(notice.title)}</div>
-                    <div class="notice-meta">发布于 ${new Date(notice.createdAt).toLocaleString()} by ${escapeHtml(notice.author || '管理员')}${currentUser && currentUser.isAdmin ? `<button class="delete-notice-btn" onclick="deleteNotice(${notice.issueNumber})">删除公告</button>` : ''}</div>
-                    <div class="notice-content">${escapeHtml(notice.content).replace(/\n/g, '<br>')}</div>
+                    <div class="notice-meta">
+                        发布于 ${new Date(notice.createdAt).toLocaleString()} by ${escapeHtml(notice.author || '管理员')}
+                        ${currentUser && currentUser.isAdmin ? `<button class="delete-notice-btn" onclick="deleteNotice(${notice.issueNumber})">删除公告</button>` : ''}
+                    </div>
+                    <div class="notice-content">${renderMarkdown(notice.content)}</div>
                 </div>
             `).join('');
         }
@@ -173,11 +340,15 @@
             const title = document.getElementById('noticeTitle').value.trim();
             const content = document.getElementById('noticeContent').value.trim();
             const msgDiv = document.getElementById('publishMessage');
+            
             if (!title || !content) {
-                msgDiv.style.display = 'block'; msgDiv.className = 'message error'; msgDiv.innerHTML = '请填写标题和内容';
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.innerHTML = '请填写标题和内容';
                 setTimeout(() => msgDiv.style.display = 'none', 3000);
                 return;
             }
+
             const noticeData = {
                 id: `notice_${Date.now()}`,
                 title: title,
@@ -196,13 +367,17 @@
                     },
                     body: JSON.stringify({ title: `公告: ${title}`, body: issueBody, labels: ['notice'] })
                 });
-                msgDiv.style.display = 'block'; msgDiv.className = 'message success'; msgDiv.innerHTML = '✅ 公告发布成功！';
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message success';
+                msgDiv.innerHTML = '✅ 公告发布成功！';
                 document.getElementById('noticeTitle').value = '';
                 document.getElementById('noticeContent').value = '';
                 await loadNotices();
                 setTimeout(() => msgDiv.style.display = 'none', 3000);
             } catch (error) {
-                msgDiv.style.display = 'block'; msgDiv.className = 'message error'; msgDiv.innerHTML = `发布失败: ${error.message}`;
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.innerHTML = `发布失败: ${error.message}`;
                 setTimeout(() => msgDiv.style.display = 'none', 3000);
             }
         }
@@ -224,13 +399,30 @@
             } catch (error) { alert('删除失败：' + error.message); }
         }
 
-        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-
-        currentUser = checkAuth();
-        if (currentUser) {
-            loadNotices();
-            if (currentUser.isAdmin) document.getElementById('adminPanel').style.display = 'block';
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
+
+        async function init() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return; }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('username').textContent = currentUser.username;
+            
+            await loadNotices();
+            if (currentUser.isAdmin) {
+                document.getElementById('adminPanel').style.display = 'block';
+                const contentTextarea = document.getElementById('noticeContent');
+                if (contentTextarea) {
+                    contentTextarea.addEventListener('input', updatePreview);
+                }
+            }
+        }
+        
+        init();
     </script>
 </body>
 </html>
