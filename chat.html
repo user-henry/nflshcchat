@@ -169,7 +169,6 @@
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
         }
-        /* Markdown 样式 */
         .message-bubble code {
             background: rgba(0,0,0,0.2);
             padding: 2px 6px;
@@ -291,7 +290,6 @@
         }
         .message.own .message-time { text-align: right; margin-right: 10px; }
         
-        /* 输入区域 + 预览区域 */
         .input-container {
             padding: 20px;
             border-top: 1px solid #2a2a3e;
@@ -540,13 +538,11 @@
         let allNotifications = [];
         let pendingJoinRoom = null;
 
-        // ========== 青云客 AI 机器人配置 ==========
+        // ========== AI 机器人配置 ==========
         const BOT_CONFIG = {
             enabled: true,
             name: '🤖 AI小助手',
-            apiUrl: 'https://api.qingyunke.com/api.php',
-            triggerWords: ['@AI', '@机器人', '问一下', 'AI', '机器人'],
-            autoReplyAll: false
+            triggerWords: ['@AI', '@机器人', 'AI', '机器人']
         };
 
         if (typeof marked !== 'undefined') {
@@ -559,18 +555,17 @@
         
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
         
-        // ========== AI 机器人函数 ==========
+        // ========== 发送机器人消息 ==========
         async function sendBotMessage(roomId, content) {
             if (!content || content === '暂无回复') return;
             
             const botMessage = {
-                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+                id: `msg_bot_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
                 roomId: roomId,
                 sender: BOT_CONFIG.name,
                 content: content,
                 timestamp: new Date().toISOString(),
-                isRecalled: false,
-                isBot: true
+                isRecalled: false
             };
             
             try {
@@ -584,58 +579,64 @@
                     },
                     body: JSON.stringify({ title: `Message: ${botMessage.id}`, body: issueBody, labels: ['chatmessage'] })
                 });
+                console.log('机器人回复已发送:', content);
             } catch (error) {
                 console.error('机器人消息发送失败:', error);
             }
         }
 
-        async function getAIReply(msg) {
+        // ========== 调用青云客 AI API ==========
+        async function callQingyunkeAPI(msg) {
             try {
-                const url = `${BOT_CONFIG.apiUrl}?key=free&appid=0&msg=${encodeURIComponent(msg)}`;
+                const url = `https://api.qingyunke.com/api.php?key=free&appid=0&msg=${encodeURIComponent(msg)}`;
+                console.log('调用 API:', url);
                 const response = await fetch(url);
                 const data = await response.json();
+                console.log('API 返回:', data);
                 
                 if (data.result === 0) {
-                    let content = data.content;
-                    content = content.replace(/{br}/g, '\n');
-                    content = content.replace(/菲菲说：?/g, '');
-                    return content;
+                    let reply = data.content;
+                    reply = reply.replace(/{br}/g, '\n');
+                    reply = reply.replace(/菲菲说：?/g, '');
+                    return reply;
                 }
                 return null;
             } catch (error) {
-                console.error('AI 请求失败:', error);
+                console.error('AI API 请求失败:', error);
                 return null;
             }
         }
 
-        async function checkAIReply(roomId, sender, content) {
+        // ========== 检查并触发 AI 回复 ==========
+        async function triggerAIReply(roomId, sender, messageContent) {
             if (!BOT_CONFIG.enabled) return false;
             if (sender === BOT_CONFIG.name) return false;
+            if (!currentRoom || currentRoom.type !== 'group') return false;
             
-            if (BOT_CONFIG.autoReplyAll) {
-                const reply = await getAIReply(content);
-                if (reply) {
-                    setTimeout(() => sendBotMessage(roomId, reply), 500);
-                    return true;
-                }
-                return false;
-            }
-            
-            const shouldReply = BOT_CONFIG.triggerWords.some(word => 
-                content.toLowerCase().includes(word.toLowerCase())
+            // 检查是否包含触发词
+            const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
+                messageContent.toLowerCase().includes(word.toLowerCase())
             );
             
-            if (!shouldReply) return false;
+            if (!hasTrigger) return false;
             
-            let question = content;
+            console.log('AI 机器人被触发，消息:', messageContent);
+            
+            // 提取问题（去掉触发词）
+            let question = messageContent;
             for (const word of BOT_CONFIG.triggerWords) {
                 question = question.replace(new RegExp(word, 'gi'), '');
             }
-            question = question.trim() || content;
+            question = question.trim();
+            if (!question) question = messageContent;
             
-            const reply = await getAIReply(question);
+            console.log('发送给 API 的问题:', question);
+            
+            // 调用 API
+            const reply = await callQingyunkeAPI(question);
             if (reply) {
-                setTimeout(() => sendBotMessage(roomId, reply), 500);
+                console.log('AI 回复:', reply);
+                await sendBotMessage(roomId, reply);
                 return true;
             }
             return false;
@@ -946,11 +947,17 @@
                 updatePreview();
                 await loadMessages();
                 
-                // AI 机器人回复（仅群聊）
+                // ========== AI 机器人触发（仅群聊） ==========
                 if (currentRoom && currentRoom.type === 'group') {
-                    setTimeout(() => checkAIReply(currentRoom.id, currentUser.username, content), 800);
+                    console.log('准备触发 AI 机器人，消息:', content);
+                    setTimeout(() => {
+                        triggerAIReply(currentRoom.id, currentUser.username, content);
+                    }, 500);
                 }
-            } catch (error) { alert('发送失败：' + error.message); }
+            } catch (error) { 
+                console.error('发送失败:', error);
+                alert('发送失败：' + error.message); 
+            }
         }
 
         async function sendMentionNotification(mentionedUser, sender, roomName, roomId) {
@@ -1217,6 +1224,7 @@
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
                 });
             }
+            console.log('AI 机器人已启用，触发词:', BOT_CONFIG.triggerWords);
         };
     </script>
 </body>
