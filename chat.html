@@ -70,6 +70,7 @@
             border-radius: 12px;
             overflow: hidden;
             height: calc(100vh - 80px);
+            position: relative;
         }
         .rooms-sidebar {
             width: 320px;
@@ -105,7 +106,7 @@
         .room-type { font-size: 11px; opacity: 0.7; }
         .room-verify-badge { font-size: 10px; background: #f39c12; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; position: relative; }
         .chat-header {
             padding: 15px 20px;
             border-bottom: 1px solid #2a2a3e;
@@ -133,7 +134,42 @@
             border-radius: 6px;
             display: inline-block;
         }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .chat-messages { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+        
+        /* 滚动到底部按钮 */
+        .scroll-to-bottom-btn {
+            position: absolute;
+            bottom: 90px;
+            right: 30px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s, opacity 0.2s;
+            z-index: 100;
+        }
+        .scroll-to-bottom-btn:hover {
+            transform: scale(1.1);
+        }
+        .scroll-to-bottom-btn.show {
+            display: flex;
+        }
         
         .message {
             display: flex;
@@ -388,6 +424,13 @@
         @media (max-width: 768px) {
             .rooms-sidebar { width: 220px; }
             .message { max-width: 85%; }
+            .scroll-to-bottom-btn {
+                bottom: 80px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -440,6 +483,10 @@
                     <div class="preview-content" id="previewContent"></div>
                 </div>
             </div>
+            <!-- 滚动到底部按钮 -->
+            <button class="scroll-to-bottom-btn" id="scrollToBottomBtn" onclick="scrollToBottomAndRefresh()" title="滚动到底部">
+                ↓
+            </button>
         </div>
     </div>
 
@@ -569,16 +616,26 @@
         // ========== 滚动检测函数 ==========
         function setupScrollDetection() {
             const messagesContainer = document.getElementById('chatMessages');
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
             if (!messagesContainer) return;
             
+            // 监听滚动，控制按钮显示/隐藏
             messagesContainer.addEventListener('scroll', function() {
+                const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+                
+                // 显示/隐藏按钮
+                if (scrollBtn) {
+                    if (isNearBottom) {
+                        scrollBtn.classList.remove('show');
+                    } else {
+                        scrollBtn.classList.add('show');
+                    }
+                }
+                
                 // 标记用户正在滚动
                 isUserScrolling = true;
                 
-                // 清除之前的超时
                 if (scrollTimeout) clearTimeout(scrollTimeout);
-                
-                // 3秒后重置滚动状态（用户停止滚动3秒后认为不再主动滚动）
                 scrollTimeout = setTimeout(() => {
                     isUserScrolling = false;
                 }, 3000);
@@ -590,7 +647,6 @@
             });
             
             messagesContainer.addEventListener('mouseleave', function() {
-                // 鼠标离开后延迟重置
                 setTimeout(() => {
                     if (scrollTimeout) clearTimeout(scrollTimeout);
                     scrollTimeout = setTimeout(() => {
@@ -600,9 +656,33 @@
             });
         }
         
-        // ========== 智能滚动到底部 ==========
+        // ========== 滚动到底部并刷新 ==========
+        async function scrollToBottomAndRefresh() {
+            const messagesContainer = document.getElementById('chatMessages');
+            if (!messagesContainer) return;
+            
+            // 强制滚动到底部
+            messagesContainer.scrollTo({
+                top: messagesContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+            
+            // 刷新消息
+            await loadMessages();
+            
+            // 再次确保滚动到底部（新消息加载后）
+            setTimeout(() => {
+                messagesContainer.scrollTo({
+                    top: messagesContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+        
+        // ========== 智能滚动到底部（自动刷新时使用） ==========
         function smartScrollToBottom() {
             const messagesContainer = document.getElementById('chatMessages');
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
             if (!messagesContainer) return;
             
             // 如果用户正在滚动/阅读，不自动滚动
@@ -617,6 +697,16 @@
             // 如果用户已经在底部附近，则滚动到底部；否则保持当前位置
             if (isNearBottom) {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // 更新按钮显示状态
+            if (scrollBtn) {
+                const stillNotNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight >= 100;
+                if (stillNotNearBottom) {
+                    scrollBtn.classList.add('show');
+                } else {
+                    scrollBtn.classList.remove('show');
+                }
             }
         }
         
