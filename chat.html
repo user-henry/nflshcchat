@@ -403,6 +403,7 @@
             <a href="favorites.html">⭐ 收藏</a>
             <a href="search.html">🔍 搜索</a>
             <a href="about.html">ℹ️ 关于</a>
+            <a href="ai-profile.html">🤖 AI助手</a>
             <span class="notification-btn" onclick="toggleNotificationPanel(event)">🔔 <span id="notificationCount" class="notification-badge zero">0</span></span>
             <a href="suggestions.html">💡 意见反馈</a>
             <a href="notice.html">📢 公告</a>
@@ -451,7 +452,10 @@
                 <option value="group">群聊（所有人可见）</option>
                 <option value="private">私聊（指定用户）</option>
             </select>
-            <input type="text" id="privateUser" placeholder="私聊对象用户名" style="display: none;">
+            <div id="privateOptions" style="display: none;">
+                <input type="text" id="privateUser" placeholder="私聊对象用户名" style="width: 100%; margin-bottom: 10px;">
+                <button type="button" onclick="quickChatWithAI()" style="width: 100%; background: #2ecc71; color: #1a1a2e; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🤖 与 AI 小助手私聊</button>
+            </div>
             <div id="groupSettings" style="display: none;">
                 <select id="joinType">
                     <option value="public">公开（任何人可加入）</option>
@@ -556,6 +560,12 @@
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
+        
+        // ========== 快速与 AI 小助手私聊 ==========
+        function quickChatWithAI() {
+            document.getElementById('privateUser').value = BOT_CONFIG.name;
+            document.getElementById('roomName').value = `与 ${BOT_CONFIG.name} 的私聊`;
+        }
         
         // ========== 发送机器人消息 ==========
         async function sendBotMessage(roomId, content) {
@@ -680,8 +690,9 @@
         
         function togglePrivateUser() {
             const type = document.getElementById('roomType').value;
-            document.getElementById('privateUser').style.display = type === 'private' ? 'block' : 'none';
-            document.getElementById('groupSettings').style.display = type === 'private' ? 'none' : 'block';
+            const isPrivate = type === 'private';
+            document.getElementById('privateOptions').style.display = isPrivate ? 'block' : 'none';
+            document.getElementById('groupSettings').style.display = isPrivate ? 'none' : 'block';
         }
         document.getElementById('roomType').addEventListener('change', togglePrivateUser);
         document.getElementById('joinType').addEventListener('change', function() {
@@ -1110,10 +1121,13 @@
             if (type === 'private') {
                 if (!privateUser) { alert('请输入私聊对象用户名'); return; }
                 if (privateUser === currentUser.username) { alert('不能与自己私聊'); return; }
-                const userExists = await checkUserExists(privateUser);
-                if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
-                const isBanned = await checkUserBanned(privateUser);
-                if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
+                // 检查用户是否存在（AI 小助手视为存在）
+                if (privateUser !== BOT_CONFIG.name) {
+                    const userExists = await checkUserExists(privateUser);
+                    if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
+                    const isBanned = await checkUserBanned(privateUser);
+                    if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
+                }
                 const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
                 if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
             }
@@ -1168,7 +1182,7 @@
         function closeCreateRoomModal() { document.getElementById('createRoomModal').style.display = 'none'; document.getElementById('roomName').value = ''; document.getElementById('privateUser').value = ''; document.getElementById('customVerifyCode').value = ''; }
 
         async function checkUserBanned(username) {
-            if (isSystemAdmin(username)) return false;
+            if (isSystemAdmin(username) || username === BOT_CONFIG.name) return false;
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
@@ -1185,7 +1199,7 @@
         }
 
         async function checkUserExists(username) {
-            if (isSystemAdmin(username)) return true;
+            if (isSystemAdmin(username) || username === BOT_CONFIG.name) return true;
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
@@ -1201,7 +1215,13 @@
             } catch (error) { return false; }
         }
 
-        function viewProfile(username) { window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank'); }
+        function viewProfile(username) { 
+            if (username === BOT_CONFIG.name) {
+                window.open('ai-profile.html', '_blank');
+            } else {
+                window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank');
+            }
+        }
         function startPolling() {
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(async () => {
