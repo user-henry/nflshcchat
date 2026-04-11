@@ -616,13 +616,12 @@
             }
         }
 
-        // ========== 检查并触发 AI 回复 ==========
+        // ========== 检查并触发 AI 回复（群聊） ==========
         async function triggerAIReply(roomId, sender, messageContent) {
             if (!BOT_CONFIG.enabled) return false;
             if (sender === BOT_CONFIG.name) return false;
             if (!currentRoom || currentRoom.type !== 'group') return false;
             
-            // 检查是否包含触发词
             const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
                 messageContent.toLowerCase().includes(word.toLowerCase())
             );
@@ -631,7 +630,6 @@
             
             console.log('AI 机器人被触发，消息:', messageContent);
             
-            // 提取问题（去掉触发词）
             let question = messageContent;
             for (const word of BOT_CONFIG.triggerWords) {
                 question = question.replace(new RegExp(word, 'gi'), '');
@@ -641,7 +639,6 @@
             
             console.log('发送给 API 的问题:', question);
             
-            // 调用 API
             const reply = await callAIAPI(question);
             if (reply) {
                 console.log('AI 回复:', reply);
@@ -893,6 +890,7 @@
             return uniqueMembers;
         }
 
+        // ========== 核心：发送消息（含群聊AI + 私聊AI） ==========
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
@@ -957,12 +955,27 @@
                 updatePreview();
                 await loadMessages();
                 
-                // ========== AI 机器人触发（仅群聊） ==========
+                // ========== 群聊 AI 触发 ==========
                 if (currentRoom && currentRoom.type === 'group') {
                     console.log('准备触发 AI 机器人，消息:', content);
                     setTimeout(() => {
                         triggerAIReply(currentRoom.id, currentUser.username, content);
                     }, 500);
+                }
+                
+                // ========== 私聊 AI 小助手触发 ==========
+                if (currentRoom && currentRoom.type === 'private') {
+                    const otherUser = currentRoom.members?.find(m => m !== currentUser.username);
+                    if (otherUser === BOT_CONFIG.name) {
+                        console.log('私聊 AI 小助手，触发回复');
+                        setTimeout(async () => {
+                            const reply = await callAIAPI(content);
+                            if (reply) {
+                                await sendBotMessage(currentRoom.id, reply);
+                                await loadMessages();
+                            }
+                        }, 500);
+                    }
                 }
             } catch (error) { 
                 console.error('发送失败:', error);
@@ -1121,7 +1134,6 @@
             if (type === 'private') {
                 if (!privateUser) { alert('请输入私聊对象用户名'); return; }
                 if (privateUser === currentUser.username) { alert('不能与自己私聊'); return; }
-                // 检查用户是否存在（AI 小助手视为存在）
                 if (privateUser !== BOT_CONFIG.name) {
                     const userExists = await checkUserExists(privateUser);
                     if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
