@@ -538,13 +538,24 @@
         let allNotifications = [];
         let pendingJoinRoom = null;
 
-        // ========== AI 机器人配置 ==========
+        // ========== AI 机器人配置（思知 API，使用你的 appid） ==========
         const BOT_CONFIG = {
             enabled: true,
             name: '🤖 AI小助手',
-            apiUrl: 'http://api.qingyunke.com/api.php',  // 必须使用 http
+            apiUrl: 'https://api.sizhi.com/chat',
+            appid: 'd18408ec60b14c5f844d5004881808eb',
             triggerWords: ['@AI', '@机器人', 'AI', '机器人']
         };
+
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
+        
+        function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
         
         // ========== 发送机器人消息 ==========
         async function sendBotMessage(roomId, content) {
@@ -575,54 +586,33 @@
                 console.error('机器人消息发送失败:', error);
             }
         }
-        
-        // ========== 使用 JSONP 方式调用 API（解决跨域） ==========
-        function callQingyunkeAPI(msg) {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'jsonp_callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-                const url = `${BOT_CONFIG.apiUrl}?key=free&appid=0&msg=${encodeURIComponent(msg)}&callback=${callbackName}`;
+
+        // ========== 调用思知 AI API（使用 appid） ==========
+        async function callAIAPI(msg) {
+            try {
+                const url = `${BOT_CONFIG.apiUrl}?appid=${BOT_CONFIG.appid}&userid=${encodeURIComponent(currentUser.username)}&spoken=${encodeURIComponent(msg)}&memory=true`;
+                console.log('调用 API:', url);
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log('API 返回:', data);
                 
-                const script = document.createElement('script');
-                script.src = url;
-                
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
-                    document.body.removeChild(script);
-                    
-                    if (data && data.result === 0) {
-                        let reply = data.content;
-                        reply = reply.replace(/{br}/g, '\n');
-                        reply = reply.replace(/菲菲说：?/g, '');
-                        resolve(reply);
-                    } else {
-                        resolve(null);
-                    }
-                };
-                
-                script.onerror = function() {
-                    delete window[callbackName];
-                    document.body.removeChild(script);
-                    reject(new Error('JSONP 请求失败'));
-                };
-                
-                document.body.appendChild(script);
-                
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                        document.body.removeChild(script);
-                        reject(new Error('请求超时'));
-                    }
-                }, 10000);
-            });
+                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    return data.data.info.text;
+                }
+                return null;
+            } catch (error) {
+                console.error('AI API 请求失败:', error);
+                return null;
+            }
         }
-        
+
         // ========== 检查并触发 AI 回复 ==========
         async function triggerAIReply(roomId, sender, messageContent) {
             if (!BOT_CONFIG.enabled) return false;
             if (sender === BOT_CONFIG.name) return false;
             if (!currentRoom || currentRoom.type !== 'group') return false;
             
+            // 检查是否包含触发词
             const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
                 messageContent.toLowerCase().includes(word.toLowerCase())
             );
@@ -631,6 +621,7 @@
             
             console.log('AI 机器人被触发，消息:', messageContent);
             
+            // 提取问题（去掉触发词）
             let question = messageContent;
             for (const word of BOT_CONFIG.triggerWords) {
                 question = question.replace(new RegExp(word, 'gi'), '');
@@ -640,16 +631,12 @@
             
             console.log('发送给 API 的问题:', question);
             
-            try {
-                const reply = await callQingyunkeAPI(question);
-                if (reply) {
-                    console.log('AI 回复:', reply);
-                    await sendBotMessage(roomId, reply);
-                    return true;
-                }
-            } catch (error) {
-                console.error('AI API 请求失败:', error);
-                await sendBotMessage(roomId, '抱歉，AI 服务暂时不可用，请稍后再试～');
+            // 调用 API
+            const reply = await callAIAPI(question);
+            if (reply) {
+                console.log('AI 回复:', reply);
+                await sendBotMessage(roomId, reply);
+                return true;
             }
             return false;
         }
