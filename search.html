@@ -93,8 +93,45 @@
         .result-content { color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
         .result-content mark { background: #f39c12; color: #1a1a2e; padding: 0 2px; border-radius: 3px; }
         .result-time { font-size: 11px; color: #666; }
-        .empty-state { text-align: center; padding: 60px; color: var(--text-secondary); }
+        
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .page-btn:hover {
+            background: var(--accent-color);
+            color: #1a1a2e;
+        }
+        .page-btn.active {
+            background: var(--accent-color);
+            color: #1a1a2e;
+            border-color: var(--accent-color);
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .empty-state { text-align: center; padding: 60px; color: var(--text-secondary); }
+        .stats-info {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
     </style>
     <script src="config.js"></script>
 </head>
@@ -127,6 +164,8 @@
         </div>
 
         <div id="results"></div>
+        <div id="pagination" class="pagination"></div>
+        <div id="statsInfo" class="stats-info"></div>
     </div>
 
     <script>
@@ -134,6 +173,12 @@
         let allRooms = [];
         let allMessages = [];
         let allSenders = new Set();
+        
+        // 分页变量
+        let currentResults = [];
+        let currentPage = 1;
+        let itemsPerPage = 20;
+        let totalPages = 1;
 
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
@@ -152,10 +197,48 @@
             return user;
         }
 
+        async function loadAllMessages() {
+            let allMsg = [];
+            let page = 1;
+            let hasMore = true;
+            
+            try {
+                while (hasMore) {
+                    const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                    const res = await fetch(url, {
+                        headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    });
+                    
+                    const linkHeader = res.headers.get('Link');
+                    hasMore = linkHeader && linkHeader.includes('rel="next"');
+                    
+                    const issues = await res.json();
+                    if (issues.length === 0) break;
+                    
+                    for (const issue of issues) {
+                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                        if (match) {
+                            const msgData = JSON.parse(match[1]);
+                            if (!msgData.isRecalled) {
+                                allMsg.push(msgData);
+                            }
+                        }
+                    }
+                    page++;
+                    if (page > 20) break; // 最多加载20页（2000条）
+                }
+                return allMsg;
+            } catch (error) {
+                console.error('加载消息失败:', error);
+                return [];
+            }
+        }
+
         async function loadData() {
             try {
                 const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
                 
+                // 加载聊天室
                 const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
                     headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
@@ -171,23 +254,14 @@
                     }
                 }
                 
-                const msgRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const msgIssues = await msgRes.json();
-                allMessages = [];
-                allSenders.clear();
-                for (const issue of msgIssues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (!msgData.isRecalled) {
-                            allMessages.push(msgData);
-                            allSenders.add(msgData.sender);
-                        }
-                    }
-                }
+                // 加载所有消息
+                allMessages = await loadAllMessages();
                 
+                // 收集所有发送者
+                allSenders.clear();
+                allMessages.forEach(msg => allSenders.add(msg.sender));
+                
+                // 更新筛选器选项
                 const roomSelect = document.getElementById('roomFilter');
                 roomSelect.innerHTML = '<option value="">所有聊天室</option>' + 
                     allRooms.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
@@ -195,8 +269,11 @@
                 const senderSelect = document.getElementById('senderFilter');
                 senderSelect.innerHTML = '<option value="">所有发送者</option>' + 
                     [...allSenders].map(s => `<option value="${s}">${escapeHtml(s)}</option>`).join('');
+                
+                document.getElementById('results').innerHTML = '<div class="empty-state">🔍 输入关键词开始搜索</div>';
             } catch (error) {
                 console.error('加载数据失败:', error);
+                document.getElementById('results').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
             }
         }
 
@@ -233,17 +310,35 @@
                 results = results.filter(m => new Date(m.timestamp) <= end);
             }
             
+            // 按时间倒序排列（最新的在前）
             results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            renderResults(results, keyword);
+            
+            currentResults = results;
+            currentPage = 1;
+            totalPages = Math.ceil(currentResults.length / itemsPerPage);
+            
+            renderResults();
+            renderPagination();
+            
+            // 显示统计信息
+            const statsDiv = document.getElementById('statsInfo');
+            statsDiv.innerHTML = `找到 ${currentResults.length} 条相关消息`;
         }
 
-        function renderResults(results, keyword) {
+        function renderResults() {
             const container = document.getElementById('results');
-            if (results.length === 0) {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageResults = currentResults.slice(start, end);
+            
+            if (pageResults.length === 0) {
                 container.innerHTML = '<div class="empty-state">🔍 没有找到相关消息</div>';
                 return;
             }
-            container.innerHTML = results.map(msg => `
+            
+            const keyword = document.getElementById('keyword').value.trim();
+            
+            container.innerHTML = pageResults.map(msg => `
                 <div class="result-item">
                     <div class="result-room">📁 ${escapeHtml(getRoomName(msg.roomId))}</div>
                     <div class="result-sender">${escapeHtml(msg.sender)}</div>
@@ -251,6 +346,50 @@
                     <div class="result-time">${new Date(msg.timestamp).toLocaleString()}</div>
                 </div>
             `).join('');
+        }
+
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // 上一页
+            html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← 上一页</button>`;
+            
+            // 页码
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span style="padding: 0 5px;">...</span>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span style="padding: 0 5px;">...</span>`;
+                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+            
+            // 下一页
+            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页 →</button>`;
+            
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderResults();
+            renderPagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         currentUser = checkAuth();
