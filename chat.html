@@ -171,13 +171,22 @@
             cursor: not-allowed;
         }
         
+        /* 消息样式 - 修复：自己的消息靠右 */
         .message {
             display: flex;
             flex-direction: column;
             max-width: 70%;
             position: relative;
         }
-        .message.own { align-self: flex-end; }
+        /* 自己的消息靠右对齐 */
+        .message.own {
+            align-self: flex-end;
+        }
+        /* 他人的消息靠左对齐 */
+        .message:not(.own) {
+            align-self: flex-start;
+        }
+        
         .message-sender {
             font-size: 12px;
             color: #aaa;
@@ -186,7 +195,12 @@
             cursor: pointer;
         }
         .message-sender:hover { text-decoration: underline; color: #ffd700; }
-        .message.own .message-sender { text-align: right; margin-right: 10px; }
+        /* 自己的消息发送者靠右 */
+        .message.own .message-sender {
+            text-align: right;
+            margin-right: 10px;
+            margin-left: 0;
+        }
         
         .message-bubble-wrapper {
             position: relative;
@@ -201,10 +215,12 @@
             word-wrap: break-word;
             line-height: 1.5;
         }
+        /* 自己的消息气泡样式 */
         .message.own .message-bubble {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
         }
+        
         .message-bubble code {
             background: rgba(0,0,0,0.2);
             padding: 2px 6px;
@@ -324,7 +340,12 @@
             margin-top: 4px;
             margin-left: 10px;
         }
-        .message.own .message-time { text-align: right; margin-right: 10px; }
+        /* 自己的消息时间靠右 */
+        .message.own .message-time {
+            text-align: right;
+            margin-right: 10px;
+            margin-left: 0;
+        }
         
         .input-container {
             padding: 20px;
@@ -601,7 +622,7 @@
         let currentUser = null;
         let currentRoom = null;
         let allRooms = [];
-        let allMessages = [];      // 存储所有已加载的消息
+        let allMessages = [];
         let messages = {};
         let pollInterval = null;
         let allNotifications = [];
@@ -611,7 +632,7 @@
         let currentPage = 1;
         let hasMoreMessages = true;
         let isLoadingMore = false;
-        let newestMessageTimestamp = null;  // 用于轮询获取新消息
+        let newestMessageTimestamp = null;
         
         // 滚动控制变量
         let isUserScrolling = false;
@@ -666,7 +687,6 @@
             const messagesContainer = document.getElementById('chatMessages');
             if (!messagesContainer) return;
             messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
-            // 只刷新新消息，不重新加载全部
             pollNewMessages();
         }
         
@@ -701,7 +721,6 @@
                     }
                 }
                 
-                // 检查是否有下一页
                 const hasNext = linkHeader && linkHeader.includes('rel="next"');
                 
                 return { messages: roomMessages, hasNext };
@@ -717,7 +736,6 @@
             try {
                 let url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=50`;
                 if (newestMessageTimestamp) {
-                    // 获取比最新消息更新的消息
                     url += `&since=${encodeURIComponent(newestMessageTimestamp)}`;
                 }
                 const res = await fetch(url, {
@@ -730,7 +748,6 @@
                     if (match) {
                         const msgData = JSON.parse(match[1]);
                         if (msgData.roomId === currentRoom.id && !msgData.isRecalled) {
-                            // 检查是否已存在
                             const exists = allMessages.some(m => m.id === msgData.id);
                             if (!exists) {
                                 newMessages.push(msgData);
@@ -751,7 +768,6 @@
             
             const messagesContainer = document.getElementById('messagesContainer');
             if (!append) {
-                // 首次加载，清空并显示加载状态
                 messagesContainer.innerHTML = '<div class="empty-state">加载中...</div>';
                 currentPage = 1;
                 hasMoreMessages = true;
@@ -762,17 +778,14 @@
             const result = await loadHistoryMessages(currentPage);
             
             if (result.messages.length > 0) {
-                // 按时间正序排列
                 result.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                 
                 if (append) {
-                    // 追加到现有消息前面
                     allMessages = [...result.messages, ...allMessages];
                 } else {
                     allMessages = result.messages;
                 }
                 
-                // 更新最新消息时间戳
                 if (allMessages.length > 0) {
                     const latestMsg = allMessages[allMessages.length - 1];
                     newestMessageTimestamp = latestMsg.timestamp;
@@ -781,7 +794,6 @@
                 messages[currentRoom.id] = allMessages;
                 renderMessages();
                 
-                // 更新加载更多按钮状态
                 const loadMoreContainer = document.getElementById('loadMoreContainer');
                 if (hasMoreMessages && result.hasNext) {
                     loadMoreContainer.style.display = 'flex';
@@ -810,13 +822,11 @@
             loadMoreBtn.textContent = '加载中...';
             loadMoreBtn.disabled = true;
             
-            // 保存当前滚动位置
             const messagesContainer = document.getElementById('chatMessages');
             const oldScrollHeight = messagesContainer.scrollHeight;
             
-            await loadMessages(true);  // append = true
+            await loadMessages(true);
             
-            // 恢复滚动位置
             setTimeout(() => {
                 const newScrollHeight = messagesContainer.scrollHeight;
                 messagesContainer.scrollTop = newScrollHeight - oldScrollHeight;
@@ -857,8 +867,10 @@
             container.innerHTML = roomMessages.map(msg => {
                 const renderedHtml = renderMarkdown(msg.content);
                 const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
+                // 添加 own 类来标识自己的消息，用于 CSS 靠右对齐
+                const isOwn = msg.sender === currentUser.username;
                 return `
-                    <div class="message ${msg.sender === currentUser.username ? 'own' : ''}" data-msg-id="${msg.id}">
+                    <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
                         <div class="message-sender" onclick="viewProfile('${escapeHtml(msg.sender)}')">${escapeHtml(msg.sender)}</div>
                         <div class="message-bubble-wrapper">
                             <div class="message-bubble">${renderedHtml}</div>
@@ -1199,7 +1211,6 @@
                 input.value = '';
                 updatePreview();
                 
-                // 刷新消息
                 await pollNewMessages();
                 renderMessages();
                 
@@ -1274,7 +1285,7 @@
             }
             
             document.getElementById('inputContainer').style.display = 'block';
-            await loadMessages(false);  // 首次加载，不清除已有消息但重新加载
+            await loadMessages(false);
             startPolling();
         }
 
