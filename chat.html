@@ -134,6 +134,8 @@
             border-radius: 6px;
             display: inline-block;
         }
+        
+        /* 消息区域 */
         .chat-messages { 
             flex: 1; 
             overflow-y: auto; 
@@ -144,31 +146,29 @@
             scroll-behavior: smooth;
         }
         
-        /* 滚动到底部按钮 */
-        .scroll-to-bottom-btn {
-            position: absolute;
-            bottom: 90px;
-            right: 30px;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-            border: none;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            transition: transform 0.2s, opacity 0.2s;
-            z-index: 100;
-        }
-        .scroll-to-bottom-btn:hover {
-            transform: scale(1.1);
-        }
-        .scroll-to-bottom-btn.show {
+        /* 加载更多按钮 */
+        .load-more-container {
             display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        .load-more-btn {
+            background: var(--bg-tertiary);
+            color: var(--accent-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .load-more-btn:hover {
+            background: var(--accent-color);
+            color: #1a1a2e;
+        }
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         .message {
@@ -386,6 +386,28 @@
         }
         .empty-state { text-align: center; padding: 60px; color: #666; }
         
+        .scroll-to-bottom-btn {
+            position: absolute;
+            bottom: 90px;
+            right: 30px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s, opacity 0.2s;
+            z-index: 100;
+        }
+        .scroll-to-bottom-btn:hover { transform: scale(1.1); }
+        .scroll-to-bottom-btn.show { display: flex; }
+        
         .modal {
             display: none;
             position: fixed;
@@ -424,13 +446,7 @@
         @media (max-width: 768px) {
             .rooms-sidebar { width: 220px; }
             .message { max-width: 85%; }
-            .scroll-to-bottom-btn {
-                bottom: 80px;
-                right: 15px;
-                width: 40px;
-                height: 40px;
-                font-size: 18px;
-            }
+            .scroll-to-bottom-btn { bottom: 80px; right: 15px; width: 40px; height: 40px; font-size: 18px; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -469,7 +485,12 @@
 
         <div class="chat-main">
             <div class="chat-header" id="chatHeader"><h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p></div>
-            <div class="chat-messages" id="chatMessages"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                    <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreMessages()">↑ 加载更多历史消息 ↑</button>
+                </div>
+                <div id="messagesContainer"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
+            </div>
             <div class="input-container" id="inputContainer" style="display: none;">
                 <div class="input-area">
                     <textarea class="chat-input" id="messageInput" placeholder="输入文字…" rows="2"></textarea>
@@ -483,10 +504,7 @@
                     <div class="preview-content" id="previewContent"></div>
                 </div>
             </div>
-            <!-- 滚动到底部按钮 -->
-            <button class="scroll-to-bottom-btn" id="scrollToBottomBtn" onclick="scrollToBottomAndRefresh()" title="滚动到底部">
-                ↓
-            </button>
+            <button class="scroll-to-bottom-btn" id="scrollToBottomBtn" onclick="scrollToBottomAndRefresh()" title="滚动到底部">↓</button>
         </div>
     </div>
 
@@ -583,18 +601,23 @@
         let currentUser = null;
         let currentRoom = null;
         let allRooms = [];
-        let allMessages = [];
+        let allMessages = [];      // 存储所有已加载的消息
         let messages = {};
         let pollInterval = null;
         let allNotifications = [];
         let pendingJoinRoom = null;
         
-        // ========== 滚动控制变量 ==========
+        // 分页相关变量
+        let currentPage = 1;
+        let hasMoreMessages = true;
+        let isLoadingMore = false;
+        let newestMessageTimestamp = null;  // 用于轮询获取新消息
+        
+        // 滚动控制变量
         let isUserScrolling = false;
         let scrollTimeout = null;
-        let lastScrollTop = 0;
-
-        // ========== AI 机器人配置（思知 API，使用你的 appid） ==========
+        
+        // ========== AI 机器人配置 ==========
         const BOT_CONFIG = {
             enabled: true,
             name: '🤖 AI小助手',
@@ -613,190 +636,244 @@
         
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
         
-        // ========== 滚动检测函数 ==========
+        // ========== 滚动检测 ==========
         function setupScrollDetection() {
             const messagesContainer = document.getElementById('chatMessages');
             const scrollBtn = document.getElementById('scrollToBottomBtn');
             if (!messagesContainer) return;
             
-            // 监听滚动，控制按钮显示/隐藏
             messagesContainer.addEventListener('scroll', function() {
                 const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
-                
-                // 显示/隐藏按钮
                 if (scrollBtn) {
-                    if (isNearBottom) {
-                        scrollBtn.classList.remove('show');
-                    } else {
-                        scrollBtn.classList.add('show');
-                    }
+                    if (isNearBottom) scrollBtn.classList.remove('show');
+                    else scrollBtn.classList.add('show');
                 }
-                
-                // 标记用户正在滚动
                 isUserScrolling = true;
-                
                 if (scrollTimeout) clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => {
-                    isUserScrolling = false;
-                }, 3000);
+                scrollTimeout = setTimeout(() => { isUserScrolling = false; }, 3000);
             });
             
-            // 鼠标进入消息区域时，也认为用户可能正在阅读
-            messagesContainer.addEventListener('mouseenter', function() {
-                isUserScrolling = true;
-            });
-            
+            messagesContainer.addEventListener('mouseenter', function() { isUserScrolling = true; });
             messagesContainer.addEventListener('mouseleave', function() {
                 setTimeout(() => {
                     if (scrollTimeout) clearTimeout(scrollTimeout);
-                    scrollTimeout = setTimeout(() => {
-                        isUserScrolling = false;
-                    }, 1000);
+                    scrollTimeout = setTimeout(() => { isUserScrolling = false; }, 1000);
                 }, 500);
             });
         }
         
-        // ========== 滚动到底部并刷新 ==========
-        async function scrollToBottomAndRefresh() {
+        function scrollToBottomAndRefresh() {
             const messagesContainer = document.getElementById('chatMessages');
             if (!messagesContainer) return;
-            
-            // 强制滚动到底部
-            messagesContainer.scrollTo({
-                top: messagesContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-            
-            // 刷新消息
-            await loadMessages();
-            
-            // 再次确保滚动到底部（新消息加载后）
-            setTimeout(() => {
-                messagesContainer.scrollTo({
-                    top: messagesContainer.scrollHeight,
-                    behavior: 'smooth'
-                });
-            }, 100);
+            messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
+            // 只刷新新消息，不重新加载全部
+            pollNewMessages();
         }
         
-        // ========== 智能滚动到底部（自动刷新时使用） ==========
         function smartScrollToBottom() {
             const messagesContainer = document.getElementById('chatMessages');
-            const scrollBtn = document.getElementById('scrollToBottomBtn');
             if (!messagesContainer) return;
+            if (isUserScrolling) return;
+            const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+            if (isNearBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // ========== 加载历史消息（分页） ==========
+        async function loadHistoryMessages(page = 1) {
+            if (!currentRoom) return [];
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=50&page=${page}`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                
+                const linkHeader = res.headers.get('Link');
+                const issues = await res.json();
+                
+                const roomMessages = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const msgData = JSON.parse(match[1]);
+                        if (msgData.roomId === currentRoom.id && !msgData.isRecalled) {
+                            roomMessages.push(msgData);
+                        }
+                    }
+                }
+                
+                // 检查是否有下一页
+                const hasNext = linkHeader && linkHeader.includes('rel="next"');
+                
+                return { messages: roomMessages, hasNext };
+            } catch (error) {
+                console.error('加载历史消息失败:', error);
+                return { messages: [], hasNext: false };
+            }
+        }
+        
+        // ========== 加载新消息（轮询用） ==========
+        async function loadNewMessages() {
+            if (!currentRoom) return [];
+            try {
+                let url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=50`;
+                if (newestMessageTimestamp) {
+                    // 获取比最新消息更新的消息
+                    url += `&since=${encodeURIComponent(newestMessageTimestamp)}`;
+                }
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                const newMessages = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const msgData = JSON.parse(match[1]);
+                        if (msgData.roomId === currentRoom.id && !msgData.isRecalled) {
+                            // 检查是否已存在
+                            const exists = allMessages.some(m => m.id === msgData.id);
+                            if (!exists) {
+                                newMessages.push(msgData);
+                            }
+                        }
+                    }
+                }
+                return newMessages;
+            } catch (error) {
+                console.error('加载新消息失败:', error);
+                return [];
+            }
+        }
+        
+        // ========== 加载消息（初始加载） ==========
+        async function loadMessages(append = false) {
+            if (!currentRoom) return;
             
-            // 如果用户正在滚动/阅读，不自动滚动
-            if (isUserScrolling) {
-                console.log('用户正在阅读，跳过自动滚动');
+            const messagesContainer = document.getElementById('messagesContainer');
+            if (!append) {
+                // 首次加载，清空并显示加载状态
+                messagesContainer.innerHTML = '<div class="empty-state">加载中...</div>';
+                currentPage = 1;
+                hasMoreMessages = true;
+                allMessages = [];
+                newestMessageTimestamp = null;
+            }
+            
+            const result = await loadHistoryMessages(currentPage);
+            
+            if (result.messages.length > 0) {
+                // 按时间正序排列
+                result.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                if (append) {
+                    // 追加到现有消息前面
+                    allMessages = [...result.messages, ...allMessages];
+                } else {
+                    allMessages = result.messages;
+                }
+                
+                // 更新最新消息时间戳
+                if (allMessages.length > 0) {
+                    const latestMsg = allMessages[allMessages.length - 1];
+                    newestMessageTimestamp = latestMsg.timestamp;
+                }
+                
+                messages[currentRoom.id] = allMessages;
+                renderMessages();
+                
+                // 更新加载更多按钮状态
+                const loadMoreContainer = document.getElementById('loadMoreContainer');
+                if (hasMoreMessages && result.hasNext) {
+                    loadMoreContainer.style.display = 'flex';
+                    currentPage++;
+                } else {
+                    loadMoreContainer.style.display = 'none';
+                    hasMoreMessages = false;
+                }
+            } else {
+                if (!append) {
+                    messagesContainer.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
+                }
+                const loadMoreContainer = document.getElementById('loadMoreContainer');
+                loadMoreContainer.style.display = 'none';
+                hasMoreMessages = false;
+            }
+        }
+        
+        // ========== 加载更多历史消息 ==========
+        async function loadMoreMessages() {
+            if (isLoadingMore || !hasMoreMessages) return;
+            isLoadingMore = true;
+            
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            const originalText = loadMoreBtn.textContent;
+            loadMoreBtn.textContent = '加载中...';
+            loadMoreBtn.disabled = true;
+            
+            // 保存当前滚动位置
+            const messagesContainer = document.getElementById('chatMessages');
+            const oldScrollHeight = messagesContainer.scrollHeight;
+            
+            await loadMessages(true);  // append = true
+            
+            // 恢复滚动位置
+            setTimeout(() => {
+                const newScrollHeight = messagesContainer.scrollHeight;
+                messagesContainer.scrollTop = newScrollHeight - oldScrollHeight;
+            }, 100);
+            
+            loadMoreBtn.textContent = originalText;
+            loadMoreBtn.disabled = false;
+            isLoadingMore = false;
+        }
+        
+        // ========== 轮询新消息 ==========
+        async function pollNewMessages() {
+            if (!currentRoom) return;
+            const newMessages = await loadNewMessages();
+            if (newMessages.length > 0) {
+                newMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                allMessages.push(...newMessages);
+                messages[currentRoom.id] = allMessages;
+                if (newestMessageTimestamp) {
+                    const latestMsg = newMessages[newMessages.length - 1];
+                    newestMessageTimestamp = latestMsg.timestamp;
+                }
+                renderMessages();
+                smartScrollToBottom();
+            }
+        }
+        
+        // ========== 渲染消息 ==========
+        function renderMessages() {
+            const container = document.getElementById('messagesContainer');
+            const roomMessages = allMessages || [];
+            
+            if (roomMessages.length === 0) {
+                container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
                 return;
             }
             
-            // 检查用户是否在底部附近（距离底部小于100px）
-            const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+            container.innerHTML = roomMessages.map(msg => {
+                const renderedHtml = renderMarkdown(msg.content);
+                const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
+                return `
+                    <div class="message ${msg.sender === currentUser.username ? 'own' : ''}" data-msg-id="${msg.id}">
+                        <div class="message-sender" onclick="viewProfile('${escapeHtml(msg.sender)}')">${escapeHtml(msg.sender)}</div>
+                        <div class="message-bubble-wrapper">
+                            <div class="message-bubble">${renderedHtml}</div>
+                            ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
+                            <button class="favorite-btn" onclick="favoriteMessage('${msg.id}')">⭐</button>
+                        </div>
+                        <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+                    </div>
+                `;
+            }).join('');
             
-            // 如果用户已经在底部附近，则滚动到底部；否则保持当前位置
-            if (isNearBottom) {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-            
-            // 更新按钮显示状态
-            if (scrollBtn) {
-                const stillNotNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight >= 100;
-                if (stillNotNearBottom) {
-                    scrollBtn.classList.add('show');
-                } else {
-                    scrollBtn.classList.remove('show');
-                }
-            }
+            smartScrollToBottom();
         }
         
-        // ========== 快速与 AI 小助手私聊 ==========
-        function quickChatWithAI() {
-            document.getElementById('privateUser').value = BOT_CONFIG.name;
-            document.getElementById('roomName').value = `与 ${BOT_CONFIG.name} 的私聊`;
-        }
-        
-        // ========== 发送机器人消息 ==========
-        async function sendBotMessage(roomId, content) {
-            if (!content || content === '暂无回复') return;
-            
-            const botMessage = {
-                id: `msg_bot_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-                roomId: roomId,
-                sender: BOT_CONFIG.name,
-                content: content,
-                timestamp: new Date().toISOString(),
-                isRecalled: false
-            };
-            
-            try {
-                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(botMessage, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: `Message: ${botMessage.id}`, body: issueBody, labels: ['chatmessage'] })
-                });
-                console.log('机器人回复已发送:', content);
-            } catch (error) {
-                console.error('机器人消息发送失败:', error);
-            }
-        }
-
-        // ========== 调用思知 AI API（使用 appid） ==========
-        async function callAIAPI(msg) {
-            try {
-                const url = `${BOT_CONFIG.apiUrl}?appid=${BOT_CONFIG.appid}&userid=${encodeURIComponent(currentUser.username)}&spoken=${encodeURIComponent(msg)}&memory=true`;
-                console.log('调用 API:', url);
-                const response = await fetch(url);
-                const data = await response.json();
-                console.log('API 返回:', data);
-                
-                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
-                    return data.data.info.text;
-                }
-                return null;
-            } catch (error) {
-                console.error('AI API 请求失败:', error);
-                return null;
-            }
-        }
-
-        // ========== 检查并触发 AI 回复（群聊） ==========
-        async function triggerAIReply(roomId, sender, messageContent) {
-            if (!BOT_CONFIG.enabled) return false;
-            if (sender === BOT_CONFIG.name) return false;
-            if (!currentRoom || currentRoom.type !== 'group') return false;
-            
-            const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
-                messageContent.toLowerCase().includes(word.toLowerCase())
-            );
-            
-            if (!hasTrigger) return false;
-            
-            console.log('AI 机器人被触发，消息:', messageContent);
-            
-            let question = messageContent;
-            for (const word of BOT_CONFIG.triggerWords) {
-                question = question.replace(new RegExp(word, 'gi'), '');
-            }
-            question = question.trim();
-            if (!question) question = messageContent;
-            
-            console.log('发送给 API 的问题:', question);
-            
-            const reply = await callAIAPI(question);
-            if (reply) {
-                console.log('AI 回复:', reply);
-                await sendBotMessage(roomId, reply);
-                return true;
-            }
-            return false;
-        }
-        
+        // ========== 渲染 Markdown ==========
         function renderMarkdown(content) {
             if (!content) return '';
             const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
@@ -834,6 +911,85 @@
             }
         }
         
+        // ========== 快速与 AI 小助手私聊 ==========
+        function quickChatWithAI() {
+            document.getElementById('privateUser').value = BOT_CONFIG.name;
+            document.getElementById('roomName').value = `与 ${BOT_CONFIG.name} 的私聊`;
+        }
+        
+        // ========== 发送机器人消息 ==========
+        async function sendBotMessage(roomId, content) {
+            if (!content || content === '暂无回复') return;
+            
+            const botMessage = {
+                id: `msg_bot_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+                roomId: roomId,
+                sender: BOT_CONFIG.name,
+                content: content,
+                timestamp: new Date().toISOString(),
+                isRecalled: false
+            };
+            
+            try {
+                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(botMessage, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `Message: ${botMessage.id}`, body: issueBody, labels: ['chatmessage'] })
+                });
+                console.log('机器人回复已发送:', content);
+                await pollNewMessages();
+            } catch (error) {
+                console.error('机器人消息发送失败:', error);
+            }
+        }
+
+        // ========== 调用思知 AI API ==========
+        async function callAIAPI(msg) {
+            try {
+                const url = `${BOT_CONFIG.apiUrl}?appid=${BOT_CONFIG.appid}&userid=${encodeURIComponent(currentUser.username)}&spoken=${encodeURIComponent(msg)}&memory=true`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    return data.data.info.text;
+                }
+                return null;
+            } catch (error) {
+                console.error('AI API 请求失败:', error);
+                return null;
+            }
+        }
+
+        // ========== 群聊 AI 触发 ==========
+        async function triggerAIReply(roomId, sender, messageContent) {
+            if (!BOT_CONFIG.enabled) return false;
+            if (sender === BOT_CONFIG.name) return false;
+            if (!currentRoom || currentRoom.type !== 'group') return false;
+            
+            const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
+                messageContent.toLowerCase().includes(word.toLowerCase())
+            );
+            if (!hasTrigger) return false;
+            
+            let question = messageContent;
+            for (const word of BOT_CONFIG.triggerWords) {
+                question = question.replace(new RegExp(word, 'gi'), '');
+            }
+            question = question.trim() || messageContent;
+            
+            const reply = await callAIAPI(question);
+            if (reply) {
+                await sendBotMessage(roomId, reply);
+                return true;
+            }
+            return false;
+        }
+        
+        // ========== 其他辅助函数 ==========
         function togglePrivateUser() {
             const type = document.getElementById('roomType').value;
             const isPrivate = type === 'private';
@@ -942,28 +1098,6 @@
             `).join('');
         }
 
-        async function loadMessages() {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
-                const issues = await res.json();
-                allMessages = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        allMessages.push({ ...msgData, issueNumber: issue.number });
-                    }
-                }
-                if (currentRoom) {
-                    const roomMessages = allMessages.filter(m => m.roomId === currentRoom.id && !m.isRecalled);
-                    roomMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                    messages[currentRoom.id] = roomMessages;
-                    renderMessages(currentRoom.id);
-                }
-            } catch (error) { console.error('加载消息失败:', error); }
-        }
-
         async function favoriteMessage(messageId) {
             const msg = allMessages.find(m => m.id === messageId);
             if (!msg) { alert('消息不存在'); return; }
@@ -995,30 +1129,6 @@
             }
         }
 
-        function renderMessages(roomId) {
-            const container = document.getElementById('chatMessages');
-            const roomMessages = messages[roomId] || [];
-            if (roomMessages.length === 0) { container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>'; return; }
-            container.innerHTML = roomMessages.map(msg => {
-                const renderedHtml = renderMarkdown(msg.content);
-                const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
-                return `
-                    <div class="message ${msg.sender === currentUser.username ? 'own' : ''}" data-msg-id="${msg.id}">
-                        <div class="message-sender" onclick="viewProfile('${escapeHtml(msg.sender)}')">${escapeHtml(msg.sender)}</div>
-                        <div class="message-bubble-wrapper">
-                            <div class="message-bubble">${renderedHtml}</div>
-                            ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
-                            <button class="favorite-btn" onclick="favoriteMessage('${msg.id}')">⭐</button>
-                        </div>
-                        <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-                    </div>
-                `;
-            }).join('');
-            
-            // 使用智能滚动（不干扰用户阅读）
-            smartScrollToBottom();
-        }
-
         async function recallMessage(messageId) {
             const msg = allMessages.find(m => m.id === messageId);
             if (!msg || msg.sender !== currentUser.username) return;
@@ -1030,7 +1140,8 @@
                 headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
-            await loadMessages();
+            await pollNewMessages();
+            renderMessages();
         }
 
         function getGroupActiveMembers(roomId) {
@@ -1041,7 +1152,6 @@
             return uniqueMembers;
         }
 
-        // ========== 核心：发送消息（含群聊AI + 私聊AI） ==========
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
@@ -1049,22 +1159,6 @@
             
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
-            
-            const currentRoomMessages = allMessages.filter(m => m.roomId === currentRoom.id && m.sender === currentUser.username && !m.isRecalled).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            if (currentRoomMessages.length > 0) {
-                const lastMessage = currentRoomMessages[0];
-                if (lastMessage.content === content) {
-                    if (confirm('您发送的消息与上一条完全相同，是否覆盖上一条消息？')) {
-                        lastMessage.isRecalled = true;
-                        const updatedBody = `聊天消息\n\`\`\`json\n${JSON.stringify(lastMessage, null, 2)}\n\`\`\``;
-                        await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${lastMessage.issueNumber}`, {
-                            method: 'PATCH',
-                            headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ body: updatedBody })
-                        });
-                    } else { return; }
-                }
-            }
             
             const hasMentionAll = content.includes('@所有人');
             let mentionedUsers = [];
@@ -1104,26 +1198,26 @@
                 }
                 input.value = '';
                 updatePreview();
-                await loadMessages();
                 
-                // ========== 群聊 AI 触发 ==========
+                // 刷新消息
+                await pollNewMessages();
+                renderMessages();
+                
+                // 群聊 AI 触发
                 if (currentRoom && currentRoom.type === 'group') {
-                    console.log('准备触发 AI 机器人，消息:', content);
-                    setTimeout(() => {
-                        triggerAIReply(currentRoom.id, currentUser.username, content);
-                    }, 500);
+                    setTimeout(() => triggerAIReply(currentRoom.id, currentUser.username, content), 500);
                 }
                 
-                // ========== 私聊 AI 小助手触发 ==========
+                // 私聊 AI 小助手触发
                 if (currentRoom && currentRoom.type === 'private') {
                     const otherUser = currentRoom.members?.find(m => m !== currentUser.username);
                     if (otherUser === BOT_CONFIG.name) {
-                        console.log('私聊 AI 小助手，触发回复');
                         setTimeout(async () => {
                             const reply = await callAIAPI(content);
                             if (reply) {
                                 await sendBotMessage(currentRoom.id, reply);
-                                await loadMessages();
+                                await pollNewMessages();
+                                renderMessages();
                             }
                         }, 500);
                     }
@@ -1158,33 +1252,33 @@
             const room = allRooms.find(r => r.id === roomId);
             if (!room) return;
             if (room.isBanned) { alert('该群聊已被封禁'); return; }
-            if (room.type === 'private') {
-                currentRoom = room;
-                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}</h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
-                document.getElementById('inputContainer').style.display = 'block';
-                await loadMessages();
-                startPolling();
-                return;
-            }
-            if (room.joinType === 'verify') {
-                const isMember = room.members && room.members.includes(currentUser.username);
-                if (!isMember) {
-                    pendingJoinRoom = room;
-                    document.getElementById('joinRoomName').innerHTML = `加入群聊「${escapeHtml(room.name)}」<br><span style="font-size: 12px; color: #aaa;">该群聊需要验证码才能加入</span>`;
-                    document.getElementById('joinVerifySection').style.display = 'block';
-                    document.getElementById('joinVerifyCode').value = '';
-                    document.getElementById('joinMessage').innerHTML = '';
-                    document.getElementById('joinRoomModal').style.display = 'flex';
-                    return;
-                }
-            }
+            
             currentRoom = room;
-            document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
+            
+            if (room.type === 'private') {
+                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}</h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
+            } else {
+                if (room.joinType === 'verify') {
+                    const isMember = room.members && room.members.includes(currentUser.username);
+                    if (!isMember) {
+                        pendingJoinRoom = room;
+                        document.getElementById('joinRoomName').innerHTML = `加入群聊「${escapeHtml(room.name)}」<br><span style="font-size: 12px; color: #aaa;">该群聊需要验证码才能加入</span>`;
+                        document.getElementById('joinVerifySection').style.display = 'block';
+                        document.getElementById('joinVerifyCode').value = '';
+                        document.getElementById('joinMessage').innerHTML = '';
+                        document.getElementById('joinRoomModal').style.display = 'flex';
+                        return;
+                    }
+                }
+                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
+            }
+            
             document.getElementById('inputContainer').style.display = 'block';
-            await loadMessages();
+            await loadMessages(false);  // 首次加载，不清除已有消息但重新加载
             startPolling();
         }
 
+        // ========== 群管理功能 ==========
         function showRoomSettings() {
             if (currentRoom.type !== 'group') { alert('只有群聊可以设置'); return; }
             const isOwner = currentRoom.creator === currentUser.username;
@@ -1274,7 +1368,7 @@
             currentRoom = null;
             document.getElementById('chatHeader').innerHTML = '<h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p>';
             document.getElementById('inputContainer').style.display = 'none';
-            document.getElementById('chatMessages').innerHTML = '<div class="empty-state">💬 选择一个聊天室开始聊天</div>';
+            document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">💬 选择一个聊天室开始聊天</div>';
         }
 
         async function createRoom() {
@@ -1389,7 +1483,9 @@
         function startPolling() {
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(async () => {
-                if (currentRoom && !currentRoom.isBanned) await loadMessages();
+                if (currentRoom && !currentRoom.isBanned) {
+                    await pollNewMessages();
+                }
                 await loadNotifications();
             }, 3000);
         }
@@ -1399,8 +1495,7 @@
             if (!currentUser) return;
             await loadRooms();
             await loadNotifications();
-            startPolling();
-            setupScrollDetection();  // 初始化滚动检测
+            setupScrollDetection();
             
             const input = document.getElementById('messageInput');
             if (input) {
