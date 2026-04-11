@@ -540,6 +540,15 @@
         let allNotifications = [];
         let pendingJoinRoom = null;
 
+        // ========== 青云客 AI 机器人配置 ==========
+        const BOT_CONFIG = {
+            enabled: true,
+            name: '🤖 AI小助手',
+            apiUrl: 'https://api.qingyunke.com/api.php',
+            triggerWords: ['@AI', '@机器人', '问一下', 'AI', '机器人'],
+            autoReplyAll: false
+        };
+
         if (typeof marked !== 'undefined') {
             marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
         }
@@ -549,6 +558,88 @@
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
+        
+        // ========== AI 机器人函数 ==========
+        async function sendBotMessage(roomId, content) {
+            if (!content || content === '暂无回复') return;
+            
+            const botMessage = {
+                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+                roomId: roomId,
+                sender: BOT_CONFIG.name,
+                content: content,
+                timestamp: new Date().toISOString(),
+                isRecalled: false,
+                isBot: true
+            };
+            
+            try {
+                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(botMessage, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `Message: ${botMessage.id}`, body: issueBody, labels: ['chatmessage'] })
+                });
+            } catch (error) {
+                console.error('机器人消息发送失败:', error);
+            }
+        }
+
+        async function getAIReply(msg) {
+            try {
+                const url = `${BOT_CONFIG.apiUrl}?key=free&appid=0&msg=${encodeURIComponent(msg)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.result === 0) {
+                    let content = data.content;
+                    content = content.replace(/{br}/g, '\n');
+                    content = content.replace(/菲菲说：?/g, '');
+                    return content;
+                }
+                return null;
+            } catch (error) {
+                console.error('AI 请求失败:', error);
+                return null;
+            }
+        }
+
+        async function checkAIReply(roomId, sender, content) {
+            if (!BOT_CONFIG.enabled) return false;
+            if (sender === BOT_CONFIG.name) return false;
+            
+            if (BOT_CONFIG.autoReplyAll) {
+                const reply = await getAIReply(content);
+                if (reply) {
+                    setTimeout(() => sendBotMessage(roomId, reply), 500);
+                    return true;
+                }
+                return false;
+            }
+            
+            const shouldReply = BOT_CONFIG.triggerWords.some(word => 
+                content.toLowerCase().includes(word.toLowerCase())
+            );
+            
+            if (!shouldReply) return false;
+            
+            let question = content;
+            for (const word of BOT_CONFIG.triggerWords) {
+                question = question.replace(new RegExp(word, 'gi'), '');
+            }
+            question = question.trim() || content;
+            
+            const reply = await getAIReply(question);
+            if (reply) {
+                setTimeout(() => sendBotMessage(roomId, reply), 500);
+                return true;
+            }
+            return false;
+        }
         
         function renderMarkdown(content) {
             if (!content) return '';
@@ -854,6 +945,11 @@
                 input.value = '';
                 updatePreview();
                 await loadMessages();
+                
+                // AI 机器人回复（仅群聊）
+                if (currentRoom && currentRoom.type === 'group') {
+                    setTimeout(() => checkAIReply(currentRoom.id, currentUser.username, content), 800);
+                }
             } catch (error) { alert('发送失败：' + error.message); }
         }
 
