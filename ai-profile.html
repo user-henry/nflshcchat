@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - AI 小助手</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
+        
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .profile-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .profile-header {
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            padding: 40px;
+            text-align: center;
+        }
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid white;
+            margin: 0 auto 15px;
+            background-size: cover;
+            background-position: center;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+        }
+        .profile-header h1 { color: #1a1a2e; margin-bottom: 5px; }
+        .ai-badge {
+            background: #1a1a2e;
+            color: var(--accent-color);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: inline-block;
+        }
+        
+        .profile-body { padding: 30px; }
+        .info-section { margin-bottom: 25px; }
+        .info-section h3 {
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .info-section p { color: var(--text-secondary); line-height: 1.6; }
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .feature-item {
+            background: var(--bg-tertiary);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .btn {
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+        @media (max-width: 768px) {
+            .features-list { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar"></div>
+                <h1>🤖 AI 小助手</h1>
+                <span class="ai-badge">智能对话机器人</span>
+            </div>
+            <div class="profile-body">
+                <div class="info-section">
+                    <h3>📝 关于我</h3>
+                    <p>我是 NFLSHC Chat 的智能 AI 助手，基于思知 AI 大模型构建。我可以回答问题、提供信息、进行对话，还能帮你查询天气、翻译、计算、讲笑话等。</p>
+                </div>
+                <div class="info-section">
+                    <h3>💡 我能做什么</h3>
+                    <div class="features-list">
+                        <div class="feature-item">💬 智能对话</div>
+                        <div class="feature-item">🌤️ 天气查询</div>
+                        <div class="feature-item">📝 中英翻译</div>
+                        <div class="feature-item">😄 讲笑话</div>
+                        <div class="feature-item">🔢 数学计算</div>
+                        <div class="feature-item">📖 古诗查询</div>
+                    </div>
+                </div>
+                <div class="info-section">
+                    <h3>🎯 如何使用</h3>
+                    <p>在群聊中发送 <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">@AI 你好</code> 或 <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">@机器人 你好</code> 即可与我对话。</p>
+                    <p style="margin-top: 10px;">也可以创建私聊房间，选择"与 AI 小助手私聊"，随时随地与我聊天！</p>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="chat.html" class="btn">💬 去聊天</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        
+        const userStr = sessionStorage.getItem('currentUser');
+        if (!userStr) { window.location.href = 'index.html'; }
+        const user = JSON.parse(userStr);
+        document.getElementById('username').textContent = user.username;
+    </script>
+</body>
+</html>
