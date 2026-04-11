@@ -135,7 +135,7 @@
             display: inline-block;
         }
         
-        /* 消息区域 */
+        /* 消息区域 - 修复右侧间距问题 */
         .chat-messages { 
             flex: 1; 
             overflow-y: auto; 
@@ -146,6 +146,13 @@
             scroll-behavior: smooth;
         }
         
+        /* 消息容器 - 内部消息使用 flex 布局 */
+        #messagesContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
         /* 加载更多按钮 */
         .load-more-container {
             display: flex;
@@ -153,9 +160,9 @@
             margin-bottom: 15px;
         }
         .load-more-btn {
-            background: var(--bg-tertiary);
-            color: var(--accent-color);
-            border: 1px solid var(--border-color);
+            background: #2a2a3e;
+            color: #ffd700;
+            border: 1px solid #3a3a4e;
             padding: 8px 20px;
             border-radius: 20px;
             cursor: pointer;
@@ -163,7 +170,7 @@
             transition: all 0.2s;
         }
         .load-more-btn:hover {
-            background: var(--accent-color);
+            background: #ffd700;
             color: #1a1a2e;
         }
         .load-more-btn:disabled {
@@ -171,36 +178,41 @@
             cursor: not-allowed;
         }
         
-        /* 消息样式 - 修复：自己的消息靠右 */
+        /* 消息样式 - 修复右侧间距 */
         .message {
             display: flex;
             flex-direction: column;
             max-width: 70%;
             position: relative;
         }
-        /* 自己的消息靠右对齐 */
+        /* 自己的消息靠右对齐，并添加右侧边距 */
         .message.own {
             align-self: flex-end;
+            margin-right: 10px;
         }
-        /* 他人的消息靠左对齐 */
+        /* 他人的消息靠左对齐，并添加左侧边距 */
         .message:not(.own) {
             align-self: flex-start;
+            margin-left: 10px;
         }
         
         .message-sender {
             font-size: 12px;
             color: #aaa;
             margin-bottom: 4px;
-            margin-left: 10px;
             cursor: pointer;
         }
-        .message-sender:hover { text-decoration: underline; color: #ffd700; }
         /* 自己的消息发送者靠右 */
         .message.own .message-sender {
             text-align: right;
             margin-right: 10px;
-            margin-left: 0;
         }
+        /* 他人的消息发送者靠左 */
+        .message:not(.own) .message-sender {
+            text-align: left;
+            margin-left: 10px;
+        }
+        .message-sender:hover { text-decoration: underline; color: #ffd700; }
         
         .message-bubble-wrapper {
             position: relative;
@@ -338,13 +350,16 @@
             font-size: 10px;
             color: #666;
             margin-top: 4px;
-            margin-left: 10px;
         }
         /* 自己的消息时间靠右 */
         .message.own .message-time {
             text-align: right;
             margin-right: 10px;
-            margin-left: 0;
+        }
+        /* 他人的消息时间靠左 */
+        .message:not(.own) .message-time {
+            text-align: left;
+            margin-left: 10px;
         }
         
         .input-container {
@@ -510,7 +525,7 @@
                 <div class="load-more-container" id="loadMoreContainer" style="display: none;">
                     <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreMessages()">↑ 加载更多历史消息 ↑</button>
                 </div>
-                <div id="messagesContainer"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
+                <div id="messagesContainer"></div>
             </div>
             <div class="input-container" id="inputContainer" style="display: none;">
                 <div class="input-area">
@@ -867,7 +882,6 @@
             container.innerHTML = roomMessages.map(msg => {
                 const renderedHtml = renderMarkdown(msg.content);
                 const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
-                // 添加 own 类来标识自己的消息，用于 CSS 靠右对齐
                 const isOwn = msg.sender === currentUser.username;
                 return `
                     <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
