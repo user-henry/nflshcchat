@@ -541,6 +541,11 @@
         let pollInterval = null;
         let allNotifications = [];
         let pendingJoinRoom = null;
+        
+        // ========== 滚动控制变量 ==========
+        let isUserScrolling = false;
+        let scrollTimeout = null;
+        let lastScrollTop = 0;
 
         // ========== AI 机器人配置（思知 API，使用你的 appid） ==========
         const BOT_CONFIG = {
@@ -560,6 +565,60 @@
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
+        
+        // ========== 滚动检测函数 ==========
+        function setupScrollDetection() {
+            const messagesContainer = document.getElementById('chatMessages');
+            if (!messagesContainer) return;
+            
+            messagesContainer.addEventListener('scroll', function() {
+                // 标记用户正在滚动
+                isUserScrolling = true;
+                
+                // 清除之前的超时
+                if (scrollTimeout) clearTimeout(scrollTimeout);
+                
+                // 3秒后重置滚动状态（用户停止滚动3秒后认为不再主动滚动）
+                scrollTimeout = setTimeout(() => {
+                    isUserScrolling = false;
+                }, 3000);
+            });
+            
+            // 鼠标进入消息区域时，也认为用户可能正在阅读
+            messagesContainer.addEventListener('mouseenter', function() {
+                isUserScrolling = true;
+            });
+            
+            messagesContainer.addEventListener('mouseleave', function() {
+                // 鼠标离开后延迟重置
+                setTimeout(() => {
+                    if (scrollTimeout) clearTimeout(scrollTimeout);
+                    scrollTimeout = setTimeout(() => {
+                        isUserScrolling = false;
+                    }, 1000);
+                }, 500);
+            });
+        }
+        
+        // ========== 智能滚动到底部 ==========
+        function smartScrollToBottom() {
+            const messagesContainer = document.getElementById('chatMessages');
+            if (!messagesContainer) return;
+            
+            // 如果用户正在滚动/阅读，不自动滚动
+            if (isUserScrolling) {
+                console.log('用户正在阅读，跳过自动滚动');
+                return;
+            }
+            
+            // 检查用户是否在底部附近（距离底部小于100px）
+            const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
+            
+            // 如果用户已经在底部附近，则滚动到底部；否则保持当前位置
+            if (isNearBottom) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
         
         // ========== 快速与 AI 小助手私聊 ==========
         function quickChatWithAI() {
@@ -865,7 +924,9 @@
                     </div>
                 `;
             }).join('');
-            container.scrollTop = container.scrollHeight;
+            
+            // 使用智能滚动（不干扰用户阅读）
+            smartScrollToBottom();
         }
 
         async function recallMessage(messageId) {
@@ -1234,6 +1295,7 @@
                 window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank');
             }
         }
+        
         function startPolling() {
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(async () => {
@@ -1248,6 +1310,8 @@
             await loadRooms();
             await loadNotifications();
             startPolling();
+            setupScrollDetection();  // 初始化滚动检测
+            
             const input = document.getElementById('messageInput');
             if (input) {
                 input.addEventListener('input', updatePreview);
