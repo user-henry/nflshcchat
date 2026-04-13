@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HZYAI - 智能对话助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #1a1a2e;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 登录页面样式 */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-card {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 40px;
+            width: 380px;
+            border: 1px solid #2a2a3e;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .login-card h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-card .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .login-card input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        .login-card button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .login-card button:hover {
+            transform: translateY(-1px);
+        }
+
+        .login-error {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* 主应用布局 */
+        .app {
+            display: none;
+            height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: #0f0f1a;
+            border-right: 1px solid #2a2a3e;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #2a2a3e;
+        }
+
+        .sidebar-header h2 {
+            font-size: 20px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .new-chat-btn {
+            margin: 16px 20px;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .new-chat-btn:hover {
+            opacity: 0.9;
+        }
+
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 12px;
+        }
+
+        .conversation-item {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #1a1a2e;
+        }
+
+        .conversation-item:hover {
+            background: #2a2a3e;
+        }
+
+        .conversation-item.active {
+            background: #2a2a3e;
+            border-left: 3px solid #ffd700;
+        }
+
+        .conversation-title {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .conversation-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .delete-conv {
+            float: right;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: #888;
+            cursor: pointer;
+        }
+
+        .conversation-item:hover .delete-conv {
+            opacity: 1;
+        }
+
+        .delete-conv:hover {
+            color: #dc3545;
+        }
+
+        .user-info {
+            padding: 16px 20px;
+            border-top: 1px solid #2a2a3e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1a1a2e;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .logout-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* 主聊天区域 */
+        .main-chat {
+            margin-left: 280px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #1a1a2e;
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #2a2a3e;
+            background: #16213e;
+        }
+
+        .chat-header h1 {
+            font-size: 20px;
+            color: #ffd700;
+        }
+
+        .chat-header p {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #2a2a3e;
+            margin-left: 12px;
+        }
+
+        .message.assistant .message-avatar {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            margin-right: 12px;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message.user .message-content {
+            background: #2a2a3e;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: #16213e;
+            color: #ddd;
+        }
+
+        .message-content pre {
+            background: #0f0f1a;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+
+        .message-content code {
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            padding: 20px 24px;
+            border-top: 1px solid #2a2a3e;
+            background: #16213e;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            background: #1a1a2e;
+            border-radius: 16px;
+            padding: 8px 12px;
+            border: 1px solid #2a2a3e;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #ffd700;
+        }
+
+        .input-wrapper textarea {
+            flex: 1;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            padding: 8px 0;
+            min-height: 24px;
+            max-height: 120px;
+        }
+
+        .input-wrapper textarea:focus {
+            outline: none;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .thinking {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: #16213e;
+            border-radius: 18px;
+            width: fit-content;
+        }
+
+        .thinking span {
+            width: 8px;
+            height: 8px;
+            background: #888;
+            border-radius: 50%;
+            animation: blink 1.4s infinite;
+        }
+
+        .thinking span:nth-child(2) { animation-delay: 0.2s; }
+        .thinking span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a3e;
+            border-radius: 3px;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                z-index: 100;
+                transition: left 0.3s;
+            }
+            .sidebar.open {
+                left: 0;
+            }
+            .main-chat {
+                margin-left: 0;
+            }
+            .menu-btn {
+                display: block;
+                position: fixed;
+                top: 16px;
+                left: 16px;
+                z-index: 101;
+                background: #2a2a3e;
+                border: none;
+                color: white;
+                padding: 8px 12px;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <h1>🤖 HZYAI</h1>
+            <div class="subtitle">智能对话助手 · 基于思知AI</div>
+            <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
+            <input type="password" id="loginPassword" placeholder="密码">
+            <button onclick="doLogin()">登录</button>
+            <div id="loginError" class="login-error"></div>
+            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
+                <a href="../nflshcchat/chat.html" style="color: #ffd700;">← 返回 NFLSHC Chat</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="app" class="app">
+        <!-- 侧边栏 -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>HZYAI</h2>
+                <p>智能对话助手</p>
+            </div>
+            <button class="new-chat-btn" onclick="createNewConversation()">
+                + 新对话
+            </button>
+            <div class="conversations-list" id="conversationsList"></div>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar"></div>
+                <div>
+                    <div class="user-name" id="userName"></div>
+                    <div class="user-role" id="userRole"></div>
+                </div>
+                <button class="logout-btn" onclick="logout()">🚪</button>
+            </div>
+        </div>
+
+        <!-- 主聊天区域 -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <h1 id="chatTitle">新对话</h1>
+                <p>和 HZYAI 对话，提问、写作、编程都可以</p>
+            </div>
+            <div class="messages-area" id="messagesArea">
+                <div class="message assistant">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。</div>
+                </div>
+            </div>
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea id="messageInput" placeholder="发送消息... (Shift+Enter 换行，Enter 发送)" rows="1"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端菜单按钮 -->
+    <button class="menu-btn" id="menuBtn" style="display: none;" onclick="toggleSidebar()">☰</button>
+
+    <script src="config.js"></script>
+    <script>
+        // ========== 配置 ==========
+        const AI_CONFIG = {
+            apiUrl: 'https://api.sizhi.com/chat',
+            appid: 'd18408ec60b14c5f844d5004881808eb',
+            name: 'HZYAI',
+            avatar: '🤖'
+        };
+
+        // 全局变量
+        let currentUser = null;
+        let conversations = [];
+        let currentConversationId = null;
+        let isWaiting = false;
+
+        // ========== 存储管理 ==========
+        function loadConversations() {
+            if (!currentUser) return;
+            const key = `hzyai_conversations_${currentUser.username}`;
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                conversations = JSON.parse(saved);
+            } else {
+                // 创建默认对话
+                conversations = [{
+                    id: Date.now().toString(),
+                    title: '新对话',
+                    messages: [
+                        { role: 'assistant', content: '你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。', timestamp: new Date().toISOString() }
+                    ],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }];
+                saveConversations();
+            }
+            renderConversationsList();
+            
+            // 如果没有选中的对话，选中第一个
+            if (!currentConversationId && conversations.length > 0) {
+                currentConversationId = conversations[0].id;
+            }
+            loadConversation(currentConversationId);
+        }
+
+        function saveConversations() {
+            if (!currentUser) return;
+            const key = `hzyai_conversations_${currentUser.username}`;
+            localStorage.setItem(key, JSON.stringify(conversations));
+        }
+
+        // ========== 对话管理 ==========
+        function renderConversationsList() {
+            const container = document.getElementById('conversationsList');
+            if (!container) return;
+            
+            if (conversations.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无对话</div>';
+                return;
+            }
+            
+            container.innerHTML = conversations.map(conv => `
+                <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" onclick="switchConversation('${conv.id}')">
+                    <div class="conversation-title">
+                        ${escapeHtml(conv.title)}
+                        <span class="delete-conv" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">🗑️</span>
+                    </div>
+                    <div class="conversation-time">${formatTime(conv.updatedAt)}</div>
+                </div>
+            `).join('');
+        }
+
+        function switchConversation(convId) {
+            currentConversationId = convId;
+            loadConversation(convId);
+            renderConversationsList();
+            
+            // 移动端关闭侧边栏
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        function loadConversation(convId) {
+            const conversation = conversations.find(c => c.id === convId);
+            if (!conversation) return;
+            
+            document.getElementById('chatTitle').textContent = conversation.title;
+            renderMessages(conversation.messages);
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('messagesArea');
+            if (!container) return;
+            
+            container.innerHTML = messages.map(msg => `
+                <div class="message ${msg.role}">
+                    <div class="message-avatar">${msg.role === 'user' ? '👤' : AI_CONFIG.avatar}</div>
+                    <div class="message-content">${renderMarkdown(msg.content)}</div>
+                </div>
+            `).join('');
+            scrollToBottom();
+        }
+
+        function renderMarkdown(content) {
+            if (typeof marked !== 'undefined') {
+                try {
+                    return marked.parse(content);
+                } catch (e) {
+                    return escapeHtml(content);
+                }
+            }
+            return escapeHtml(content).replace(/\n/g, '<br>');
+        }
+
+        function addMessage(role, content) {
+            const conversation = conversations.find(c => c.id === currentConversationId);
+            if (!conversation) return;
+            
+            conversation.messages.push({
+                role: role,
+                content: content,
+                timestamp: new Date().toISOString()
+            });
+            conversation.updatedAt = new Date().toISOString();
+            
+            // 更新标题（使用第一条用户消息作为标题）
+            if (conversation.title === '新对话' && role === 'user') {
+                const newTitle = content.length > 30 ? content.substring(0, 30) + '...' : content;
+                conversation.title = newTitle;
+                document.getElementById('chatTitle').textContent = newTitle;
+            }
+            
+            saveConversations();
+            renderMessages(conversation.messages);
+            renderConversationsList();
+        }
+
+        function createNewConversation() {
+            const newConv = {
+                id: Date.now().toString(),
+                title: '新对话',
+                messages: [
+                    { role: 'assistant', content: '你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。', timestamp: new Date().toISOString() }
+                ],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            conversations.unshift(newConv);
+            saveConversations();
+            currentConversationId = newConv.id;
+            renderConversationsList();
+            loadConversation(currentConversationId);
+        }
+
+        function deleteConversation(convId) {
+            if (conversations.length === 1) {
+                if (confirm('这是最后一个对话，删除后将创建新对话。确定删除吗？')) {
+                    conversations = [];
+                    saveConversations();
+                    createNewConversation();
+                }
+                return;
+            }
+            
+            conversations = conversations.filter(c => c.id !== convId);
+            if (currentConversationId === convId) {
+                currentConversationId = conversations[0]?.id || null;
+                if (currentConversationId) {
+                    loadConversation(currentConversationId);
+                } else {
+                    createNewConversation();
+                }
+            }
+            saveConversations();
+            renderConversationsList();
+        }
+
+        // ========== AI 调用 ==========
+        async function callAI(messages) {
+            try {
+                // 构建消息历史（只取最近10条作为上下文）
+                const history = messages.slice(-10);
+                const userMessage = history.filter(m => m.role === 'user').pop();
+                if (!userMessage) return null;
+                
+                const url = `${AI_CONFIG.apiUrl}?appid=${AI_CONFIG.appid}&userid=${currentUser.username}&spoken=${encodeURIComponent(userMessage.content)}&memory=true`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    return data.data.info.text;
+                }
+                return null;
+            } catch (error) {
+                console.error('AI 调用失败:', error);
+                return null;
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            if (!content || isWaiting) return;
+            
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // 添加用户消息
+            addMessage('user', content);
+            
+            // 显示思考状态
+            const conversation = conversations.find(c => c.id === currentConversationId);
+            const container = document.getElementById('messagesArea');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'message assistant';
+            thinkingDiv.innerHTML = `
+                <div class="message-avatar">${AI_CONFIG.avatar}</div>
+                <div class="thinking"><span></span><span></span><span></span></div>
+            `;
+            container.appendChild(thinkingDiv);
+            scrollToBottom();
+            isWaiting = true;
+            
+            // 调用 AI
+            const reply = await callAI(conversation.messages);
+            
+            // 移除思考状态
+            thinkingDiv.remove();
+            isWaiting = false;
+            
+            if (reply) {
+                addMessage('assistant', reply);
+            } else {
+                addMessage('assistant', '抱歉，我遇到了一些问题，请稍后再试。');
+            }
+        }
+
+        // ========== 辅助函数 ==========
+        function scrollToBottom() {
+            const container = document.getElementById('messagesArea');
+            if (container) {
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
+            }
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+            return `${date.getMonth()+1}/${date.getDate()}`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== 自动调整输入框高度 ==========
+        function autoResizeTextarea() {
+            const textarea = document.getElementById('messageInput');
+            if (textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            }
+        }
+
+        // ========== 登录/登出 ==========
+        async function doLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (!username || !password) {
+                errorDiv.textContent = '请填写用户名和密码';
+                return;
+            }
+            
+            // 管理员登录
+            if (username === 'huangzhiyuan' && password === '15240254891') {
+                currentUser = { username: 'huangzhiyuan', isAdmin: true };
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                document.getElementById('userName').textContent = 'huangzhiyuan';
+                document.getElementById('userRole').textContent = '管理员';
+                document.getElementById('userAvatar').textContent = '👑';
+                loadConversations();
+                return;
+            }
+            
+            // 普通用户登录
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                let foundUser = null;
+                
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        if (userData.username === username && userData.password === password) {
+                            foundUser = userData;
+                            break;
+                        }
+                    }
+                }
+                
+                if (foundUser && !foundUser.isBanned) {
+                    currentUser = { username: foundUser.username, isAdmin: false };
+                    document.getElementById('loginPage').style.display = 'none';
+                    document.getElementById('app').style.display = 'flex';
+                    document.getElementById('userName').textContent = foundUser.username;
+                    document.getElementById('userRole').textContent = '用户';
+                    document.getElementById('userAvatar').textContent = foundUser.username.charAt(0).toUpperCase();
+                    loadConversations();
+                } else if (foundUser && foundUser.isBanned) {
+                    errorDiv.textContent = '账号已被封禁';
+                } else {
+                    errorDiv.textContent = '用户名或密码错误';
+                }
+            } catch (error) {
+                errorDiv.textContent = '登录失败：' + error.message;
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            conversations = [];
+            currentConversationId = null;
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ========== 事件监听 ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('messageInput');
+            if (textarea) {
+                textarea.addEventListener('input', autoResizeTextarea);
+                textarea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+            
+            // 移动端菜单
+            if (window.innerWidth <= 768) {
+                document.getElementById('menuBtn').style.display = 'block';
+            }
+            
+            window.addEventListener('resize', function() {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('menuBtn').style.display = 'block';
+                } else {
+                    document.getElementById('menuBtn').style.display = 'none';
+                    document.getElementById('sidebar').classList.remove('open');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
