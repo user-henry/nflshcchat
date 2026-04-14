@@ -270,6 +270,47 @@
             color: #888;
         }
 
+        /* 同步按钮区域 */
+        .sync-bar {
+            padding: 12px 24px;
+            background: #16213e;
+            border-bottom: 1px solid #2a2a3e;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .sync-btn {
+            background: #2a2a3e;
+            color: #ffd700;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .sync-btn:hover {
+            background: #ffd700;
+            color: #1a1a2e;
+        }
+
+        .sync-warning {
+            font-size: 11px;
+            color: #f39c12;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sync-status {
+            font-size: 11px;
+            color: #888;
+            margin-left: auto;
+        }
+
         .messages-area {
             flex: 1;
             overflow-y: auto;
@@ -461,6 +502,13 @@
                 border-radius: 8px;
                 cursor: pointer;
             }
+            .sync-bar {
+                padding: 10px 16px;
+            }
+            .sync-btn {
+                padding: 4px 10px;
+                font-size: 10px;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -509,6 +557,17 @@
                 <h1 id="chatTitle">新对话</h1>
                 <p>和 HZYAI 对话，提问、写作、编程都可以</p>
             </div>
+            
+            <!-- 同步按钮栏 -->
+            <div class="sync-bar">
+                <button class="sync-btn" onclick="pullFromGitHub()" id="pullBtn">📥 爬取 GitHub Issues 消息</button>
+                <button class="sync-btn" onclick="pushToGitHub()" id="pushBtn">📤 更新消息至 GitHub Issues</button>
+                <div class="sync-warning">
+                    ⚠️ 爬取 GitHub Issues 消息需要时间，请耐心等待
+                </div>
+                <div class="sync-status" id="syncStatus"></div>
+            </div>
+
             <div class="messages-area" id="messagesArea">
                 <div class="message assistant">
                     <div class="message-avatar">🤖</div>
@@ -542,9 +601,10 @@
         let conversations = [];
         let currentConversationId = null;
         let isWaiting = false;
+        let isSyncing = false;
 
-        // ========== 存储管理 ==========
-        function loadConversations() {
+        // ========== 存储管理 (localStorage) ==========
+        function loadConversationsFromLocal() {
             if (!currentUser) return;
             const key = `hzyai_conversations_${currentUser.username}`;
             const saved = localStorage.getItem(key);
@@ -559,23 +619,191 @@
                         { role: 'assistant', content: '你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。', timestamp: new Date().toISOString() }
                     ],
                     createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
+                    updatedAt: new Date().toISOString(),
+                    synced: true
                 }];
-                saveConversations();
+                saveConversationsToLocal();
             }
-            renderConversationsList();
-            
-            // 如果没有选中的对话，选中第一个
-            if (!currentConversationId && conversations.length > 0) {
-                currentConversationId = conversations[0].id;
-            }
-            loadConversation(currentConversationId);
         }
 
-        function saveConversations() {
+        function saveConversationsToLocal() {
             if (!currentUser) return;
             const key = `hzyai_conversations_${currentUser.username}`;
             localStorage.setItem(key, JSON.stringify(conversations));
+        }
+
+        // ========== GitHub Issues 存储 ==========
+        function getGitHubLabel() {
+            return `hzyai_${currentUser.username}`;
+        }
+
+        async function loadFromGitHub() {
+            if (!currentUser) return [];
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getGitHubLabel()}&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                const githubConversations = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const conv = JSON.parse(match[1]);
+                            githubConversations.push({ ...conv, issueNumber: issue.number });
+                        } catch (e) {}
+                    }
+                }
+                return githubConversations;
+            } catch (error) {
+                console.error('从 GitHub 加载失败:', error);
+                return [];
+            }
+        }
+
+        async function saveConversationToGitHub(conversation) {
+            if (!currentUser) return;
+            try {
+                const existingIssues = await loadFromGitHub();
+                const existing = existingIssues.find(c => c.id === conversation.id);
+                
+                const issueBody = `HZYAI对话数据\n\`\`\`json\n${JSON.stringify(conversation, null, 2)}\n\`\`\``;
+                const labels = [getGitHubLabel()];
+                
+                if (existing && existing.issueNumber) {
+                    // 更新现有 Issue
+                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ body: issueBody })
+                    });
+                } else {
+                    // 创建新 Issue
+                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ title: `HZYAI: ${conversation.title}`, body: issueBody, labels: labels })
+                    });
+                }
+                conversation.synced = true;
+                return true;
+            } catch (error) {
+                console.error('保存到 GitHub 失败:', error);
+                return false;
+            }
+        }
+
+        async function saveAllConversationsToGitHub() {
+            if (!currentUser) return;
+            setSyncStatus('正在同步到 GitHub...', 'warning');
+            let successCount = 0;
+            for (const conv of conversations) {
+                const success = await saveConversationToGitHub(conv);
+                if (success) successCount++;
+            }
+            saveConversationsToLocal();
+            setSyncStatus(`✅ 同步完成！已同步 ${successCount}/${conversations.length} 个对话`, 'success');
+            setTimeout(() => setSyncStatus('', ''), 3000);
+        }
+
+        async function pullFromGitHub() {
+            if (isSyncing) return;
+            isSyncing = true;
+            setSyncStatus('🔄 正在从 GitHub 爬取消息，请稍候...', 'warning');
+            document.getElementById('pullBtn').disabled = true;
+            document.getElementById('pushBtn').disabled = true;
+            
+            try {
+                const githubConvs = await loadFromGitHub();
+                let updatedCount = 0;
+                let newCount = 0;
+                
+                for (const githubConv of githubConvs) {
+                    const localConv = conversations.find(c => c.id === githubConv.id);
+                    if (localConv) {
+                        // 合并消息：GitHub 有而本地没有的消息
+                        const localMessageIds = new Set(localConv.messages.map(m => `${m.role}_${m.timestamp}_${m.content.substring(0, 50)}`));
+                        const newMessages = githubConv.messages.filter(m => {
+                            const key = `${m.role}_${m.timestamp}_${m.content.substring(0, 50)}`;
+                            return !localMessageIds.has(key);
+                        });
+                        if (newMessages.length > 0) {
+                            localConv.messages.push(...newMessages);
+                            localConv.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                            localConv.updatedAt = githubConv.updatedAt;
+                            localConv.title = githubConv.title;
+                            updatedCount++;
+                        }
+                    } else {
+                        // 本地没有的对话，直接添加
+                        conversations.push(githubConv);
+                        newCount++;
+                    }
+                }
+                
+                saveConversationsToLocal();
+                renderConversationsList();
+                if (currentConversationId) {
+                    const currentConv = conversations.find(c => c.id === currentConversationId);
+                    if (currentConv) {
+                        renderMessages(currentConv.messages);
+                    }
+                }
+                
+                setSyncStatus(`✅ 爬取完成！更新了 ${updatedCount} 个对话，新增了 ${newCount} 个对话`, 'success');
+                setTimeout(() => setSyncStatus('', ''), 3000);
+            } catch (error) {
+                setSyncStatus(`❌ 爬取失败: ${error.message}`, 'error');
+            } finally {
+                isSyncing = false;
+                document.getElementById('pullBtn').disabled = false;
+                document.getElementById('pushBtn').disabled = false;
+            }
+        }
+
+        async function pushToGitHub() {
+            if (isSyncing) return;
+            isSyncing = true;
+            setSyncStatus('🔄 正在上传至 GitHub...', 'warning');
+            document.getElementById('pullBtn').disabled = true;
+            document.getElementById('pushBtn').disabled = true;
+            
+            try {
+                let successCount = 0;
+                for (const conv of conversations) {
+                    const success = await saveConversationToGitHub(conv);
+                    if (success) successCount++;
+                }
+                saveConversationsToLocal();
+                setSyncStatus(`✅ 上传完成！已同步 ${successCount}/${conversations.length} 个对话`, 'success');
+                setTimeout(() => setSyncStatus('', ''), 3000);
+            } catch (error) {
+                setSyncStatus(`❌ 上传失败: ${error.message}`, 'error');
+            } finally {
+                isSyncing = false;
+                document.getElementById('pullBtn').disabled = false;
+                document.getElementById('pushBtn').disabled = false;
+            }
+        }
+
+        function setSyncStatus(message, type) {
+            const statusDiv = document.getElementById('syncStatus');
+            if (statusDiv) {
+                statusDiv.textContent = message;
+                statusDiv.style.color = type === 'error' ? '#dc3545' : (type === 'success' ? '#28a745' : '#f39c12');
+            }
         }
 
         // ========== 对话管理 ==========
@@ -601,26 +829,26 @@
 
         function switchConversation(convId) {
             currentConversationId = convId;
-            loadConversation(convId);
+            const conversation = conversations.find(c => c.id === convId);
+            if (conversation) {
+                document.getElementById('chatTitle').textContent = conversation.title;
+                renderMessages(conversation.messages);
+            }
             renderConversationsList();
             
-            // 移动端关闭侧边栏
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('open');
             }
         }
 
-        function loadConversation(convId) {
-            const conversation = conversations.find(c => c.id === convId);
-            if (!conversation) return;
-            
-            document.getElementById('chatTitle').textContent = conversation.title;
-            renderMessages(conversation.messages);
-        }
-
         function renderMessages(messages) {
             const container = document.getElementById('messagesArea');
             if (!container) return;
+            
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div class="message assistant"><div class="message-avatar">🤖</div><div class="message-content">你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。</div></div>';
+                return;
+            }
             
             container.innerHTML = messages.map(msg => `
                 <div class="message ${msg.role}">
@@ -652,15 +880,16 @@
                 timestamp: new Date().toISOString()
             });
             conversation.updatedAt = new Date().toISOString();
+            conversation.synced = false;
             
-            // 更新标题（使用第一条用户消息作为标题）
+            // 更新标题
             if (conversation.title === '新对话' && role === 'user') {
                 const newTitle = content.length > 30 ? content.substring(0, 30) + '...' : content;
                 conversation.title = newTitle;
                 document.getElementById('chatTitle').textContent = newTitle;
             }
             
-            saveConversations();
+            saveConversationsToLocal();
             renderMessages(conversation.messages);
             renderConversationsList();
         }
@@ -673,20 +902,22 @@
                     { role: 'assistant', content: '你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。', timestamp: new Date().toISOString() }
                 ],
                 createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                synced: false
             };
             conversations.unshift(newConv);
-            saveConversations();
+            saveConversationsToLocal();
             currentConversationId = newConv.id;
             renderConversationsList();
-            loadConversation(currentConversationId);
+            document.getElementById('chatTitle').textContent = newConv.title;
+            renderMessages(newConv.messages);
         }
 
         function deleteConversation(convId) {
             if (conversations.length === 1) {
                 if (confirm('这是最后一个对话，删除后将创建新对话。确定删除吗？')) {
                     conversations = [];
-                    saveConversations();
+                    saveConversationsToLocal();
                     createNewConversation();
                 }
                 return;
@@ -696,19 +927,20 @@
             if (currentConversationId === convId) {
                 currentConversationId = conversations[0]?.id || null;
                 if (currentConversationId) {
-                    loadConversation(currentConversationId);
+                    const conv = conversations.find(c => c.id === currentConversationId);
+                    document.getElementById('chatTitle').textContent = conv.title;
+                    renderMessages(conv.messages);
                 } else {
                     createNewConversation();
                 }
             }
-            saveConversations();
+            saveConversationsToLocal();
             renderConversationsList();
         }
 
         // ========== AI 调用 ==========
         async function callAI(messages) {
             try {
-                // 构建消息历史（只取最近10条作为上下文）
                 const history = messages.slice(-10);
                 const userMessage = history.filter(m => m.role === 'user').pop();
                 if (!userMessage) return null;
@@ -735,10 +967,8 @@
             input.value = '';
             input.style.height = 'auto';
             
-            // 添加用户消息
             addMessage('user', content);
             
-            // 显示思考状态
             const conversation = conversations.find(c => c.id === currentConversationId);
             const container = document.getElementById('messagesArea');
             const thinkingDiv = document.createElement('div');
@@ -751,10 +981,8 @@
             scrollToBottom();
             isWaiting = true;
             
-            // 调用 AI
             const reply = await callAI(conversation.messages);
             
-            // 移除思考状态
             thinkingDiv.remove();
             isWaiting = false;
             
@@ -793,7 +1021,6 @@
             return div.innerHTML;
         }
 
-        // ========== 自动调整输入框高度 ==========
         function autoResizeTextarea() {
             const textarea = document.getElementById('messageInput');
             if (textarea) {
@@ -813,7 +1040,6 @@
                 return;
             }
             
-            // 管理员登录
             if (username === 'huangzhiyuan' && password === '15240254891') {
                 currentUser = { username: 'huangzhiyuan', isAdmin: true };
                 document.getElementById('loginPage').style.display = 'none';
@@ -821,11 +1047,16 @@
                 document.getElementById('userName').textContent = 'huangzhiyuan';
                 document.getElementById('userRole').textContent = '管理员';
                 document.getElementById('userAvatar').textContent = '👑';
-                loadConversations();
+                loadConversationsFromLocal();
+                renderConversationsList();
+                if (conversations.length > 0) {
+                    currentConversationId = conversations[0].id;
+                    document.getElementById('chatTitle').textContent = conversations[0].title;
+                    renderMessages(conversations[0].messages);
+                }
                 return;
             }
             
-            // 普通用户登录
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const response = await fetch(url, {
@@ -855,7 +1086,13 @@
                     document.getElementById('userName').textContent = foundUser.username;
                     document.getElementById('userRole').textContent = '用户';
                     document.getElementById('userAvatar').textContent = foundUser.username.charAt(0).toUpperCase();
-                    loadConversations();
+                    loadConversationsFromLocal();
+                    renderConversationsList();
+                    if (conversations.length > 0) {
+                        currentConversationId = conversations[0].id;
+                        document.getElementById('chatTitle').textContent = conversations[0].title;
+                        renderMessages(conversations[0].messages);
+                    }
                 } else if (foundUser && foundUser.isBanned) {
                     errorDiv.textContent = '账号已被封禁';
                 } else {
@@ -881,7 +1118,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        // ========== 事件监听 ==========
+        // ========== 初始化 ==========
         document.addEventListener('DOMContentLoaded', function() {
             const textarea = document.getElementById('messageInput');
             if (textarea) {
@@ -894,7 +1131,6 @@
                 });
             }
             
-            // 移动端菜单
             if (window.innerWidth <= 768) {
                 document.getElementById('menuBtn').style.display = 'block';
             }
