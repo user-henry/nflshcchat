@@ -27,10 +27,15 @@
         .nav a:hover { color: #ffd700; }
         .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
 
+        /* 移动端导航换行 */
         @media (max-width: 768px) {
             .nav { flex-direction: column; gap: 10px; text-align: center; }
             .nav div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
             .nav a { margin-left: 0; }
+            /* 移动端隐藏通知按钮 */
+            .notification-wrapper {
+                display: none !important;
+            }
         }
 
         /* 通知按钮包装器 */
@@ -62,7 +67,7 @@
         }
         .notification-badge.zero { background: #28a745; }
         
-        /* 通知面板 - 默认隐藏 */
+        /* 通知面板 */
         .notification-panel {
             position: absolute;
             top: 100%;
@@ -209,6 +214,7 @@
             cursor: not-allowed;
         }
         
+        /* 消息样式 - 强制换行 */
         .message {
             display: flex;
             flex-direction: column;
@@ -397,6 +403,7 @@
             margin-left: 10px;
         }
         
+        /* 输入区域 */
         .input-container {
             padding: 20px;
             border-top: 1px solid #2a2a3e;
@@ -524,6 +531,7 @@
         .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
+        /* 移动端布局 */
         @media (max-width: 768px) {
             .rooms-sidebar { 
                 width: 260px;
@@ -544,11 +552,25 @@
                 border-radius: 0;
                 height: 100vh;
             }
-            .message { max-width: 90%; }
-            .scroll-to-bottom-btn { bottom: 160px; right: 15px; width: 40px; height: 40px; font-size: 18px; }
-            .chat-header h3 { font-size: 16px; }
-            .markdown-hint { font-size: 10px; }
-            .room-name { font-size: 14px; }
+            .message { 
+                max-width: 90%;
+            }
+            .scroll-to-bottom-btn { 
+                bottom: 160px; 
+                right: 15px; 
+                width: 40px; 
+                height: 40px; 
+                font-size: 18px; 
+            }
+            .chat-header h3 {
+                font-size: 16px;
+            }
+            .markdown-hint {
+                font-size: 10px;
+            }
+            .room-name {
+                font-size: 14px;
+            }
             .menu-toggle {
                 display: flex;
                 position: fixed;
@@ -567,12 +589,20 @@
                 font-size: 24px;
                 border: none;
             }
-            .menu-toggle:hover { transform: scale(1.05); }
+            .menu-toggle:hover {
+                transform: scale(1.05);
+            }
         }
         
+        /* 桌面端恢复水平布局 */
         @media (min-width: 769px) {
-            .input-area { flex-direction: row; }
-            .send-btn { width: auto; min-width: 100px; }
+            .input-area {
+                flex-direction: row;
+            }
+            .send-btn {
+                width: auto;
+                min-width: 100px;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -591,6 +621,7 @@
             <a href="search.html">🔍 搜索</a>
             <a href="about.html">ℹ️ 关于</a>
             <a href="ai-profile.html">🤖 AI助手</a>
+            <!-- 通知按钮 - 电脑端显示，移动端通过CSS隐藏 -->
             <span class="notification-wrapper">
                 <button class="notification-btn" id="notificationBtn">🔔 <span id="notificationCount" class="notification-badge zero">0</span></button>
                 <div id="notificationPanel" class="notification-panel">
@@ -1100,6 +1131,7 @@
             return user;
         }
 
+        // ========== 通知功能（仅电脑端有效） ==========
         async function loadNotifications() {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
@@ -1120,9 +1152,12 @@
         function updateNotificationUI() {
             const unreadCount = allNotifications.filter(n => !n.isRead).length;
             const badge = document.getElementById('notificationCount');
-            badge.textContent = unreadCount;
-            badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
+            if (badge) {
+                badge.textContent = unreadCount;
+                badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
+            }
             const container = document.getElementById('notificationList');
+            if (!container) return;
             if (allNotifications.length === 0) { container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>'; return; }
             allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
             container.innerHTML = allNotifications.map(n => `
@@ -1147,7 +1182,7 @@
             await loadNotifications();
         }
 
-        // ========== 通知面板独立控制（彻底修复） ==========
+        // 通知面板开关
         let notificationPanelInitialized = false;
         
         function initNotificationPanel() {
@@ -1158,36 +1193,24 @@
             
             if (!notificationBtn || !notificationPanel) return;
             
-            // 移除可能存在的旧监听器（通过替换克隆元素来清除所有监听器）
-            const newBtn = notificationBtn.cloneNode(true);
-            notificationBtn.parentNode.replaceChild(newBtn, notificationBtn);
-            const newPanel = notificationPanel.cloneNode(true);
-            notificationPanel.parentNode.replaceChild(newPanel, notificationPanel);
-            
-            // 重新获取元素
-            const finalBtn = document.getElementById('notificationBtn');
-            const finalPanel = document.getElementById('notificationPanel');
-            
-            if (!finalBtn || !finalPanel) return;
-            
             // 确保面板初始是关闭的
-            finalPanel.classList.remove('show');
+            notificationPanel.classList.remove('show');
             
             // 添加点击事件：切换面板
-            finalBtn.addEventListener('click', function(e) {
+            notificationBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                finalPanel.classList.toggle('show');
+                notificationPanel.classList.toggle('show');
             });
             
             // 点击页面其他地方关闭面板
             document.addEventListener('click', function(e) {
-                if (!finalBtn.contains(e.target) && !finalPanel.contains(e.target)) {
-                    finalPanel.classList.remove('show');
+                if (!notificationBtn.contains(e.target) && !notificationPanel.contains(e.target)) {
+                    notificationPanel.classList.remove('show');
                 }
             });
             
             notificationPanelInitialized = true;
-            console.log('通知面板已初始化，初始状态：关闭');
+            console.log('通知面板已初始化');
         }
         
         document.addEventListener('click', closeMobileMenuOnClickOutside);
@@ -1603,7 +1626,12 @@
                 if (currentRoom && !currentRoom.isBanned) {
                     await pollNewMessages();
                 }
-                await loadNotifications();
+                // 只有电脑端才加载通知（移动端通知按钮被隐藏，但为了节省资源也可以不加载）
+                // 通过检查通知按钮是否存在来判断是否加载
+                const notificationBtn = document.getElementById('notificationBtn');
+                if (notificationBtn && window.innerWidth > 768) {
+                    await loadNotifications();
+                }
             }, 3000);
         }
 
@@ -1611,10 +1639,13 @@
             currentUser = checkAuth();
             if (!currentUser) return;
             await loadRooms();
-            await loadNotifications();
             setupScrollDetection();
-            // 初始化通知面板（确保面板默认关闭，点击开关）
+            // 初始化通知面板（仅电脑端可见，但初始化不影响）
             initNotificationPanel();
+            // 初始加载通知（仅电脑端）
+            if (window.innerWidth > 768) {
+                await loadNotifications();
+            }
             
             const input = document.getElementById('messageInput');
             if (input) {
