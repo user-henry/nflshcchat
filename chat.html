@@ -34,7 +34,11 @@
             .nav a { margin-left: 0; }
         }
 
-        .notification-btn { position: relative; cursor: pointer; }
+        .notification-btn { 
+            position: relative; 
+            cursor: pointer; 
+            display: inline-block;
+        }
         .notification-badge {
             position: absolute;
             top: -8px;
@@ -49,7 +53,7 @@
         }
         .notification-badge.zero { background: #28a745; }
         
-        /* 通知面板 - 优化移动端显示，不遮挡导航栏 */
+        /* 通知面板 - 与电脑端位置一致，不自动展开 */
         .notification-panel {
             position: absolute;
             top: 100%;
@@ -65,19 +69,16 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
         
-        /* 移动端通知面板调整 */
+        /* 移动端通知面板 - 保持相同行为，仅调整宽度适应屏幕 */
         @media (max-width: 768px) {
             .notification-panel {
-                position: fixed;
-                top: auto;
-                bottom: 0;
-                left: 0;
+                position: absolute;
+                top: 100%;
                 right: 0;
-                width: 100%;
+                left: auto;
+                width: 300px;
                 max-height: 60vh;
-                border-radius: 20px 20px 0 0;
-                bottom: 0;
-                top: auto;
+                border-radius: 12px;
             }
         }
         
@@ -521,7 +522,7 @@
         .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
-        /* 移动端布局 - 保持原样 */
+        /* 移动端布局 */
         @media (max-width: 768px) {
             .rooms-sidebar { 
                 width: 260px;
@@ -604,7 +605,7 @@
 
     <div class="nav">
         <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
-        <div>
+        <div style="position: relative;">
             <span>欢迎，<span id="username"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
             <a href="profile.html">👤 个人资料</a>
             <a href="stats.html">📊 统计</a>
@@ -617,10 +618,12 @@
             <a href="suggestions.html">💡 意见反馈</a>
             <a href="notice.html">📢 公告</a>
             <a href="#" onclick="logout()">🚪 退出</a>
-        </div>
-        <div id="notificationPanel" class="notification-panel">
-            <div class="notification-header">📨 系统通知</div>
-            <div id="notificationList" style="padding: 0;">加载中...</div>
+            
+            <!-- 通知面板放在导航栏内部，确保定位正确 -->
+            <div id="notificationPanel" class="notification-panel">
+                <div class="notification-header">📨 系统通知</div>
+                <div id="notificationList" style="padding: 0;">加载中...</div>
+            </div>
         </div>
     </div>
 
@@ -1173,12 +1176,14 @@
             await loadNotifications();
         }
 
+        // 通知面板开关 - 点击🔔切换，不会自动展开
         function toggleNotificationPanel(event) { 
             event.stopPropagation(); 
             const panel = document.getElementById('notificationPanel');
             panel.classList.toggle('show');
         }
         
+        // 点击其他地方关闭通知面板
         document.addEventListener('click', function(e) {
             const panel = document.getElementById('notificationPanel');
             const btn = document.querySelector('.notification-btn');
