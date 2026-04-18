@@ -27,14 +27,13 @@
         .nav a:hover { color: #ffd700; }
         .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
 
-        /* 移动端导航换行 */
         @media (max-width: 768px) {
             .nav { flex-direction: column; gap: 10px; text-align: center; }
             .nav div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
             .nav a { margin-left: 0; }
         }
 
-        /* 通知按钮容器 - 用于相对定位 */
+        /* 通知按钮包装器 */
         .notification-wrapper {
             position: relative;
             display: inline-block;
@@ -47,6 +46,7 @@
             color: white;
             font-size: inherit;
             font-family: inherit;
+            padding: 0;
         }
         .notification-badge {
             position: absolute;
@@ -62,7 +62,7 @@
         }
         .notification-badge.zero { background: #28a745; }
         
-        /* 通知面板 - 相对于通知按钮定位 */
+        /* 通知面板 - 默认隐藏 */
         .notification-panel {
             position: absolute;
             top: 100%;
@@ -78,7 +78,6 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
         
-        /* 移动端通知面板 - 缩小宽度适应屏幕 */
         @media (max-width: 768px) {
             .notification-panel {
                 width: 280px;
@@ -210,7 +209,6 @@
             cursor: not-allowed;
         }
         
-        /* 消息样式 - 强制换行 */
         .message {
             display: flex;
             flex-direction: column;
@@ -399,7 +397,6 @@
             margin-left: 10px;
         }
         
-        /* 输入区域 */
         .input-container {
             padding: 20px;
             border-top: 1px solid #2a2a3e;
@@ -527,7 +524,6 @@
         .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
-        /* 移动端布局 */
         @media (max-width: 768px) {
             .rooms-sidebar { 
                 width: 260px;
@@ -548,25 +544,11 @@
                 border-radius: 0;
                 height: 100vh;
             }
-            .message { 
-                max-width: 90%;
-            }
-            .scroll-to-bottom-btn { 
-                bottom: 160px; 
-                right: 15px; 
-                width: 40px; 
-                height: 40px; 
-                font-size: 18px; 
-            }
-            .chat-header h3 {
-                font-size: 16px;
-            }
-            .markdown-hint {
-                font-size: 10px;
-            }
-            .room-name {
-                font-size: 14px;
-            }
+            .message { max-width: 90%; }
+            .scroll-to-bottom-btn { bottom: 160px; right: 15px; width: 40px; height: 40px; font-size: 18px; }
+            .chat-header h3 { font-size: 16px; }
+            .markdown-hint { font-size: 10px; }
+            .room-name { font-size: 14px; }
             .menu-toggle {
                 display: flex;
                 position: fixed;
@@ -585,20 +567,12 @@
                 font-size: 24px;
                 border: none;
             }
-            .menu-toggle:hover {
-                transform: scale(1.05);
-            }
+            .menu-toggle:hover { transform: scale(1.05); }
         }
         
-        /* 桌面端恢复水平布局 */
         @media (min-width: 769px) {
-            .input-area {
-                flex-direction: row;
-            }
-            .send-btn {
-                width: auto;
-                min-width: 100px;
-            }
+            .input-area { flex-direction: row; }
+            .send-btn { width: auto; min-width: 100px; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -617,7 +591,6 @@
             <a href="search.html">🔍 搜索</a>
             <a href="about.html">ℹ️ 关于</a>
             <a href="ai-profile.html">🤖 AI助手</a>
-            <!-- 通知按钮包装器，用于相对定位 -->
             <span class="notification-wrapper">
                 <button class="notification-btn" id="notificationBtn">🔔 <span id="notificationCount" class="notification-badge zero">0</span></button>
                 <div id="notificationPanel" class="notification-panel">
@@ -665,7 +638,7 @@
         </div>
     </div>
 
-    <!-- 模态框省略，与之前相同... -->
+    <!-- 模态框 -->
     <div id="createRoomModal" class="modal">
         <div class="modal-content">
             <h3>创建聊天室</h3>
@@ -789,9 +762,7 @@
         
         function toggleMobileMenu() {
             const sidebar = document.getElementById('roomsSidebar');
-            if (sidebar) {
-                sidebar.classList.toggle('open');
-            }
+            if (sidebar) sidebar.classList.toggle('open');
         }
         
         function closeMobileMenuOnClickOutside(e) {
@@ -1176,28 +1147,49 @@
             await loadNotifications();
         }
 
-        // 通知面板开关 - 使用独立的按钮ID，确保只通过点击控制
-        function setupNotificationToggle() {
+        // ========== 通知面板独立控制（彻底修复） ==========
+        let notificationPanelInitialized = false;
+        
+        function initNotificationPanel() {
+            if (notificationPanelInitialized) return;
+            
             const notificationBtn = document.getElementById('notificationBtn');
             const notificationPanel = document.getElementById('notificationPanel');
             
-            if (notificationBtn && notificationPanel) {
-                // 点击按钮切换面板
-                notificationBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    notificationPanel.classList.toggle('show');
-                });
-                
-                // 点击其他地方关闭面板
-                document.addEventListener('click', function(e) {
-                    if (!notificationBtn.contains(e.target) && !notificationPanel.contains(e.target)) {
-                        notificationPanel.classList.remove('show');
-                    }
-                });
-            }
+            if (!notificationBtn || !notificationPanel) return;
+            
+            // 移除可能存在的旧监听器（通过替换克隆元素来清除所有监听器）
+            const newBtn = notificationBtn.cloneNode(true);
+            notificationBtn.parentNode.replaceChild(newBtn, notificationBtn);
+            const newPanel = notificationPanel.cloneNode(true);
+            notificationPanel.parentNode.replaceChild(newPanel, notificationPanel);
+            
+            // 重新获取元素
+            const finalBtn = document.getElementById('notificationBtn');
+            const finalPanel = document.getElementById('notificationPanel');
+            
+            if (!finalBtn || !finalPanel) return;
+            
+            // 确保面板初始是关闭的
+            finalPanel.classList.remove('show');
+            
+            // 添加点击事件：切换面板
+            finalBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                finalPanel.classList.toggle('show');
+            });
+            
+            // 点击页面其他地方关闭面板
+            document.addEventListener('click', function(e) {
+                if (!finalBtn.contains(e.target) && !finalPanel.contains(e.target)) {
+                    finalPanel.classList.remove('show');
+                }
+            });
+            
+            notificationPanelInitialized = true;
+            console.log('通知面板已初始化，初始状态：关闭');
         }
         
-        // 点击关闭移动端菜单
         document.addEventListener('click', closeMobileMenuOnClickOutside);
 
         async function loadRooms() {
@@ -1621,8 +1613,8 @@
             await loadRooms();
             await loadNotifications();
             setupScrollDetection();
-            // 设置通知面板的点击开关
-            setupNotificationToggle();
+            // 初始化通知面板（确保面板默认关闭，点击开关）
+            initNotificationPanel();
             
             const input = document.getElementById('messageInput');
             if (input) {
