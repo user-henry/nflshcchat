@@ -41,9 +41,20 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
 
+        .login-logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/91if3kid.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
         .login-card h1 {
             font-size: 28px;
             margin-bottom: 8px;
+            text-align: center;
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -54,6 +65,7 @@
             color: #888;
             margin-bottom: 30px;
             font-size: 14px;
+            text-align: center;
         }
 
         .login-card input {
@@ -117,6 +129,18 @@
         .sidebar-header {
             padding: 20px;
             border-bottom: 1px solid #2a2a3e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-logo {
+            width: 36px;
+            height: 36px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/91if3kid.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
         .sidebar-header h2 {
@@ -125,12 +149,6 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 4px;
-        }
-
-        .sidebar-header p {
-            font-size: 12px;
-            color: #666;
         }
 
         .new-chat-btn {
@@ -245,9 +263,10 @@
             font-size: 18px;
         }
 
-        /* 主聊天区域 */
+        /* 主聊天区域 - 两栏布局 */
         .main-chat {
             margin-left: 280px;
+            margin-right: 300px;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -461,6 +480,77 @@
             30% { opacity: 1; }
         }
 
+        /* 右侧介绍面板 */
+        .info-sidebar {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 300px;
+            background: #0f0f1a;
+            border-left: 1px solid #2a2a3e;
+            overflow-y: auto;
+            padding: 24px 20px;
+        }
+
+        .info-section {
+            margin-bottom: 28px;
+        }
+
+        .info-section h3 {
+            color: #ffd700;
+            font-size: 16px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a2a3e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-section p {
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            color: #ccc;
+            font-size: 13px;
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-list li::before {
+            content: "✨";
+        }
+
+        .command-example {
+            background: #1a1a2e;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #ffd700;
+            margin: 5px 0;
+        }
+
+        .footer-note {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid #2a2a3e;
+            font-size: 11px;
+            color: #666;
+        }
+
         /* 滚动条 */
         ::-webkit-scrollbar {
             width: 6px;
@@ -476,6 +566,15 @@
         }
 
         /* 移动端适配 */
+        @media (max-width: 900px) {
+            .info-sidebar {
+                display: none;
+            }
+            .main-chat {
+                margin-right: 0;
+            }
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -488,6 +587,7 @@
             }
             .main-chat {
                 margin-left: 0;
+                margin-right: 0;
             }
             .menu-btn {
                 display: block;
@@ -517,7 +617,8 @@
     <!-- 登录页面 -->
     <div id="loginPage" class="login-container">
         <div class="login-card">
-            <h1>🤖 HZYAI</h1>
+            <div class="login-logo"></div>
+            <h1>HZYAI</h1>
             <div class="subtitle">智能对话助手 · 基于思知AI</div>
             <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
             <input type="password" id="loginPassword" placeholder="密码">
@@ -534,8 +635,8 @@
         <!-- 侧边栏 -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
+                <div class="sidebar-logo"></div>
                 <h2>HZYAI</h2>
-                <p>智能对话助手</p>
             </div>
             <button class="new-chat-btn" onclick="createNewConversation()">
                 + 新对话
@@ -579,6 +680,40 @@
                     <textarea id="messageInput" placeholder="发送消息... (Shift+Enter 换行，Enter 发送)" rows="1"></textarea>
                     <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- 右侧介绍面板 -->
+        <div class="info-sidebar">
+            <div class="info-section">
+                <h3>🤖 关于 HZYAI</h3>
+                <p>HZYAI 是基于思知 AI 大模型构建的智能对话助手，响应快速，适合只需使用 AI 工具的用户。</p>
+                <p>所有对话都会<strong>本地存储</strong>，同时支持同步到 GitHub Issues，换设备登录后一键爬取，记录永不丢失。</p>
+            </div>
+            <div class="info-section">
+                <h3>✨ 功能特点</h3>
+                <ul class="feature-list">
+                    <li>智能对话 & 问答</li>
+                    <li>编程辅助 & 代码解释</li>
+                    <li>写作助手 & 文案生成</li>
+                    <li>翻译 & 语言学习</li>
+                    <li>创意激发 & 头脑风暴</li>
+                </ul>
+            </div>
+            <div class="info-section">
+                <h3>💡 使用技巧</h3>
+                <div class="command-example">📝 编程问题：Python 如何读取文件？</div>
+                <div class="command-example">✍️ 写作帮助：帮我写一封请假邮件</div>
+                <div class="command-example">🌐 翻译：把"你好"翻译成英语</div>
+                <div class="command-example">💬 闲聊：讲个笑话</div>
+            </div>
+            <div class="info-section">
+                <h3>📦 数据同步</h3>
+                <p>点击「爬取 GitHub Issues 消息」可拉取云端历史对话；点击「更新消息至 GitHub Issues」可上传当前对话。</p>
+                <p style="font-size: 11px; color: #f39c12;">⚠️ 首次使用建议先爬取云端数据，避免覆盖已有记录。</p>
+            </div>
+            <div class="footer-note">
+                HZYAI · 让对话更智能
             </div>
         </div>
     </div>
@@ -1042,6 +1177,8 @@
             
             if (username === 'huangzhiyuan' && password === '15240254891') {
                 currentUser = { username: 'huangzhiyuan', isAdmin: true };
+                // 保存登录状态到 localStorage
+                localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
                 document.getElementById('loginPage').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
                 document.getElementById('userName').textContent = 'huangzhiyuan';
@@ -1081,6 +1218,8 @@
                 
                 if (foundUser && !foundUser.isBanned) {
                     currentUser = { username: foundUser.username, isAdmin: false };
+                    // 保存登录状态到 localStorage
+                    localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('userName').textContent = foundUser.username;
@@ -1107,6 +1246,8 @@
             currentUser = null;
             conversations = [];
             currentConversationId = null;
+            // 清除 localStorage 中的登录状态
+            localStorage.removeItem('hzyai_currentUser');
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
             document.getElementById('loginUsername').value = '';
@@ -1118,8 +1259,35 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        // ========== 初始化 ==========
+        // ========== 初始化 - 检查 localStorage 登录状态 ==========
+        function init() {
+            // 从 localStorage 恢复登录状态
+            const savedUser = localStorage.getItem('hzyai_currentUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    document.getElementById('loginPage').style.display = 'none';
+                    document.getElementById('app').style.display = 'flex';
+                    document.getElementById('userName').textContent = currentUser.username;
+                    document.getElementById('userRole').textContent = currentUser.isAdmin ? '管理员' : '用户';
+                    document.getElementById('userAvatar').textContent = currentUser.isAdmin ? '👑' : currentUser.username.charAt(0).toUpperCase();
+                    loadConversationsFromLocal();
+                    renderConversationsList();
+                    if (conversations.length > 0) {
+                        currentConversationId = conversations[0].id;
+                        document.getElementById('chatTitle').textContent = conversations[0].title;
+                        renderMessages(conversations[0].messages);
+                    }
+                } catch (e) {
+                    console.error('恢复登录状态失败', e);
+                    localStorage.removeItem('hzyai_currentUser');
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            init();
+            
             const textarea = document.getElementById('messageInput');
             if (textarea) {
                 textarea.addEventListener('input', autoResizeTextarea);
