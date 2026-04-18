@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>NFLSHC Chat - 聊天室</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,6 +24,13 @@
         .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
         .nav a:hover { color: #ffd700; }
         .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
+
+        /* 响应式导航 - 移动端换行 */
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; gap: 10px; text-align: center; }
+            .nav div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+            .nav a { margin-left: 0; }
+        }
 
         .notification-btn { position: relative; cursor: pointer; }
         .notification-badge {
@@ -62,10 +69,12 @@
         .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
         .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; }
 
+        /* 聊天容器 - 右侧留出350px边距（与hzyai一致） */
         .chat-container {
             display: flex;
             max-width: 1400px;
             margin: 20px auto;
+            margin-right: 350px;
             background: #16213e;
             border-radius: 12px;
             overflow: hidden;
@@ -102,11 +111,11 @@
         }
         .room-item:hover { background: #2a2a3e; transform: translateX(5px); }
         .room-item.active { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; }
-        .room-name { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .room-name { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; flex-wrap: wrap; }
         .room-type { font-size: 11px; opacity: 0.7; }
         .room-verify-badge { font-size: 10px; background: #f39c12; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; position: relative; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; position: relative; min-width: 0; /* 防止flex溢出 */ }
         .chat-header {
             padding: 15px 20px;
             border-bottom: 1px solid #2a2a3e;
@@ -123,8 +132,8 @@
             font-size: 12px;
         }
         .settings-btn:hover { background: #ffd700; color: #1a1a2e; }
-        .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; }
-        .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
+        .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; display: inline-block; }
+        .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; word-break: break-word; }
         .markdown-hint {
             font-size: 11px;
             color: #888;
@@ -135,7 +144,6 @@
             display: inline-block;
         }
         
-        /* 消息区域 */
         .chat-messages { 
             flex: 1; 
             overflow-y: auto; 
@@ -146,16 +154,21 @@
             scroll-behavior: smooth;
         }
         
-        /* 加载更多按钮 */
+        #messagesContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
         .load-more-container {
             display: flex;
             justify-content: center;
             margin-bottom: 15px;
         }
         .load-more-btn {
-            background: var(--bg-tertiary);
-            color: var(--accent-color);
-            border: 1px solid var(--border-color);
+            background: #2a2a3e;
+            color: #ffd700;
+            border: 1px solid #3a3a4e;
             padding: 8px 20px;
             border-radius: 20px;
             cursor: pointer;
@@ -163,7 +176,7 @@
             transition: all 0.2s;
         }
         .load-more-btn:hover {
-            background: var(--accent-color);
+            background: #ffd700;
             color: #1a1a2e;
         }
         .load-more-btn:disabled {
@@ -171,36 +184,37 @@
             cursor: not-allowed;
         }
         
-        /* 消息样式 - 修复：自己的消息靠右 */
+        /* 消息样式 - 强制换行 */
         .message {
             display: flex;
             flex-direction: column;
-            max-width: 70%;
+            max-width: 80%;
             position: relative;
         }
-        /* 自己的消息靠右对齐 */
         .message.own {
             align-self: flex-end;
+            margin-right: 10px;
         }
-        /* 他人的消息靠左对齐 */
         .message:not(.own) {
             align-self: flex-start;
+            margin-left: 10px;
         }
         
         .message-sender {
             font-size: 12px;
             color: #aaa;
             margin-bottom: 4px;
-            margin-left: 10px;
             cursor: pointer;
         }
-        .message-sender:hover { text-decoration: underline; color: #ffd700; }
-        /* 自己的消息发送者靠右 */
         .message.own .message-sender {
             text-align: right;
             margin-right: 10px;
-            margin-left: 0;
         }
+        .message:not(.own) .message-sender {
+            text-align: left;
+            margin-left: 10px;
+        }
+        .message-sender:hover { text-decoration: underline; color: #ffd700; }
         
         .message-bubble-wrapper {
             position: relative;
@@ -213,9 +227,12 @@
             background: #1a1a2e;
             color: white;
             word-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
             line-height: 1.5;
+            max-width: 100%;
+            overflow-wrap: break-word;
         }
-        /* 自己的消息气泡样式 */
         .message.own .message-bubble {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
@@ -227,6 +244,7 @@
             border-radius: 4px;
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 0.9em;
+            word-break: break-all;
         }
         .message-bubble pre {
             background: rgba(0,0,0,0.3);
@@ -234,6 +252,8 @@
             border-radius: 8px;
             overflow-x: auto;
             margin: 8px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
         .message-bubble pre code {
             background: transparent;
@@ -242,6 +262,7 @@
         .message-bubble a {
             color: #ffd700;
             text-decoration: none;
+            word-break: break-all;
         }
         .message-bubble a:hover {
             text-decoration: underline;
@@ -251,6 +272,7 @@
             margin: 8px 0;
             padding-left: 12px;
             color: #ccc;
+            word-break: break-word;
         }
         .message-bubble ul, .message-bubble ol {
             margin: 5px 0;
@@ -265,6 +287,9 @@
         .message-bubble table {
             border-collapse: collapse;
             margin: 8px 0;
+            width: 100%;
+            overflow-x: auto;
+            display: block;
         }
         .message-bubble th, .message-bubble td {
             border: 1px solid #555;
@@ -338,15 +363,17 @@
             font-size: 10px;
             color: #666;
             margin-top: 4px;
-            margin-left: 10px;
         }
-        /* 自己的消息时间靠右 */
         .message.own .message-time {
             text-align: right;
             margin-right: 10px;
-            margin-left: 0;
+        }
+        .message:not(.own) .message-time {
+            text-align: left;
+            margin-left: 10px;
         }
         
+        /* 输入区域 - 移动端优化：垂直布局 */
         .input-container {
             padding: 20px;
             border-top: 1px solid #2a2a3e;
@@ -354,21 +381,26 @@
         }
         .input-area {
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 12px;
             margin-bottom: 12px;
         }
         .chat-input {
-            flex: 1;
+            width: 100%;
             padding: 12px;
             border: 1px solid #2a2a3e;
             border-radius: 24px;
             background: #0f0f1a;
             color: white;
-            resize: none;
+            resize: vertical;
             font-family: inherit;
+            font-size: 16px; /* 防止iOS缩放 */
+            word-wrap: break-word;
+            word-break: break-word;
         }
         .chat-input:focus { outline: none; border-color: #ffd700; }
         .send-btn {
+            width: 100%;
             padding: 12px 28px;
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
@@ -376,6 +408,7 @@
             border-radius: 24px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 16px;
         }
         .preview-area {
             background: #0f0f1a;
@@ -390,6 +423,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .preview-content {
             background: #16213e;
@@ -398,6 +432,8 @@
             min-height: 60px;
             max-height: 200px;
             overflow-y: auto;
+            word-wrap: break-word;
+            word-break: break-word;
         }
         .preview-content p { margin: 0 0 5px 0; }
         .preview-content:empty::before {
@@ -409,7 +445,7 @@
         
         .scroll-to-bottom-btn {
             position: absolute;
-            bottom: 90px;
+            bottom: 140px;
             right: 30px;
             width: 44px;
             height: 44px;
@@ -442,7 +478,8 @@
             background: #1a1a2e;
             padding: 25px;
             border-radius: 16px;
-            width: 450px;
+            width: 90%;
+            max-width: 450px;
             border: 1px solid #ffd700;
             max-height: 80vh;
             overflow-y: auto;
@@ -458,21 +495,98 @@
             color: white;
         }
         .modal-content textarea { resize: vertical; font-family: inherit; }
-        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
         .modal-buttons button { padding: 8px 20px; border-radius: 8px; cursor: pointer; }
         
         .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
+        /* 响应式布局 - 移动端优化 */
+        @media (max-width: 1000px) {
+            .chat-container {
+                margin-right: 0;
+            }
+        }
+        
         @media (max-width: 768px) {
-            .rooms-sidebar { width: 220px; }
-            .message { max-width: 85%; }
-            .scroll-to-bottom-btn { bottom: 80px; right: 15px; width: 40px; height: 40px; font-size: 18px; }
+            .rooms-sidebar { 
+                width: 260px;
+                position: fixed;
+                left: -260px;
+                top: 0;
+                bottom: 0;
+                z-index: 200;
+                transition: left 0.3s ease;
+                border-right: 1px solid #ffd700;
+            }
+            .rooms-sidebar.open {
+                left: 0;
+            }
+            .chat-container {
+                margin: 0;
+                border-radius: 0;
+                height: 100vh;
+            }
+            .message { 
+                max-width: 90%;
+            }
+            .scroll-to-bottom-btn { 
+                bottom: 160px; 
+                right: 15px; 
+                width: 40px; 
+                height: 40px; 
+                font-size: 18px; 
+            }
+            .chat-header h3 {
+                font-size: 16px;
+            }
+            .markdown-hint {
+                font-size: 10px;
+            }
+            .room-name {
+                font-size: 14px;
+            }
+            /* 移动端菜单按钮 */
+            .menu-toggle {
+                display: flex;
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                background: #ffd700;
+                color: #1a1a2e;
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 201;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                font-size: 24px;
+                border: none;
+            }
+            .menu-toggle:hover {
+                transform: scale(1.05);
+            }
+        }
+        
+        /* 桌面端恢复水平布局 */
+        @media (min-width: 769px) {
+            .input-area {
+                flex-direction: row;
+            }
+            .send-btn {
+                width: auto;
+                min-width: 100px;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+    <!-- 移动端菜单按钮 -->
+    <button class="menu-toggle" id="menuToggle" style="display: none;" onclick="toggleMobileMenu()">☰</button>
+
     <div class="nav">
         <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
         <div>
@@ -496,7 +610,7 @@
     </div>
 
     <div class="chat-container">
-        <div class="rooms-sidebar">
+        <div class="rooms-sidebar" id="roomsSidebar">
             <div class="rooms-header">
                 <h3>聊天室列表</h3>
                 <button class="create-room-btn" onclick="showCreateRoomModal()">+ 创建聊天室</button>
@@ -510,7 +624,7 @@
                 <div class="load-more-container" id="loadMoreContainer" style="display: none;">
                     <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreMessages()">↑ 加载更多历史消息 ↑</button>
                 </div>
-                <div id="messagesContainer"><div class="empty-state">💬 选择一个聊天室开始聊天</div></div>
+                <div id="messagesContainer"></div>
             </div>
             <div class="input-container" id="inputContainer" style="display: none;">
                 <div class="input-area">
@@ -598,7 +712,7 @@
                 <div class="form-group">
                     <label>群管理员</label>
                     <div id="adminList" style="background: #0f0f1a; border-radius: 8px; padding: 10px; max-height: 150px; overflow-y: auto;"></div>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
                         <input type="text" id="addAdminUser" placeholder="用户名" style="flex:1;">
                         <button onclick="addAdmin()" style="width: auto; padding: 8px 15px;">添加</button>
                     </div>
@@ -628,17 +742,14 @@
         let allNotifications = [];
         let pendingJoinRoom = null;
         
-        // 分页相关变量
         let currentPage = 1;
         let hasMoreMessages = true;
         let isLoadingMore = false;
         let newestMessageTimestamp = null;
         
-        // 滚动控制变量
         let isUserScrolling = false;
         let scrollTimeout = null;
         
-        // ========== AI 机器人配置 ==========
         const BOT_CONFIG = {
             enabled: true,
             name: '🤖 AI小助手',
@@ -654,15 +765,31 @@
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
-        
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
         
-        // ========== 滚动检测 ==========
+        // 移动端菜单
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('roomsSidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('open');
+            }
+        }
+        
+        // 点击其他地方关闭移动端菜单
+        function closeMobileMenuOnClickOutside(e) {
+            const sidebar = document.getElementById('roomsSidebar');
+            const menuBtn = document.getElementById('menuToggle');
+            if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('open')) {
+                if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        }
+        
         function setupScrollDetection() {
             const messagesContainer = document.getElementById('chatMessages');
             const scrollBtn = document.getElementById('scrollToBottomBtn');
             if (!messagesContainer) return;
-            
             messagesContainer.addEventListener('scroll', function() {
                 const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
                 if (scrollBtn) {
@@ -673,7 +800,6 @@
                 if (scrollTimeout) clearTimeout(scrollTimeout);
                 scrollTimeout = setTimeout(() => { isUserScrolling = false; }, 3000);
             });
-            
             messagesContainer.addEventListener('mouseenter', function() { isUserScrolling = true; });
             messagesContainer.addEventListener('mouseleave', function() {
                 setTimeout(() => {
@@ -698,7 +824,6 @@
             if (isNearBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
-        // ========== 加载历史消息（分页） ==========
         async function loadHistoryMessages(page = 1) {
             if (!currentRoom) return [];
             try {
@@ -706,10 +831,8 @@
                 const res = await fetch(url, {
                     headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
-                
                 const linkHeader = res.headers.get('Link');
                 const issues = await res.json();
-                
                 const roomMessages = [];
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
@@ -720,9 +843,7 @@
                         }
                     }
                 }
-                
                 const hasNext = linkHeader && linkHeader.includes('rel="next"');
-                
                 return { messages: roomMessages, hasNext };
             } catch (error) {
                 console.error('加载历史消息失败:', error);
@@ -730,7 +851,6 @@
             }
         }
         
-        // ========== 加载新消息（轮询用） ==========
         async function loadNewMessages() {
             if (!currentRoom) return [];
             try {
@@ -762,10 +882,8 @@
             }
         }
         
-        // ========== 加载消息（初始加载） ==========
         async function loadMessages(append = false) {
             if (!currentRoom) return;
-            
             const messagesContainer = document.getElementById('messagesContainer');
             if (!append) {
                 messagesContainer.innerHTML = '<div class="empty-state">加载中...</div>';
@@ -774,26 +892,20 @@
                 allMessages = [];
                 newestMessageTimestamp = null;
             }
-            
             const result = await loadHistoryMessages(currentPage);
-            
             if (result.messages.length > 0) {
                 result.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                
                 if (append) {
                     allMessages = [...result.messages, ...allMessages];
                 } else {
                     allMessages = result.messages;
                 }
-                
                 if (allMessages.length > 0) {
                     const latestMsg = allMessages[allMessages.length - 1];
                     newestMessageTimestamp = latestMsg.timestamp;
                 }
-                
                 messages[currentRoom.id] = allMessages;
                 renderMessages();
-                
                 const loadMoreContainer = document.getElementById('loadMoreContainer');
                 if (hasMoreMessages && result.hasNext) {
                     loadMoreContainer.style.display = 'flex';
@@ -812,32 +924,25 @@
             }
         }
         
-        // ========== 加载更多历史消息 ==========
         async function loadMoreMessages() {
             if (isLoadingMore || !hasMoreMessages) return;
             isLoadingMore = true;
-            
             const loadMoreBtn = document.getElementById('loadMoreBtn');
             const originalText = loadMoreBtn.textContent;
             loadMoreBtn.textContent = '加载中...';
             loadMoreBtn.disabled = true;
-            
             const messagesContainer = document.getElementById('chatMessages');
             const oldScrollHeight = messagesContainer.scrollHeight;
-            
             await loadMessages(true);
-            
             setTimeout(() => {
                 const newScrollHeight = messagesContainer.scrollHeight;
                 messagesContainer.scrollTop = newScrollHeight - oldScrollHeight;
             }, 100);
-            
             loadMoreBtn.textContent = originalText;
             loadMoreBtn.disabled = false;
             isLoadingMore = false;
         }
         
-        // ========== 轮询新消息 ==========
         async function pollNewMessages() {
             if (!currentRoom) return;
             const newMessages = await loadNewMessages();
@@ -854,20 +959,16 @@
             }
         }
         
-        // ========== 渲染消息 ==========
         function renderMessages() {
             const container = document.getElementById('messagesContainer');
             const roomMessages = allMessages || [];
-            
             if (roomMessages.length === 0) {
                 container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
                 return;
             }
-            
             container.innerHTML = roomMessages.map(msg => {
                 const renderedHtml = renderMarkdown(msg.content);
                 const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
-                // 添加 own 类来标识自己的消息，用于 CSS 靠右对齐
                 const isOwn = msg.sender === currentUser.username;
                 return `
                     <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
@@ -881,11 +982,9 @@
                     </div>
                 `;
             }).join('');
-            
             smartScrollToBottom();
         }
         
-        // ========== 渲染 Markdown ==========
         function renderMarkdown(content) {
             if (!content) return '';
             const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
@@ -923,16 +1022,13 @@
             }
         }
         
-        // ========== 快速与 AI 小助手私聊 ==========
         function quickChatWithAI() {
             document.getElementById('privateUser').value = BOT_CONFIG.name;
             document.getElementById('roomName').value = `与 ${BOT_CONFIG.name} 的私聊`;
         }
         
-        // ========== 发送机器人消息 ==========
         async function sendBotMessage(roomId, content) {
             if (!content || content === '暂无回复') return;
-            
             const botMessage = {
                 id: `msg_bot_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
                 roomId: roomId,
@@ -941,7 +1037,6 @@
                 timestamp: new Date().toISOString(),
                 isRecalled: false
             };
-            
             try {
                 const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(botMessage, null, 2)}\n\`\`\``;
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
@@ -960,7 +1055,6 @@
             }
         }
 
-        // ========== 调用思知 AI API ==========
         async function callAIAPI(msg) {
             try {
                 const url = `${BOT_CONFIG.apiUrl}?appid=${BOT_CONFIG.appid}&userid=${encodeURIComponent(currentUser.username)}&spoken=${encodeURIComponent(msg)}&memory=true`;
@@ -976,23 +1070,19 @@
             }
         }
 
-        // ========== 群聊 AI 触发 ==========
         async function triggerAIReply(roomId, sender, messageContent) {
             if (!BOT_CONFIG.enabled) return false;
             if (sender === BOT_CONFIG.name) return false;
             if (!currentRoom || currentRoom.type !== 'group') return false;
-            
             const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
                 messageContent.toLowerCase().includes(word.toLowerCase())
             );
             if (!hasTrigger) return false;
-            
             let question = messageContent;
             for (const word of BOT_CONFIG.triggerWords) {
                 question = question.replace(new RegExp(word, 'gi'), '');
             }
             question = question.trim() || messageContent;
-            
             const reply = await callAIAPI(question);
             if (reply) {
                 await sendBotMessage(roomId, reply);
@@ -1001,7 +1091,6 @@
             return false;
         }
         
-        // ========== 其他辅助函数 ==========
         function togglePrivateUser() {
             const type = document.getElementById('roomType').value;
             const isPrivate = type === 'private';
@@ -1075,6 +1164,9 @@
             const btn = document.querySelector('.notification-btn');
             if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('show');
         });
+        
+        // 点击关闭移动端菜单
+        document.addEventListener('click', closeMobileMenuOnClickOutside);
 
         async function loadRooms() {
             try {
@@ -1113,7 +1205,6 @@
         async function favoriteMessage(messageId) {
             const msg = allMessages.find(m => m.id === messageId);
             if (!msg) { alert('消息不存在'); return; }
-            
             const favoriteData = {
                 id: `fav_${Date.now()}`,
                 messageId: msg.id,
@@ -1123,7 +1214,6 @@
                 user: currentUser.username,
                 createdAt: new Date().toISOString()
             };
-            
             try {
                 const issueBody = `收藏消息\n\`\`\`json\n${JSON.stringify(favoriteData, null, 2)}\n\`\`\``;
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
@@ -1168,10 +1258,8 @@
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             if (!content || !currentRoom) return;
-            
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
-            
             const hasMentionAll = content.includes('@所有人');
             let mentionedUsers = [];
             const mentionPattern = /@([a-zA-Z0-9_\u4e00-\u9fa5]+)/g;
@@ -1183,7 +1271,6 @@
                 mentionedUsers.push(...otherMembers);
                 mentionedUsers = [...new Set(mentionedUsers)];
             }
-            
             const messageData = {
                 id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 roomId: currentRoom.id,
@@ -1210,16 +1297,11 @@
                 }
                 input.value = '';
                 updatePreview();
-                
                 await pollNewMessages();
                 renderMessages();
-                
-                // 群聊 AI 触发
                 if (currentRoom && currentRoom.type === 'group') {
                     setTimeout(() => triggerAIReply(currentRoom.id, currentUser.username, content), 500);
                 }
-                
-                // 私聊 AI 小助手触发
                 if (currentRoom && currentRoom.type === 'private') {
                     const otherUser = currentRoom.members?.find(m => m !== currentUser.username);
                     if (otherUser === BOT_CONFIG.name) {
@@ -1260,12 +1342,15 @@
         }
 
         async function selectRoom(roomId) {
+            // 移动端选择房间后关闭侧边栏
+            if (window.innerWidth <= 768) {
+                document.getElementById('roomsSidebar').classList.remove('open');
+            }
+            
             const room = allRooms.find(r => r.id === roomId);
             if (!room) return;
             if (room.isBanned) { alert('该群聊已被封禁'); return; }
-            
             currentRoom = room;
-            
             if (room.type === 'private') {
                 document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}</h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
             } else {
@@ -1283,13 +1368,11 @@
                 }
                 document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
             }
-            
             document.getElementById('inputContainer').style.display = 'block';
             await loadMessages(false);
             startPolling();
         }
 
-        // ========== 群管理功能 ==========
         function showRoomSettings() {
             if (currentRoom.type !== 'group') { alert('只有群聊可以设置'); return; }
             const isOwner = currentRoom.creator === currentUser.username;
@@ -1507,7 +1590,6 @@
             await loadRooms();
             await loadNotifications();
             setupScrollDetection();
-            
             const input = document.getElementById('messageInput');
             if (input) {
                 input.addEventListener('input', updatePreview);
@@ -1516,6 +1598,21 @@
                 });
             }
             console.log('AI 机器人已启用，触发词:', BOT_CONFIG.triggerWords);
+            
+            // 移动端显示菜单按钮
+            if (window.innerWidth <= 768) {
+                document.getElementById('menuToggle').style.display = 'flex';
+            }
+            
+            // 监听窗口大小变化
+            window.addEventListener('resize', function() {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('menuToggle').style.display = 'flex';
+                } else {
+                    document.getElementById('menuToggle').style.display = 'none';
+                    document.getElementById('roomsSidebar').classList.remove('open');
+                }
+            });
         };
     </script>
 </body>
