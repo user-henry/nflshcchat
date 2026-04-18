@@ -2,15 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>NFLSHC Chat - 聊天室</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 管理员后台</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; min-height: 100vh; }
-
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+        }
         .nav {
             background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
-            padding: 12px 30px;
+            padding: 15px 30px;
             color: white;
             display: flex;
             justify-content: space-between;
@@ -19,1456 +22,704 @@
             border-bottom: 1px solid #ffd700;
         }
         .nav-left { display: flex; align-items: center; gap: 15px; }
-        .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
         .nav h2 { font-size: 20px; color: #ffd700; }
         .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
         .nav a:hover { color: #ffd700; }
-        .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
-
-        .notification-btn { position: relative; cursor: pointer; }
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -15px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 10px;
-            min-width: 18px;
+        
+        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 25px;
             text-align: center;
+            border: 1px solid #2a2a3e;
         }
-        .notification-badge.zero { background: #28a745; }
-        .notification-panel {
-            position: absolute;
-            top: 60px;
-            right: 20px;
-            width: 350px;
-            max-height: 400px;
-            background: #16213e;
-            border-radius: 12px;
-            border: 1px solid #ffd700;
-            z-index: 100;
-            overflow-y: auto;
-            display: none;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        }
-        .notification-panel.show { display: block; }
-        .notification-item { padding: 12px; border-bottom: 1px solid #2a2a3e; cursor: pointer; }
-        .notification-item:hover { background: #1a1a2e; }
-        .notification-item.unread { background: #2a1a3e; border-left: 3px solid #ffd700; }
-        .notification-title { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
-        .notification-content { font-size: 12px; color: #aaa; }
-        .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
-        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; }
-
-        /* 聊天容器 - 右侧留出300px边距 */
-        .chat-container {
-            display: flex;
-            max-width: 1400px;
-            margin: 20px auto;
-            margin-right: 0;  /* 新增：右侧留出300px空白，与hzyai.html一致 */
-            background: #16213e;
-            border-radius: 12px;
-            overflow: hidden;
-            height: calc(100vh - 80px);
-            position: relative;
-        }
-        .rooms-sidebar {
-            width: 320px;
-            background: #0f0f1a;
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid #2a2a3e;
-        }
-        .rooms-header { padding: 20px; border-bottom: 1px solid #2a2a3e; }
-        .rooms-header h3 { color: #ffd700; margin-bottom: 10px; }
-        .create-room-btn {
-            width: 100%;
-            padding: 10px;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .rooms-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .room-item {
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-            cursor: pointer;
-            background: #1a1a2e;
-            transition: all 0.2s;
-        }
-        .room-item:hover { background: #2a2a3e; transform: translateX(5px); }
-        .room-item.active { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; }
-        .room-name { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .room-type { font-size: 11px; opacity: 0.7; }
-        .room-verify-badge { font-size: 10px; background: #f39c12; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
-
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; position: relative; }
-        .chat-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #2a2a3e;
-            background: #1a1a2e;
-        }
-        .chat-header h3 { color: #ffd700; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .settings-btn {
-            background: #2a2a3e;
-            border: none;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .settings-btn:hover { background: #ffd700; color: #1a1a2e; }
-        .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; }
-        .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; }
-        .markdown-hint {
-            font-size: 11px;
-            color: #888;
-            margin-top: 5px;
-            padding: 4px 8px;
-            background: #0f0f1a;
-            border-radius: 6px;
-            display: inline-block;
-        }
+        .stat-number { font-size: 36px; font-weight: bold; color: #ffd700; }
+        .stat-label { color: #aaa; margin-top: 8px; }
         
-        .chat-messages { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px;
-            scroll-behavior: smooth;
-        }
-        
-        #messagesContainer {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .load-more-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 15px;
-        }
-        .load-more-btn {
-            background: #2a2a3e;
-            color: #ffd700;
-            border: 1px solid #3a3a4e;
-            padding: 8px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-        .load-more-btn:hover {
-            background: #ffd700;
-            color: #1a1a2e;
-        }
-        .load-more-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .message {
-            display: flex;
-            flex-direction: column;
-            max-width: 70%;
-            position: relative;
-        }
-        .message.own {
-            align-self: flex-end;
-            margin-right: 10px;
-        }
-        .message:not(.own) {
-            align-self: flex-start;
-            margin-left: 10px;
-        }
-        
-        .message-sender {
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 4px;
-            cursor: pointer;
-        }
-        .message.own .message-sender {
-            text-align: right;
-            margin-right: 10px;
-        }
-        .message:not(.own) .message-sender {
-            text-align: left;
-            margin-left: 10px;
-        }
-        .message-sender:hover { text-decoration: underline; color: #ffd700; }
-        
-        .message-bubble-wrapper {
-            position: relative;
-            display: inline-block;
-            max-width: 100%;
-        }
-        .message-bubble {
-            padding: 10px 16px;
-            border-radius: 18px;
-            background: #1a1a2e;
-            color: white;
-            word-wrap: break-word;
-            line-height: 1.5;
-        }
-        .message.own .message-bubble {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-        }
-        
-        .message-bubble code {
-            background: rgba(0,0,0,0.2);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.9em;
-        }
-        .message-bubble pre {
-            background: rgba(0,0,0,0.3);
-            padding: 10px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 8px 0;
-        }
-        .message-bubble pre code {
-            background: transparent;
-            padding: 0;
-        }
-        .message-bubble a {
-            color: #ffd700;
-            text-decoration: none;
-        }
-        .message-bubble a:hover {
-            text-decoration: underline;
-        }
-        .message-bubble blockquote {
-            border-left: 3px solid #ffd700;
-            margin: 8px 0;
-            padding-left: 12px;
-            color: #ccc;
-        }
-        .message-bubble ul, .message-bubble ol {
-            margin: 5px 0;
-            padding-left: 20px;
-        }
-        .message-bubble h1, .message-bubble h2, .message-bubble h3 {
-            margin: 8px 0;
-        }
-        .message-bubble h1 { font-size: 1.4em; }
-        .message-bubble h2 { font-size: 1.2em; }
-        .message-bubble h3 { font-size: 1.1em; }
-        .message-bubble table {
-            border-collapse: collapse;
-            margin: 8px 0;
-        }
-        .message-bubble th, .message-bubble td {
-            border: 1px solid #555;
-            padding: 4px 8px;
-        }
-        .message-bubble img {
-            max-width: 100%;
-            border-radius: 8px;
-        }
-        .message-bubble .mention {
-            background: #2ecc71;
-            color: #1a1a2e;
-            padding: 2px 6px;
-            border-radius: 12px;
-            font-weight: bold;
-            display: inline-block;
-        }
-        .message-bubble .mention-all {
-            background: #e74c3c;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 12px;
-            font-weight: bold;
-            display: inline-block;
-        }
-        
-        .recall-btn {
-            position: absolute;
-            top: -12px;
-            right: -8px;
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 10;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .message.own .recall-btn {
-            right: -8px;
-            left: auto;
-        }
-        .message-bubble-wrapper:hover .recall-btn {
-            opacity: 1;
-        }
-        
-        .favorite-btn {
-            position: absolute;
-            bottom: -8px;
-            right: -8px;
-            background: #f39c12;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 20px;
-            font-size: 10px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 10;
-        }
-        .message-bubble-wrapper:hover .favorite-btn {
-            opacity: 1;
-        }
-        
-        .message-time {
-            font-size: 10px;
-            color: #666;
-            margin-top: 4px;
-        }
-        .message.own .message-time {
-            text-align: right;
-            margin-right: 10px;
-        }
-        .message:not(.own) .message-time {
-            text-align: left;
-            margin-left: 10px;
-        }
-        
-        .input-container {
-            padding: 20px;
-            border-top: 1px solid #2a2a3e;
-            background: #1a1a2e;
-        }
-        .input-area {
+        .tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
-        .chat-input {
-            flex: 1;
-            padding: 12px;
+        .tab-btn {
+            padding: 10px 24px;
+            background: #16213e;
             border: 1px solid #2a2a3e;
-            border-radius: 24px;
-            background: #0f0f1a;
+            border-radius: 8px;
             color: white;
-            resize: none;
-            font-family: inherit;
-        }
-        .chat-input:focus { outline: none; border-color: #ffd700; }
-        .send-btn {
-            padding: 12px 28px;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-            border: none;
-            border-radius: 24px;
             cursor: pointer;
-            font-weight: bold;
+            transition: all 0.2s;
         }
-        .preview-area {
-            background: #0f0f1a;
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 8px;
-        }
-        .preview-label {
-            font-size: 11px;
-            color: #888;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .preview-content {
+        .tab-btn.active { background: #ffd700; color: #1a1a2e; border-color: #ffd700; }
+        
+        .card {
             background: #16213e;
             border-radius: 12px;
-            padding: 12px;
-            min-height: 60px;
-            max-height: 200px;
-            overflow-y: auto;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #2a2a3e;
         }
-        .preview-content p { margin: 0 0 5px 0; }
-        .preview-content:empty::before {
-            content: "输入内容后将在此显示预览效果";
-            color: #666;
-            font-style: italic;
-        }
-        .empty-state { text-align: center; padding: 60px; color: #666; }
+        .card h2 { color: #ffd700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3e; }
         
-        .scroll-to-bottom-btn {
-            position: absolute;
-            bottom: 90px;
-            right: 30px;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
-            border: none;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            transition: transform 0.2s, opacity 0.2s;
-            z-index: 100;
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
         }
-        .scroll-to-bottom-btn:hover { transform: scale(1.1); }
-        .scroll-to-bottom-btn.show { display: flex; }
+        .room-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 18px;
+            border: 1px solid #2a2a3e;
+            transition: transform 0.2s;
+        }
+        .room-card:hover { transform: translateY(-3px); border-color: #ffd700; }
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .room-name { font-size: 18px; font-weight: bold; color: #ffd700; }
+        .room-type {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .room-type.private { background: #dc3545; color: white; }
+        .room-type.group { background: #28a745; color: white; }
+        .room-info p { color: #aaa; font-size: 13px; margin-bottom: 6px; }
+        .room-members {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 12px 0;
+        }
+        .room-members h4 { color: #ffd700; font-size: 12px; margin-bottom: 8px; }
+        .member-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .member-tag {
+            background: #2a2a3e;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            color: #ddd;
+        }
+        .member-tag.creator { background: #ffd700; color: #1a1a2e; }
+        
+        .user-list { max-height: 500px; overflow-y: auto; }
+        .user-item {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .user-info { flex: 1; }
+        .user-name { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
+        .user-meta { font-size: 12px; color: #aaa; }
+        .admin-badge, .banned-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        .admin-badge { background: #ffd700; color: #1a1a2e; }
+        .banned-badge { background: #dc3545; color: white; }
+        
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .ban-user-btn, .unban-user-btn, .notify-user-btn, .ban-btn, .unban-btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .ban-user-btn, .ban-btn { background: #dc3545; color: white; }
+        .unban-user-btn, .unban-btn { background: #28a745; color: white; }
+        .notify-user-btn { background: #ffc107; color: #1a1a2e; }
+        
+        .clean-btn {
+            background: #dc3545;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .clean-btn:hover { transform: translateY(-2px); background: #c82333; }
+        .clean-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
         
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
         .modal-content {
-            background: #1a1a2e;
-            padding: 25px;
+            background: #16213e;
+            padding: 30px;
             border-radius: 16px;
             width: 450px;
             border: 1px solid #ffd700;
-            max-height: 80vh;
-            overflow-y: auto;
         }
         .modal-content h3 { color: #ffd700; margin-bottom: 20px; }
-        .modal-content input, .modal-content select, .modal-content textarea {
+        .modal-content input, .modal-content textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin-bottom: 15px;
             border: 1px solid #2a2a3e;
             border-radius: 8px;
-            background: #0f0f1a;
+            background: #1a1a2e;
             color: white;
+            font-family: inherit;
         }
-        .modal-content textarea { resize: vertical; font-family: inherit; }
-        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
-        .modal-buttons button { padding: 8px 20px; border-radius: 8px; cursor: pointer; }
+        .modal-content textarea { resize: vertical; min-height: 100px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-buttons button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        .modal-buttons button:first-child { background: #2a2a3e; color: white; }
+        .modal-buttons button:last-child { background: #ffd700; color: #1a1a2e; }
         
-        .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
-        .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #0f0f1a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #ffd700;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .stats-info {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 10px;
+        }
         
-        /* 响应式布局 - 小屏幕时恢复右边距为0 */
         @media (max-width: 768px) {
-            .rooms-sidebar { width: 220px; }
-            .message { max-width: 85%; }
-            .scroll-to-bottom-btn { bottom: 80px; right: 15px; width: 40px; height: 40px; font-size: 18px; }
-            /* 小屏幕时右侧边距恢复为0 */
-            .chat-container {
-                margin-right: 600px;
-            }
+            .stats { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+            .rooms-grid { grid-template-columns: 1fr; }
+            .user-item { flex-direction: column; align-items: flex-start; }
+            .actions { align-self: flex-end; }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <div class="nav">
-        <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
+        <div class="nav-left"><div class="logo"></div><h2>👑 NFLSHC Chat 管理后台</h2></div>
         <div>
-            <span>欢迎，<span id="username"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
-            <a href="profile.html">👤 个人资料</a>
-            <a href="stats.html">📊 统计</a>
-            <a href="export.html">📤 导出</a>
-            <a href="favorites.html">⭐ 收藏</a>
-            <a href="search.html">🔍 搜索</a>
-            <a href="about.html">ℹ️ 关于</a>
-            <a href="ai-profile.html">🤖 AI助手</a>
-            <span class="notification-btn" onclick="toggleNotificationPanel(event)">🔔 <span id="notificationCount" class="notification-badge zero">0</span></span>
-            <a href="suggestions.html">💡 意见反馈</a>
+            <span>欢迎，管理员 <span id="adminName"></span></span>
+            <a href="admin-suggestions.html">💡 建议审核</a>
+            <a href="chat.html">💬 聊天</a>
             <a href="notice.html">📢 公告</a>
-            <a href="#" onclick="logout()">🚪 退出</a>
-        </div>
-        <div id="notificationPanel" class="notification-panel">
-            <div class="notification-header">📨 系统通知</div>
-            <div id="notificationList" style="padding: 0;">加载中...</div>
+            <a href="index.html" onclick="logout()">🚪 退出</a>
         </div>
     </div>
 
-    <div class="chat-container">
-        <div class="rooms-sidebar">
-            <div class="rooms-header">
-                <h3>聊天室列表</h3>
-                <button class="create-room-btn" onclick="showCreateRoomModal()">+ 创建聊天室</button>
-            </div>
-            <div class="rooms-list" id="roomsList"><div class="empty-state">加载中...</div></div>
+    <div class="container">
+        <div class="stats">
+            <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div class="stat-label">总用户数</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalRooms">0</div><div class="stat-label">聊天室总数</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalGroupRooms">0</div><div class="stat-label">群聊数量</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalPrivateRooms">0</div><div class="stat-label">私聊数量</div></div>
         </div>
 
-        <div class="chat-main">
-            <div class="chat-header" id="chatHeader"><h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p></div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="load-more-container" id="loadMoreContainer" style="display: none;">
-                    <button class="load-more-btn" id="loadMoreBtn" onclick="loadMoreMessages()">↑ 加载更多历史消息 ↑</button>
-                </div>
-                <div id="messagesContainer"></div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('rooms')">💬 所有聊天室</button>
+            <button class="tab-btn" onclick="switchTab('users')">👥 用户管理</button>
+            <button class="tab-btn" onclick="switchTab('notifications')">📨 系统通知</button>
+        </div>
+
+        <div id="roomsTab" class="card">
+            <h2>📋 所有聊天室</h2>
+            <div id="roomsList" class="rooms-grid"><div class="loading">加载中...</div></div>
+        </div>
+
+        <div id="usersTab" class="card" style="display: none;">
+            <h2>👥 用户管理</h2>
+            <div id="usersList" class="user-list"><div class="loading">加载中...</div></div>
+            <div style="margin-top: 25px; text-align: center; padding-top: 20px; border-top: 1px solid #2a2a3e;">
+                <button id="cleanDuplicateUsersBtn" class="clean-btn" onclick="cleanDuplicateUsers()">
+                    🧹 清除多余账号
+                </button>
+                <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
+                    此操作将删除因重复注册产生的相同用户名账号，仅保留最新创建的一个。
+                </p>
             </div>
-            <div class="input-container" id="inputContainer" style="display: none;">
-                <div class="input-area">
-                    <textarea class="chat-input" id="messageInput" placeholder="输入文字…" rows="2"></textarea>
-                    <button class="send-btn" onclick="sendMessage()">发送</button>
-                </div>
-                <div class="preview-area">
-                    <div class="preview-label">
-                        <span>👁️ 实时预览</span>
-                        <span style="font-size: 10px;">(支持 Markdown)</span>
-                    </div>
-                    <div class="preview-content" id="previewContent"></div>
-                </div>
-            </div>
-            <button class="scroll-to-bottom-btn" id="scrollToBottomBtn" onclick="scrollToBottomAndRefresh()" title="滚动到底部">↓</button>
+        </div>
+
+        <div id="notificationsTab" class="card" style="display: none;">
+            <h2>📨 系统通知记录</h2>
+            <div id="notificationsList" class="user-list"><div class="loading">加载中...</div></div>
         </div>
     </div>
 
-    <!-- 创建聊天室模态框 -->
-    <div id="createRoomModal" class="modal">
+    <div id="notifyModal" class="modal">
         <div class="modal-content">
-            <h3>创建聊天室</h3>
-            <input type="text" id="roomName" placeholder="聊天室名称">
-            <select id="roomType" onchange="togglePrivateUser()">
-                <option value="group">群聊（所有人可见）</option>
-                <option value="private">私聊（指定用户）</option>
-            </select>
-            <div id="privateOptions" style="display: none;">
-                <input type="text" id="privateUser" placeholder="私聊对象用户名" style="width: 100%; margin-bottom: 10px;">
-                <button type="button" onclick="quickChatWithAI()" style="width: 100%; background: #2ecc71; color: #1a1a2e; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🤖 与 AI 小助手私聊</button>
-            </div>
-            <div id="groupSettings" style="display: none;">
-                <select id="joinType">
-                    <option value="public">公开（任何人可加入）</option>
-                    <option value="verify">需验证码加入</option>
-                </select>
-                <div id="verifyCodeGroup" style="display: none;">
-                    <input type="text" id="customVerifyCode" placeholder="自定义验证码（留空则随机生成）">
-                </div>
-            </div>
+            <h3>📨 发送系统通知</h3>
+            <p style="color: #aaa; margin-bottom: 15px;">发送给: <span id="notifyTargetUser" style="color: #ffd700;"></span></p>
+            <input type="text" id="notifyTitle" placeholder="通知标题">
+            <textarea id="notifyMessage" placeholder="通知内容..."></textarea>
             <div class="modal-buttons">
-                <button onclick="closeCreateRoomModal()">取消</button>
-                <button onclick="createRoom()" style="background: #ffd700;">创建</button>
+                <button onclick="closeNotifyModal()">取消</button>
+                <button onclick="sendSystemNotification()">发送通知</button>
             </div>
         </div>
     </div>
 
-    <!-- 加入群聊模态框 -->
-    <div id="joinRoomModal" class="modal">
-        <div class="modal-content">
-            <h3 id="joinRoomName">加入群聊</h3>
-            <div id="joinVerifySection" style="display: none;">
-                <p style="color: #aaa; margin-bottom: 10px;">请输入验证码：</p>
-                <input type="text" id="joinVerifyCode" placeholder="验证码">
-            </div>
-            <div class="modal-buttons">
-                <button onclick="closeJoinRoomModal()">取消</button>
-                <button onclick="confirmJoinRoom()" style="background: #ffd700;">加入</button>
-            </div>
-            <div id="joinMessage" style="margin-top: 10px; font-size: 12px;"></div>
-        </div>
-    </div>
-
-    <!-- 群设置模态框 -->
-    <div id="roomSettingsModal" class="modal">
-        <div class="modal-content">
-            <h3 id="settingsRoomName">群设置</h3>
-            <div id="adminOnlySettings" style="display: none;">
-                <div class="form-group">
-                    <label>群公告</label>
-                    <textarea id="roomAnnouncement" rows="3" placeholder="群公告..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>加入方式</label>
-                    <select id="editJoinType">
-                        <option value="public">公开（任何人可加入）</option>
-                        <option value="verify">需验证码加入</option>
-                    </select>
-                </div>
-                <div id="editVerifyGroup" style="display: none;">
-                    <label>验证码</label>
-                    <input type="text" id="editVerifyCode" placeholder="验证码">
-                    <button onclick="generateRandomCode()" style="margin-top: 5px; padding: 5px; font-size: 12px;">随机生成</button>
-                </div>
-                <div class="form-group">
-                    <label>群管理员</label>
-                    <div id="adminList" style="background: #0f0f1a; border-radius: 8px; padding: 10px; max-height: 150px; overflow-y: auto;"></div>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <input type="text" id="addAdminUser" placeholder="用户名" style="flex:1;">
-                        <button onclick="addAdmin()" style="width: auto; padding: 8px 15px;">添加</button>
-                    </div>
-                </div>
-                <hr style="margin: 15px 0; border-color: #2a2a3e;">
-                <button onclick="leaveRoom()" style="background: #dc3545; color: white;">退出群聊</button>
-            </div>
-            <div id="normalUserSettings" style="display: none;">
-                <p style="color: #aaa;">只有群主和管理员可以修改群设置</p>
-                <button onclick="leaveRoom()" style="background: #dc3545; color: white; margin-top: 10px;">退出群聊</button>
-            </div>
-            <div class="modal-buttons">
-                <button onclick="closeRoomSettingsModal()">关闭</button>
-                <button onclick="saveRoomSettings()" style="background: #ffd700;" id="saveSettingsBtn">保存</button>
-            </div>
-        </div>
+    <div id="loadingProgress" style="display: none; margin: 20px;">
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        <div id="progressText" class="stats-info"></div>
     </div>
 
     <script src="config.js"></script>
     <script>
-        let currentUser = null;
-        let currentRoom = null;
+        let currentAdmin = null;
+        let allUsers = [];
         let allRooms = [];
         let allMessages = [];
-        let messages = {};
-        let pollInterval = null;
         let allNotifications = [];
-        let pendingJoinRoom = null;
-        
-        let currentPage = 1;
-        let hasMoreMessages = true;
-        let isLoadingMore = false;
-        let newestMessageTimestamp = null;
-        
-        let isUserScrolling = false;
-        let scrollTimeout = null;
-        
-        const BOT_CONFIG = {
-            enabled: true,
-            name: '🤖 AI小助手',
-            apiUrl: 'https://api.sizhi.com/chat',
-            appid: 'd18408ec60b14c5f844d5004881808eb',
-            triggerWords: ['@AI', '@机器人', 'AI', '机器人']
-        };
+        let currentNotifyUser = null;
 
-        if (typeof marked !== 'undefined') {
-            marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
-        }
-
-        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
-        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-        function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
-        function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
-        
-        function setupScrollDetection() {
-            const messagesContainer = document.getElementById('chatMessages');
-            const scrollBtn = document.getElementById('scrollToBottomBtn');
-            if (!messagesContainer) return;
-            messagesContainer.addEventListener('scroll', function() {
-                const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
-                if (scrollBtn) {
-                    if (isNearBottom) scrollBtn.classList.remove('show');
-                    else scrollBtn.classList.add('show');
-                }
-                isUserScrolling = true;
-                if (scrollTimeout) clearTimeout(scrollTimeout);
-                scrollTimeout = setTimeout(() => { isUserScrolling = false; }, 3000);
-            });
-            messagesContainer.addEventListener('mouseenter', function() { isUserScrolling = true; });
-            messagesContainer.addEventListener('mouseleave', function() {
-                setTimeout(() => {
-                    if (scrollTimeout) clearTimeout(scrollTimeout);
-                    scrollTimeout = setTimeout(() => { isUserScrolling = false; }, 1000);
-                }, 500);
-            });
-        }
-        
-        function scrollToBottomAndRefresh() {
-            const messagesContainer = document.getElementById('chatMessages');
-            if (!messagesContainer) return;
-            messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' });
-            pollNewMessages();
-        }
-        
-        function smartScrollToBottom() {
-            const messagesContainer = document.getElementById('chatMessages');
-            if (!messagesContainer) return;
-            if (isUserScrolling) return;
-            const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
-            if (isNearBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        async function loadHistoryMessages(page = 1) {
-            if (!currentRoom) return [];
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=50&page=${page}`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const linkHeader = res.headers.get('Link');
-                const issues = await res.json();
-                const roomMessages = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (msgData.roomId === currentRoom.id && !msgData.isRecalled) {
-                            roomMessages.push(msgData);
-                        }
-                    }
-                }
-                const hasNext = linkHeader && linkHeader.includes('rel="next"');
-                return { messages: roomMessages, hasNext };
-            } catch (error) {
-                console.error('加载历史消息失败:', error);
-                return { messages: [], hasNext: false };
-            }
-        }
-        
-        async function loadNewMessages() {
-            if (!currentRoom) return [];
-            try {
-                let url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=50`;
-                if (newestMessageTimestamp) {
-                    url += `&since=${encodeURIComponent(newestMessageTimestamp)}`;
-                }
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await res.json();
-                const newMessages = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (msgData.roomId === currentRoom.id && !msgData.isRecalled) {
-                            const exists = allMessages.some(m => m.id === msgData.id);
-                            if (!exists) {
-                                newMessages.push(msgData);
-                            }
-                        }
-                    }
-                }
-                return newMessages;
-            } catch (error) {
-                console.error('加载新消息失败:', error);
-                return [];
-            }
-        }
-        
-        async function loadMessages(append = false) {
-            if (!currentRoom) return;
-            const messagesContainer = document.getElementById('messagesContainer');
-            if (!append) {
-                messagesContainer.innerHTML = '<div class="empty-state">加载中...</div>';
-                currentPage = 1;
-                hasMoreMessages = true;
-                allMessages = [];
-                newestMessageTimestamp = null;
-            }
-            const result = await loadHistoryMessages(currentPage);
-            if (result.messages.length > 0) {
-                result.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                if (append) {
-                    allMessages = [...result.messages, ...allMessages];
-                } else {
-                    allMessages = result.messages;
-                }
-                if (allMessages.length > 0) {
-                    const latestMsg = allMessages[allMessages.length - 1];
-                    newestMessageTimestamp = latestMsg.timestamp;
-                }
-                messages[currentRoom.id] = allMessages;
-                renderMessages();
-                const loadMoreContainer = document.getElementById('loadMoreContainer');
-                if (hasMoreMessages && result.hasNext) {
-                    loadMoreContainer.style.display = 'flex';
-                    currentPage++;
-                } else {
-                    loadMoreContainer.style.display = 'none';
-                    hasMoreMessages = false;
-                }
-            } else {
-                if (!append) {
-                    messagesContainer.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
-                }
-                const loadMoreContainer = document.getElementById('loadMoreContainer');
-                loadMoreContainer.style.display = 'none';
-                hasMoreMessages = false;
-            }
-        }
-        
-        async function loadMoreMessages() {
-            if (isLoadingMore || !hasMoreMessages) return;
-            isLoadingMore = true;
-            const loadMoreBtn = document.getElementById('loadMoreBtn');
-            const originalText = loadMoreBtn.textContent;
-            loadMoreBtn.textContent = '加载中...';
-            loadMoreBtn.disabled = true;
-            const messagesContainer = document.getElementById('chatMessages');
-            const oldScrollHeight = messagesContainer.scrollHeight;
-            await loadMessages(true);
-            setTimeout(() => {
-                const newScrollHeight = messagesContainer.scrollHeight;
-                messagesContainer.scrollTop = newScrollHeight - oldScrollHeight;
-            }, 100);
-            loadMoreBtn.textContent = originalText;
-            loadMoreBtn.disabled = false;
-            isLoadingMore = false;
-        }
-        
-        async function pollNewMessages() {
-            if (!currentRoom) return;
-            const newMessages = await loadNewMessages();
-            if (newMessages.length > 0) {
-                newMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                allMessages.push(...newMessages);
-                messages[currentRoom.id] = allMessages;
-                if (newestMessageTimestamp) {
-                    const latestMsg = newMessages[newMessages.length - 1];
-                    newestMessageTimestamp = latestMsg.timestamp;
-                }
-                renderMessages();
-                smartScrollToBottom();
-            }
-        }
-        
-        function renderMessages() {
-            const container = document.getElementById('messagesContainer');
-            const roomMessages = allMessages || [];
-            if (roomMessages.length === 0) {
-                container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
-                return;
-            }
-            container.innerHTML = roomMessages.map(msg => {
-                const renderedHtml = renderMarkdown(msg.content);
-                const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
-                const isOwn = msg.sender === currentUser.username;
-                return `
-                    <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
-                        <div class="message-sender" onclick="viewProfile('${escapeHtml(msg.sender)}')">${escapeHtml(msg.sender)}</div>
-                        <div class="message-bubble-wrapper">
-                            <div class="message-bubble">${renderedHtml}</div>
-                            ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
-                            <button class="favorite-btn" onclick="favoriteMessage('${msg.id}')">⭐</button>
-                        </div>
-                        <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-                    </div>
-                `;
-            }).join('');
-            smartScrollToBottom();
-        }
-        
-        function renderMarkdown(content) {
-            if (!content) return '';
-            const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
-            const mentions = [];
-            let tempContent = content.replace(mentionPattern, (match) => {
-                mentions.push(match);
-                return `\u200B\u200BMENTION_${mentions.length - 1}\u200B\u200B`;
-            });
-            let html = tempContent;
-            if (typeof marked !== 'undefined') {
-                try {
-                    html = marked.parse(tempContent);
-                    if (html && typeof html.then === 'function') html = tempContent;
-                } catch (e) { html = tempContent; }
-            }
-            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-            html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-            html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-            html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-            for (let i = 0; i < mentions.length; i++) {
-                const mention = mentions[i];
-                const mentionClass = mention === '@所有人' ? 'mention-all' : 'mention';
-                const regex = new RegExp(`\u200B\u200BMENTION_${i}\u200B\u200B`, 'g');
-                html = html.replace(regex, `<span class="${mentionClass}">${mention}</span>`);
-            }
-            return html;
-        }
-        
-        function updatePreview() {
-            const input = document.getElementById('messageInput');
-            const previewDiv = document.getElementById('previewContent');
-            if (input && previewDiv) {
-                const rawText = input.value;
-                previewDiv.innerHTML = rawText.trim() === '' ? '' : renderMarkdown(rawText);
-            }
-        }
-        
-        function quickChatWithAI() {
-            document.getElementById('privateUser').value = BOT_CONFIG.name;
-            document.getElementById('roomName').value = `与 ${BOT_CONFIG.name} 的私聊`;
-        }
-        
-        async function sendBotMessage(roomId, content) {
-            if (!content || content === '暂无回复') return;
-            const botMessage = {
-                id: `msg_bot_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-                roomId: roomId,
-                sender: BOT_CONFIG.name,
-                content: content,
-                timestamp: new Date().toISOString(),
-                isRecalled: false
-            };
-            try {
-                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(botMessage, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: `Message: ${botMessage.id}`, body: issueBody, labels: ['chatmessage'] })
-                });
-                console.log('机器人回复已发送:', content);
-                await pollNewMessages();
-            } catch (error) {
-                console.error('机器人消息发送失败:', error);
-            }
-        }
-
-        async function callAIAPI(msg) {
-            try {
-                const url = `${BOT_CONFIG.apiUrl}?appid=${BOT_CONFIG.appid}&userid=${encodeURIComponent(currentUser.username)}&spoken=${encodeURIComponent(msg)}&memory=true`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
-                    return data.data.info.text;
-                }
-                return null;
-            } catch (error) {
-                console.error('AI API 请求失败:', error);
-                return null;
-            }
-        }
-
-        async function triggerAIReply(roomId, sender, messageContent) {
-            if (!BOT_CONFIG.enabled) return false;
-            if (sender === BOT_CONFIG.name) return false;
-            if (!currentRoom || currentRoom.type !== 'group') return false;
-            const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
-                messageContent.toLowerCase().includes(word.toLowerCase())
-            );
-            if (!hasTrigger) return false;
-            let question = messageContent;
-            for (const word of BOT_CONFIG.triggerWords) {
-                question = question.replace(new RegExp(word, 'gi'), '');
-            }
-            question = question.trim() || messageContent;
-            const reply = await callAIAPI(question);
-            if (reply) {
-                await sendBotMessage(roomId, reply);
-                return true;
-            }
-            return false;
-        }
-        
-        function togglePrivateUser() {
-            const type = document.getElementById('roomType').value;
-            const isPrivate = type === 'private';
-            document.getElementById('privateOptions').style.display = isPrivate ? 'block' : 'none';
-            document.getElementById('groupSettings').style.display = isPrivate ? 'none' : 'block';
-        }
-        document.getElementById('roomType').addEventListener('change', togglePrivateUser);
-        document.getElementById('joinType').addEventListener('change', function() {
-            document.getElementById('verifyCodeGroup').style.display = this.value === 'verify' ? 'block' : 'none';
-        });
-
-        function checkAuth() {
+        function checkAdmin() {
             const userStr = sessionStorage.getItem('currentUser');
             if (!userStr) { window.location.href = 'index.html'; return null; }
             const user = JSON.parse(userStr);
-            document.getElementById('username').textContent = user.username;
-            if (user.isAdmin) document.getElementById('adminBadge').style.display = 'inline-block';
+            if (!user.isAdmin) { alert('无权访问管理员后台'); window.location.href = 'chat.html'; return null; }
+            document.getElementById('adminName').textContent = user.username;
             return user;
         }
+        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
 
-        async function loadNotifications() {
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+        // ========== 分页加载所有消息 ==========
+        async function loadAllMessages() {
+            let allMsg = [];
+            let page = 1;
+            let hasMore = true;
+            
+            const progressDiv = document.getElementById('loadingProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressDiv.style.display = 'block';
+            
+            while (hasMore) {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                
+                const linkHeader = res.headers.get('Link');
+                hasMore = linkHeader && linkHeader.includes('rel="next"');
+                
                 const issues = await res.json();
-                allNotifications = [];
+                if (issues.length === 0) break;
+                
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
-                        const notif = JSON.parse(match[1]);
-                        if (notif.targetUser === currentUser.username) allNotifications.push({ ...notif, issueNumber: issue.number });
+                        const msgData = JSON.parse(match[1]);
+                        allMsg.push(msgData);
                     }
                 }
-                updateNotificationUI();
-            } catch (error) { console.error('加载通知失败:', error); }
+                
+                const percent = Math.min(95, page * 2);
+                progressFill.style.width = `${percent}%`;
+                progressText.innerHTML = `正在加载消息... 已加载 ${allMsg.length} 条 (第${page}页)`;
+                page++;
+                if (page > 50) break;
+            }
+            
+            progressFill.style.width = '100%';
+            progressText.innerHTML = `✅ 消息加载完成！共 ${allMsg.length} 条消息`;
+            setTimeout(() => {
+                progressDiv.style.display = 'none';
+            }, 1500);
+            
+            return allMsg;
         }
 
-        function updateNotificationUI() {
-            const unreadCount = allNotifications.filter(n => !n.isRead).length;
-            const badge = document.getElementById('notificationCount');
-            badge.textContent = unreadCount;
-            badge.className = `notification-badge ${unreadCount === 0 ? 'zero' : ''}`;
-            const container = document.getElementById('notificationList');
-            if (allNotifications.length === 0) { container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>'; return; }
-            allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
-            container.innerHTML = allNotifications.map(n => `
-                <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead('${n.id}')">
-                    <div class="notification-title">📨 ${escapeHtml(n.title)}</div>
-                    <div class="notification-content">${escapeHtml(n.content)}</div>
-                    <div class="notification-time">${new Date(n.sentAt).toLocaleString()}</div>
-                </div>
-            `).join('');
-        }
-
-        async function markAsRead(notificationId) {
-            const notif = allNotifications.find(n => n.id === notificationId);
-            if (!notif || notif.isRead) return;
-            notif.isRead = true;
-            const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            await loadNotifications();
-        }
-
-        function toggleNotificationPanel(event) { event.stopPropagation(); document.getElementById('notificationPanel').classList.toggle('show'); }
-        document.addEventListener('click', function(e) {
-            const panel = document.getElementById('notificationPanel');
-            const btn = document.querySelector('.notification-btn');
-            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('show');
-        });
-
-        async function loadRooms() {
+        async function loadAllData() {
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
-                const issues = await res.json();
+                const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+                
+                // 用户数据
+                const usersRes = await fetch(`${baseUrl}?labels=user&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const userIssues = await usersRes.json();
+                allUsers = [];
+                for (const issue of userIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) { const userData = JSON.parse(match[1]); allUsers.push({ ...userData, issueNumber: issue.number }); }
+                }
+
+                // 聊天室数据
+                const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const roomIssues = await roomsRes.json();
                 allRooms = [];
-                for (const issue of issues) {
+                for (const issue of roomIssues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const roomData = JSON.parse(match[1]);
-                        if (roomData.type === 'private') {
-                            if (roomData.members && (roomData.members.includes(currentUser.username) || roomData.creator === currentUser.username)) {
-                                allRooms.push({ ...roomData, issueNumber: issue.number });
-                            }
-                        } else if (!roomData.isBanned) {
-                            allRooms.push({ ...roomData, issueNumber: issue.number });
-                        }
-                    }
+                    if (match) { const roomData = JSON.parse(match[1]); allRooms.push({ ...roomData, issueNumber: issue.number }); }
                 }
+
+                // 消息数据（分页加载所有）
+                allMessages = await loadAllMessages();
+
+                // 通知数据
+                const notifRes = await fetch(`${baseUrl}?labels=system_notification&state=open`, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const notifIssues = await notifRes.json();
+                allNotifications = [];
+                for (const issue of notifIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) { allNotifications.push(JSON.parse(match[1])); }
+                }
+
+                updateStats();
                 renderRooms();
-            } catch (error) { console.error('加载聊天室失败:', error); }
+                renderUsers();
+                renderNotifications();
+            } catch (error) { console.error('加载数据失败:', error); }
+        }
+
+        function updateStats() {
+            const groupRooms = allRooms.filter(r => r.type === 'group');
+            const privateRooms = allRooms.filter(r => r.type === 'private');
+            document.getElementById('totalUsers').textContent = allUsers.length;
+            document.getElementById('totalRooms').textContent = allRooms.length;
+            document.getElementById('totalGroupRooms').textContent = groupRooms.length;
+            document.getElementById('totalPrivateRooms').textContent = privateRooms.length;
+        }
+
+        function getMessageCount(roomId) { return allMessages.filter(m => m.roomId === roomId).length; }
+        function getActiveMembers(roomId) { return [...new Set(allMessages.filter(m => m.roomId === roomId).map(m => m.sender))]; }
+        
+        // ========== 私聊聊天双方显示 ==========
+        function getRoomMembersDisplay(room) {
+            const activeMembers = getActiveMembers(room.id);
+            
+            if (room.type === 'group') {
+                if (activeMembers.length > 0) return activeMembers;
+                return [room.creator];
+            } else {
+                if (activeMembers.length >= 2) return activeMembers;
+                if (room.members && room.members.length >= 2) return room.members;
+                if (room.privateWith) return [room.creator, room.privateWith];
+                const nameMatch = room.name.match(/(.+?)\s+和\s+(.+?)\s+的私聊/);
+                if (nameMatch) return [nameMatch[1], nameMatch[2]];
+                if (activeMembers.length === 1) {
+                    const singleMember = activeMembers[0];
+                    const otherSenders = [...new Set(allMessages.filter(m => m.roomId === room.id && m.sender !== singleMember).map(m => m.sender))];
+                    if (otherSenders.length > 0) return [singleMember, otherSenders[0]];
+                    if (room.members && room.members.length === 1) return [singleMember, room.creator];
+                    return [singleMember, '未知用户'];
+                }
+                return [room.creator, '私聊对象'];
+            }
         }
 
         function renderRooms() {
             const container = document.getElementById('roomsList');
-            if (allRooms.length === 0) { container.innerHTML = '<div class="empty-state">暂无聊天室<br>点击上方按钮创建</div>'; return; }
-            container.innerHTML = allRooms.map(room => `
-                <div class="room-item ${currentRoom && currentRoom.id === room.id ? 'active' : ''}" onclick="selectRoom('${room.id}')">
-                    <div class="room-name">${escapeHtml(room.name)}${room.joinType === 'verify' ? '<span class="room-verify-badge">🔐 验证码</span>' : ''}</div>
-                    <div class="room-type">${room.type === 'group' ? '👥 群聊' : '🔒 私聊'}</div>
+            if (allRooms.length === 0) { container.innerHTML = '<div class="empty-state">暂无聊天室</div>'; return; }
+            container.innerHTML = allRooms.map(room => {
+                const members = getRoomMembersDisplay(room);
+                const messageCount = getMessageCount(room.id);
+                return `
+                    <div class="room-card">
+                        <div class="room-header">
+                            <span class="room-name">${escapeHtml(room.name)}</span>
+                            <span class="room-type ${room.type}">${room.type === 'group' ? '👥 群聊' : '🔒 私聊'}</span>
+                        </div>
+                        <div class="room-info">
+                            <p>📅 创建时间: ${new Date(room.createdAt).toLocaleString()}</p>
+                            <p>👤 创建者: ${escapeHtml(room.creator)}</p>
+                            <p>📊 消息总数: ${messageCount} 条</p>
+                            <p>👥 ${room.type === 'group' ? '活跃成员数' : '参与人数'}: ${members.length} 人</p>
+                            ${room.isBanned ? '<p style="color: #dc3545;">🚫 状态: 已封禁</p>' : '<p style="color: #28a745;">✅ 状态: 正常</p>'}
+                        </div>
+                        <div class="room-members">
+                            <h4>📋 ${room.type === 'group' ? '活跃成员列表' : '聊天双方'}</h4>
+                            <div class="member-list">
+                                ${members.map(m => `<span class="member-tag ${m === room.creator ? 'creator' : ''}">${escapeHtml(m)}${m === room.creator ? ' (创建者)' : ''}</span>`).join('')}
+                            </div>
+                        </div>
+                        ${room.type === 'group' ? `
+                            <div>${room.isBanned ? 
+                                `<button class="unban-btn" onclick="toggleRoomBan('${room.id}', false)">解除封禁群聊</button>` :
+                                `<button class="ban-btn" onclick="toggleRoomBan('${room.id}', true)">封禁群聊</button>`}
+                            </div>
+                        ` : '<div style="margin-top: 12px;"><span style="font-size: 12px; color: #888;">💡 私聊无法封禁，只能封禁用户</span></div>'}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderUsers() {
+            const container = document.getElementById('usersList');
+            if (allUsers.length === 0) { container.innerHTML = '<div class="empty-state">暂无用户</div>'; return; }
+            const userRoomCount = {};
+            for (const msg of allMessages) {
+                if (!userRoomCount[msg.sender]) userRoomCount[msg.sender] = new Set();
+                userRoomCount[msg.sender].add(msg.roomId);
+            }
+            container.innerHTML = allUsers.map(user => `
+                <div class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">${escapeHtml(user.username)}${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}</div>
+                        <div class="user-meta">注册时间: ${new Date(user.createdAt).toLocaleString()}<br>参与聊天室: ${userRoomCount[user.username]?.size || 0} 个<br>发送消息: ${allMessages.filter(m => m.sender === user.username).length} 条</div>
+                    </div>
+                    <div class="actions">
+                        ${user.username !== 'huangzhiyuan' ? `
+                            <button class="notify-user-btn" onclick="showNotifyModal('${user.username}')">📨 发通知</button>
+                            ${user.isBanned ? 
+                                `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
+                                `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`}
+                        ` : ''}
+                    </div>
                 </div>
             `).join('');
         }
 
-        async function favoriteMessage(messageId) {
-            const msg = allMessages.find(m => m.id === messageId);
-            if (!msg) { alert('消息不存在'); return; }
-            const favoriteData = {
-                id: `fav_${Date.now()}`,
-                messageId: msg.id,
-                roomId: msg.roomId,
-                sender: msg.sender,
-                content: msg.content,
-                user: currentUser.username,
-                createdAt: new Date().toISOString()
-            };
+        function renderNotifications() {
+            const container = document.getElementById('notificationsList');
+            if (allNotifications.length === 0) { container.innerHTML = '<div class="empty-state">暂无系统通知记录</div>'; return; }
+            allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+            container.innerHTML = allNotifications.map(notif => `
+                <div class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">📨 ${escapeHtml(notif.title)}</div>
+                        <div class="user-meta">发送给: ${escapeHtml(notif.targetUser)}<br>发送时间: ${new Date(notif.sentAt).toLocaleString()}<br>内容: ${escapeHtml(notif.content)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ========== 清除多余账号功能 ==========
+        async function cleanDuplicateUsers() {
+            const button = document.getElementById('cleanDuplicateUsersBtn');
+            
+            if (!confirm('⚠️ 警告：此操作将删除所有重复注册的账号（相同用户名仅保留最新创建的一个），且不可恢复。\n\n是否继续？')) {
+                return;
+            }
+
+            const originalText = button.innerText;
+            button.innerText = '⏳ 处理中...';
+            button.disabled = true;
+
             try {
-                const issueBody = `收藏消息\n\`\`\`json\n${JSON.stringify(favoriteData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                    method: 'POST',
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const response = await fetch(url, {
                     headers: {
                         'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: `Favorite: ${favoriteData.id}`, body: issueBody, labels: ['favorite'] })
-                });
-                alert('⭐ 已收藏');
-            } catch (error) {
-                alert('收藏失败：' + error.message);
-            }
-        }
-
-        async function recallMessage(messageId) {
-            const msg = allMessages.find(m => m.id === messageId);
-            if (!msg || msg.sender !== currentUser.username) return;
-            if (Date.now() - new Date(msg.timestamp).getTime() > 120000) { alert('只能撤回2分钟内的消息'); return; }
-            msg.isRecalled = true;
-            const updatedBody = `聊天消息\n\`\`\`json\n${JSON.stringify(msg, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${msg.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            await pollNewMessages();
-            renderMessages();
-        }
-
-        function getGroupActiveMembers(roomId) {
-            const senders = allMessages.filter(m => m.roomId === roomId && !m.isRecalled).map(m => m.sender);
-            const uniqueMembers = [...new Set(senders)];
-            const room = allRooms.find(r => r.id === roomId);
-            if (room && room.creator && !uniqueMembers.includes(room.creator)) uniqueMembers.push(room.creator);
-            return uniqueMembers;
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const content = input.value.trim();
-            if (!content || !currentRoom) return;
-            const isBanned = await checkUserBanned(currentUser.username);
-            if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
-            const hasMentionAll = content.includes('@所有人');
-            let mentionedUsers = [];
-            const mentionPattern = /@([a-zA-Z0-9_\u4e00-\u9fa5]+)/g;
-            const userMentions = [...content.matchAll(mentionPattern)].map(m => m[1]);
-            mentionedUsers.push(...userMentions);
-            if (hasMentionAll && currentRoom.type === 'group') {
-                const allMembers = getGroupActiveMembers(currentRoom.id);
-                const otherMembers = allMembers.filter(m => m !== currentUser.username);
-                mentionedUsers.push(...otherMembers);
-                mentionedUsers = [...new Set(mentionedUsers)];
-            }
-            const messageData = {
-                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                roomId: currentRoom.id,
-                sender: currentUser.username,
-                content: content,
-                mentions: mentionedUsers,
-                hasMentionAll: hasMentionAll,
-                timestamp: new Date().toISOString(),
-                isRecalled: false
-            };
-            try {
-                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
-                });
-                for (const mentionedUser of mentionedUsers) {
-                    if (mentionedUser === currentUser.username) continue;
-                    const userExists = await checkUserExists(mentionedUser);
-                    if (userExists || isSystemAdmin(mentionedUser)) {
-                        await sendMentionNotification(mentionedUser, currentUser.username, currentRoom.name, currentRoom.id);
+                        'Accept': 'application/vnd.github.v3+json'
                     }
-                }
-                input.value = '';
-                updatePreview();
-                await pollNewMessages();
-                renderMessages();
-                if (currentRoom && currentRoom.type === 'group') {
-                    setTimeout(() => triggerAIReply(currentRoom.id, currentUser.username, content), 500);
-                }
-                if (currentRoom && currentRoom.type === 'private') {
-                    const otherUser = currentRoom.members?.find(m => m !== currentUser.username);
-                    if (otherUser === BOT_CONFIG.name) {
-                        setTimeout(async () => {
-                            const reply = await callAIAPI(content);
-                            if (reply) {
-                                await sendBotMessage(currentRoom.id, reply);
-                                await pollNewMessages();
-                                renderMessages();
+                });
+                const issues = await response.json();
+
+                const userMap = new Map();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const userData = JSON.parse(match[1]);
+                            const username = userData.username;
+                            const createdAt = new Date(userData.createdAt);
+                            if (!userMap.has(username)) {
+                                userMap.set(username, []);
                             }
-                        }, 500);
+                            userMap.get(username).push({
+                                issueNumber: issue.number,
+                                createdAt: createdAt,
+                                userData: userData
+                            });
+                        } catch (e) {}
                     }
                 }
-            } catch (error) { 
-                console.error('发送失败:', error);
-                alert('发送失败：' + error.message); 
+
+                const toDelete = [];
+                for (const [username, users] of userMap.entries()) {
+                    if (users.length > 1) {
+                        users.sort((a, b) => b.createdAt - a.createdAt);
+                        const keep = users[0];
+                        const duplicates = users.slice(1);
+                        for (const dup of duplicates) {
+                            toDelete.push({
+                                issueNumber: dup.issueNumber,
+                                username: username,
+                                createdAt: dup.createdAt
+                            });
+                        }
+                        console.log(`用户 "${username}" 共有 ${users.length} 个账号，保留 ${keep.createdAt.toLocaleString()}，删除 ${duplicates.length} 个`);
+                    }
+                }
+
+                if (toDelete.length === 0) {
+                    alert('✅ 没有发现重复注册的账号，无需清理。');
+                    button.innerText = originalText;
+                    button.disabled = false;
+                    return;
+                }
+
+                if (!confirm(`发现 ${toDelete.length} 个重复账号，确定要删除吗？此操作不可恢复！`)) {
+                    button.innerText = originalText;
+                    button.disabled = false;
+                    return;
+                }
+
+                let deletedCount = 0;
+                let failedCount = 0;
+                for (const dup of toDelete) {
+                    try {
+                        const deleteUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${dup.issueNumber}`;
+                        const deleteResponse = await fetch(deleteUrl, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ state: 'closed' })
+                        });
+                        if (deleteResponse.ok) {
+                            deletedCount++;
+                        } else {
+                            failedCount++;
+                        }
+                    } catch (error) {
+                        failedCount++;
+                    }
+                }
+
+                alert(`🎉 清理完成！\n\n成功删除: ${deletedCount} 个重复账号\n失败: ${failedCount} 个`);
+                await loadAllData();
+                
+            } catch (error) {
+                console.error('清理重复账号失败:', error);
+                alert('❌ 清理失败：' + error.message);
+            } finally {
+                button.innerText = originalText;
+                button.disabled = false;
             }
         }
 
-        async function sendMentionNotification(mentionedUser, sender, roomName, roomId) {
+        // ========== 系统通知功能 ==========
+        async function sendSystemNotification() {
+            const title = document.getElementById('notifyTitle').value.trim();
+            const content = document.getElementById('notifyMessage').value.trim();
+            if (!title || !content) { alert('请填写通知标题和内容'); return; }
             const notificationData = {
-                id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-                type: 'mention',
-                title: `📢 有人@了你`,
-                content: `${sender} 在群聊「${roomName}」中提到了你，快去看看！`,
-                targetUser: mentionedUser,
-                sender: sender,
-                roomId: roomId,
+                id: `notif_${Date.now()}`,
+                type: 'system',
+                title: title,
+                content: content,
+                targetUser: currentNotifyUser,
+                sender: 'system',
                 sentAt: new Date().toISOString(),
                 isRead: false
             };
-            const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                method: 'POST',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: `系统通知: @${mentionedUser}`, body: notifBody, labels: ['system_notification'] })
-            });
-        }
-
-        async function selectRoom(roomId) {
-            const room = allRooms.find(r => r.id === roomId);
-            if (!room) return;
-            if (room.isBanned) { alert('该群聊已被封禁'); return; }
-            currentRoom = room;
-            if (room.type === 'private') {
-                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}</h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
-            } else {
-                if (room.joinType === 'verify') {
-                    const isMember = room.members && room.members.includes(currentUser.username);
-                    if (!isMember) {
-                        pendingJoinRoom = room;
-                        document.getElementById('joinRoomName').innerHTML = `加入群聊「${escapeHtml(room.name)}」<br><span style="font-size: 12px; color: #aaa;">该群聊需要验证码才能加入</span>`;
-                        document.getElementById('joinVerifySection').style.display = 'block';
-                        document.getElementById('joinVerifyCode').value = '';
-                        document.getElementById('joinMessage').innerHTML = '';
-                        document.getElementById('joinRoomModal').style.display = 'flex';
-                        return;
-                    }
-                }
-                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
-            }
-            document.getElementById('inputContainer').style.display = 'block';
-            await loadMessages(false);
-            startPolling();
-        }
-
-        function showRoomSettings() {
-            if (currentRoom.type !== 'group') { alert('只有群聊可以设置'); return; }
-            const isOwner = currentRoom.creator === currentUser.username;
-            const isAdmin = currentRoom.admins && currentRoom.admins.includes(currentUser.username);
-            const canEdit = isOwner || isAdmin;
-            document.getElementById('settingsRoomName').textContent = currentRoom.name;
-            document.getElementById('roomAnnouncement').value = currentRoom.announcement || '';
-            document.getElementById('editJoinType').value = currentRoom.joinType || 'public';
-            document.getElementById('editVerifyCode').value = currentRoom.verifyCode || '';
-            document.getElementById('editVerifyGroup').style.display = (currentRoom.joinType === 'verify') ? 'block' : 'none';
-            const admins = currentRoom.admins || [];
-            const adminListDiv = document.getElementById('adminList');
-            adminListDiv.innerHTML = admins.map(admin => `<div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>${escapeHtml(admin)}</span>${isOwner && admin !== currentRoom.creator ? `<button onclick="removeAdmin('${admin}')" style="background: #dc3545; padding: 2px 8px;">移除</button>` : ''}</div>`).join('');
-            if (admins.length === 0) adminListDiv.innerHTML = '<div style="padding: 5px; color: #aaa;">暂无管理员</div>';
-            document.getElementById('adminOnlySettings').style.display = canEdit ? 'block' : 'none';
-            document.getElementById('normalUserSettings').style.display = canEdit ? 'none' : 'block';
-            document.getElementById('saveSettingsBtn').style.display = canEdit ? 'block' : 'none';
-            document.getElementById('roomSettingsModal').style.display = 'flex';
-        }
-
-        function closeRoomSettingsModal() { document.getElementById('roomSettingsModal').style.display = 'none'; }
-        function generateRandomCode() { const code = Math.random().toString(36).substring(2, 10).toUpperCase(); document.getElementById('editVerifyCode').value = code; }
-        
-        async function saveRoomSettings() {
-            const announcement = document.getElementById('roomAnnouncement').value.trim();
-            const joinType = document.getElementById('editJoinType').value;
-            const verifyCode = document.getElementById('editVerifyCode').value.trim();
-            currentRoom.announcement = announcement;
-            currentRoom.joinType = joinType;
-            if (joinType === 'verify') currentRoom.verifyCode = verifyCode || generateRandomCode();
-            else currentRoom.verifyCode = null;
-            currentRoom.updatedAt = new Date().toISOString();
-            const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            alert('群设置已保存');
-            closeRoomSettingsModal();
-            if (currentRoom.id === currentRoom?.id) selectRoom(currentRoom.id);
-        }
-        
-        async function addAdmin() {
-            const username = document.getElementById('addAdminUser').value.trim();
-            if (!username) return;
-            if (isSystemAdmin(username)) { alert('系统管理员不能被添加为群管理员'); return; }
-            if (!currentRoom.admins) currentRoom.admins = [];
-            if (currentRoom.admins.includes(username)) { alert('已是管理员'); return; }
-            currentRoom.admins.push(username);
-            const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            alert(`已添加 ${username} 为管理员`);
-            document.getElementById('addAdminUser').value = '';
-            showRoomSettings();
-        }
-        
-        async function removeAdmin(username) {
-            if (!confirm(`确定要移除 ${username} 的管理员权限吗？`)) return;
-            currentRoom.admins = currentRoom.admins.filter(a => a !== username);
-            const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            alert(`已移除 ${username} 的管理员权限`);
-            showRoomSettings();
-        }
-        
-        async function leaveRoom() {
-            if (!confirm('确定要退出该群聊吗？')) return;
-            if (currentRoom.members) currentRoom.members = currentRoom.members.filter(m => m !== currentUser.username);
-            const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
-            alert('已退出群聊');
-            closeRoomSettingsModal();
-            await loadRooms();
-            currentRoom = null;
-            document.getElementById('chatHeader').innerHTML = '<h3>选择一个聊天室</h3><p>左侧选择聊天室开始对话</p>';
-            document.getElementById('inputContainer').style.display = 'none';
-            document.getElementById('messagesContainer').innerHTML = '<div class="empty-state">💬 选择一个聊天室开始聊天</div>';
-        }
-
-        async function createRoom() {
-            const name = document.getElementById('roomName').value.trim();
-            const type = document.getElementById('roomType').value;
-            const privateUser = document.getElementById('privateUser').value.trim();
-            if (!name) { alert('请输入聊天室名称'); return; }
-            if (type === 'private') {
-                if (!privateUser) { alert('请输入私聊对象用户名'); return; }
-                if (privateUser === currentUser.username) { alert('不能与自己私聊'); return; }
-                if (privateUser !== BOT_CONFIG.name) {
-                    const userExists = await checkUserExists(privateUser);
-                    if (!userExists) { alert(`用户 "${privateUser}" 不存在`); return; }
-                    const isBanned = await checkUserBanned(privateUser);
-                    if (isBanned) { alert(`用户 "${privateUser}" 已被封禁，无法建立私聊`); return; }
-                }
-                const existingRoom = allRooms.find(r => r.type === 'private' && r.members && r.members.includes(privateUser) && r.members.includes(currentUser.username));
-                if (existingRoom) { alert(`已存在与 ${privateUser} 的私聊房间`); closeCreateRoomModal(); selectRoom(existingRoom.id); return; }
-            }
-            const joinType = document.getElementById('joinType').value;
-            const customVerifyCode = document.getElementById('customVerifyCode').value.trim();
-            const verifyCode = (joinType === 'verify') ? (customVerifyCode || generateRandomCode()) : null;
-            const roomData = {
-                id: `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                name: name, type: type, creator: currentUser.username,
-                members: type === 'private' ? [currentUser.username, privateUser] : [],
-                admins: [], joinType: type === 'group' ? joinType : null,
-                verifyCode: verifyCode, announcement: '', isBanned: false,
-                createdAt: new Date().toISOString()
-            };
             try {
-                const issueBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(roomData, null, 2)}\n\`\`\``;
+                const issueBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
                     method: 'POST',
                     headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: `ChatRoom: ${roomData.id}`, body: issueBody, labels: ['chatroom'] })
+                    body: JSON.stringify({ title: `系统通知: ${title}`, body: issueBody, labels: ['system_notification'] })
                 });
-                closeCreateRoomModal();
-                await loadRooms();
-                alert('聊天室创建成功');
-            } catch (error) { alert('创建失败：' + error.message); }
+                alert(`通知已发送给 ${currentNotifyUser}`);
+                closeNotifyModal();
+                loadAllData();
+            } catch (error) { alert('发送失败: ' + error.message); }
         }
 
-        async function confirmJoinRoom() {
-            const enteredCode = document.getElementById('joinVerifyCode').value.trim();
-            if (enteredCode !== pendingJoinRoom.verifyCode) { document.getElementById('joinMessage').innerHTML = '<span style="color: #dc3545;">❌ 验证码错误</span>'; return; }
-            await doJoinRoom(pendingJoinRoom);
-            closeJoinRoomModal();
-            await selectRoom(pendingJoinRoom.id);
+        function showNotifyModal(username) { currentNotifyUser = username; document.getElementById('notifyTargetUser').textContent = username; document.getElementById('notifyTitle').value = ''; document.getElementById('notifyMessage').value = ''; document.getElementById('notifyModal').style.display = 'flex'; }
+        function closeNotifyModal() { document.getElementById('notifyModal').style.display = 'none'; currentNotifyUser = null; }
+
+        async function toggleUserBan(username, shouldBan) {
+            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？`)) return;
+            const user = allUsers.find(u => u.username === username);
+            if (!user) return;
+            user.isBanned = shouldBan;
+            const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(user, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${user.issueNumber}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: updatedBody })
+            });
+            alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除封禁`);
+            loadAllData();
         }
-        
-        async function doJoinRoom(room) {
-            if (!room.members) room.members = [];
-            if (room.members.includes(currentUser.username)) { alert('您已在群聊中'); return; }
-            room.members.push(currentUser.username);
+
+        async function toggleRoomBan(roomId, shouldBan) {
+            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}该群聊吗？`)) return;
+            const room = allRooms.find(r => r.id === roomId);
+            if (!room) return;
+            room.isBanned = shouldBan;
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
             await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${room.issueNumber}`, {
                 method: 'PATCH',
                 headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
-            alert(`✅ 已成功加入群聊「${room.name}」`);
-            await loadRooms();
-        }
-        
-        function closeJoinRoomModal() { document.getElementById('joinRoomModal').style.display = 'none'; pendingJoinRoom = null; }
-        function showCreateRoomModal() { document.getElementById('createRoomModal').style.display = 'flex'; }
-        function closeCreateRoomModal() { document.getElementById('createRoomModal').style.display = 'none'; document.getElementById('roomName').value = ''; document.getElementById('privateUser').value = ''; document.getElementById('customVerifyCode').value = ''; }
-
-        async function checkUserBanned(username) {
-            if (isSystemAdmin(username) || username === BOT_CONFIG.name) return false;
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
-                const issues = await res.json();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        if (userData.username === username) return userData.isBanned || false;
-                    }
-                }
-                return false;
-            } catch (error) { return false; }
+            alert(shouldBan ? `群聊已被封禁` : `群聊已解除封禁`);
+            loadAllData();
         }
 
-        async function checkUserExists(username) {
-            if (isSystemAdmin(username) || username === BOT_CONFIG.name) return true;
-            try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
-                const issues = await res.json();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        if (userData.username === username) return true;
-                    }
-                }
-                return false;
-            } catch (error) { return false; }
+        function switchTab(tab) {
+            const roomsTab = document.getElementById('roomsTab');
+            const usersTab = document.getElementById('usersTab');
+            const notificationsTab = document.getElementById('notificationsTab');
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(btn => btn.classList.remove('active'));
+            roomsTab.style.display = 'none';
+            usersTab.style.display = 'none';
+            notificationsTab.style.display = 'none';
+            if (tab === 'rooms') { roomsTab.style.display = 'block'; btns[0].classList.add('active'); }
+            else if (tab === 'users') { usersTab.style.display = 'block'; btns[1].classList.add('active'); }
+            else { notificationsTab.style.display = 'block'; btns[2].classList.add('active'); renderNotifications(); }
         }
 
-        function viewProfile(username) { 
-            if (username === BOT_CONFIG.name) {
-                window.open('ai-profile.html', '_blank');
-            } else {
-                window.open(`profile.html?user=${encodeURIComponent(username)}`, '_blank');
-            }
-        }
-        
-        function startPolling() {
-            if (pollInterval) clearInterval(pollInterval);
-            pollInterval = setInterval(async () => {
-                if (currentRoom && !currentRoom.isBanned) {
-                    await pollNewMessages();
-                }
-                await loadNotifications();
-            }, 3000);
-        }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
-        window.onload = async function() {
-            currentUser = checkAuth();
-            if (!currentUser) return;
-            await loadRooms();
-            await loadNotifications();
-            setupScrollDetection();
-            const input = document.getElementById('messageInput');
-            if (input) {
-                input.addEventListener('input', updatePreview);
-                input.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-                });
-            }
-            console.log('AI 机器人已启用，触发词:', BOT_CONFIG.triggerWords);
-        };
+        currentAdmin = checkAdmin();
+        if (currentAdmin) { loadAllData(); setInterval(loadAllData, 60000); }
     </script>
 </body>
 </html>
