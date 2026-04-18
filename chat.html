@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>NFLSHC Chat - 聊天室</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -62,10 +62,12 @@
         .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
         .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; }
 
+        /* 聊天容器 - 右侧留出300px边距 */
         .chat-container {
             display: flex;
             max-width: 1400px;
             margin: 20px auto;
+            margin-right: 300px;  /* 新增：右侧留出300px空白，与hzyai.html一致 */
             background: #16213e;
             border-radius: 12px;
             overflow: hidden;
@@ -135,7 +137,6 @@
             display: inline-block;
         }
         
-        /* 消息区域 - 修复右侧间距问题 */
         .chat-messages { 
             flex: 1; 
             overflow-y: auto; 
@@ -146,14 +147,12 @@
             scroll-behavior: smooth;
         }
         
-        /* 消息容器 - 内部消息使用 flex 布局 */
         #messagesContainer {
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
         
-        /* 加载更多按钮 */
         .load-more-container {
             display: flex;
             justify-content: center;
@@ -178,19 +177,16 @@
             cursor: not-allowed;
         }
         
-        /* 消息样式 - 修复右侧间距 */
         .message {
             display: flex;
             flex-direction: column;
             max-width: 70%;
             position: relative;
         }
-        /* 自己的消息靠右对齐，并添加右侧边距 */
         .message.own {
             align-self: flex-end;
             margin-right: 10px;
         }
-        /* 他人的消息靠左对齐，并添加左侧边距 */
         .message:not(.own) {
             align-self: flex-start;
             margin-left: 10px;
@@ -202,12 +198,10 @@
             margin-bottom: 4px;
             cursor: pointer;
         }
-        /* 自己的消息发送者靠右 */
         .message.own .message-sender {
             text-align: right;
             margin-right: 10px;
         }
-        /* 他人的消息发送者靠左 */
         .message:not(.own) .message-sender {
             text-align: left;
             margin-left: 10px;
@@ -227,7 +221,6 @@
             word-wrap: break-word;
             line-height: 1.5;
         }
-        /* 自己的消息气泡样式 */
         .message.own .message-bubble {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
@@ -351,12 +344,10 @@
             color: #666;
             margin-top: 4px;
         }
-        /* 自己的消息时间靠右 */
         .message.own .message-time {
             text-align: right;
             margin-right: 10px;
         }
-        /* 他人的消息时间靠左 */
         .message:not(.own) .message-time {
             text-align: left;
             margin-left: 10px;
@@ -479,10 +470,15 @@
         .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
+        /* 响应式布局 - 小屏幕时恢复右边距为0 */
         @media (max-width: 768px) {
             .rooms-sidebar { width: 220px; }
             .message { max-width: 85%; }
             .scroll-to-bottom-btn { bottom: 80px; right: 15px; width: 40px; height: 40px; font-size: 18px; }
+            /* 小屏幕时右侧边距恢复为0 */
+            .chat-container {
+                margin-right: 0;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -643,17 +639,14 @@
         let allNotifications = [];
         let pendingJoinRoom = null;
         
-        // 分页相关变量
         let currentPage = 1;
         let hasMoreMessages = true;
         let isLoadingMore = false;
         let newestMessageTimestamp = null;
         
-        // 滚动控制变量
         let isUserScrolling = false;
         let scrollTimeout = null;
         
-        // ========== AI 机器人配置 ==========
         const BOT_CONFIG = {
             enabled: true,
             name: '🤖 AI小助手',
@@ -669,15 +662,12 @@
         function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
-        
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
         
-        // ========== 滚动检测 ==========
         function setupScrollDetection() {
             const messagesContainer = document.getElementById('chatMessages');
             const scrollBtn = document.getElementById('scrollToBottomBtn');
             if (!messagesContainer) return;
-            
             messagesContainer.addEventListener('scroll', function() {
                 const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
                 if (scrollBtn) {
@@ -688,7 +678,6 @@
                 if (scrollTimeout) clearTimeout(scrollTimeout);
                 scrollTimeout = setTimeout(() => { isUserScrolling = false; }, 3000);
             });
-            
             messagesContainer.addEventListener('mouseenter', function() { isUserScrolling = true; });
             messagesContainer.addEventListener('mouseleave', function() {
                 setTimeout(() => {
@@ -713,7 +702,6 @@
             if (isNearBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
-        // ========== 加载历史消息（分页） ==========
         async function loadHistoryMessages(page = 1) {
             if (!currentRoom) return [];
             try {
@@ -721,10 +709,8 @@
                 const res = await fetch(url, {
                     headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
-                
                 const linkHeader = res.headers.get('Link');
                 const issues = await res.json();
-                
                 const roomMessages = [];
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
@@ -735,9 +721,7 @@
                         }
                     }
                 }
-                
                 const hasNext = linkHeader && linkHeader.includes('rel="next"');
-                
                 return { messages: roomMessages, hasNext };
             } catch (error) {
                 console.error('加载历史消息失败:', error);
@@ -745,7 +729,6 @@
             }
         }
         
-        // ========== 加载新消息（轮询用） ==========
         async function loadNewMessages() {
             if (!currentRoom) return [];
             try {
@@ -777,10 +760,8 @@
             }
         }
         
-        // ========== 加载消息（初始加载） ==========
         async function loadMessages(append = false) {
             if (!currentRoom) return;
-            
             const messagesContainer = document.getElementById('messagesContainer');
             if (!append) {
                 messagesContainer.innerHTML = '<div class="empty-state">加载中...</div>';
@@ -789,26 +770,20 @@
                 allMessages = [];
                 newestMessageTimestamp = null;
             }
-            
             const result = await loadHistoryMessages(currentPage);
-            
             if (result.messages.length > 0) {
                 result.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                
                 if (append) {
                     allMessages = [...result.messages, ...allMessages];
                 } else {
                     allMessages = result.messages;
                 }
-                
                 if (allMessages.length > 0) {
                     const latestMsg = allMessages[allMessages.length - 1];
                     newestMessageTimestamp = latestMsg.timestamp;
                 }
-                
                 messages[currentRoom.id] = allMessages;
                 renderMessages();
-                
                 const loadMoreContainer = document.getElementById('loadMoreContainer');
                 if (hasMoreMessages && result.hasNext) {
                     loadMoreContainer.style.display = 'flex';
@@ -827,32 +802,25 @@
             }
         }
         
-        // ========== 加载更多历史消息 ==========
         async function loadMoreMessages() {
             if (isLoadingMore || !hasMoreMessages) return;
             isLoadingMore = true;
-            
             const loadMoreBtn = document.getElementById('loadMoreBtn');
             const originalText = loadMoreBtn.textContent;
             loadMoreBtn.textContent = '加载中...';
             loadMoreBtn.disabled = true;
-            
             const messagesContainer = document.getElementById('chatMessages');
             const oldScrollHeight = messagesContainer.scrollHeight;
-            
             await loadMessages(true);
-            
             setTimeout(() => {
                 const newScrollHeight = messagesContainer.scrollHeight;
                 messagesContainer.scrollTop = newScrollHeight - oldScrollHeight;
             }, 100);
-            
             loadMoreBtn.textContent = originalText;
             loadMoreBtn.disabled = false;
             isLoadingMore = false;
         }
         
-        // ========== 轮询新消息 ==========
         async function pollNewMessages() {
             if (!currentRoom) return;
             const newMessages = await loadNewMessages();
@@ -869,16 +837,13 @@
             }
         }
         
-        // ========== 渲染消息 ==========
         function renderMessages() {
             const container = document.getElementById('messagesContainer');
             const roomMessages = allMessages || [];
-            
             if (roomMessages.length === 0) {
                 container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
                 return;
             }
-            
             container.innerHTML = roomMessages.map(msg => {
                 const renderedHtml = renderMarkdown(msg.content);
                 const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
@@ -895,11 +860,9 @@
                     </div>
                 `;
             }).join('');
-            
             smartScrollToBottom();
         }
         
-        // ========== 渲染 Markdown ==========
         function renderMarkdown(content) {
             if (!content) return '';
             const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
@@ -937,16 +900,13 @@
             }
         }
         
-        // ========== 快速与 AI 小助手私聊 ==========
         function quickChatWithAI() {
             document.getElementById('privateUser').value = BOT_CONFIG.name;
             document.getElementById('roomName').value = `与 ${BOT_CONFIG.name} 的私聊`;
         }
         
-        // ========== 发送机器人消息 ==========
         async function sendBotMessage(roomId, content) {
             if (!content || content === '暂无回复') return;
-            
             const botMessage = {
                 id: `msg_bot_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
                 roomId: roomId,
@@ -955,7 +915,6 @@
                 timestamp: new Date().toISOString(),
                 isRecalled: false
             };
-            
             try {
                 const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(botMessage, null, 2)}\n\`\`\``;
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
@@ -974,7 +933,6 @@
             }
         }
 
-        // ========== 调用思知 AI API ==========
         async function callAIAPI(msg) {
             try {
                 const url = `${BOT_CONFIG.apiUrl}?appid=${BOT_CONFIG.appid}&userid=${encodeURIComponent(currentUser.username)}&spoken=${encodeURIComponent(msg)}&memory=true`;
@@ -990,23 +948,19 @@
             }
         }
 
-        // ========== 群聊 AI 触发 ==========
         async function triggerAIReply(roomId, sender, messageContent) {
             if (!BOT_CONFIG.enabled) return false;
             if (sender === BOT_CONFIG.name) return false;
             if (!currentRoom || currentRoom.type !== 'group') return false;
-            
             const hasTrigger = BOT_CONFIG.triggerWords.some(word => 
                 messageContent.toLowerCase().includes(word.toLowerCase())
             );
             if (!hasTrigger) return false;
-            
             let question = messageContent;
             for (const word of BOT_CONFIG.triggerWords) {
                 question = question.replace(new RegExp(word, 'gi'), '');
             }
             question = question.trim() || messageContent;
-            
             const reply = await callAIAPI(question);
             if (reply) {
                 await sendBotMessage(roomId, reply);
@@ -1015,7 +969,6 @@
             return false;
         }
         
-        // ========== 其他辅助函数 ==========
         function togglePrivateUser() {
             const type = document.getElementById('roomType').value;
             const isPrivate = type === 'private';
@@ -1127,7 +1080,6 @@
         async function favoriteMessage(messageId) {
             const msg = allMessages.find(m => m.id === messageId);
             if (!msg) { alert('消息不存在'); return; }
-            
             const favoriteData = {
                 id: `fav_${Date.now()}`,
                 messageId: msg.id,
@@ -1137,7 +1089,6 @@
                 user: currentUser.username,
                 createdAt: new Date().toISOString()
             };
-            
             try {
                 const issueBody = `收藏消息\n\`\`\`json\n${JSON.stringify(favoriteData, null, 2)}\n\`\`\``;
                 await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
@@ -1182,10 +1133,8 @@
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             if (!content || !currentRoom) return;
-            
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
-            
             const hasMentionAll = content.includes('@所有人');
             let mentionedUsers = [];
             const mentionPattern = /@([a-zA-Z0-9_\u4e00-\u9fa5]+)/g;
@@ -1197,7 +1146,6 @@
                 mentionedUsers.push(...otherMembers);
                 mentionedUsers = [...new Set(mentionedUsers)];
             }
-            
             const messageData = {
                 id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 roomId: currentRoom.id,
@@ -1224,16 +1172,11 @@
                 }
                 input.value = '';
                 updatePreview();
-                
                 await pollNewMessages();
                 renderMessages();
-                
-                // 群聊 AI 触发
                 if (currentRoom && currentRoom.type === 'group') {
                     setTimeout(() => triggerAIReply(currentRoom.id, currentUser.username, content), 500);
                 }
-                
-                // 私聊 AI 小助手触发
                 if (currentRoom && currentRoom.type === 'private') {
                     const otherUser = currentRoom.members?.find(m => m !== currentUser.username);
                     if (otherUser === BOT_CONFIG.name) {
@@ -1277,9 +1220,7 @@
             const room = allRooms.find(r => r.id === roomId);
             if (!room) return;
             if (room.isBanned) { alert('该群聊已被封禁'); return; }
-            
             currentRoom = room;
-            
             if (room.type === 'private') {
                 document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}</h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
             } else {
@@ -1297,13 +1238,11 @@
                 }
                 document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
             }
-            
             document.getElementById('inputContainer').style.display = 'block';
             await loadMessages(false);
             startPolling();
         }
 
-        // ========== 群管理功能 ==========
         function showRoomSettings() {
             if (currentRoom.type !== 'group') { alert('只有群聊可以设置'); return; }
             const isOwner = currentRoom.creator === currentUser.username;
@@ -1521,7 +1460,6 @@
             await loadRooms();
             await loadNotifications();
             setupScrollDetection();
-            
             const input = document.getElementById('messageInput');
             if (input) {
                 input.addEventListener('input', updatePreview);
