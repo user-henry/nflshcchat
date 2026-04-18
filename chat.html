@@ -17,6 +17,8 @@
             align-items: center;
             flex-wrap: wrap;
             border-bottom: 1px solid #ffd700;
+            position: relative;
+            z-index: 50;
         }
         .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
@@ -25,7 +27,7 @@
         .nav a:hover { color: #ffd700; }
         .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
 
-        /* 响应式导航 - 移动端换行 */
+        /* 移动端导航换行 - 保持原样 */
         @media (max-width: 768px) {
             .nav { flex-direction: column; gap: 10px; text-align: center; }
             .nav div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
@@ -46,20 +48,39 @@
             text-align: center;
         }
         .notification-badge.zero { background: #28a745; }
+        
+        /* 通知面板 - 优化移动端显示，不遮挡导航栏 */
         .notification-panel {
             position: absolute;
-            top: 60px;
-            right: 20px;
+            top: 100%;
+            right: 0;
             width: 350px;
             max-height: 400px;
             background: #16213e;
             border-radius: 12px;
             border: 1px solid #ffd700;
-            z-index: 100;
+            z-index: 1000;
             overflow-y: auto;
             display: none;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         }
+        
+        /* 移动端通知面板调整 */
+        @media (max-width: 768px) {
+            .notification-panel {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                max-height: 60vh;
+                border-radius: 20px 20px 0 0;
+                bottom: 0;
+                top: auto;
+            }
+        }
+        
         .notification-panel.show { display: block; }
         .notification-item { padding: 12px; border-bottom: 1px solid #2a2a3e; cursor: pointer; }
         .notification-item:hover { background: #1a1a2e; }
@@ -67,14 +88,13 @@
         .notification-title { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
         .notification-content { font-size: 12px; color: #aaa; }
         .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
-        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; }
+        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; position: sticky; top: 0; z-index: 1; }
 
-        /* 聊天容器 - 右侧留出350px边距（与hzyai一致） */
+        /* 聊天容器 - 电脑端无右边距 */
         .chat-container {
             display: flex;
             max-width: 1400px;
             margin: 20px auto;
-            margin-right: 350px;
             background: #16213e;
             border-radius: 12px;
             overflow: hidden;
@@ -115,7 +135,7 @@
         .room-type { font-size: 11px; opacity: 0.7; }
         .room-verify-badge { font-size: 10px; background: #f39c12; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; position: relative; min-width: 0; /* 防止flex溢出 */ }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; position: relative; min-width: 0; }
         .chat-header {
             padding: 15px 20px;
             border-bottom: 1px solid #2a2a3e;
@@ -394,7 +414,7 @@
             color: white;
             resize: vertical;
             font-family: inherit;
-            font-size: 16px; /* 防止iOS缩放 */
+            font-size: 16px;
             word-wrap: break-word;
             word-break: break-word;
         }
@@ -472,7 +492,7 @@
             background: rgba(0,0,0,0.7);
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 2000;
         }
         .modal-content {
             background: #1a1a2e;
@@ -501,13 +521,7 @@
         .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
-        /* 响应式布局 - 移动端优化 */
-        @media (max-width: 1000px) {
-            .chat-container {
-                margin-right: 0;
-            }
-        }
-        
+        /* 移动端布局 - 保持原样 */
         @media (max-width: 768px) {
             .rooms-sidebar { 
                 width: 260px;
@@ -518,6 +532,7 @@
                 z-index: 200;
                 transition: left 0.3s ease;
                 border-right: 1px solid #ffd700;
+                border-radius: 0;
             }
             .rooms-sidebar.open {
                 left: 0;
@@ -1158,11 +1173,18 @@
             await loadNotifications();
         }
 
-        function toggleNotificationPanel(event) { event.stopPropagation(); document.getElementById('notificationPanel').classList.toggle('show'); }
+        function toggleNotificationPanel(event) { 
+            event.stopPropagation(); 
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('show');
+        }
+        
         document.addEventListener('click', function(e) {
             const panel = document.getElementById('notificationPanel');
             const btn = document.querySelector('.notification-btn');
-            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('show');
+            if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('show');
+            }
         });
         
         // 点击关闭移动端菜单
