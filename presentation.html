@@ -29,13 +29,16 @@
             align-items: center;
             z-index: 1000;
             transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            backdrop-filter: blur(4px);
         }
         .start-screen.hide { opacity: 0; pointer-events: none; }
-        .logo-giant {
-            width: 120px; height: 120px;
+        /* 封面 Logo - 只在这里出现一次 */
+        .cover-logo {
+            width: 120px;
+            height: 120px;
             background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
             background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             filter: drop-shadow(0 0 20px #ffd700);
             margin-bottom: 2rem;
             animation: float 3s ease-in-out infinite;
@@ -50,7 +53,7 @@
             color: transparent;
             text-align: center;
         }
-        .sub { margin-top: 1rem; color: #94a3b8; font-size: 1.2rem; }
+        .sub { margin-top: 1rem; color: #94a3b8; font-size: 1.2rem; text-align: center; }
         .start-btn {
             margin-top: 3rem;
             background: rgba(255, 215, 0, 0.15);
@@ -134,11 +137,13 @@
         .slide-progress { position: fixed; bottom: 1.5rem; left: 2rem; background: #0f172a; padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.8rem; z-index: 200; }
         .code-block { background: #010409; padding: 0.8rem; border-radius: 16px; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; }
         @media (max-width: 800px) { .slide { padding: 1rem; } h1 { font-size: 2rem; } }
+        footer { margin-top: 2rem; text-align: center; font-size: 0.7rem; opacity: 0.7; }
     </style>
 </head>
 <body>
+<!-- 封面：Logo 只在这里出现一次 -->
 <div class="start-screen" id="startScreen">
-    <div class="logo-giant"></div>
+    <div class="cover-logo"></div>
     <div class="talk-title">GitHub's Infinite Possibilities</div>
     <div class="sub">From static pages to intelligent chat platforms · by HZY</div>
     <div class="start-btn" id="startBtn">✦ START PRESENTATION ✦</div>
@@ -151,7 +156,7 @@
             <h1>🌍 GitHub is more than code hosting</h1>
             <p style="font-size: 1.2rem; margin-top: 1rem;">Today we explore how GitHub Issues + API can build a <span style="color:#ffd700;">FULLY FUNCTIONAL CHAT APP</span> — no backend server required.</p>
             <div class="flex-2col"><div class="col"><div class="code-block">✅ GitHub as Database<br>✅ Real‑time Messaging via REST<br>✅ Markdown + AI bot<br>✅ Live Demo from real data</div></div></div>
-            <footer style="margin-top:2rem; text-align:center;">← scroll down / use arrows →</footer>
+            <footer>← scroll down / use arrows →</footer>
         </div></section>
 
         <!-- SLIDE 2: 真实历史消息展示（全部，带搜索） -->
@@ -185,12 +190,12 @@
         <section class="slide"><div class="slide-content">
             <h2>🛠️ Solving Real Problems (Interactive Demos)</h2>
             <div class="solution-grid">
-                <div class="solution-card" id="corsCard"><div class="solution-title">🌐 CORS & Tokens</div><div>GitHub API allows CORS + Personal Access Token. <span id="tokenStatus" style="color:#2ecc71;">✓ Configured</span></div><div class="solution-demo" id="corsDemo">Click to test API →</div></div>
+                <div class="solution-card" id="corsCard"><div class="solution-title">🌐 CORS & Tokens</div><div>GitHub API allows CORS + Personal Access Token. <span id="tokenStatus" style="color:#2ecc71;">✓ Configured</span></div><div class="solution-demo" id="corsDemo">Click card → test API</div></div>
                 <div class="solution-card" id="pollingCard"><div class="solution-title">⏱️ Real-time Polling</div><div>Short polling every 3s → instant message feeling.<br><span id="pollCounter">0</span> polls simulated</div><div class="solution-demo">Live counter ↑</div></div>
-                <div class="solution-card" id="mobileCard"><div class="solution-title">📱 Mobile Notification Fix</div><div>CSS media queries hide notification bell on mobile. Click to simulate mobile view.</div><div class="solution-demo" id="mobileDemo">📱 Tap to preview fix</div></div>
+                <div class="solution-card" id="mobileCard"><div class="solution-title">📱 Mobile Notification Fix</div><div>CSS media queries hide notification bell on mobile. Click to see how.</div><div class="solution-demo" id="mobileDemo">📱 Tap to preview fix</div></div>
                 <div class="solution-card"><div class="solution-title">📊 Total Messages Stored</div><div id="totalMsgStat" class="stat-number">--</div><div>Real messages in GitHub Issues (label: chatmessage)</div><div class="solution-demo">Auto-updated from API</div></div>
             </div>
-            <footer>✨ Each fix is documented in about.html changelog — click cards to see live demonstrations</footer>
+            <footer>✨ Each fix is documented in about.html changelog — click cards for live demos</footer>
         </div></section>
 
         <!-- SLIDE 6: Thank you -->
@@ -222,7 +227,7 @@
             loadAllMessages(); loadTotalCount(); startPollingDemo();
         };
 
-        // ----- 幻灯片2：加载全部历史消息 (真实数据) -----
+        // ----- 幻灯片2：加载全部历史消息 -----
         async function loadAllMessages() {
             const container = document.getElementById('fullMessagesList');
             if(!window.CONFIG) { container.innerHTML = '<div class="code-block">⚠️ Config missing, but you can imagine real data from GitHub.</div>'; return; }
@@ -245,7 +250,6 @@
                 }
                 renderMessageList(allMsgs);
                 window.allMessagesCache = allMsgs;
-                // 搜索功能
                 document.getElementById('searchBtn').onclick = () => filterMessages(allMsgs);
                 document.getElementById('msgSearch').addEventListener('keyup', () => filterMessages(allMsgs));
             } catch(e) { container.innerHTML = '<div class="code-block">✅ Real data ready — API connected.</div>'; }
@@ -322,7 +326,6 @@
         }
         document.getElementById('corsCard').onclick = () => { alert('✅ GitHub API supports CORS. We use a personal token stored in config.js. No proxy needed!'); };
         document.getElementById('mobileCard').onclick = () => { alert('📱 Mobile fix: CSS @media hides the notification bell on phones. We also fixed the auto-expand issue.'); };
-        document.getElementById('corsDemo').innerHTML = '✓ Token validated → Click card for details';
         
         function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     })();
