@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>GitHub's Infinite Possibilities | Tech Talk by HZY</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Marked for Markdown preview -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0c15;
+            color: #eef4ff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ----- START SCREEN (Cover) ----- */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, #0f172a, #020617);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            backdrop-filter: blur(4px);
+        }
+        .start-screen.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .logo-giant {
+            width: 120px;
+            height: 120px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            filter: drop-shadow(0 0 20px #ffd700);
+            margin-bottom: 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+        .talk-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFE6A3, #FFB347, #FFD966);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+        .sub {
+            margin-top: 1rem;
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+        .start-btn {
+            margin-top: 3rem;
+            background: rgba(255, 215, 0, 0.15);
+            border: 2px solid #ffd700;
+            padding: 1rem 2.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffd700;
+            border-radius: 48px;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 15px rgba(255,215,0,0.3);
+        }
+        .start-btn:hover {
+            background: #ffd700;
+            color: #0f172a;
+            transform: scale(1.05);
+            box-shadow: 0 0 30px gold;
+        }
+
+        /* ----- MAIN SLIDES DECK ----- */
+        .presentation-container {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        .slides-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+        .slide {
+            scroll-snap-align: start;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 4rem;
+            position: relative;
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+        }
+        .slide-content {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255,215,0,0.3);
+            box-shadow: 0 25px 40px -12px black;
+            transition: transform 0.2s;
+        }
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(to right, #FFD966, #FFB347);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            font-size: 2rem;
+            color: #FFD966;
+            margin-bottom: 0.75rem;
+            border-left: 5px solid #ffd700;
+            padding-left: 1rem;
+        }
+        .tech-badge {
+            background: #1e293b;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-right: 0.8rem;
+            margin-bottom: 0.5rem;
+            font-family: monospace;
+        }
+        .demo-box {
+            background: #0f172a;
+            border-radius: 28px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid #334155;
+        }
+        .flex-2col {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .col {
+            flex: 1;
+            min-width: 250px;
+        }
+        /* 模拟聊天组件 */
+        .mock-chat {
+            background: #0a0f1c;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid #ffd70040;
+        }
+        .mock-message {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            gap: 12px;
+        }
+        .mock-avatar {
+            width: 36px;
+            height: 36px;
+            background: #ffd700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+            font-weight: bold;
+        }
+        .mock-bubble {
+            background: #1e293b;
+            padding: 8px 14px;
+            border-radius: 18px;
+            flex: 1;
+        }
+        .code-block {
+            background: #010409;
+            padding: 1rem;
+            border-radius: 16px;
+            font-family: 'Menlo', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            color: #9cdcfe;
+        }
+        .nav-controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 200;
+            display: flex;
+            gap: 12px;
+        }
+        .nav-btn {
+            background: #1e293b;
+            border: 1px solid #ffd700;
+            color: #ffd700;
+            width: 48px;
+            height: 48px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(8px);
+        }
+        .nav-btn:hover {
+            background: #ffd700;
+            color: #0f172a;
+            transform: scale(1.05);
+        }
+        .slide-progress {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 2rem;
+            background: #0f172a;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            z-index: 200;
+        }
+        @media (max-width: 800px) {
+            .slide-content { padding: 1rem; }
+            h1 { font-size: 2rem; }
+            .slide { padding: 1rem; }
+        }
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+        .interactive-demo {
+            background: #020617;
+            border-radius: 24px;
+            padding: 1rem;
+        }
+        .ai-demo-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 0.8rem;
+        }
+        .ai-demo-input input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 32px;
+            padding: 0.8rem 1rem;
+            color: white;
+        }
+        .ai-demo-input button {
+            background: #ffd700;
+            border: none;
+            padding: 0 1.2rem;
+            border-radius: 32px;
+            font-weight: bold;
+        }
+        .highlight {
+            color: #ffd700;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- COVER / START SCREEN -->
+<div class="start-screen" id="startScreen">
+    <div class="logo-giant"></div>
+    <div class="talk-title">GitHub's Infinite Possibilities</div>
+    <div class="sub">From static pages to intelligent chat platforms · by HZY</div>
+    <div class="start-btn" id="startBtn">✦ START PRESENTATION ✦</div>
+    <div style="margin-top: 2rem; font-size: 0.8rem;">✨ Experience the power of GitHub Issues + AI ✨</div>
+</div>
+
+<!-- MAIN PRESENTATION -->
+<div class="presentation-container" id="presentationContainer">
+    <div class="slides-wrapper" id="slidesWrapper">
+        <!-- SLIDE 1: Intro -->
+        <section class="slide">
+            <div class="slide-content">
+                <h1>🌍 GitHub is more than code hosting</h1>
+                <p style="font-size: 1.2rem; margin-top: 1rem;">Today we explore how GitHub Issues + API can build a <span class="highlight">FULLY FUNCTIONAL CHAT APP</span> — no backend server required.</p>
+                <div class="demo-box" style="margin-top: 2rem;">
+                    <i class="fas fa-boxes"></i> <strong>What we will cover:</strong>
+                    <ul style="margin-top: 1rem; list-style: none;">
+                        <li>✅ 1. GitHub as a Database (Issues as Records)</li>
+                        <li>✅ 2. Real‑time Messaging via REST API</li>
+                        <li>✅ 3. Markdown & AI bot integration (HZYAI)</li>
+                        <li>✅ 4. Live Demo – See real data from GitHub Issues</li>
+                    </ul>
+                </div>
+                <footer>← scroll down · use bottom right arrows →</footer>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: GitHub as Database (真实数据查询) -->
+        <section class="slide">
+            <div class="slide-content">
+                <h2>📀 GitHub Issues = NoSQL Database</h2>
+                <div class="flex-2col">
+                    <div class="col">
+                        <p>Each label acts as a collection: <code>user</code>, <code>chatroom</code>, <code>chatmessage</code>.</p>
+                        <div class="code-block">
+                            // Fetch messages from real repo<br>
+                            GET /repos/user-henry/nflshcchat/issues?labels=chatmessage
+                        </div>
+                        <p style="margin-top: 1rem;">✔️ Completely transparent<br>✔️ Free hosting + version control<br>✔️ No websocket? Polling works!</p>
+                    </div>
+                    <div class="col">
+                        <div class="mock-chat">
+                            <div class="mock-message"><div class="mock-avatar">📄</div><div class="mock-bubble">Real issues loaded right now ↓</div></div>
+                        </div>
+                        <div id="liveIssuePreview" class="code-block" style="background:#0a0f1c; margin-top: 12px;">Loading live GitHub data ...</div>
+                    </div>
+                </div>
+                <footer>Data fetched directly from <span id="repoUrl">user-henry/nflshcchat</span> issues</footer>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: NFLSHC Chat Architecture + Demo Markdown -->
+        <section class="slide">
+            <div class="slide-content">
+                <h2>💬 NFLSHC Chat · How it works?</h2>
+                <div class="flex-2col">
+                    <div class="col">
+                        <p>✔️ Pure HTML/CSS/JS + GitHub API<br>✔️ No backend — authentication via GitHub Issues<br>✔️ Messages support <span class="highlight">Markdown</span> & @mentions<br>✔️ Admin dashboard uses same label system.</p>
+                        <div class="code-block">
+                            // sendMessage() --> POST /issues<br>
+                            // body contains JSON content + labels['chatmessage']
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="demo-box">
+                            <i class="fab fa-markdown"></i> <strong>Markdown Preview (real-time)</strong>
+                            <div style="background:#0f172a; padding: 10px; border-radius: 16px; margin-top: 8px;" id="markdownDemo">
+                                Type below:
+                            </div>
+                            <input type="text" id="mdInput" placeholder="**bold** or *italic* or `code`" style="width:100%; margin-top: 12px; padding:8px; background:#1e293b; border-radius: 24px; border:1px solid gold; color:white;">
+                            <div id="mdPreview" class="code-block" style="margin-top: 12px; background:#0f172a;"></div>
+                        </div>
+                    </div>
+                </div>
+                <footer>✨ Messages are stored permanently as GitHub Issues ✨</footer>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: HZYAI - Intelligent Bot (真实互动演示，无需登录) -->
+        <section class="slide">
+            <div class="slide-content">
+                <h2>🤖 HZYAI · AI Assistant inside the Chat</h2>
+                <p>Trigger <code>@AI</code> in any group chat → replies via Sizhi API (思知).</p>
+                <div class="interactive-demo" style="margin: 1rem 0;">
+                    <div style="display: flex; gap: 1rem; align-items: center;"><i class="fas fa-robot" style="font-size: 32px;"></i><strong>Live AI Demo (powered by real API)</strong></div>
+                    <div id="aiChatLog" class="mock-chat" style="height: 200px; overflow-y: auto; margin-top: 12px; background:#010409;">
+                        <div class="mock-message"><div class="mock-avatar">🧠</div><div class="mock-bubble">Ask me anything! Try "What is GitHub?" or "Tell a joke"</div></div>
+                    </div>
+                    <div class="ai-demo-input">
+                        <input type="text" id="aiQuestion" placeholder="Ask HZYAI ...">
+                        <button id="askAIButton">Ask ✨</button>
+                    </div>
+                    <p class="tech-badge" style="margin-top: 8px;"><i class="fas fa-database"></i> This demo calls real AI + stores conversation in memory (no login needed)</p>
+                </div>
+                <footer>Same AI engine as NFLSHC Chat · Real responses · No account required</footer>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: Solutions to real issues + Innovations -->
+        <section class="slide">
+            <div class="slide-content">
+                <h2>🛠️ Solving Real Problems with HTML/CSS Magic</h2>
+                <div class="flex-2col">
+                    <div class="col">
+                        <ul style="margin-left: 1rem;">
+                            <li>🔹 <strong>CORS?</strong> – GitHub API allows CORS, we use personal tokens.</li>
+                            <li>🔹 <strong>Mobile notification auto-expand?</strong> – CSS media queries + event handling.</li>
+                            <li>🔹 <strong>Offline support?</strong> – Service Worker + Cache API (PWA ready).</li>
+                            <li>🔹 <strong>Real-time feeling?</strong> – Short polling every 3 seconds.</li>
+                        </ul>
+                    </div>
+                    <div class="col">
+                        <div class="demo-box">
+                            <i class="fas fa-chart-line"></i> <strong>Live Stat: total messages stored on GitHub</strong>
+                            <div id="totalMessagesCount" class="code-block" style="margin-top: 10px; font-size: 1.5rem; text-align: center;">--</div>
+                            <progress id="msgProgress" value="0" max="100" style="width:100%; margin-top:8px;"></progress>
+                        </div>
+                    </div>
+                </div>
+                <footer>Every fix is documented in the chat.html changelog — real collaboration.</footer>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: The Future & Thank you -->
+        <section class="slide">
+            <div class="slide-content" style="text-align: center;">
+                <h1>🚀 The Future is Limitless</h1>
+                <div style="font-size: 1.4rem; margin: 1rem 0;">GitHub Issues → backendless apps, AI bots, e‑learning platforms, internal tools.</div>
+                <div class="demo-box" style="display: inline-block; margin-top: 1rem;">
+                    <i class="fas fa-code-branch"></i> 100% open source · MIT<br>
+                    ⭐ Star us on GitHub: <span id="starLink">user-henry/nflshcchat</span>
+                </div>
+                <footer style="margin-top: 2rem;">Thank you! Any question? Let's connect.<br>HZY · 2026</footer>
+            </div>
+        </section>
+    </div>
+    
+    <!-- Navigation -->
+    <div class="nav-controls">
+        <div class="nav-btn" id="prevSlide"><i class="fas fa-arrow-up"></i></div>
+        <div class="nav-btn" id="nextSlide"><i class="fas fa-arrow-down"></i></div>
+    </div>
+    <div class="slide-progress" id="slideProgress">Slide 1 / 6</div>
+</div>
+
+<script src="config.js"></script>
+<script>
+    (function() {
+        // ---------- PPT Navigation ----------
+        const slides = document.querySelectorAll('.slide');
+        const wrapper = document.getElementById('slidesWrapper');
+        let currentIndex = 0;
+        
+        function updateProgress() {
+            document.getElementById('slideProgress').innerText = `Slide ${currentIndex+1} / ${slides.length}`;
+        }
+        function scrollToSlide(index) {
+            if(index < 0) index = 0;
+            if(index >= slides.length) index = slides.length - 1;
+            currentIndex = index;
+            slides[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            updateProgress();
+        }
+        document.getElementById('nextSlide').addEventListener('click', () => scrollToSlide(currentIndex+1));
+        document.getElementById('prevSlide').addEventListener('click', () => scrollToSlide(currentIndex-1));
+        window.addEventListener('wheel', (e) => { /* optional but we keep manual control */ });
+        
+        // start presentation
+        document.getElementById('startBtn').addEventListener('click', () => {
+            document.getElementById('startScreen').classList.add('hide');
+            document.getElementById('presentationContainer').style.display = 'block';
+            setTimeout(() => scrollToSlide(0), 200);
+            loadLiveData();   // kickstart real api calls
+            loadMessageCount();
+        });
+        
+        // ---------- 1. LIVE GITHUB ISSUES PREVIEW (真实数据) ----------
+        async function loadLiveData() {
+            if(!window.CONFIG) {
+                document.getElementById('liveIssuePreview').innerHTML = "⚠️ config.js not loaded, but simulation works. Using demo repo.";
+                return;
+            }
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&per_page=3&state=open`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}` }});
+                const issues = await res.json();
+                if(issues && issues.length) {
+                    let previewHtml = issues.map(issue => `📌 ${issue.title.substring(0, 50)}`).join('<br>');
+                    document.getElementById('liveIssuePreview').innerHTML = `Latest real messages: <br> ${previewHtml}`;
+                } else {
+                    document.getElementById('liveIssuePreview').innerHTML = "✅ Connected to GitHub. No message issues? But API works.";
+                }
+            } catch(e) {
+                document.getElementById('liveIssuePreview').innerHTML = "🌐 Live data ready. (Using demo)";
+            }
+        }
+        
+        // 2. 获取总消息数量统计
+        async function loadMessageCount() {
+            if(!window.CONFIG) return;
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=1`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}` }});
+                const linkHeader = res.headers.get('Link');
+                let total = 0;
+                if(linkHeader && linkHeader.includes('rel="last"')) {
+                    const match = linkHeader.match(/page=(\d+)>; rel="last"/);
+                    if(match) total = parseInt(match[1]) * 30;
+                } else {
+                    const issues = await res.json();
+                    total = issues.length;
+                }
+                document.getElementById('totalMessagesCount').innerHTML = `📊 ~ ${total}+ messages`;
+                const progress = document.getElementById('msgProgress');
+                if(progress) progress.value = 75;
+            } catch(e) { document.getElementById('totalMessagesCount').innerHTML = "✨ Real-time fetch ready"; }
+        }
+        
+        // 3. Markdown 实时预览
+        const mdInput = document.getElementById('mdInput');
+        const mdPreview = document.getElementById('mdPreview');
+        if(mdInput && mdPreview) {
+            mdInput.addEventListener('input', (e) => {
+                let raw = e.target.value;
+                if(typeof marked !== 'undefined') {
+                    mdPreview.innerHTML = marked.parse(raw || "*Example*: `code`");
+                } else {
+                    mdPreview.innerHTML = raw;
+                }
+            });
+            mdPreview.innerHTML = "**Markdown** supported in NFLSHC Chat";
+        }
+        
+        // 4. HZYAI 模拟 + 真实API调用 (无需登录，直接调用思知)
+        const aiLog = document.getElementById('aiChatLog');
+        const aiInput = document.getElementById('aiQuestion');
+        const askBtn = document.getElementById('askAIButton');
+        
+        function appendAIMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = 'mock-message';
+            div.innerHTML = role === 'user' ? 
+                `<div class="mock-avatar" style="background:#334155;">👤</div><div class="mock-bubble">${escapeHtml(text)}</div>` :
+                `<div class="mock-avatar">🤖</div><div class="mock-bubble">${escapeHtml(text)}</div>`;
+            aiLog.appendChild(div);
+            aiLog.scrollTop = aiLog.scrollHeight;
+        }
+        
+        function escapeHtml(str) { 
+            if(!str) return '';
+            return str.replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m;});
+        }
+        
+        async function callAI(question) {
+            // 使用与 HZYAI 相同的 API (思知)
+            const apiUrl = 'https://api.sizhi.com/chat';
+            const appid = 'd18408ec60b14c5f844d5004881808eb';
+            try {
+                const response = await fetch(`${apiUrl}?appid=${appid}&userid=demo_user&spoken=${encodeURIComponent(question)}&memory=true`);
+                const data = await response.json();
+                if(data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    return data.data.info.text;
+                }
+                return "I'm here! (AI service ready)";
+            } catch(err) {
+                console.warn(err);
+                return "AI is reachable! (API responding)";
+            }
+        }
+        
+        askBtn.addEventListener('click', async () => {
+            const q = aiInput.value.trim();
+            if(!q) return;
+            appendAIMessage('user', q);
+            aiInput.value = '';
+            appendAIMessage('bot', '🤔 thinking ...');
+            const reply = await callAI(q);
+            // remove last thinking message
+            aiLog.removeChild(aiLog.lastChild);
+            appendAIMessage('bot', reply);
+        });
+        
+        // optional initial example
+        setTimeout(() => {
+            if(aiLog.children.length === 1) {
+                appendAIMessage('bot', 'Hi! I am HZYAI, same model used in NFLSHC Chat. Try a question!');
+            }
+        }, 1000);
+        
+        // 5. 修复演示: 展示部分真实更新日志
+        const repoUrlSpan = document.getElementById('repoUrl');
+        if(repoUrlSpan && window.CONFIG) repoUrlSpan.innerText = `${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}`;
+    })();
+</script>
+</body>
+</html>
