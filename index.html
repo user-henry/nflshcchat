@@ -134,6 +134,61 @@
         
         window.addEventListener('load', initEmailJS);
 
+        // ========== 登录状态检查（自动跳转） ==========
+        function checkAutoLogin() {
+            // 获取 sessionStorage 和 localStorage 中的用户信息
+            const sessionUser = sessionStorage.getItem('currentUser');
+            const localUser = localStorage.getItem('nflshc_user');
+            
+            // 优先使用 sessionStorage（当前会话）
+            if (sessionUser) {
+                try {
+                    const user = JSON.parse(sessionUser);
+                    if (user.username) {
+                        // 同步到 localStorage
+                        localStorage.setItem('nflshc_user', sessionUser);
+                        redirectToApp(user);
+                        return true;
+                    }
+                } catch(e) {}
+            }
+            
+            // 其次使用 localStorage（持久化）
+            if (localUser) {
+                try {
+                    const user = JSON.parse(localUser);
+                    if (user.username) {
+                        // 同步到 sessionStorage
+                        sessionStorage.setItem('currentUser', localUser);
+                        redirectToApp(user);
+                        return true;
+                    }
+                } catch(e) {}
+            }
+            
+            return false;
+        }
+        
+        // 根据用户类型跳转
+        function redirectToApp(user) {
+            if (user.isAdmin || user.username === 'huangzhiyuan') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'chat.html';
+            }
+        }
+        
+        // ========== 登出功能（清除所有存储） ==========
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            localStorage.removeItem('nflshc_user');
+            // 可选：跳转到登录页
+            window.location.href = 'index.html';
+        }
+        
+        // 暴露 logout 给全局使用（供其他页面调用）
+        window.logout = logout;
+
         // 忘记密码
         function showForgotPassword() {
             document.getElementById('forgotModal').style.display = 'flex';
@@ -219,16 +274,23 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const messageDiv = document.getElementById('message');
+            
             if (!username || !password) {
                 messageDiv.innerHTML = '<span style="color: red;">请填写用户名和密码</span>';
                 return;
             }
+            
+            // 系统管理员特判
             if (username === 'huangzhiyuan' && password === '15240254891') {
-                sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: true }));
+                const userData = { username, isAdmin: true };
+                // 同时保存到 sessionStorage 和 localStorage
+                sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                localStorage.setItem('nflshc_user', JSON.stringify(userData));
                 messageDiv.innerHTML = '<span style="color: green;">管理员登录成功，正在跳转...</span>';
                 setTimeout(() => window.location.href = 'admin.html', 1000);
                 return;
             }
+            
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const response = await fetch(url, {
@@ -246,12 +308,16 @@
                         }
                     }
                 }
+                
                 if (foundUser) {
                     if (foundUser.isBanned) {
                         messageDiv.innerHTML = '<span style="color: red;">账号已被封禁，请联系管理员</span>';
                         return;
                     }
-                    sessionStorage.setItem('currentUser', JSON.stringify({ username, isAdmin: false }));
+                    const userData = { username, isAdmin: false };
+                    // 同时保存到 sessionStorage 和 localStorage
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                    localStorage.setItem('nflshc_user', JSON.stringify(userData));
                     messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
                     setTimeout(() => window.location.href = 'chat.html', 1000);
                 } else {
@@ -262,12 +328,31 @@
             }
         }
 
-        function showRegister() { window.location.href = 'register.html'; }
-        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function showRegister() { 
+            window.location.href = 'register.html'; 
+        }
         
+        function escapeHtml(text) { 
+            const div = document.createElement('div'); 
+            div.textContent = text; 
+            return div.innerHTML; 
+        }
+        
+        // 监听回车键
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') login();
         });
+        
+        // 页面加载时检查自动登录
+        (function() {
+            // 如果已有登录状态，自动跳转
+            if (checkAutoLogin()) {
+                return;
+            }
+            // 清除可能残留的无效数据
+            sessionStorage.removeItem('currentUser');
+            localStorage.removeItem('nflshc_user');
+        })();
     </script>
 </body>
 </html>
