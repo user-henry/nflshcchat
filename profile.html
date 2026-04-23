@@ -145,7 +145,15 @@
 
         const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
         
-        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function logout() { 
+            // 清除 localStorage 和 sessionStorage 中的登录状态
+            localStorage.removeItem('nflshc_currentUser');
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('nflshc_user');
+            // 如果有全局清除函数也调用一下
+            if (window.clearLoginState) window.clearLoginState();
+            window.location.href = 'index.html'; 
+        }
         
         function isSystemAdmin(username) {
             return username === 'huangzhiyuan';
