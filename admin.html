@@ -324,7 +324,15 @@
             document.getElementById('adminName').textContent = user.username;
             return user;
         }
-        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function logout() { 
+            // 清除 localStorage 和 sessionStorage 中的登录状态
+            localStorage.removeItem('nflshc_currentUser');
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('nflshc_user');
+            // 如果有全局清除函数也调用一下
+            if (window.clearLoginState) window.clearLoginState();
+            window.location.href = 'index.html'; 
+        }
 
         // ========== 分页加载所有消息 ==========
         async function loadAllMessages() {
