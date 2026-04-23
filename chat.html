@@ -786,7 +786,15 @@
             marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
         }
 
-        function logout() { sessionStorage.clear(); window.location.href = 'index.html'; }
+        function logout() { 
+            // 清除 localStorage 和 sessionStorage 中的登录状态
+            localStorage.removeItem('nflshc_currentUser');
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('nflshc_user');
+            // 如果有全局清除函数也调用一下
+            if (window.clearLoginState) window.clearLoginState();
+            window.location.href = 'index.html'; 
+        }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
