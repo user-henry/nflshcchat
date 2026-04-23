@@ -134,60 +134,58 @@
         
         window.addEventListener('load', initEmailJS);
 
-        // ========== 登录状态检查（自动跳转） ==========
-        function checkAutoLogin() {
-            // 获取 sessionStorage 和 localStorage 中的用户信息
-            const sessionUser = sessionStorage.getItem('currentUser');
-            const localUser = localStorage.getItem('nflshc_user');
+        // ========== 统一的存储 Key ==========
+        const STORAGE_KEY = 'nflshc_currentUser';
+
+        // ========== 检查登录状态并自动跳转 ==========
+        function checkAndAutoRedirect() {
+            // 优先从 localStorage 读取
+            let userStr = localStorage.getItem(STORAGE_KEY);
             
-            // 优先使用 sessionStorage（当前会话）
-            if (sessionUser) {
-                try {
-                    const user = JSON.parse(sessionUser);
-                    if (user.username) {
-                        // 同步到 localStorage
-                        localStorage.setItem('nflshc_user', sessionUser);
-                        redirectToApp(user);
-                        return true;
-                    }
-                } catch(e) {}
+            // 如果 localStorage 没有，尝试从 sessionStorage 读取（兼容旧版本）
+            if (!userStr) {
+                userStr = sessionStorage.getItem('currentUser');
+                if (userStr) {
+                    // 迁移到 localStorage
+                    localStorage.setItem(STORAGE_KEY, userStr);
+                }
             }
             
-            // 其次使用 localStorage（持久化）
-            if (localUser) {
+            if (userStr) {
                 try {
-                    const user = JSON.parse(localUser);
-                    if (user.username) {
+                    const user = JSON.parse(userStr);
+                    if (user && user.username) {
                         // 同步到 sessionStorage
-                        sessionStorage.setItem('currentUser', localUser);
-                        redirectToApp(user);
+                        sessionStorage.setItem('currentUser', userStr);
+                        // 根据角色跳转
+                        if (user.isAdmin || user.username === 'huangzhiyuan') {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'chat.html';
+                        }
                         return true;
                     }
-                } catch(e) {}
+                } catch(e) {
+                    console.error('解析用户数据失败', e);
+                }
             }
-            
             return false;
         }
-        
-        // 根据用户类型跳转
-        function redirectToApp(user) {
-            if (user.isAdmin || user.username === 'huangzhiyuan') {
-                window.location.href = 'admin.html';
-            } else {
-                window.location.href = 'chat.html';
-            }
+
+        // ========== 保存登录状态 ==========
+        function saveLoginState(user) {
+            const userStr = JSON.stringify(user);
+            localStorage.setItem(STORAGE_KEY, userStr);
+            sessionStorage.setItem('currentUser', userStr);
         }
-        
-        // ========== 登出功能（清除所有存储） ==========
-        function logout() {
+
+        // ========== 清除登录状态（供其他页面调用） ==========
+        window.clearLoginState = function() {
+            localStorage.removeItem(STORAGE_KEY);
             sessionStorage.removeItem('currentUser');
-            localStorage.removeItem('nflshc_user');
-            // 可选：跳转到登录页
-            window.location.href = 'index.html';
-        }
-        
-        // 暴露 logout 给全局使用（供其他页面调用）
-        window.logout = logout;
+            sessionStorage.removeItem('nflshc_user'); // 兼容旧 key
+            console.log('登录状态已清除');
+        };
 
         // 忘记密码
         function showForgotPassword() {
@@ -282,10 +280,8 @@
             
             // 系统管理员特判
             if (username === 'huangzhiyuan' && password === '15240254891') {
-                const userData = { username, isAdmin: true };
-                // 同时保存到 sessionStorage 和 localStorage
-                sessionStorage.setItem('currentUser', JSON.stringify(userData));
-                localStorage.setItem('nflshc_user', JSON.stringify(userData));
+                const userData = { username: username, isAdmin: true };
+                saveLoginState(userData);
                 messageDiv.innerHTML = '<span style="color: green;">管理员登录成功，正在跳转...</span>';
                 setTimeout(() => window.location.href = 'admin.html', 1000);
                 return;
@@ -314,10 +310,8 @@
                         messageDiv.innerHTML = '<span style="color: red;">账号已被封禁，请联系管理员</span>';
                         return;
                     }
-                    const userData = { username, isAdmin: false };
-                    // 同时保存到 sessionStorage 和 localStorage
-                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
-                    localStorage.setItem('nflshc_user', JSON.stringify(userData));
+                    const userData = { username: username, isAdmin: false };
+                    saveLoginState(userData);
                     messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
                     setTimeout(() => window.location.href = 'chat.html', 1000);
                 } else {
@@ -332,26 +326,17 @@
             window.location.href = 'register.html'; 
         }
         
-        function escapeHtml(text) { 
-            const div = document.createElement('div'); 
-            div.textContent = text; 
-            return div.innerHTML; 
-        }
-        
         // 监听回车键
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') login();
         });
         
-        // 页面加载时检查自动登录
+        // ========== 页面启动时检查自动登录 ==========
         (function() {
-            // 如果已有登录状态，自动跳转
-            if (checkAutoLogin()) {
-                return;
-            }
-            // 清除可能残留的无效数据
-            sessionStorage.removeItem('currentUser');
-            localStorage.removeItem('nflshc_user');
+            // 延迟一点点执行，确保所有脚本加载完成
+            setTimeout(() => {
+                checkAndAutoRedirect();
+            }, 10);
         })();
     </script>
 </body>
