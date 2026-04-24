@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 好友</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; min-height: 100vh; }
+        .nav { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%); padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #ffd700; }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+        .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+        .card { background: #16213e; border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid #2a2a3e; }
+        .card h2 { color: #ffd700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #2a2a3e; }
+        .add-friend-section { display: flex; gap: 10px; margin-bottom: 15px; }
+        .add-friend-section input { flex: 1; padding: 10px; border: 1px solid #2a2a3e; border-radius: 8px; background: #0f0f1a; color: white; font-size: 14px; }
+        .add-friend-section input:focus { outline: none; border-color: #ffd700; }
+        .btn { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .friend-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #2a2a3e; gap: 15px; }
+        .friend-item:last-child { border-bottom: none; }
+        .friend-avatar { width: 48px; height: 48px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; border: 2px solid #2a2a3e; }
+        .online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
+        .online-dot.online { background: #2ecc71; box-shadow: 0 0 4px #2ecc71; }
+        .online-dot.offline { background: #666; }
+        .friend-level { display: inline-block; padding: 0 5px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 4px; vertical-align: middle; }
+        .friend-level.lv-low { background: #2ecc71; color: #1a1a2e; }
+        .friend-level.lv-mid { background: #3498db; color: white; }
+        .friend-level.lv-high { background: #9b59b6; color: white; }
+        .friend-level.lv-top { background: #ffd700; color: #1a1a2e; }
+        .search-section { margin-bottom: 20px; }
+        .search-section input { width: 100%; padding: 10px; border: 1px solid #2a2a3e; border-radius: 8px; background: #0f0f1a; color: white; font-size: 14px; }
+        .search-section input:focus { outline: none; border-color: #ffd700; }
+        .friend-bio { font-size: 12px; color: #888; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
+        .friend-info { flex: 1; }
+        .friend-name { font-weight: 600; color: white; cursor: pointer; }
+        .friend-name:hover { color: #ffd700; }
+        .friend-since { font-size: 12px; color: #888; margin-top: 4px; }
+        .friend-actions { display: flex; gap: 8px; }
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .message { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; }
+        .message.success { background: rgba(40,167,69,0.2); color: #28a745; }
+        .message.error { background: rgba(220,53,69,0.2); color: #dc3545; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; gap: 10px; text-align: center; }
+            .nav div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+            .nav a { margin-left: 0; }
+            .friend-item { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>👥 NFLSHC Chat 好友</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="profile.html">👤 个人资料</a>
+            <a href="friends.html">👥 好友</a>
+            <a href="suggestions.html">💡 意见反馈</a>
+            <a href="notice.html">📢 公告</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2>➕ 添加好友</h2>
+            <div class="add-friend-section">
+                <input type="text" id="friendUsername" placeholder="输入用户名">
+                <button class="btn" onclick="addFriend()">添加好友</button>
+            </div>
+            <div id="addMessage" class="message" style="display: none;"></div>
+        </div>
+        <div class="card">
+            <h2>👥 我的好友</h2>
+            <div class="search-section">
+                <input type="text" id="friendSearch" placeholder="🔍 搜索好友..." oninput="filterFriends()">
+            </div>
+            <div id="friendsList"><div class="loading">加载中...</div></div>
+        </div>
+    </div>
+    <script src="config.js"></script>
+    <script>
+        let currentUser = null;
+        let friends = [];
+        let friendProfiles = {};
+        let allMessages = [];
+        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
+
+        function logout() {
+            localStorage.removeItem('nflshc_currentUser');
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('nflshc_user');
+            if (window.clearLoginState) window.clearLoginState();
+            window.location.href = 'index.html';
+        }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
+
+        function checkAuth() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            document.getElementById('username').textContent = user.username;
+            return user;
+        }
+
+        async function checkUserExists(username) {
+            if (isSystemAdmin(username)) return true;
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await res.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        if (userData.username === username) return true;
+                    }
+                }
+                return false;
+            } catch (e) { return false; }
+        }
+
+        async function loadFriends() {
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=friend&state=open`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await res.json();
+                friends = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const data = JSON.parse(match[1]);
+                        if (data.user1 === currentUser.username || data.user2 === currentUser.username) {
+                            const friendName = data.user1 === currentUser.username ? data.user2 : data.user1;
+                            friends.push({ ...data, friendName, issueNumber: issue.number });
+                        }
+                    }
+                }
+                // Load friend profiles for avatars, bios, levels
+                await loadFriendProfiles();
+                // Load messages for level calculation
+                await loadMessagesForLevels();
+                renderFriends();
+            } catch (error) {
+                console.error('加载好友列表失败:', error);
+                document.getElementById('friendsList').innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
+            }
+        }
+
+        async function loadFriendProfiles() {
+            friendProfiles = {};
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await res.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const user = JSON.parse(match[1]);
+                            friendProfiles[user.username] = user;
+                        } catch(e) {}
+                    }
+                }
+            } catch(e) {}
+            // Admin profile
+            friendProfiles['huangzhiyuan'] = { username: 'huangzhiyuan', avatarUrl: SITE_LOGO, bio: '平台创始人及系统管理员', isAdmin: true };
+        }
+
+        async function loadMessagesForLevels() {
+            allMessages = [];
+            try {
+                let page = 1;
+                let hasMore = true;
+                while (hasMore) {
+                    const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                    const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                    const linkHeader = res.headers.get('Link');
+                    hasMore = linkHeader && linkHeader.includes('rel="next"');
+                    const issues = await res.json();
+                    if (issues.length === 0) break;
+                    for (const issue of issues) {
+                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                        if (match) { try { allMessages.push(JSON.parse(match[1])); } catch(e) {} }
+                    }
+                    page++;
+                    if (page > 20) break;
+                }
+            } catch(e) {}
+        }
+
+        function calculateLevel(xp) { return Math.floor(Math.sqrt(xp / 10)) + 1; }
+        function getLevelClass(level) { if (level <= 3) return 'lv-low'; if (level <= 6) return 'lv-mid'; if (level <= 9) return 'lv-high'; return 'lv-top'; }
+
+        function isUserOnline(username) {
+            const userMsgs = allMessages.filter(m => m.sender === username && !m.isRecalled);
+            if (userMsgs.length === 0) return false;
+            const lastMsg = userMsgs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+            return (Date.now() - new Date(lastMsg.timestamp).getTime()) < 300000; // 5 minutes
+        }
+
+        function filterFriends() {
+            const keyword = document.getElementById('friendSearch').value.trim().toLowerCase();
+            renderFriends(keyword);
+        }
+
+        function renderFriends(searchKeyword) {
+            const container = document.getElementById('friendsList');
+            let filteredFriends = friends;
+            if (searchKeyword) {
+                filteredFriends = friends.filter(f => f.friendName.toLowerCase().includes(searchKeyword));
+            }
+            if (filteredFriends.length === 0) {
+                container.innerHTML = searchKeyword ? '<div class="empty-state">没有找到匹配的好友</div>' : '<div class="empty-state">暂无好友，快去添加吧！</div>';
+                return;
+            }
+            container.innerHTML = filteredFriends.map(f => {
+                const profile = friendProfiles[f.friendName] || {};
+                const avatarSrc = profile.avatarUrl || SITE_LOGO;
+                const bio = profile.bio || '';
+                const isOnline = isUserOnline(f.friendName);
+                const friendMsgCount = allMessages.filter(m => m.sender === f.friendName && !m.isRecalled).length;
+                const friendLevel = calculateLevel(friendMsgCount);
+                const friendLevelClass = getLevelClass(friendLevel);
+                return `
+                <div class="friend-item">
+                    <div class="friend-avatar" style="background-image: url('${avatarSrc}')"></div>
+                    <div class="friend-info">
+                        <div class="friend-name" onclick="window.open('profile.html?user=${encodeURIComponent(f.friendName)}', '_blank')">${escapeHtml(f.friendName)}<span class="online-dot ${isOnline ? 'online' : 'offline'}"></span><span class="friend-level ${friendLevelClass}">Lv.${friendLevel}</span></div>
+                        ${bio ? '<div class="friend-bio">' + escapeHtml(bio) + '</div>' : ''}
+                        <div class="friend-since">好友自 ${new Date(f.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="btn btn-sm" onclick="startChat('${escapeHtml(f.friendName)}')">💬 发消息</button>
+                        <button class="btn btn-sm btn-danger" onclick="removeFriend('${f.id}')">❌ 删除</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function addFriend() {
+            const username = document.getElementById('friendUsername').value.trim();
+            const msgDiv = document.getElementById('addMessage');
+            if (!username) { showMsg(msgDiv, '请输入用户名', 'error'); return; }
+            if (username === currentUser.username) { showMsg(msgDiv, '不能添加自己为好友', 'error'); return; }
+            if (username === '🤖 AI小助手') { showMsg(msgDiv, '不能添加 AI 为好友', 'error'); return; }
+            
+            const exists = await checkUserExists(username);
+            if (!exists) { showMsg(msgDiv, `用户 "${username}" 不存在`, 'error'); return; }
+            
+            const alreadyFriends = friends.some(f => f.friendName === username);
+            if (alreadyFriends) { showMsg(msgDiv, `你和 ${username} 已经是好友了`, 'error'); return; }
+            
+            const sorted = [currentUser.username, username].sort();
+            const friendData = {
+                id: `friend_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                user1: sorted[0],
+                user2: sorted[1],
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                const issueBody = `好友关系\n\`\`\`json\n${JSON.stringify(friendData, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: `Friend: ${friendData.id}`, body: issueBody, labels: ['friend'] })
+                });
+                showMsg(msgDiv, `✅ 已添加 ${username} 为好友！`, 'success');
+                document.getElementById('friendUsername').value = '';
+                await loadFriends();
+            } catch (error) {
+                showMsg(msgDiv, '添加好友失败：' + error.message, 'error');
+            }
+        }
+
+        async function removeFriend(friendId) {
+            if (!confirm('确定要删除该好友吗？')) return;
+            const friend = friends.find(f => f.id === friendId);
+            if (!friend) return;
+            try {
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${friend.issueNumber}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state: 'closed' })
+                });
+                await loadFriends();
+            } catch (error) {
+                alert('删除好友失败：' + error.message);
+            }
+        }
+
+        async function startChat(username) {
+            // Navigate to chat.html - the chat page will handle finding/creating the room
+            window.location.href = `chat.html?chatWith=${encodeURIComponent(username)}`;
+        }
+
+        function showMsg(div, text, type) {
+            div.style.display = 'block';
+            div.className = `message ${type}`;
+            div.textContent = text;
+            setTimeout(() => div.style.display = 'none', 3000);
+        }
+
+        currentUser = checkAuth();
+        if (currentUser) loadFriends();
+    </script>
+    <script src="shortcuts.js"></script>
+</body>
+</html>
