@@ -888,9 +888,39 @@
         let pendingJoinRoom = null;
         let pinnedMessages = [];
         let replyToMessage = null;
+        let globalMsgCounts = {}; // global message count per user
         
         function calculateLevel(xp) { return Math.floor(Math.sqrt(xp / 10)) + 1; }
         function getLevelClass(level) { if (level <= 3) return 'level-low'; if (level <= 6) return 'level-mid'; if (level <= 9) return 'level-high'; return 'level-top'; }
+
+        // Load global message counts for level badges
+        async function loadGlobalMsgCounts() {
+            try {
+                let page = 1;
+                let hasMore = true;
+                while (hasMore) {
+                    const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=chatmessage&state=open&per_page=100&page=' + page;
+                    const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                    const linkHeader = res.headers.get('Link');
+                    hasMore = linkHeader && linkHeader.includes('rel="next"');
+                    const issues = await res.json();
+                    if (issues.length === 0) break;
+                    for (const issue of issues) {
+                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                        if (match) {
+                            try {
+                                const msgData = JSON.parse(match[1]);
+                                if (!msgData.isRecalled) {
+                                    globalMsgCounts[msgData.sender] = (globalMsgCounts[msgData.sender] || 0) + 1;
+                                }
+                            } catch(e) {}
+                        }
+                    }
+                    page++;
+                    if (page > 30) break;
+                }
+            } catch(e) { console.error('加载全局消息计数失败:', e); }
+        }
         
         let currentPage = 1;
         let hasMoreMessages = true;
@@ -1174,8 +1204,8 @@
                     scheduleHtml = '<div class="schedule-reminder"><span class="schedule-time">⏰ ' + new Date(msg.scheduleData.time).toLocaleString() + '</span><div class="schedule-content">' + escapeHtml(msg.scheduleData.content) + '</div></div>';
                 }
 
-                // Level badge
-                const senderMsgCount = roomMessages.filter(m => m.sender === msg.sender && !m.isRecalled).length;
+                // Level badge - use global message count
+                const senderMsgCount = globalMsgCounts[msg.sender] || 0;
                 const senderLevel = calculateLevel(senderMsgCount);
                 const levelBadge = '<span class="level-badge ' + getLevelClass(senderLevel) + '">Lv.' + senderLevel + '</span>';
 
@@ -1884,6 +1914,8 @@
             currentUser = checkAuth();
             if (!currentUser) return;
             await loadRooms();
+            // Load global message counts for level badges (background)
+            loadGlobalMsgCounts();
             setupScrollDetection();
             // 初始化通知面板（仅电脑端可见，但初始化不影响）
             initNotificationPanel();
@@ -2056,29 +2088,45 @@
         // === Feature #7: Pin functions ===
         function togglePin(messageId) {
             const msg = allMessages.find(m => m.id === messageId);
-            if (!msg) return;
+            if (!msg) { alert('消息不存在'); return; }
             msg.isPinned = !msg.isPinned;
-            updateMessageOnGitHub(msg);
             renderMessages();
+            updateMessageOnGitHub(msg);
         }
 
         async function updateMessageOnGitHub(msg) {
             try {
-                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=chatmessage&state=open&per_page=100';
-                const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
-                const issues = await res.json();
-                for (const issue of issues) {
-                    if (issue.title === 'Message: ' + msg.id) {
-                        const body = '聊天消息\n```json\n' + JSON.stringify(msg, null, 2) + '\n```';
-                        await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + issue.number, {
-                            method: 'PATCH',
-                            headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ body: body })
-                        });
-                        break;
+                // Search across multiple pages to find the issue
+                let page = 1;
+                let found = false;
+                while (!found && page <= 10) {
+                    const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=chatmessage&state=open&per_page=100&page=' + page;
+                    const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                    const issues = await res.json();
+                    for (const issue of issues) {
+                        if (issue.title === 'Message: ' + msg.id) {
+                            const body = '聊天消息\n```json\n' + JSON.stringify(msg, null, 2) + '\n```';
+                            await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + issue.number, {
+                                method: 'PATCH',
+                                headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ body: body })
+                            });
+                            found = true;
+                            alert(msg.isPinned ? '📌 已置顶' : '已取消置顶');
+                            break;
+                        }
                     }
+                    const linkHeader = res.headers.get('Link');
+                    if (!linkHeader || !linkHeader.includes('rel="next"')) break;
+                    page++;
                 }
-            } catch (e) { console.error('更新置顶状态失败:', e); }
+                if (!found) {
+                    alert('无法找到该消息的存储记录，置顶操作可能未生效');
+                }
+            } catch (e) {
+                console.error('更新置顶状态失败:', e);
+                alert('置顶失败：' + e.message);
+            }
         }
 
         // === Feature #9: Copy code block ===
