@@ -385,7 +385,7 @@
                 if (match) {
                     try {
                         const data = JSON.parse(match[1]);
-                        if (data.username === currentUser.username) {
+                        if (data.user === currentUser.username) {
                             allFavorites.push(data);
                         }
                     } catch(e) {}
