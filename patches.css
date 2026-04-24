@@ -1,0 +1,83 @@
+/* NFLSHC Chat - 功能补丁样式 */
+/* #6 置顶消息 */
+.pinned-bar {
+    background: linear-gradient(135deg, #2d1b69 0%, #1a1a2e 100%);
+    border-bottom: 1px solid #9b59b6;
+    padding: 8px 16px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #ddd;
+}
+.pinned-bar.show { display: flex; }
+.pinned-bar .pin-icon { color: #9b59b6; font-size: 16px; }
+.pinned-bar .pin-content { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.pinned-bar .pin-content:hover { color: #ffd700; }
+.pinned-bar .pin-close { background: none; border: none; color: #888; cursor: pointer; font-size: 14px; padding: 2px 6px; }
+.pinned-bar .pin-close:hover { color: white; }
+.pin-msg-btn {
+    position: absolute; top: -12px; right: 60px; background: #9b59b6; color: white; border: none;
+    padding: 4px 10px; border-radius: 20px; font-size: 10px; cursor: pointer; opacity: 0;
+    transition: opacity 0.2s; z-index: 10;
+}
+.message-bubble-wrapper:hover .pin-msg-btn { opacity: 1; }
+.message.pinned-msg .message-bubble { border: 2px solid #9b59b6; }
+
+/* #7 免打扰 */
+.room-item.muted .room-name { opacity: 0.5; }
+.mute-toggle {
+    font-size: 11px; color: #888; cursor: pointer; margin-left: 6px; background: none;
+    border: none; padding: 2px 4px; display: inline-block;
+}
+.mute-toggle:hover { color: #ffd700; }
+.mute-badge { font-size: 10px; color: #888; margin-left: 4px; }
+
+/* #9 群标签 */
+.room-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.room-tag-badge {
+    display: inline-block; background: rgba(255,215,0,0.15); color: #ffd700;
+    padding: 0 6px; border-radius: 8px; font-size: 10px;
+}
+.tag-filter-bar {
+    padding: 6px 10px; display: flex; flex-wrap: wrap; gap: 5px;
+    border-bottom: 1px solid #2a2a3e; background: #0f0f1a;
+}
+.tag-filter-btn {
+    padding: 3px 10px; border-radius: 10px; font-size: 11px; cursor: pointer;
+    background: #1a1a2e; color: #aaa; border: 1px solid #2a2a3e; transition: all 0.2s;
+}
+.tag-filter-btn:hover, .tag-filter-btn.active { background: #ffd700; color: #1a1a2e; border-color: #ffd700; }
+.tags-input-area { margin-bottom: 10px; }
+.tags-input-area input {
+    width: 100%; padding: 8px; background: #0f0f1a; color: white;
+    border: 1px solid #2a2a3e; border-radius: 6px; font-size: 13px;
+}
+.tags-display { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tag-item {
+    display: inline-flex; align-items: center; gap: 4px; background: #2a2a3e;
+    padding: 2px 8px; border-radius: 8px; font-size: 11px; color: #ddd;
+}
+.tag-remove {
+    background: none; border: none; color: #dc3545; cursor: pointer;
+    font-size: 10px; padding: 0;
+}
+
+/* #11 在线状态 */
+.online-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-left: 4px; vertical-align: middle;
+}
+.online-dot.online { background: #2ecc71; box-shadow: 0 0 4px #2ecc71; }
+.online-dot.away { background: #f39c12; }
+.online-dot.offline { background: #666; }
+
+/* #13 用户等级 */
+.msg-level-badge {
+    display: inline-block; padding: 0 5px; border-radius: 8px; font-size: 10px;
+    font-weight: bold; margin-left: 4px; vertical-align: middle;
+}
+.msg-level-badge.lv-low { background: #2ecc71; color: #1a1a2e; }
+.msg-level-badge.lv-mid { background: #3498db; color: white; }
+.msg-level-badge.lv-high { background: #9b59b6; color: white; }
+.msg-level-badge.lv-top { background: #ffd700; color: #1a1a2e; }
