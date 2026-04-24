@@ -551,16 +551,23 @@
             color: #666;
         }
 
-        /* 保利威视频容器样式 */
-        .polyv-video-container {
-            margin-top: 10px;
-            border-radius: 12px;
+        /* 视频容器样式 */
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 宽高比 */
+            height: 0;
             overflow: hidden;
+            border-radius: 12px;
+            margin-top: 10px;
             background: #000;
         }
-        .polyv-video-container #plv_o8415a648d7e64810f9646f76baf4649 {
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            aspect-ratio: 16 / 9;
+            height: 100%;
+            border-radius: 12px;
         }
         .video-caption {
             font-size: 12px;
@@ -630,8 +637,6 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- 保利威播放器 SDK -->
-    <script src="//player.polyv.net/resp/vod-player/latest/player.js"></script>
 </head>
 <body>
     <!-- 登录页面 -->
@@ -703,31 +708,25 @@
             </div>
         </div>
 
-        <!-- 右侧介绍面板（包含保利威视频） -->
+        <!-- 右侧介绍面板（包含视频） -->
         <div class="info-sidebar">
             <div class="info-section">
                 <h3>🤖 关于 HZYAI</h3>
-                <p>HZYAI 是基于思知 AI 大模型构建的智能对话助手，响应快速，适合只有 AI 工具的使用需求的用户。</p>
+                <p>HZYAI 是基于思知 AI 大模型构建的智能对话助手，响应快速，适合只需使用 AI 工具的用户。</p>
                 <p>所有对话都会<strong>本地存储</strong>，同时支持同步到 GitHub Issues，换设备登录后一键爬取，记录永不丢失。</p>
             </div>
             
-            <!-- ========== 介绍视频板块（保利威播放器） ========== -->
+            <!-- ========== 介绍视频板块（方案一：直接嵌入视频播放器） ========== -->
             <div class="info-section">
                 <h3>📺 产品介绍视频</h3>
-                <div class="polyv-video-container">
-                    <div id="plv_o8415a648d7e64810f9646f76baf4649"></div>
-                    <script>
-                        // 保利威播放器初始化（延迟执行，确保 DOM 已加载）
-                        if (document.getElementById('plv_o8415a648d7e64810f9646f76baf4649')) {
-                            var player = polyvPlayer({
-                                'wrap': '#plv_o8415a648d7e64810f9646f76baf4649',
-                                'width': '100%',
-                                'height': '100%',
-                                'vid': 'o8415a648d7e64810f9646f76baf4649',
-                                'playsafe': ''
-                            });
-                        }
-                    </script>
+                <div class="video-container">
+                    <video 
+                        controls 
+                        preload="metadata"
+                        poster="https://cdn.luogu.com.cn/upload/image_hosting/91if3kid.png">
+                        <source src="https://dpv.videocc.net/o8415a648d/9/o8415a648d7e64810f9646f76baf4649_3.mp4?pid=1777032924508X1827882" type="video/mp4">
+                        您的浏览器不支持 video 标签。
+                    </video>
                 </div>
                 <div class="video-caption">✨ 一分钟了解 HZYAI 的强大功能</div>
             </div>
