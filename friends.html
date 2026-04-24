@@ -235,7 +235,7 @@
                 <div class="friend-item">
                     <div class="friend-avatar" style="background-image: url('${avatarSrc}')"></div>
                     <div class="friend-info">
-                        <div class="friend-name" onclick="window.open('profile.html?user=${encodeURIComponent(f.friendName)}', '_blank')">${escapeHtml(f.friendName)}<span class="online-dot ${isOnline ? 'online' : 'offline'}"></span><span class="friend-level ${friendLevelClass}">Lv.${friendLevel}</span></div>
+                        <div class="friend-name" onclick="window.open('profile.html?user=${encodeURIComponent(f.friendName)}', '_blank')">${escapeHtml(f.friendName)}<span class="friend-level ${friendLevelClass}">Lv.${friendLevel}</span></div>
                         ${bio ? '<div class="friend-bio">' + escapeHtml(bio) + '</div>' : ''}
                         <div class="friend-since">好友自 ${new Date(f.createdAt).toLocaleDateString()}</div>
                     </div>
