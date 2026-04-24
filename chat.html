@@ -1147,29 +1147,25 @@
             const container = document.getElementById('messagesContainer');
             const roomMessages = allMessages || [];
 
-            // Render pinned messages banner
-            const pinnedArea = document.getElementById('pinnedMessagesArea');
-            if (pinnedArea) pinnedArea.remove();
+            // Build pinned messages banner HTML
             pinnedMessages = roomMessages.filter(m => m.isPinned && !m.isRecalled);
+            let pinnedHtml = '';
             if (pinnedMessages.length > 0 && currentRoom && currentRoom.type === 'group') {
                 const canPin = currentRoom.creator === currentUser.username || (currentRoom.admins && currentRoom.admins.includes(currentUser.username));
-                const pinnedDiv = document.createElement('div');
-                pinnedDiv.id = 'pinnedMessagesArea';
-                pinnedDiv.innerHTML = pinnedMessages.map(msg =>
+                pinnedHtml = '<div id="pinnedMessagesArea">' + pinnedMessages.map(msg =>
                     '<div class="pinned-banner"><div><div class="pin-content">' + escapeHtml(msg.content).substring(0, 200) +
                     '</div><div class="pin-sender">📌 ' + escapeHtml(msg.sender) + ' · ' + new Date(msg.timestamp).toLocaleString() +
                     '</div></div>' + (canPin ? '<button class="unpin-btn" onclick="togglePin(\'' + msg.id + '\')">取消置顶</button>' : '') +
                     '</div>'
-                ).join('');
-                container.insertBefore(pinnedDiv, container.firstChild);
+                ).join('') + '</div>';
             }
 
-            if (roomMessages.length === 0) {
+            if (roomMessages.length === 0 && !pinnedHtml) {
                 container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
                 return;
             }
 
-            container.innerHTML = roomMessages.map(msg => {
+            container.innerHTML = pinnedHtml + roomMessages.map(msg => {
                 const renderedHtml = renderMarkdown(msg.content);
                 let bubbleContent = renderedHtml;
 
