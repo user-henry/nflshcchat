@@ -340,13 +340,16 @@
                             <h3>📊 活跃统计</h3>
                             <p>等级: <strong>Lv.${level}</strong> | 经验值: <strong>${userMsgCount} XP</strong> | 消息数: <strong>${userMsgCount}</strong></p>
                         </div>
-                        ${!isAdminUser ? `
                         <div class="info-section">
                             <h3>📅 注册时间</h3>
                             <p>${new Date(viewUser.createdAt).toLocaleString()}</p>
                         </div>
-                        ` : ''}
-                        ` : ''}
+                        ` : `
+                        <div class="info-section">
+                            <h3>📊 活跃统计</h3>
+                            <p>等级: <strong>Lv.${level}</strong> | 经验值: <strong>${userMsgCount} XP</strong> | 消息数: <strong>${userMsgCount}</strong></p>
+                        </div>
+                        `}
                         <div class="info-section">
                             <h3>💬 参与的聊天室</h3>
                             <div class="rooms-list">
