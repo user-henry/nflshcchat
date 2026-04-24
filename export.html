@@ -397,6 +397,7 @@ ${roomMessages.map(msg => `
 <div class="footer">
     <p>导出自 NFLSHC Chat | 导出时间: ${new Date().toLocaleString()}</p>
 </div>
+    <script src="shortcuts.js"></script>
 </body>
 </html>`;
             showProgress(100, '导出完成！');
@@ -437,5 +438,6 @@ ${roomMessages.map(msg => `
         currentUser = checkAuth();
         if (currentUser) loadRooms();
     </script>
+    <script src="shortcuts.js"></script>
 </body>
 </html>
