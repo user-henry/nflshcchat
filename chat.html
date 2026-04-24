@@ -604,8 +604,120 @@
                 min-width: 100px;
             }
         }
+        .voice-btn {
+            background: #2a2a3e;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .voice-btn:hover { background: #ffd700; color: #1a1a2e; }
+        .voice-btn.recording { background: #dc3545; color: white; animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .recording-indicator {
+            display: none;
+            color: #dc3545;
+            font-size: 13px;
+            padding: 4px 12px;
+            background: rgba(220,53,69,0.1);
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+        .recording-indicator.show { display: inline-block; }
+        .voice-message audio {
+            max-width: 250px;
+            height: 40px;
+            border-radius: 20px;
+        }
+        .voice-message-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* === Feature #6: Reply/Quote === */
+        .reply-btn {
+            position: absolute; top: -8px; left: -8px;
+            background: #3498db; color: white; border: none;
+            padding: 4px 8px; border-radius: 20px; font-size: 10px;
+            cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 10;
+        }
+        .message-bubble-wrapper:hover .reply-btn { opacity: 1; }
+        .reply-preview-bar {
+            display: none; background: #0d1b2a; padding: 8px 14px;
+            border-radius: 10px; margin-bottom: 8px; font-size: 13px; color: #888;
+            border-left: 3px solid #3498db; align-items: center; justify-content: space-between;
+        }
+        .reply-preview-bar.show { display: flex; }
+        .reply-preview-bar .reply-preview-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .reply-preview-bar .reply-cancel-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; margin-left: 8px; }
+        .reply-quote {
+            background: rgba(52, 152, 219, 0.1); border-left: 3px solid #3498db;
+            padding: 6px 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 12px; color: #aaa;
+        }
+        .reply-quote .reply-quote-sender { color: #3498db; font-weight: 600; }
+
+        /* === Feature #7: Pinned Messages === */
+        .pin-btn {
+            position: absolute; top: -8px; right: 50px; background: #9b59b6; color: white; border: none;
+            padding: 4px 8px; border-radius: 20px; font-size: 10px;
+            cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 10;
+        }
+        .message-bubble-wrapper:hover .pin-btn { opacity: 1; }
+        .pinned-banner {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white; padding: 10px 16px; border-radius: 10px;
+            margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;
+        }
+        .pinned-banner .pin-content { flex: 1; font-size: 13px; word-break: break-word; }
+        .pinned-banner .pin-sender { font-size: 11px; opacity: 0.7; }
+        .pinned-banner .unpin-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 10px; cursor: pointer; font-size: 11px; }
+
+        /* === Feature #9: Code Highlight + Copy === */
+        .code-block-wrapper { position: relative; margin: 8px 0; }
+        .copy-code-btn {
+            position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.12);
+            border: none; color: #ccc; padding: 4px 10px; border-radius: 8px; cursor: pointer;
+            font-size: 11px; opacity: 0; transition: opacity 0.2s;
+        }
+        .code-block-wrapper:hover .copy-code-btn { opacity: 1; }
+        .copy-code-btn:hover { background: rgba(255,255,255,0.25); }
+
+        /* === Feature #13: User Level Badge === */
+        .level-badge {
+            display: inline-block; padding: 1px 6px; border-radius: 10px;
+            font-size: 10px; font-weight: bold; margin-left: 4px; vertical-align: middle;
+        }
+        .level-low { background: #2ecc71; color: #1a1a2e; }
+        .level-mid { background: #3498db; color: white; }
+        .level-high { background: #9b59b6; color: white; }
+        .level-top { background: #ffd700; color: #1a1a2e; }
+
+        /* === Feature #14: Personal Card Share === */
+        .share-card-btn {
+            background: #2a2a3e; color: #ffd700; border: 1px solid #3a3a4e;
+            padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px;
+        }
+        .share-card-btn:hover { background: #ffd700; color: #1a1a2e; }
+
+        /* === Feature #18: AI Schedule === */
+        .schedule-reminder {
+            background: rgba(46, 204, 113, 0.1); border-left: 3px solid #2ecc71;
+            padding: 8px 12px; border-radius: 0 8px 8px 0; margin: 8px 0; font-size: 13px;
+        }
+        .schedule-reminder .schedule-time { color: #2ecc71; font-weight: 600; }
+        .schedule-reminder .schedule-content { color: #ddd; margin-top: 4px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 </head>
 <body>
     <button class="menu-toggle" id="menuToggle" style="display: none;" onclick="toggleMobileMenu()">☰</button>
@@ -615,12 +727,15 @@
         <div>
             <span>欢迎，<span id="username"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
             <a href="profile.html">👤 个人资料</a>
+            <a href="friends.html">👥 好友</a>
             <a href="stats.html">📊 统计</a>
+            <a href="dashboard.html">📋 仪表盘</a>
             <a href="export.html">📤 导出</a>
             <a href="favorites.html">⭐ 收藏</a>
             <a href="search.html">🔍 搜索</a>
             <a href="about.html">ℹ️ 关于</a>
             <a href="ai-profile.html">🤖 AI助手</a>
+            <button class="share-card-btn" onclick="shareMyCard()" style="margin-left: 10px; font-family: inherit;">📋 发名片</button>
             <!-- 通知按钮 - 电脑端显示，移动端通过CSS隐藏 -->
             <span class="notification-wrapper">
                 <button class="notification-btn" id="notificationBtn">🔔 <span id="notificationCount" class="notification-badge zero">0</span></button>
@@ -655,8 +770,14 @@
             <div class="input-container" id="inputContainer" style="display: none;">
                 <div class="input-area">
                     <textarea class="chat-input" id="messageInput" placeholder="输入文字…" rows="2"></textarea>
+                    <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceRecording()" title="语音消息">🎤</button>
                     <button class="send-btn" onclick="sendMessage()">发送</button>
                 </div>
+                <div class="reply-preview-bar" id="replyPreviewBar">
+                    <span class="reply-preview-text" id="replyPreviewText">回复：</span>
+                    <button class="reply-cancel-btn" onclick="cancelReply()">✕</button>
+                </div>
+                <div class="recording-indicator" id="recordingIndicator">🔴 正在录音... <span id="recordingTime">0:00</span></div>
                 <div class="preview-area">
                     <div class="preview-label">
                         <span>👁️ 实时预览</span>
@@ -765,6 +886,11 @@
         let pollInterval = null;
         let allNotifications = [];
         let pendingJoinRoom = null;
+        let pinnedMessages = [];
+        let replyToMessage = null;
+        
+        function calculateLevel(xp) { return Math.floor(Math.sqrt(xp / 10)) + 1; }
+        function getLevelClass(level) { if (level <= 3) return 'level-low'; if (level <= 6) return 'level-mid'; if (level <= 9) return 'level-high'; return 'level-top'; }
         
         let currentPage = 1;
         let hasMoreMessages = true;
@@ -990,26 +1116,91 @@
         function renderMessages() {
             const container = document.getElementById('messagesContainer');
             const roomMessages = allMessages || [];
+
+            // Render pinned messages banner
+            const pinnedArea = document.getElementById('pinnedMessagesArea');
+            if (pinnedArea) pinnedArea.remove();
+            pinnedMessages = roomMessages.filter(m => m.isPinned && !m.isRecalled);
+            if (pinnedMessages.length > 0 && currentRoom && currentRoom.type === 'group') {
+                const canPin = currentRoom.creator === currentUser.username || (currentRoom.admins && currentRoom.admins.includes(currentUser.username));
+                const pinnedDiv = document.createElement('div');
+                pinnedDiv.id = 'pinnedMessagesArea';
+                pinnedDiv.innerHTML = pinnedMessages.map(msg =>
+                    '<div class="pinned-banner"><div><div class="pin-content">' + escapeHtml(msg.content).substring(0, 200) +
+                    '</div><div class="pin-sender">📌 ' + escapeHtml(msg.sender) + ' · ' + new Date(msg.timestamp).toLocaleString() +
+                    '</div></div>' + (canPin ? '<button class="unpin-btn" onclick="togglePin(\'' + msg.id + '\')">取消置顶</button>' : '') +
+                    '</div>'
+                ).join('');
+                container.insertBefore(pinnedDiv, container.firstChild);
+            }
+
             if (roomMessages.length === 0) {
                 container.innerHTML = '<div class="empty-state">💬 暂无消息，发送第一条消息吧！</div>';
                 return;
             }
+
             container.innerHTML = roomMessages.map(msg => {
                 const renderedHtml = renderMarkdown(msg.content);
+                let bubbleContent = renderedHtml;
+
+                if (msg.isVoice && msg.voiceData) {
+                    bubbleContent = '<div class="voice-message"><audio controls src="' + msg.voiceData + '"></audio><div class="voice-message-label">' + escapeHtml(msg.content) + '</div></div>';
+                }
+
+                // Code block: wrap with highlight + copy button
+                bubbleContent = bubbleContent.replace(/<pre><code(\s[^>]*)?>([\s\S]*?)<\/code><\/pre>/g, function(match, attrs, code) {
+                    return '<div class="code-block-wrapper"><button class="copy-code-btn" onclick="copyCodeBlock(this)">📋 复制</button><pre><code' + (attrs || '') + '>' + code + '</code></pre></div>';
+                });
+
                 const canRecall = msg.sender === currentUser.username && (Date.now() - new Date(msg.timestamp).getTime() < 120000);
                 const isOwn = msg.sender === currentUser.username;
-                return `
-                    <div class="message ${isOwn ? 'own' : ''}" data-msg-id="${msg.id}">
-                        <div class="message-sender" onclick="viewProfile('${escapeHtml(msg.sender)}')">${escapeHtml(msg.sender)}</div>
-                        <div class="message-bubble-wrapper">
-                            <div class="message-bubble">${renderedHtml}</div>
-                            ${canRecall ? `<button class="recall-btn" onclick="recallMessage('${msg.id}')">撤回</button>` : ''}
-                            <button class="favorite-btn" onclick="favoriteMessage('${msg.id}')">⭐</button>
-                        </div>
-                        <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
-                    </div>
-                `;
+                const canPin = currentRoom && currentRoom.type === 'group' &&
+                    (currentRoom.creator === currentUser.username || (currentRoom.admins && currentRoom.admins.includes(currentUser.username)));
+
+                // Reply quote
+                let replyQuote = '';
+                if (msg.replyTo) {
+                    const origMsg = roomMessages.find(m => m.id === msg.replyTo);
+                    if (origMsg) {
+                        replyQuote = '<div class="reply-quote"><span class="reply-quote-sender">' + escapeHtml(origMsg.sender) + '：</span>' + escapeHtml(origMsg.content).substring(0, 100) + '</div>';
+                    } else {
+                        replyQuote = '<div class="reply-quote" style="opacity:0.5"><span class="reply-quote-sender">[已删除的消息]</span></div>';
+                    }
+                }
+
+                // Schedule reminder display
+                let scheduleHtml = '';
+                if (msg.scheduleData) {
+                    scheduleHtml = '<div class="schedule-reminder"><span class="schedule-time">⏰ ' + new Date(msg.scheduleData.time).toLocaleString() + '</span><div class="schedule-content">' + escapeHtml(msg.scheduleData.content) + '</div></div>';
+                }
+
+                // Level badge
+                const senderMsgCount = roomMessages.filter(m => m.sender === msg.sender && !m.isRecalled).length;
+                const senderLevel = calculateLevel(senderMsgCount);
+                const levelBadge = '<span class="level-badge ' + getLevelClass(senderLevel) + '">Lv.' + senderLevel + '</span>';
+
+                return '<div class="message ' + (isOwn ? 'own' : '') + '" data-msg-id="' + msg.id + '">' +
+                    '<div class="message-sender" onclick="viewProfile(\'' + escapeHtml(msg.sender) + '\')">' + escapeHtml(msg.sender) + levelBadge + '</div>' +
+                    '<div class="message-bubble-wrapper">' +
+                    (replyQuote ? replyQuote : '') +
+                    scheduleHtml +
+                    '<div class="message-bubble">' + bubbleContent + '</div>' +
+                    (canRecall ? '<button class="recall-btn" onclick="recallMessage(\'' + msg.id + '\')">撤回</button>' : '') +
+                    '<button class="favorite-btn" onclick="favoriteMessage(\'' + msg.id + '\')">⭐</button>' +
+                    '<button class="reply-btn" onclick="setReplyTo(\'' + msg.id + '\')">↩️</button>' +
+                    (canPin ? '<button class="pin-btn" onclick="togglePin(\'' + msg.id + '\')">' + (msg.isPinned ? '📌' : '📍') + '</button>' : '') +
+                    '</div>' +
+                    '<div class="message-time">' + new Date(msg.timestamp).toLocaleString() + '</div>' +
+                    '</div>';
             }).join('');
+
+            // Apply hljs highlighting
+            if (typeof hljs !== 'undefined') {
+                container.querySelectorAll('pre code').forEach(block => {
+                    try { hljs.highlightElement(block); } catch(e) {}
+                });
+            }
+
             smartScrollToBottom();
         }
         
@@ -1111,6 +1302,49 @@
                 question = question.replace(new RegExp(word, 'gi'), '');
             }
             question = question.trim() || messageContent;
+
+            // Feature #18: AI Schedule Assistant
+            const scheduleMatch = question.match(/(?:提醒我|提醒|日程|闹钟|定时)\s*(\d{1,2}):(\d{2})\s+(.{1,50})/);
+            if (scheduleMatch) {
+                const now = new Date();
+                const schedHour = parseInt(scheduleMatch[1]);
+                const schedMin = parseInt(scheduleMatch[2]);
+                const schedContent = scheduleMatch[3].trim();
+                let schedTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), schedHour, schedMin, 0);
+                if (schedTime <= now) schedTime.setDate(schedTime.getDate() + 1);
+                const delay = schedTime.getTime() - Date.now();
+                const scheduleData = { time: schedTime.toISOString(), content: schedContent, user: sender };
+                const replyText = '⏰ 好的！我会在 ' + schedTime.toLocaleString() + ' 提醒你：' + schedContent;
+                await sendBotMessage(roomId, replyText);
+                // Set a local timer for the reminder
+                setTimeout(async () => {
+                    const reminderMsg = '⏰ 提醒 @' + sender + '：' + schedContent;
+                    await sendBotMessage(roomId, reminderMsg);
+                    await pollNewMessages();
+                    renderMessages();
+                }, delay);
+                return true;
+            }
+
+            // Also handle relative time like "提醒我5分钟后xxx"
+            const relScheduleMatch = question.match(/(?:提醒我|提醒|日程|闹钟|定时)\s*(\d+)\s*(?:分钟|min|小时|hour)(?:后)?\s+(.{1,50})/);
+            if (relScheduleMatch) {
+                const amount = parseInt(relScheduleMatch[1]);
+                const isHour = /小时|hour/i.test(question);
+                const delayMs = isHour ? amount * 3600000 : amount * 60000;
+                const schedContent = relScheduleMatch[2].trim();
+                const schedTime = new Date(Date.now() + delayMs);
+                const replyText = '⏰ 好的！我会在 ' + schedTime.toLocaleString() + ' 提醒你：' + schedContent;
+                await sendBotMessage(roomId, replyText);
+                setTimeout(async () => {
+                    const reminderMsg = '⏰ 提醒 @' + sender + '：' + schedContent;
+                    await sendBotMessage(roomId, reminderMsg);
+                    await pollNewMessages();
+                    renderMessages();
+                }, delayMs);
+                return true;
+            }
+
             const reply = await callAIAPI(question);
             if (reply) {
                 await sendBotMessage(roomId, reply);
@@ -1333,6 +1567,7 @@
                 content: content,
                 mentions: mentionedUsers,
                 hasMentionAll: hasMentionAll,
+                replyTo: replyToMessage ? replyToMessage.id : null,
                 timestamp: new Date().toISOString(),
                 isRecalled: false
             };
@@ -1351,6 +1586,8 @@
                     }
                 }
                 input.value = '';
+                replyToMessage = null;
+                document.getElementById('replyPreviewBar').classList.remove('show');
                 updatePreview();
                 await pollNewMessages();
                 renderMessages();
@@ -1677,6 +1914,208 @@
                 }
             });
         };
-    </script>
+    
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let recordingTimer = null;
+        let recordingSeconds = 0;
+
+        async function toggleVoiceRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                await startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                        const base64Audio = reader.result;
+                        await sendVoiceMessage(base64Audio, recordingSeconds);
+                    };
+                    reader.readAsDataURL(audioBlob);
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                recordingSeconds = 0;
+                
+                const voiceBtn = document.getElementById('voiceBtn');
+                voiceBtn.classList.add('recording');
+                voiceBtn.textContent = '⏹️';
+                
+                const indicator = document.getElementById('recordingIndicator');
+                indicator.classList.add('show');
+                
+                recordingTimer = setInterval(() => {
+                    recordingSeconds++;
+                    const minutes = Math.floor(recordingSeconds / 60);
+                    const seconds = recordingSeconds % 60;
+                    document.getElementById('recordingTime').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    if (recordingSeconds >= 60) {
+                        stopRecording();
+                    }
+                }, 1000);
+            } catch (error) {
+                alert('无法访问麦克风：' + error.message);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            
+            const voiceBtn = document.getElementById('voiceBtn');
+            voiceBtn.classList.remove('recording');
+            voiceBtn.textContent = '🎤';
+            
+            const indicator = document.getElementById('recordingIndicator');
+            indicator.classList.remove('show');
+            
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+        }
+
+        async function sendVoiceMessage(base64Audio, duration) {
+            if (!currentRoom) return;
+            
+            // Size check - GitHub issue body limit
+            if (base64Audio.length > 50000) {
+                alert('语音消息过长，请缩短录音时间（建议30秒以内）');
+                return;
+            }
+            
+            const isBanned = await checkUserBanned(currentUser.username);
+            if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
+            
+            const durationStr = `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`;
+            const messageData = {
+                id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                roomId: currentRoom.id,
+                sender: currentUser.username,
+                content: `🎤 语音消息 (${durationStr})`,
+                isVoice: true,
+                voiceData: base64Audio,
+                voiceDuration: duration,
+                mentions: [],
+                hasMentionAll: false,
+                timestamp: new Date().toISOString(),
+                isRecalled: false
+            };
+            
+            try {
+                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
+                });
+                await pollNewMessages();
+                renderMessages();
+            } catch (error) {
+                alert('语音消息发送失败：' + error.message);
+            }
+        }
+
+        // === Feature #6: Reply functions ===
+        function setReplyTo(messageId) {
+            const msg = allMessages.find(m => m.id === messageId);
+            if (!msg) return;
+            replyToMessage = msg;
+            const bar = document.getElementById('replyPreviewBar');
+            const text = document.getElementById('replyPreviewText');
+            text.textContent = '回复 ' + msg.sender + '：' + msg.content.substring(0, 50);
+            bar.classList.add('show');
+            document.getElementById('messageInput').focus();
+        }
+
+        function cancelReply() {
+            replyToMessage = null;
+            document.getElementById('replyPreviewBar').classList.remove('show');
+        }
+
+        // === Feature #7: Pin functions ===
+        function togglePin(messageId) {
+            const msg = allMessages.find(m => m.id === messageId);
+            if (!msg) return;
+            msg.isPinned = !msg.isPinned;
+            updateMessageOnGitHub(msg);
+            renderMessages();
+        }
+
+        async function updateMessageOnGitHub(msg) {
+            try {
+                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=chatmessage&state=open&per_page=100';
+                const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await res.json();
+                for (const issue of issues) {
+                    if (issue.title === 'Message: ' + msg.id) {
+                        const body = '聊天消息\n```json\n' + JSON.stringify(msg, null, 2) + '\n```';
+                        await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + issue.number, {
+                            method: 'PATCH',
+                            headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ body: body })
+                        });
+                        break;
+                    }
+                }
+            } catch (e) { console.error('更新置顶状态失败:', e); }
+        }
+
+        // === Feature #9: Copy code block ===
+        function copyCodeBlock(btn) {
+            const wrapper = btn.parentElement;
+            const code = wrapper.querySelector('code');
+            if (!code) return;
+            const text = code.textContent;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function() {
+                    btn.textContent = '✅ 已复制';
+                    setTimeout(function() { btn.textContent = '📋 复制'; }, 2000);
+                });
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = text; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy');
+                document.body.removeChild(ta);
+                btn.textContent = '✅ 已复制';
+                setTimeout(function() { btn.textContent = '📋 复制'; }, 2000);
+            }
+        }
+
+        // === Feature #14: Personal Card Share ===
+        function shareMyCard() {
+            const cardData = {
+                username: currentUser.username,
+                bio: '来看看我的个人资料吧！',
+                url: window.location.origin + window.location.pathname.replace('chat.html', '') + 'profile.html?user=' + encodeURIComponent(currentUser.username)
+            };
+            const cardText = '📋 个人名片\n👤 ' + cardData.username + '\n📝 ' + cardData.bio + '\n🔗 ' + cardData.url;
+            const input = document.getElementById('messageInput');
+            input.value = cardText;
+            updatePreview();
+            input.focus();
+        }
+</script>
+<script src="shortcuts.js"></script>
 </body>
 </html>
