@@ -136,12 +136,14 @@
                         <div class="feature-item">😄 讲笑话</div>
                         <div class="feature-item">🔢 数学计算</div>
                         <div class="feature-item">📖 古诗查询</div>
+                        <div class="feature-item">⏰ 日程提醒</div>
                     </div>
                 </div>
                 <div class="info-section">
                     <h3>🎯 如何使用</h3>
                     <p>在群聊中发送 <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">@AI 你好</code> 或 <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">@机器人 你好</code> 即可与我对话。</p>
                     <p style="margin-top: 10px;">也可以创建私聊房间，选择"与 AI 小助手私聊"，随时随地与我聊天！</p>
+                    <p style="margin-top: 10px;">📅 <strong>日程提醒：</strong>发送 <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">@AI 提醒我 14:30 开会</code> 或 <code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px;">@AI 提醒我5分钟后喝水</code> 即可设置提醒。</p>
                 </div>
                 <div style="text-align: center; margin-top: 20px;">
                     <a href="chat.html" class="btn">💬 去聊天</a>
@@ -167,5 +169,6 @@
         const user = JSON.parse(userStr);
         document.getElementById('username').textContent = user.username;
     </script>
+    <script src="shortcuts.js"></script>
 </body>
 </html>
