@@ -375,21 +375,30 @@
                 }
             }
 
-            // Load favorites
+            // Load favorites with pagination
             updateProgress(85, '正在加载收藏...');
-            const favRes = await fetch(`${baseUrl}?labels=favorite&state=open`, { headers });
-            const favIssues = await favRes.json();
             allFavorites = [];
-            for (const issue of favIssues) {
-                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                if (match) {
-                    try {
-                        const data = JSON.parse(match[1]);
-                        if (data.user === currentUser.username) {
-                            allFavorites.push(data);
-                        }
-                    } catch(e) {}
+            let favPage = 1;
+            let favHasMore = true;
+            while (favHasMore) {
+                const favRes = await fetch(`${baseUrl}?labels=favorite&state=open&per_page=100&page=${favPage}`, { headers });
+                const favLinkHeader = favRes.headers.get('Link');
+                favHasMore = favLinkHeader && favLinkHeader.includes('rel="next"');
+                const favIssues = await favRes.json();
+                if (favIssues.length === 0) break;
+                for (const issue of favIssues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const data = JSON.parse(match[1]);
+                            if (data.user === currentUser.username) {
+                                allFavorites.push(data);
+                            }
+                        } catch(e) {}
+                    }
                 }
+                favPage++;
+                if (favPage > 10) break;
             }
 
             updateProgress(100, '✅ 加载完成！');
