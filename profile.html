@@ -248,30 +248,39 @@
         }
 
         async function loadRoomsAndMessages() {
-            const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
-            const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-            });
+            const baseUrl = `https://api.github.com/repos/` + window.CONFIG.GITHUB_USERNAME + `/` + window.CONFIG.GITHUB_REPO + `/issues`;
+            const headers = { 'Authorization': `token ` + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' };
+
+            // Load rooms
+            const roomsRes = await fetch(baseUrl + `?labels=chatroom&state=open`, { headers });
             const roomIssues = await roomsRes.json();
             allRooms = [];
             for (const issue of roomIssues) {
-                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                const match = issue.body.match(/``json\n([\s\S]*?)\n``/);
                 if (match) {
                     const room = JSON.parse(match[1]);
                     allRooms.push({ ...room, issueNumber: issue.number });
                 }
             }
             
-            const msgRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-            });
-            const msgIssues = await msgRes.json();
+            // Load ALL messages with pagination
             allMessages = [];
-            for (const issue of msgIssues) {
-                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                if (match) {
-                    allMessages.push(JSON.parse(match[1]));
+            let page = 1;
+            let hasMore = true;
+            while (hasMore) {
+                const msgRes = await fetch(baseUrl + `?labels=chatmessage&state=open&per_page=100&page=` + page, { headers });
+                const linkHeader = msgRes.headers.get('Link');
+                hasMore = linkHeader && linkHeader.includes('rel="next"');
+                const msgIssues = await msgRes.json();
+                if (msgIssues.length === 0) break;
+                for (const issue of msgIssues) {
+                    const match = issue.body.match(/``json\n([\s\S]*?)\n``/);
+                    if (match) {
+                        try { allMessages.push(JSON.parse(match[1])); } catch(e) {}
+                    }
                 }
+                page++;
+                if (page > 30) break;
             }
         }
 
