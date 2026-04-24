@@ -64,6 +64,11 @@
             font-size: 14px;
             margin-left: 10px;
         }
+        .level-badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: bold; margin-left: 4px; vertical-align: middle; }
+        .level-badge.level-low { background: #2ecc71; color: #1a1a2e; }
+        .level-badge.level-mid { background: #3498db; color: white; }
+        .level-badge.level-high { background: #9b59b6; color: white; }
+        .level-badge.level-top { background: #ffd700; color: #1a1a2e; }
         
         .profile-body { padding: 30px; }
         .info-section { margin-bottom: 25px; }
@@ -109,6 +114,20 @@
             text-decoration: none;
             display: inline-block;
         }
+        .share-card-modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 2000;
+        }
+        .share-card-modal.show { display: flex; }
+        .share-card-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #ffd700;
+            border-radius: 20px; padding: 30px; text-align: center; max-width: 380px; width: 90%;
+        }
+        .share-card-content .share-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #ffd700; margin: 0 auto 12px; background-size: cover; background-position: center; }
+        .share-card-content h2 { color: #ffd700; margin-bottom: 8px; }
+        .share-card-content p { color: #aaa; font-size: 14px; margin-bottom: 6px; }
+        .share-card-content .share-link { background: #0f0f1a; padding: 8px 12px; border-radius: 8px; font-size: 12px; color: #ffd700; word-break: break-all; margin: 12px 0; }
+        .share-card-content .share-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
         .message {
             margin-top: 15px;
             padding: 10px;
@@ -126,6 +145,7 @@
         <div>
             <span>欢迎，<span id="username"></span></span>
             <a href="chat.html">💬 聊天</a>
+            <a href="friends.html">👥 好友</a>
             <a href="suggestions.html">💡 意见反馈</a>
             <a href="notice.html">📢 公告</a>
             <a href="#" onclick="logout()">🚪 退出</a>
@@ -134,6 +154,21 @@
 
     <div class="container" id="container">
         <div class="loading">加载中...</div>
+    </div>
+
+    <!-- Feature #14: Share Personal Card Modal -->
+    <div class="share-card-modal" id="shareCardModal">
+        <div class="share-card-content">
+            <div class="share-avatar" id="shareAvatar"></div>
+            <h2 id="shareName"></h2>
+            <p id="shareBio"></p>
+            <p id="shareLevel"></p>
+            <div class="share-link" id="shareLink"></div>
+            <div class="share-actions">
+                <button class="btn" onclick="copyShareLink()">📋 复制链接</button>
+                <button class="btn" style="background: #dc3545; color: white;" onclick="closeShareCard()">关闭</button>
+            </div>
+        </div>
     </div>
 
     <script src="config.js"></script>
@@ -158,6 +193,8 @@
         function isSystemAdmin(username) {
             return username === 'huangzhiyuan';
         }
+        function calculateLevel(xp) { return Math.floor(Math.sqrt(xp / 10)) + 1; }
+        function getLevelClass(level) { if (level <= 3) return 'level-low'; if (level <= 6) return 'level-mid'; if (level <= 9) return 'level-high'; return 'level-top'; }
 
         async function loadUserData(username) {
             // 系统管理员特判
@@ -185,7 +222,7 @@
                     try {
                         const user = JSON.parse(match[1]);
                         if (user.username === username) {
-                            user.avatar = SITE_LOGO;
+                            user.avatar = user.avatarUrl || SITE_LOGO;
                             return { ...user, issueNumber: issue.number };
                         }
                     } catch (e) {
@@ -200,7 +237,7 @@
                     if (match) {
                         try {
                             const user = JSON.parse(match[1]);
-                            user.avatar = SITE_LOGO;
+                            user.avatar = user.avatarUrl || SITE_LOGO;
                             return { ...user, issueNumber: issue.number };
                         } catch (e) {}
                     }
@@ -274,7 +311,11 @@
         async function renderProfile() {
             const container = document.getElementById('container');
             const isOwnProfile = (currentUser.username === viewUser.username);
+            const avatarSrc = viewUser.avatarUrl || SITE_LOGO;
             const isAdminUser = viewUser.username === 'huangzhiyuan';
+            const userMsgCount = allMessages.filter(m => m.sender === viewUser.username && !m.isRecalled).length;
+            const level = calculateLevel(userMsgCount);
+            const levelClass = getLevelClass(level);
             
             if (!viewUser) {
                 container.innerHTML = '<div class="loading" style="color: #dc3545;">❌ 用户不存在或数据加载失败</div>';
@@ -286,8 +327,8 @@
             container.innerHTML = `
                 <div class="profile-card">
                     <div class="profile-header">
-                        <div class="avatar" style="background-image: url('${SITE_LOGO}')"></div>
-                        <h1>${escapeHtml(viewUser.username)} ${isAdminUser ? '<span class="admin-badge">👑 系统管理员</span>' : ''}</h1>
+                        <div class="avatar" style="background-image: url('${avatarSrc}')"></div>
+                        <h1>${escapeHtml(viewUser.username)} ${isAdminUser ? '<span class="admin-badge">👑 系统管理员</span>' : ''} <span class="level-badge ${levelClass}">Lv.${level}</span></h1>
                     </div>
                     <div class="profile-body">
                         <div class="info-section">
@@ -296,9 +337,15 @@
                         </div>
                         ${!isAdminUser ? `
                         <div class="info-section">
+                            <h3>📊 活跃统计</h3>
+                            <p>等级: <strong>Lv.${level}</strong> | 经验值: <strong>${userMsgCount} XP</strong> | 消息数: <strong>${userMsgCount}</strong></p>
+                        </div>
+                        ${!isAdminUser ? `
+                        <div class="info-section">
                             <h3>📅 注册时间</h3>
                             <p>${new Date(viewUser.createdAt).toLocaleString()}</p>
                         </div>
+                        ` : ''}
                         ` : ''}
                         <div class="info-section">
                             <h3>💬 参与的聊天室</h3>
@@ -310,10 +357,12 @@
                         ${isOwnProfile ? `
                             <div class="edit-form">
                                 <h3>✏️ 编辑个人资料</h3>
+                                <input type="text" id="editAvatar" placeholder="头像图片链接（留空使用默认头像）" value="${escapeHtml(viewUser.avatarUrl || '')}">
                                 <textarea id="editBio" placeholder="个人简介">${escapeHtml(viewUser.bio || '')}</textarea>
                                 <input type="password" id="editPassword" placeholder="新密码（留空则不修改）">
                                 <input type="password" id="editConfirmPassword" placeholder="确认新密码">
                                 <button class="btn" onclick="updateProfile()">保存修改</button>
+                                <button class="btn" onclick="showShareCard()" style="background: #2ecc71; color: white; margin-left: 10px;">📋 分享个人名片</button>
                                 <div id="editMessage" class="message" style="display: none;"></div>
                             </div>
                         ` : ''}
@@ -341,7 +390,8 @@
                 return;
             }
             
-            const updates = { bio: newBio || '这个人很懒，什么都没有写。' };
+            const newAvatar = document.getElementById('editAvatar').value.trim();
+            const updates = { bio: newBio || '这个人很懒，什么都没有写。', avatarUrl: newAvatar };
             if (newPassword) {
                 updates.password = newPassword;
             }
@@ -389,8 +439,41 @@
             }
             await renderProfile();
         }
+
+        // === Feature #14: Personal Card Share ===
+        function showShareCard() {
+            if (!viewUser) return;
+            const avatarSrc = viewUser.avatarUrl || SITE_LOGO;
+            const userMsgCount = allMessages.filter(m => m.sender === viewUser.username && !m.isRecalled).length;
+            const level = calculateLevel(userMsgCount);
+            document.getElementById('shareAvatar').style.backgroundImage = 'url("' + avatarSrc + '")';
+            document.getElementById('shareName').textContent = viewUser.username;
+            document.getElementById('shareBio').textContent = viewUser.bio || '这个人很懒，什么都没有写。';
+            document.getElementById('shareLevel').textContent = '🏆 Lv.' + level + ' | ' + userMsgCount + ' 条消息';
+            const profileUrl = window.location.origin + window.location.pathname.replace('profile.html', '') + 'profile.html?user=' + encodeURIComponent(viewUser.username);
+            document.getElementById('shareLink').textContent = profileUrl;
+            document.getElementById('shareCardModal').classList.add('show');
+        }
+
+        function closeShareCard() {
+            document.getElementById('shareCardModal').classList.remove('show');
+        }
+
+        function copyShareLink() {
+            const link = document.getElementById('shareLink').textContent;
+            navigator.clipboard.writeText(link).then(function() {
+                alert('✅ 链接已复制到剪贴板！');
+            }).catch(function() {
+                const ta = document.createElement('textarea');
+                ta.value = link; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy');
+                document.body.removeChild(ta);
+                alert('✅ 链接已复制到剪贴板！');
+            });
+        }
         
         init();
     </script>
+    <script src="shortcuts.js"></script>
 </body>
 </html>
