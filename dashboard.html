@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 个人数据仪表盘</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+
+        /* Profile Header Card */
+        .profile-header-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+        .profile-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 3px solid var(--accent-color);
+            background-size: cover; background-position: center;
+            flex-shrink: 0;
+        }
+        .profile-info { flex: 1; min-width: 200px; }
+        .profile-info h1 { color: var(--accent-color); font-size: 24px; margin-bottom: 5px; }
+        .profile-info .level-display { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .profile-info .level-display .level-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .level-low { background: #2ecc71; color: #1a1a2e; }
+        .level-mid { background: #3498db; color: white; }
+        .level-high { background: #9b59b6; color: white; }
+        .level-top { background: #ffd700; color: #1a1a2e; }
+        .xp-bar-container { background: var(--bg-tertiary); border-radius: 10px; height: 14px; overflow: hidden; margin-top: 5px; }
+        .xp-bar-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--accent-color), var(--accent-hover)); transition: width 0.5s ease; }
+        .xp-text { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 22px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-icon { font-size: 32px; margin-bottom: 10px; }
+        .stat-number { font-size: 32px; font-weight: bold; color: var(--accent-color); }
+        .stat-label { color: var(--text-secondary); margin-top: 5px; font-size: 14px; }
+
+        /* Charts Section */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .chart-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 22px;
+            border: 1px solid var(--border-color);
+        }
+        .chart-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Activity List */
+        .activity-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+        .activity-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .activity-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 0; border-bottom: 1px solid var(--border-color);
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-icon { font-size: 24px; }
+        .activity-info { flex: 1; }
+        .activity-title { font-weight: 500; margin-bottom: 3px; }
+        .activity-subtitle { font-size: 12px; color: var(--text-secondary); }
+        .activity-time { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+
+        /* Rooms List */
+        .rooms-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+        .rooms-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .room-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px; margin-bottom: 8px;
+            background: var(--bg-tertiary); border-radius: 10px;
+        }
+        .room-icon { font-size: 20px; }
+        .room-info { flex: 1; }
+        .room-name { font-weight: 500; }
+        .room-meta { font-size: 11px; color: var(--text-secondary); }
+        .room-msg-count { color: var(--accent-color); font-weight: bold; font-size: 14px; }
+
+        /* Achievements */
+        .achievements-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+        .achievements-card h3 {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .achievement-item {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .achievement-item:hover { transform: scale(1.05); }
+        .achievement-item.earned { border: 1px solid var(--accent-color); }
+        .achievement-item.locked { opacity: 0.4; }
+        .achievement-icon { font-size: 28px; margin-bottom: 8px; }
+        .achievement-name { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+        .achievement-desc { font-size: 11px; color: var(--text-secondary); }
+
+        .loading { text-align: center; padding: 60px; color: var(--text-secondary); }
+        .progress-bar { width: 100%; height: 20px; background: var(--bg-tertiary); border-radius: 10px; overflow: hidden; margin: 15px 0; }
+        .progress-fill { height: 100%; background: var(--accent-color); width: 0%; transition: width 0.3s; }
+        .progress-text { text-align: center; font-size: 12px; color: var(--text-secondary); }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+            .profile-header-card { flex-direction: column; text-align: center; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>📊 个人数据仪表盘</h2></div>
+        <div>
+            <span>欢迎，<span id="username"></span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="profile.html">👤 资料</a>
+            <a href="stats.html">📈 群聊统计</a>
+            <a href="#" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="loadingProgress" style="display: none;">
+            <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+            <div id="progressText" class="progress-text">正在加载数据...</div>
+        </div>
+
+        <!-- Profile Header -->
+        <div class="profile-header-card" id="profileHeader">
+            <div class="profile-avatar" id="profileAvatar"></div>
+            <div class="profile-info">
+                <h1 id="profileName">加载中...</h1>
+                <div class="level-display">
+                    <span class="level-badge level-low" id="profileLevel">Lv.1</span>
+                    <span id="profileTitle" style="font-size: 13px; color: var(--text-secondary);">新手</span>
+                </div>
+                <div class="xp-bar-container">
+                    <div class="xp-bar-fill" id="xpBarFill" style="width: 0%"></div>
+                </div>
+                <div class="xp-text" id="xpText">0 / 10 XP</div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-number" id="totalMessages">0</div><div class="stat-label">总消息数</div></div>
+            <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-number" id="totalFriends">0</div><div class="stat-label">好友数</div></div>
+            <div class="stat-card"><div class="stat-icon">🏠</div><div class="stat-number" id="totalRooms">0</div><div class="stat-label">参与聊天室</div></div>
+            <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-number" id="totalFavorites">0</div><div class="stat-label">收藏消息</div></div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>📈 消息趋势（最近14天）</h3>
+                <canvas id="trendChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>⏰ 活跃时段分布</h3>
+                <canvas id="hourChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- My Rooms -->
+        <div class="rooms-card">
+            <h3>🏠 我的聊天室</h3>
+            <div id="roomsList"></div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="achievements-card">
+            <h3>🏆 成就徽章</h3>
+            <div class="achievements-grid" id="achievementsGrid"></div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-card">
+            <h3>🕐 最近活动</h3>
+            <div id="activityList"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allMessages = [];
+        let allRooms = [];
+        let allFriends = [];
+        let allFavorites = [];
+        let trendChart = null;
+        let hourChart = null;
+
+        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
+
+        function logout() {
+            localStorage.removeItem('nflshc_currentUser');
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('nflshc_user');
+            if (window.clearLoginState) window.clearLoginState();
+            window.location.href = 'index.html';
+        }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
+        function calculateLevel(xp) { return Math.floor(Math.sqrt(xp / 10)) + 1; }
+        function getLevelClass(level) { if (level <= 3) return 'level-low'; if (level <= 6) return 'level-mid'; if (level <= 9) return 'level-high'; return 'level-top'; }
+        function getLevelTitle(level) {
+            if (level <= 2) return '新手';
+            if (level <= 4) return '活跃用户';
+            if (level <= 6) return '资深成员';
+            if (level <= 8) return '社区明星';
+            if (level <= 10) return '传奇人物';
+            return '至高无上';
+        }
+        function xpForLevel(level) { return (level * level - 2 * level + 1) * 10; }
+
+        function checkAuth() {
+            const userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) { window.location.href = 'index.html'; return null; }
+            const user = JSON.parse(userStr);
+            document.getElementById('username').textContent = user.username;
+            return user;
+        }
+
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text;
+        }
+
+        async function loadAllData() {
+            const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+            const headers = { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' };
+
+            // Load messages with pagination
+            document.getElementById('loadingProgress').style.display = 'block';
+            allMessages = [];
+            let page = 1;
+            let hasMore = true;
+            while (hasMore) {
+                updateProgress(Math.min(50, page * 5), `正在加载消息... 第${page}页，已加载 ${allMessages.length} 条`);
+                const res = await fetch(`${baseUrl}?labels=chatmessage&state=open&per_page=100&page=${page}`, { headers });
+                const linkHeader = res.headers.get('Link');
+                hasMore = linkHeader && linkHeader.includes('rel="next"');
+                const issues = await res.json();
+                if (issues.length === 0) break;
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try { allMessages.push(JSON.parse(match[1])); } catch(e) {}
+                    }
+                }
+                page++;
+                if (page > 30) break;
+            }
+
+            // Load rooms
+            updateProgress(60, '正在加载聊天室...');
+            const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, { headers });
+            const roomIssues = await roomsRes.json();
+            allRooms = [];
+            for (const issue of roomIssues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try { allRooms.push(JSON.parse(match[1])); } catch(e) {}
+                }
+            }
+
+            // Load friends
+            updateProgress(75, '正在加载好友...');
+            const friendsRes = await fetch(`${baseUrl}?labels=friend&state=open`, { headers });
+            const friendIssues = await friendsRes.json();
+            allFriends = [];
+            for (const issue of friendIssues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try {
+                        const data = JSON.parse(match[1]);
+                        if (data.user1 === currentUser.username || data.user2 === currentUser.username) {
+                            allFriends.push(data);
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            // Load favorites
+            updateProgress(85, '正在加载收藏...');
+            const favRes = await fetch(`${baseUrl}?labels=favorite&state=open`, { headers });
+            const favIssues = await favRes.json();
+            allFavorites = [];
+            for (const issue of favIssues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try {
+                        const data = JSON.parse(match[1]);
+                        if (data.username === currentUser.username) {
+                            allFavorites.push(data);
+                        }
+                    } catch(e) {}
+                }
+            }
+
+            updateProgress(100, '✅ 加载完成！');
+            setTimeout(() => { document.getElementById('loadingProgress').style.display = 'none'; }, 800);
+
+            renderDashboard();
+        }
+
+        async function loadUserProfile() {
+            if (isSystemAdmin(currentUser.username)) {
+                return { username: 'huangzhiyuan', avatarUrl: SITE_LOGO, bio: '平台创始人', createdAt: new Date().toISOString() };
+            }
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await res.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const user = JSON.parse(match[1]);
+                        if (user.username === currentUser.username) return user;
+                    }
+                }
+            } catch(e) {}
+            return { username: currentUser.username, avatarUrl: SITE_LOGO };
+        }
+
+        function renderDashboard() {
+            const myMessages = allMessages.filter(m => m.sender === currentUser.username && !m.isRecalled);
+            const totalMsg = myMessages.length;
+            const level = calculateLevel(totalMsg);
+            const levelClass = getLevelClass(level);
+            const levelTitle = getLevelTitle(level);
+            const nextLevelXP = xpForLevel(level + 1);
+            const currentLevelXP = xpForLevel(level);
+            const xpInLevel = totalMsg - currentLevelXP;
+            const xpNeeded = nextLevelXP - currentLevelXP;
+            const xpPercent = Math.min(100, (xpInLevel / xpNeeded) * 100);
+
+            // Profile header
+            const profileAvatar = document.getElementById('profileAvatar');
+            loadUserProfile().then(profile => {
+                profileAvatar.style.backgroundImage = `url('${profile.avatarUrl || SITE_LOGO}')`;
+            });
+
+            document.getElementById('profileName').textContent = currentUser.username;
+            const levelBadge = document.getElementById('profileLevel');
+            levelBadge.textContent = 'Lv.' + level;
+            levelBadge.className = 'level-badge ' + levelClass;
+            document.getElementById('profileTitle').textContent = levelTitle;
+            document.getElementById('xpBarFill').style.width = xpPercent + '%';
+            document.getElementById('xpText').textContent = `${xpInLevel} / ${xpNeeded} XP (下一级) · 总计 ${totalMsg} XP`;
+
+            // Stats grid
+            document.getElementById('totalMessages').textContent = totalMsg;
+            document.getElementById('totalFriends').textContent = allFriends.length;
+
+            const myRooms = allRooms.filter(r => {
+                if (r.type === 'private') return r.members && r.members.includes(currentUser.username);
+                return r.creator === currentUser.username || myMessages.some(m => m.roomId === r.id);
+            });
+            document.getElementById('totalRooms').textContent = myRooms.length;
+            document.getElementById('totalFavorites').textContent = allFavorites.length;
+
+            // Trend chart (last 14 days)
+            const dateMap = new Map();
+            myMessages.forEach(msg => {
+                const date = new Date(msg.timestamp).toLocaleDateString();
+                dateMap.set(date, (dateMap.get(date) || 0) + 1);
+            });
+            const last14Days = [];
+            const last14Counts = [];
+            for (let i = 13; i >= 0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const dateStr = d.toLocaleDateString();
+                last14Days.push(`${d.getMonth()+1}/${d.getDate()}`);
+                last14Counts.push(dateMap.get(dateStr) || 0);
+            }
+            if (trendChart) trendChart.destroy();
+            trendChart = new Chart(document.getElementById('trendChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: last14Days, datasets: [{ label: '消息数', data: last14Counts, borderColor: '#ffd700', backgroundColor: 'rgba(255,215,0,0.1)', fill: true, tension: 0.3 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#aaa' } } }, scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#888' } } } }
+            });
+
+            // Hour chart
+            const hourMap = new Array(24).fill(0);
+            myMessages.forEach(msg => {
+                const hour = new Date(msg.timestamp).getHours();
+                hourMap[hour]++;
+            });
+            if (hourChart) hourChart.destroy();
+            hourChart = new Chart(document.getElementById('hourChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: [...Array(24).keys()].map(i => `${i}:00`), datasets: [{ label: '消息数', data: hourMap, backgroundColor: 'rgba(255,215,0,0.7)' }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#aaa' } } }, scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#888' } } } }
+            });
+
+            // Rooms list
+            const roomsDiv = document.getElementById('roomsList');
+            if (myRooms.length === 0) {
+                roomsDiv.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">暂无参与的聊天室</div>';
+            } else {
+                roomsDiv.innerHTML = myRooms.map(room => {
+                    const roomMsgCount = allMessages.filter(m => m.roomId === room.id && !m.isRecalled).length;
+                    const myRoomMsgCount = myMessages.filter(m => m.roomId === room.id).length;
+                    const icon = room.type === 'group' ? '👥' : '👤';
+                    return `<div class="room-item">
+                        <div class="room-icon">${icon}</div>
+                        <div class="room-info">
+                            <div class="room-name">${escapeHtml(room.name)}</div>
+                            <div class="room-meta">${room.type === 'group' ? '群聊' : '私聊'} · 共 ${roomMsgCount} 条消息</div>
+                        </div>
+                        <div class="room-msg-count">${myRoomMsgCount}</div>
+                    </div>`;
+                }).join('');
+            }
+
+            // Achievements
+            const achievements = [
+                { icon: '💬', name: '初来乍到', desc: '发送第1条消息', condition: totalMsg >= 1 },
+                { icon: '📝', name: '话痨初级', desc: '发送10条消息', condition: totalMsg >= 10 },
+                { icon: '📢', name: '话痨中级', desc: '发送50条消息', condition: totalMsg >= 50 },
+                { icon: '🗣️', name: '话痨高级', desc: '发送200条消息', condition: totalMsg >= 200 },
+                { icon: '🔥', name: '超级话痨', desc: '发送500条消息', condition: totalMsg >= 500 },
+                { icon: '🤝', name: '社交新手', desc: '添加1位好友', condition: allFriends.length >= 1 },
+                { icon: '👥', name: '社交达人', desc: '添加5位好友', condition: allFriends.length >= 5 },
+                { icon: '🌟', name: '人气之王', desc: '添加10位好友', condition: allFriends.length >= 10 },
+                { icon: '🏠', name: '聊天室常客', desc: '加入2个聊天室', condition: myRooms.length >= 2 },
+                { icon: '🏰', name: '社区领袖', desc: '加入5个聊天室', condition: myRooms.length >= 5 },
+                { icon: '⭐', name: '收藏家', desc: '收藏3条消息', condition: allFavorites.length >= 3 },
+                { icon: '💎', name: '珍品猎手', desc: '收藏10条消息', condition: allFavorites.length >= 10 },
+            ];
+            document.getElementById('achievementsGrid').innerHTML = achievements.map(a =>
+                `<div class="achievement-item ${a.condition ? 'earned' : 'locked'}">
+                    <div class="achievement-icon">${a.icon}</div>
+                    <div class="achievement-name">${a.name}</div>
+                    <div class="achievement-desc">${a.condition ? '✅ 已达成' : a.desc}</div>
+                </div>`
+            ).join('');
+
+            // Recent activity
+            const recentMsgs = myMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8);
+            const activityDiv = document.getElementById('activityList');
+            if (recentMsgs.length === 0) {
+                activityDiv.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">暂无活动记录</div>';
+            } else {
+                activityDiv.innerHTML = recentMsgs.map(msg => {
+                    const room = allRooms.find(r => r.id === msg.roomId);
+                    const roomName = room ? room.name : '未知聊天室';
+                    const content = msg.content.substring(0, 60) + (msg.content.length > 60 ? '...' : '');
+                    const time = new Date(msg.timestamp);
+                    const timeStr = time.toLocaleDateString() === new Date().toLocaleDateString() ? time.toLocaleTimeString() : time.toLocaleDateString();
+                    return `<div class="activity-item">
+                        <div class="activity-icon">💬</div>
+                        <div class="activity-info">
+                            <div class="activity-title">${escapeHtml(content)}</div>
+                            <div class="activity-subtitle">在 ${escapeHtml(roomName)}</div>
+                        </div>
+                        <div class="activity-time">${timeStr}</div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        currentUser = checkAuth();
+        if (currentUser) loadAllData();
+    </script>
+</body>
+</html>
