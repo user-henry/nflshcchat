@@ -580,32 +580,6 @@
             transform: translateY(0);
         }
 
-        /* ===== Sound Toggle ===== */
-        .sound-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.3s;
-            opacity: 0;
-            animation: fadeIn 1s ease-out 2s forwards;
-        }
-
-        .sound-toggle:hover {
-            background: rgba(255,255,255,0.1);
-            transform: scale(1.1);
-        }
-
         /* ===== Glitch Effect ===== */
         .glitch {
             position: relative;
@@ -660,9 +634,6 @@
     </style>
 </head>
 <body>
-
-    <!-- Sound Toggle -->
-    <button class="sound-toggle" id="soundToggle" title="播放/暂停背景音乐">🎵</button>
 
     <!-- Animated Background -->
     <div class="bg-canvas">
@@ -872,29 +843,6 @@
             els.forEach(el => observer.observe(el));
         }
 
-        // ===== Sound Toggle (plays anthem) =====
-        let audioPlaying = false;
-        let anthemAudio = null;
-
-        function initAudio() {
-            anthemAudio = new Audio('https://raw.githubusercontent.com/user-henry/nflshcchat/main/NFLSHC%20%E6%A0%A1%E6%AD%8C.mp3');
-            anthemAudio.volume = 0.3;
-            anthemAudio.loop = true;
-        }
-
-        document.getElementById('soundToggle').addEventListener('click', function() {
-            if (!anthemAudio) initAudio();
-            if (audioPlaying) {
-                anthemAudio.pause();
-                this.textContent = '🎵';
-                audioPlaying = false;
-            } else {
-                anthemAudio.play().catch(() => {});
-                this.textContent = '🔊';
-                audioPlaying = true;
-            }
-        });
-
         // ===== Counter Animation =====
         function animateCounters() {
             const counters = document.querySelectorAll('.stat-number');
@@ -918,4 +866,3 @@
     </script>
 </body>
 </html>
-
