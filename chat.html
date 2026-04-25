@@ -230,19 +230,24 @@
             margin-left: 10px;
         }
         
+        .message-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .message-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background-size: cover; background-position: center; background-color: #2a2a3e;
+            flex-shrink: 0; cursor: pointer; border: 2px solid #333;
+        }
+        .message.own .message-header-row { flex-direction: row-reverse; }
+        .message.own .message-avatar { order: 2; }
         .message-sender {
             font-size: 12px;
             color: #aaa;
-            margin-bottom: 4px;
             cursor: pointer;
         }
         .message.own .message-sender {
             text-align: right;
-            margin-right: 10px;
         }
         .message:not(.own) .message-sender {
             text-align: left;
-            margin-left: 10px;
         }
         .message-sender:hover { text-decoration: underline; color: #ffd700; }
         
@@ -882,9 +887,33 @@
         let pinnedMessages = [];
         let replyToMessage = null;
         let globalMsgCounts = {}; // global message count per user
+        let userAvatarCache = {}; // username -> avatarUrl
+        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
         
         function calculateLevel(xp) { return Math.floor(Math.sqrt(xp / 10)) + 1; }
         function getLevelClass(level) { if (level <= 3) return 'level-low'; if (level <= 6) return 'level-mid'; if (level <= 9) return 'level-high'; return 'level-top'; }
+
+        // Load user avatar URLs from GitHub Issues
+        async function loadUserAvatars(usernames) {
+            var toLoad = usernames.filter(function(u) { return !userAvatarCache[u]; });
+            if (toLoad.length === 0) return;
+            try {
+                var url = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.GITHUB_REPO + '/issues?labels=user&state=open&per_page=100';
+                var res = await fetch(url, { headers: { 'Authorization': 'token ' + CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                var issues = await res.json();
+                toLoad.forEach(function(username) {
+                    var issue = issues.find(function(i) {
+                        try { return JSON.parse(i.body.match(/```json\n([\s\S]*?)\n```/)[1]).username === username; } catch(e) { return false; }
+                    });
+                    if (issue) {
+                        try {
+                            var ud = JSON.parse(issue.body.match(/```json\n([\s\S]*?)\n```/)[1]);
+                            if (ud.avatarUrl) userAvatarCache[username] = ud.avatarUrl;
+                        } catch(e) {}
+                    }
+                });
+            } catch(e) { console.error('Failed to load user avatars:', e); }
+        }
 
         // Load global message counts for level badges
         async function loadGlobalMsgCounts() {
@@ -1082,6 +1111,9 @@
                     newestMessageTimestamp = latestMsg.timestamp;
                 }
                 messages[currentRoom.id] = allMessages;
+                // Load avatars for message senders
+                var senders = [...new Set(allMessages.map(function(m) { return m.sender; }))];
+                loadUserAvatars(senders).then(function() { renderMessages(); });
                 renderMessages();
                 const loadMoreContainer = document.getElementById('loadMoreContainer');
                 if (hasMoreMessages && result.hasNext) {
@@ -1199,7 +1231,10 @@
                 const levelBadge = '<span class="level-badge ' + getLevelClass(senderLevel) + '">Lv.' + senderLevel + '</span>';
 
                 return '<div class="message ' + (isOwn ? 'own' : '') + '" data-msg-id="' + msg.id + '">' +
-                    '<div class="message-sender" onclick="viewProfile(\'' + escapeHtml(msg.sender) + '\')">' + escapeHtml(msg.sender) + levelBadge + '</div>' +
+                    '<div class="message-header-row">' +
+                        '<div class="message-avatar" style="background-image:url(\'' + (userAvatarCache[msg.sender] || SITE_LOGO) + '\')" onclick="viewProfile(\'' + escapeHtml(msg.sender) + '\')"></div>' +
+                        '<div class="message-sender" onclick="viewProfile(\'' + escapeHtml(msg.sender) + '\')">' + escapeHtml(msg.sender) + levelBadge + '</div>' +
+                    '</div>' +
                     '<div class="message-bubble-wrapper">' +
                     (replyQuote ? replyQuote : '') +
                     scheduleHtml +

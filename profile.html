@@ -55,6 +55,20 @@
             background-size: cover;
             background-position: center;
         }
+        .avatar-upload-area {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+        }
+        .avatar-upload-preview {
+            width: 60px; height: 60px; border-radius: 50%; border: 2px solid #ffd700;
+            background-size: cover; background-position: center; background-color: #1a1a2e;
+            flex-shrink: 0;
+        }
+        .avatar-upload-btn {
+            background: #2ecc71; color: white; border: none; border-radius: 8px;
+            padding: 8px 16px; cursor: pointer; font-size: 14px;
+        }
+        .avatar-upload-btn:hover { background: #27ae60; }
+        .avatar-upload-status { font-size: 12px; color: #aaa; margin-top: 5px; }
         .profile-header h1 { color: #1a1a2e; margin-bottom: 5px; }
         .admin-badge {
             background: #1a1a2e;
@@ -369,7 +383,15 @@
                         ${isOwnProfile ? `
                             <div class="edit-form">
                                 <h3>✏️ 编辑个人资料</h3>
-                                <input type="text" id="editAvatar" placeholder="头像图片链接（留空使用默认头像）" value="${escapeHtml(viewUser.avatarUrl || '')}">
+                                <input type="file" id="avatarFileInput" accept="image/*" onchange="handleAvatarUpload(this)" style="display:none;">
+                                <div class="avatar-upload-area">
+                                    <div class="avatar-upload-preview" id="avatarPreview" style="background-image:url('${viewUser.avatarUrl || SITE_LOGO}')"></div>
+                                    <div>
+                                        <button type="button" class="avatar-upload-btn" onclick="document.getElementById('avatarFileInput').click()">&#x1F4F7; 上传头像</button>
+                                        <div class="avatar-upload-status" id="avatarUploadStatus">支持 JPG/PNG/GIF，&le;5MB</div>
+                                    </div>
+                                </div>
+                                <input type="text" id="editAvatar" placeholder="或粘贴头像图片链接" value="${escapeHtml(viewUser.avatarUrl || '')}" style="margin-top:5px;">
                                 <textarea id="editBio" placeholder="个人简介">${escapeHtml(viewUser.bio || '')}</textarea>
                                 <input type="password" id="editPassword" placeholder="新密码（留空则不修改）">
                                 <input type="password" id="editConfirmPassword" placeholder="确认新密码">
@@ -386,6 +408,47 @@
                     </div>
                 </div>
             `;
+        }
+
+        // ===== 头像上传功能 =====
+        async function handleAvatarUpload(fileInput) {
+            var file = fileInput.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('图片大小不能超过 5MB！', 'error');
+                return;
+            }
+            var statusEl = document.getElementById('avatarUploadStatus');
+            var previewEl = document.getElementById('avatarPreview');
+            var avatarUrlInput = document.getElementById('editAvatar');
+            statusEl.textContent = '⏳ 正在上传...';
+            try {
+                var base64 = await new Promise(function(resolve) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) { resolve(e.target.result); };
+                    reader.readAsDataURL(file);
+                });
+                var resp = await fetch('https://api.imgur.com/3/image', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Client-ID 7a3d6e9b0c8a4e5' },
+                    body: base64.split(',')[1]
+                });
+                if (!resp.ok) throw new Error('上传服务不可用');
+                var data = await resp.json();
+                if (data.success && data.data && data.data.link) {
+                    previewEl.style.backgroundImage = "url('" + data.data.link + "')";
+                    avatarUrlInput.value = data.data.link;
+                    statusEl.textContent = '✅ 上传成功！点击保存修改生效';
+                    showToast('头像上传成功！', 'success');
+                } else {
+                    throw new Error(data.data && data.data.error ? data.data.error : '上传失败');
+                }
+            } catch (err) {
+                console.error('Avatar upload error:', err);
+                statusEl.textContent = '❌ 上传失败，请重试或直接粘贴图片链接';
+                showToast('头像上传失败：' + err.message, 'error');
+            }
+            fileInput.value = '';
         }
 
         async function updateProfile() {
