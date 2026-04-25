@@ -423,25 +423,23 @@
             var avatarUrlInput = document.getElementById('editAvatar');
             statusEl.textContent = '⏳ 正在上传...';
             try {
-                var base64 = await new Promise(function(resolve) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) { resolve(e.target.result); };
-                    reader.readAsDataURL(file);
-                });
-                var resp = await fetch('https://api.imgur.com/3/image', {
+                var formData = new FormData();
+                formData.append('file', file);
+                formData.append('storage_id', 1);
+                formData.append('is_public', true);
+                formData.append('is_remove_exif', true);
+                var resp = await fetch('https://www.boltp.com/api/v2/upload', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Client-ID 7a3d6e9b0c8a4e5' },
-                    body: base64.split(',')[1]
+                    body: formData
                 });
-                if (!resp.ok) throw new Error('上传服务不可用');
                 var data = await resp.json();
-                if (data.success && data.data && data.data.link) {
-                    previewEl.style.backgroundImage = "url('" + data.data.link + "')";
-                    avatarUrlInput.value = data.data.link;
+                if (data.status === 'success' && data.data && data.data.public_url) {
+                    previewEl.style.backgroundImage = "url('" + data.data.public_url + "')";
+                    avatarUrlInput.value = data.data.public_url;
                     statusEl.textContent = '✅ 上传成功！点击保存修改生效';
                     showToast('头像上传成功！', 'success');
                 } else {
-                    throw new Error(data.data && data.data.error ? data.data.error : '上传失败');
+                    throw new Error(data.message || '上传失败');
                 }
             } catch (err) {
                 console.error('Avatar upload error:', err);
