@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -200,12 +200,19 @@
 
         <div class="card">
             <h2>🎵 NFLSHC 校歌</h2>
-            <p style="text-align:center; margin-bottom:20px; color: var(--text-secondary);">点击播放按钮收听 NFLSHC 校歌，让我们一起感受校园情怀 🎶</p>
-            <div class="anthem-player">
-                <audio id="anthemAudio" controls preload="none">
-                    <source src="https://nflshcchat.edgeone.app/%E5%8D%97%E4%BA%AC%E5%A4%96%E5%9B%BD%E8%AF%AD%E5%AD%A6%E6%A0%A1%E6%B7%AE%E5%AE%89%E5%88%86%E6%A0%A1%E6%A0%A1%E6%AD%8C.mp3" type="audio/mpeg">
+                        <p style="text-align:center; margin-bottom:15px; color: var(--text-secondary);">🎵 点击播放按钮收听 NFLSHC 校歌，让我们一起感受校园情怀 🎶</p>
+            <div class="anthem-player" style="max-width:600px;margin:0 auto 25px;">
+                <audio controls preload="none" style="width:100%;border-radius:10px;outline:none;">
+                    <source src="https://raw.githubusercontent.com/user-henry/nflshcchat/main/NFLSHC%20%E6%A0%A1%E6%AD%8C.mp3" type="audio/mpeg">
                     您的浏览器不支持音频播放。
                 </audio>
+            </div>
+            <p style="text-align:center; margin-bottom:15px; color: var(--text-secondary);">🎬 NFLSHC 学校官方宣传片</p>
+            <div class="anthem-player" style="max-width:720px;margin:0 auto;">
+                <video controls preload="none" style="width:100%;border-radius:10px;outline:none;background:#000;">
+                    <source src="https://eos-shanghai-2.cmecloud.cn/nanwai001/599835a1cd8de38bea7e6e73a5dd7123.mp4" type="video/mp4">
+                    您的浏览器不支持视频播放。
+                </video>
             </div>
         </div>
 
