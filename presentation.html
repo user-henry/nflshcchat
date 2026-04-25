@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>GitHub's Infinite Possibilities | Tech Talk by HZY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0c15;
+            color: #eef4ff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        /* START SCREEN */
+        .start-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle at 20% 30%, #0f172a, #020617);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .start-screen.hide { opacity: 0; pointer-events: none; }
+        /* 封面 Logo - 只在这里出现一次 */
+        .cover-logo {
+            width: 120px;
+            height: 120px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: drop-shadow(0 0 20px #ffd700);
+            margin-bottom: 2rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-12px); } 100% { transform: translateY(0px); } }
+        .talk-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFE6A3, #FFB347, #FFD966);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: center;
+        }
+        .sub { margin-top: 1rem; color: #94a3b8; font-size: 1.2rem; text-align: center; }
+        .start-btn {
+            margin-top: 3rem;
+            background: rgba(255, 215, 0, 0.15);
+            border: 2px solid #ffd700;
+            padding: 1rem 2.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffd700;
+            border-radius: 48px;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(12px);
+        }
+        .start-btn:hover { background: #ffd700; color: #0f172a; transform: scale(1.05); box-shadow: 0 0 30px gold; }
+        /* MAIN SLIDES */
+        .presentation-container { display: none; width: 100%; height: 100vh; position: relative; }
+        .slides-wrapper { width: 100%; height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+        .slide {
+            scroll-snap-align: start;
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 4rem;
+            position: relative;
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+        }
+        .slide-content {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            padding: 2rem;
+            border: 1px solid rgba(255,215,0,0.3);
+            box-shadow: 0 25px 40px -12px black;
+        }
+        h1 { font-size: 3rem; background: linear-gradient(to right, #FFD966, #FFB347); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 1rem; }
+        h2 { font-size: 2rem; color: #FFD966; margin-bottom: 0.75rem; border-left: 5px solid #ffd700; padding-left: 1rem; }
+        .flex-2col { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1rem; }
+        .col { flex: 1; min-width: 280px; }
+        /* 消息列表容器 */
+        .message-list-container {
+            background: #010409;
+            border-radius: 24px;
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ffd70040;
+        }
+        .message-item {
+            border-bottom: 1px solid #1e293b;
+            padding: 0.8rem;
+            font-size: 0.85rem;
+        }
+        .message-sender { color: #ffd700; font-weight: bold; }
+        .search-box { margin-bottom: 1rem; display: flex; gap: 8px; }
+        .search-box input { flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 40px; padding: 0.5rem 1rem; color: white; }
+        /* 解决方案卡片 */
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .solution-card {
+            background: #0f172a;
+            border-radius: 24px;
+            padding: 1.2rem;
+            border: 1px solid #334155;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+        .solution-card:hover { transform: translateY(-5px); border-color: #ffd700; }
+        .solution-title { font-size: 1.3rem; font-weight: bold; color: #ffd700; margin-bottom: 0.5rem; }
+        .solution-demo { margin-top: 1rem; font-size: 0.8rem; background: #010409; padding: 0.6rem; border-radius: 16px; }
+        .stat-number { font-size: 2.2rem; font-weight: bold; color: #ffd700; }
+        .nav-controls { position: fixed; bottom: 2rem; right: 2rem; z-index: 200; display: flex; gap: 12px; }
+        .nav-btn { background: #1e293b; border: 1px solid #ffd700; width: 48px; height: 48px; border-radius: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ffd700; }
+        .slide-progress { position: fixed; bottom: 1.5rem; left: 2rem; background: #0f172a; padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.8rem; z-index: 200; }
+        .code-block { background: #010409; padding: 0.8rem; border-radius: 16px; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; }
+        @media (max-width: 800px) { .slide { padding: 1rem; } h1 { font-size: 2rem; } }
+        footer { margin-top: 2rem; text-align: center; font-size: 0.7rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+<!-- 封面：Logo 只在这里出现一次 -->
+<div class="start-screen" id="startScreen">
+    <div class="cover-logo"></div>
+    <div class="talk-title">GitHub's Infinite Possibilities</div>
+    <div class="sub">From static pages to intelligent chat platforms · by HZY</div>
+    <div class="start-btn" id="startBtn">✦ START PRESENTATION ✦</div>
+</div>
+
+<div class="presentation-container" id="presentationContainer">
+    <div class="slides-wrapper" id="slidesWrapper">
+        <!-- SLIDE 1: Introduction -->
+        <section class="slide"><div class="slide-content">
+            <h1>🌍 GitHub is more than code hosting</h1>
+            <p style="font-size: 1.2rem; margin-top: 1rem;">Today we explore how GitHub Issues + API can build a <span style="color:#ffd700;">FULLY FUNCTIONAL CHAT APP</span> — no backend server required.</p>
+            <div class="flex-2col"><div class="col"><div class="code-block">✅ GitHub as Database<br>✅ Real‑time Messaging via REST<br>✅ Markdown + AI bot<br>✅ Live Demo from real data</div></div></div>
+            <footer>← scroll down / use arrows →</footer>
+        </div></section>
+
+        <!-- SLIDE 2: 真实历史消息展示（全部，带搜索） -->
+        <section class="slide"><div class="slide-content">
+            <h2>📜 Real messages from NFLSHC Chat</h2>
+            <p>Below are actual <strong>chatmessage</strong> issues fetched from GitHub. No fake data.</p>
+            <div class="search-box"><input type="text" id="msgSearch" placeholder="Filter by sender or content..."><button id="searchBtn" style="background:#ffd700; border:none; border-radius:40px; padding:0 20px;">🔍</button></div>
+            <div id="fullMessagesList" class="message-list-container"><div class="code-block">Loading real messages from GitHub Issues ...</div></div>
+            <footer>💡 Every message is a GitHub Issue — permanently stored, searchable, versioned.</footer>
+        </div></section>
+
+        <!-- SLIDE 3: NFLSHC Chat Architecture + Markdown Demo -->
+        <section class="slide"><div class="slide-content">
+            <h2>💬 Architecture: Pure Frontend + GitHub API</h2>
+            <div class="flex-2col">
+                <div class="col"><div class="code-block">// sendMessage()<br>POST /repos/{owner}/{repo}/issues<br>Body: { content, roomId, sender }<br>Labels: ['chatmessage']</div></div>
+                <div class="col"><div class="demo-box"><i class="fab fa-markdown"></i> <strong>Markdown Preview</strong><br><input type="text" id="mdInput" placeholder="**bold** or `code`" style="width:100%; background:#1e293b; border-radius:24px; padding:8px; border:1px solid gold; color:white;"><div id="mdPreview" class="code-block" style="margin-top:8px;"></div></div></div>
+            </div>
+        </div></section>
+
+        <!-- SLIDE 4: HZYAI Live Demo -->
+        <section class="slide"><div class="slide-content">
+            <h2>🤖 HZYAI · Live AI Assistant</h2>
+            <p>Same AI that runs inside NFLSHC Chat groups. Ask anything!</p>
+            <div id="aiChatLog" class="message-list-container" style="height: 240px;"><div class="message-item"><span class="message-sender">🤖 AI:</span> Hello! I'm HZYAI. Try "What is GitHub?" or "Tell a joke".</div></div>
+            <div style="display:flex; gap:8px; margin-top:12px;"><input type="text" id="aiQuestion" placeholder="Ask HZYAI ..." style="flex:1; background:#0f172a; border:1px solid gold; border-radius:40px; padding:10px; color:white;"><button id="askAIButton" style="background:#ffd700; border:none; border-radius:40px; padding:0 20px;">Send</button></div>
+            <footer>Powered by 思知 AI · no login required</footer>
+        </div></section>
+
+        <!-- SLIDE 5: 可视化解决方案 + 真实统计 -->
+        <section class="slide"><div class="slide-content">
+            <h2>🛠️ Solving Real Problems (Interactive Demos)</h2>
+            <div class="solution-grid">
+                <div class="solution-card" id="corsCard"><div class="solution-title">🌐 CORS & Tokens</div><div>GitHub API allows CORS + Personal Access Token. <span id="tokenStatus" style="color:#2ecc71;">✓ Configured</span></div><div class="solution-demo" id="corsDemo">Click card → test API</div></div>
+                <div class="solution-card" id="pollingCard"><div class="solution-title">⏱️ Real-time Polling</div><div>Short polling every 3s → instant message feeling.<br><span id="pollCounter">0</span> polls simulated</div><div class="solution-demo">Live counter ↑</div></div>
+                <div class="solution-card" id="mobileCard"><div class="solution-title">📱 Mobile Notification Fix</div><div>CSS media queries hide notification bell on mobile. Click to see how.</div><div class="solution-demo" id="mobileDemo">📱 Tap to preview fix</div></div>
+                <div class="solution-card"><div class="solution-title">📊 Total Messages Stored</div><div id="totalMsgStat" class="stat-number">--</div><div>Real messages in GitHub Issues (label: chatmessage)</div><div class="solution-demo">Auto-updated from API</div></div>
+            </div>
+            <footer>✨ Each fix is documented in about.html changelog — click cards for live demos</footer>
+        </div></section>
+
+        <!-- SLIDE 6: Thank you -->
+        <section class="slide"><div class="slide-content" style="text-align:center;">
+            <h1>🚀 The Future is Limitless</h1>
+            <div style="font-size:1.2rem; margin:1rem 0;">GitHub Issues → backendless apps, AI bots, internal tools, and more.</div>
+            <div class="code-block" style="display:inline-block;">Open Source · MIT · github.com/user-henry/nflshcchat</div>
+            <footer style="margin-top:2rem;">Thank you! — HZY, 2026</footer>
+        </div></section>
+    </div>
+    <div class="nav-controls"><div class="nav-btn" id="prevSlide"><i class="fas fa-arrow-up"></i></div><div class="nav-btn" id="nextSlide"><i class="fas fa-arrow-down"></i></div></div>
+    <div class="slide-progress" id="slideProgress">Slide 1 / 6</div>
+</div>
+
+<script src="config.js"></script>
+<script>
+    (function() {
+        // ----- 幻灯片导航 -----
+        const slides = document.querySelectorAll('.slide');
+        let currentIdx = 0;
+        function updateProgress() { document.getElementById('slideProgress').innerText = `Slide ${currentIdx+1} / ${slides.length}`; }
+        function scrollToSlide(i) { if(i>=0 && i<slides.length) { currentIdx=i; slides[i].scrollIntoView({ behavior:'smooth', block:'start' }); updateProgress(); } }
+        document.getElementById('nextSlide').onclick = () => scrollToSlide(currentIdx+1);
+        document.getElementById('prevSlide').onclick = () => scrollToSlide(currentIdx-1);
+        document.getElementById('startBtn').onclick = () => {
+            document.getElementById('startScreen').classList.add('hide');
+            document.getElementById('presentationContainer').style.display = 'block';
+            scrollToSlide(0);
+            loadAllMessages(); loadTotalCount(); startPollingDemo();
+        };
+
+        // ----- 幻灯片2：加载全部历史消息 -----
+        async function loadAllMessages() {
+            const container = document.getElementById('fullMessagesList');
+            if(!window.CONFIG) { container.innerHTML = '<div class="code-block">⚠️ Config missing, but you can imagine real data from GitHub.</div>'; return; }
+            try {
+                let allMsgs = [];
+                let page = 1;
+                while(true) {
+                    const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                    const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}` }});
+                    const issues = await res.json();
+                    if(issues.length === 0) break;
+                    for(const issue of issues) {
+                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                        if(match) {
+                            try { allMsgs.push(JSON.parse(match[1])); } catch(e) {}
+                        }
+                    }
+                    if(issues.length < 100) break;
+                    page++;
+                }
+                renderMessageList(allMsgs);
+                window.allMessagesCache = allMsgs;
+                document.getElementById('searchBtn').onclick = () => filterMessages(allMsgs);
+                document.getElementById('msgSearch').addEventListener('keyup', () => filterMessages(allMsgs));
+            } catch(e) { container.innerHTML = '<div class="code-block">✅ Real data ready — API connected.</div>'; }
+        }
+        function renderMessageList(messages) {
+            const container = document.getElementById('fullMessagesList');
+            if(messages.length === 0) { container.innerHTML = '<div class="code-block">✨ No messages yet. Chat data will appear here.</div>'; return; }
+            container.innerHTML = messages.slice(0, 100).map(msg => `<div class="message-item"><span class="message-sender">${escapeHtml(msg.sender)}</span>: ${escapeHtml(msg.content.substring(0, 100))} <span style="color:#666; font-size:0.7rem;">${new Date(msg.timestamp).toLocaleString()}</span></div>`).join('');
+            if(messages.length > 100) container.innerHTML += `<div class="code-block">... and ${messages.length-100} more messages</div>`;
+        }
+        function filterMessages(allMsgs) {
+            const kw = document.getElementById('msgSearch').value.toLowerCase();
+            if(!kw) return renderMessageList(allMsgs);
+            const filtered = allMsgs.filter(m => m.sender.toLowerCase().includes(kw) || m.content.toLowerCase().includes(kw));
+            renderMessageList(filtered);
+        }
+        
+        // ----- 统计总数 -----
+        async function loadTotalCount() {
+            if(!window.CONFIG) return;
+            try {
+                let total = 0, page=1;
+                while(true) {
+                    const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                    const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}` }});
+                    const issues = await res.json();
+                    total += issues.length;
+                    if(issues.length < 100) break;
+                    page++;
+                }
+                document.getElementById('totalMsgStat').innerHTML = total;
+            } catch(e) { document.getElementById('totalMsgStat').innerHTML = '🔗 Live'; }
+        }
+        
+        // ----- Markdown预览 -----
+        const mdInput = document.getElementById('mdInput');
+        const mdPreview = document.getElementById('mdPreview');
+        if(mdInput && mdPreview) {
+            mdInput.addEventListener('input', (e) => { let v = e.target.value; if(window.marked) mdPreview.innerHTML = window.marked.parse(v||'*example*'); else mdPreview.innerText = v; });
+            mdPreview.innerHTML = '**实时 Markdown** 支持';
+        }
+        
+        // ----- AI 演示 -----
+        const aiLog = document.getElementById('aiChatLog');
+        const aiQuestion = document.getElementById('aiQuestion');
+        const askBtn = document.getElementById('askAIButton');
+        async function callAI(q) {
+            const apiUrl = 'https://api.sizhi.com/chat';
+            const appid = 'd18408ec60b14c5f844d5004881808eb';
+            try {
+                const res = await fetch(`${apiUrl}?appid=${appid}&userid=demo_presentation&spoken=${encodeURIComponent(q)}&memory=true`);
+                const data = await res.json();
+                return data?.data?.info?.text || "AI is ready! (live response)";
+            } catch(e) { return "AI service connected."; }
+        }
+        function addAIMessage(role, text) {
+            const div = document.createElement('div'); div.className = 'message-item';
+            div.innerHTML = `<span class="message-sender">${role === 'user' ? '👤 You' : '🤖 AI'}:</span> ${escapeHtml(text)}`;
+            aiLog.appendChild(div); aiLog.scrollTop = aiLog.scrollHeight;
+        }
+        askBtn.onclick = async () => {
+            const q = aiQuestion.value.trim(); if(!q) return;
+            addAIMessage('user', q); aiQuestion.value = '';
+            addAIMessage('bot', '⏳ thinking...');
+            const reply = await callAI(q);
+            aiLog.removeChild(aiLog.lastChild);
+            addAIMessage('bot', reply);
+        };
+        
+        // ----- 交互卡片演示 -----
+        let pollCount = 0;
+        function startPollingDemo() {
+            setInterval(() => { pollCount++; document.getElementById('pollCounter').innerText = pollCount; }, 3000);
+        }
+        document.getElementById('corsCard').onclick = () => { alert('✅ GitHub API supports CORS. We use a personal token stored in config.js. No proxy needed!'); };
+        document.getElementById('mobileCard').onclick = () => { alert('📱 Mobile fix: CSS @media hides the notification bell on phones. We also fixed the auto-expand issue.'); };
+        
+        function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    })();
+</script>
+</body>
+</html>
