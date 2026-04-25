@@ -156,6 +156,24 @@
             .hero p { font-size: 14px; }
             .feature-grid { grid-template-columns: 1fr; }
         }
+
+        .anthem-player {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .anthem-player audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 8px;
+            outline: none;
+        }
+        .anthem-player audio::-webkit-media-controls-panel {
+            background: var(--bg-secondary);
+        }
     </style>
 </head>
 <body>
@@ -178,6 +196,17 @@
             <h2>📖 关于本站</h2>
             <p>NFLSHC Chat 是一款基于 GitHub Issues 构建的轻量级聊天平台。我们致力于为用户提供安全、私密、功能丰富的聊天体验，无需复杂的服务器部署，即可享受群聊、私聊等多种功能。</p>
             <p>本平台采用现代化的 Web 技术栈，支持 Markdown 格式消息、实时预览、消息收藏、聊天记录导出等功能，让您的沟通更加高效便捷。</p>
+        </div>
+
+        <div class="card">
+            <h2>🎵 NFLSHC 校歌</h2>
+            <p style="text-align:center; margin-bottom:20px; color: var(--text-secondary);">点击播放按钮收听 NFLSHC 校歌，让我们一起感受校园情怀 🎶</p>
+            <div class="anthem-player">
+                <audio id="anthemAudio" controls preload="none">
+                    <source src="https://nflshcchat.edgeone.app/%E5%8D%97%E4%BA%AC%E5%A4%96%E5%9B%BD%E8%AF%AD%E5%AD%A6%E6%A0%A1%E6%B7%AE%E5%AE%89%E5%88%86%E6%A0%A1%E6%A0%A1%E6%AD%8C.mp3" type="audio/mpeg">
+                    您的浏览器不支持音频播放。
+                </audio>
+            </div>
         </div>
 
         <div class="card">
