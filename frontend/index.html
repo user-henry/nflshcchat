@@ -1148,13 +1148,7 @@
     <!-- 底部面板容器 -->
     <div id="bottom-panels">
         <!-- Memo 面板 -->
-        <div id="memo-panel">
-            <div id="memo-title">昨 日 小 记</div>
-            <div id="memo-date"></div>
-            <div class="memo-decoration">─ ─ ─ ─ ─</div>
-            <div id="memo-content">
-                <div id="memo-placeholder">加载中...</div>
-            </div>
+        <!-- 昨日小记 removed -->
             <div class="memo-decoration">─ ─ ─ ─ ─</div>
         </div>
         
@@ -1216,7 +1210,7 @@
                     </div>
                     <div id="asset-move-result" class="asset-sub" style="margin-top:4px; margin-bottom:6px;"></div>
                     <div id="asset-broker-panel">
-                        <div class="asset-sub" style="margin-bottom:6px;">写你的风格主题（严格保持原始房间结构，只改变视觉风格）</div>
+                        <div class="asset-sub" style="margin-bottom:6px;">写你的风格主题（严格保持原始房间结构，只改��视觉风格）</div>
                         <textarea id="asset-broker-prompt" placeholder="例如：像素风赛博东京夜景，霓虹灯、雨夜地面反光、蓝紫主色"></textarea>
                         <div class="asset-toolbar" style="margin-top:6px; gap:8px; align-items:center; justify-content:flex-start;">
                             <span id="speed-mode-label" class="asset-sub" style="min-width:62px;">生成模式</span>
@@ -1358,7 +1352,7 @@
                 assetHide: '非表示', assetShow: '表示',
                 resetToDefault: 'デフォルトへ戻す', restorePrevAsset: '前の版へ戻す',
                 btnMove: '📦 引っ越し', btnHome: '🐚 実家に戻る', btnHomeLast: '↩️ ひとつ前へ', btnHomeFavorite: '⭐ この家を保存', btnBroker: '🤝 仲介', btnDIY: '🪚 自分で装飾', btnBrokerGo: '仲介に任せる',
-                homeFavTitle: '🏠 保存した家', homeFavEmpty: 'まだ保存がありません。先に「⭐ この家を保存」を押してください。', homeFavApply: '現在のマップに適用', homeFavDelete: '削除', homeFavSaved: '✅ 現在のマップを保存しました', homeFavApplied: '✅ 保存した家を適用しました', homeFavDeleted: '🗑️ 保存した家を削除しました',
+                homeFavTitle: '🏠 保存した家', homeFavEmpty: 'まだ保存がありません。先に「⭐ この家を保存」を押してください��', homeFavApply: '現在のマップに適用', homeFavDelete: '削除', homeFavSaved: '✅ 現在のマップを保存しました', homeFavApplied: '✅ 保存した家を適用しました', homeFavDeleted: '🗑️ 保存した家を削除しました',
                 brokerHint: 'ロブスターにはどんな家をおすすめしますか',
                 brokerPromptPh: '例：故宮テーマ、モネ風、ダンジョン風、兵馬俑テーマ…',
                 brokerNeedPrompt: '先に仲介プランの説明を入力してください',
@@ -1366,7 +1360,7 @@
                 brokerDone: '✅ 仲介プランを適用して背景を更新しました。部屋を更新中...',
                 moveSuccess: '✅ 引っ越し成功！',
                 brokerMissingKey: '❌ 生成失敗：GEMINI APIキーが未設定です。下で入力して保存してください。',
-                geminiPanelTitle: '🔐 API設定（折りたたみ）', geminiHint: '任意：画像生成APIキーを設定（未設定でも基本機能は利用可）', geminiApiDoc: '📘 Google API Keyの取得方法', geminiInputPh: 'GEMINI_API_KEY を貼り付け（入力は非表示）', geminiSaveKey: 'Keyを保存', geminiMaskNoKey: '現在：キー未設定', geminiMaskHasKey: '設定済みキー：',
+                geminiPanelTitle: '🔐 API設定（折りたたみ）', geminiHint: '任意：画像生成APIキーを設定（未設定でも基本機能は利用可）', geminiApiDoc: '📘 Google API Keyの取得方法', geminiInputPh: 'GEMINI_API_KEY を貼り付け（入力は非表示）', geminiSaveKey: 'Keyを保存', geminiMaskNoKey: '現在：キー未設定', geminiMaskHasKey: '��定済みキー：',
                 speedModeLabel: '生成モード', speedFast: '🍌2', speedQuality: '🍌Pro',
                 searchPlaceholder: 'アセット検索（desk / sofa / star）', loaded: '読み込み済み', allAssets: '全アセット',
                 chooseImage: '素材アップロード', confirmUpload: '確定して更新', resetToDefault: '初期に戻す', restorePrevAsset: '前版に戻す', uploadPending: 'アップロード待ち', uploadTarget: '対象',
@@ -1678,7 +1672,7 @@
         let roomLoadingIndex = 0;
         let roomLoadingEmojiIndex = 0;
 
-        // 默认走更稳的模型档（quality），避免部分通道不支持 fast 模型时报错
+        // 默认走更稳的模型档（quality），避免部分通道不支持 fast 模��时报错
         let speedMode = localStorage.getItem('speedMode') || 'quality';
         function setSpeedMode(mode) {
             speedMode = (mode === 'quality') ? 'quality' : 'fast';
@@ -1948,7 +1942,7 @@
             ja: {
                 'office_bg_small': 'メイン背景（現在有効）。1280×720（16:9）推奨。部屋構造と視点を維持し、キャラの位置ズレを防いでください。',
                 'office_bg': '旧背景のバックアップ。通常は直接反映されません。office_bg_small と同構図で保持すると復旧しやすいです。',
-                'star-idle-v5': 'メイン待機スプライトシート。256×256 分割とグリッド構成を維持しないと待機アニメが崩れます。',
+                'star-idle-v5': 'メイン待機スプライト���ート。256×256 分割とグリッド構成を維持しないと待機アニメが崩れます。',
                 'star-working-spritesheet-grid': 'メイン作業スプライトシート（デスク状態）。300×300 分割を維持し、重心位置を揃えてください。',
                 'sync-animation': '同期状態素材（現在参照中）。256×256 仕様を守ると静止/ガタつきを回避できます。',
                 'sync-animation-v3-grid': '同期スプライトシート（互換用）。256×256 グリッド維持で同期演出を差し替え可能です。',
@@ -1957,7 +1951,7 @@
                 'desk': '旧デスク素材（互換）。desk-v3 に近いサイズ/アンカーで差し替えると崩れにくいです。',
                 'sofa-idle-v3': 'ソファ静止素材。256×256 と透過背景を維持し、位置ズレを防いでください。',
                 'sofa-shadow-v1': 'ソファ影レイヤー。本体と同座標に重ねると接地感が出ます。',
-                'memo-bg': 'メモパネル背景。文字可読域を確保し、細かすぎる模様は避けてください。',
+                'memo-bg': 'メ��パネル背景。文字可読域を確保し、細かすぎる模様は避けてください。',
                 'plants-spritesheet': '植物ランダム素材。160×160 分割を維持すると複数の植物表示を一括更新できます。',
                 'posters-spritesheet': 'ポスターランダム素材。160×160 分割を維持し、壁面の統一感を意識してください。',
                 'cats-spritesheet': '猫ランダム素材。160×160 分割を維持し、シルエットを明確にすると見分けやすいです。',
@@ -1966,7 +1960,7 @@
                 'serverroom-spritesheet': 'サーバールームアニメ素材。180×251 分割を維持し、過度な点滅は避けてください。',
                 'flowers-bloom-v2': '花ランダム素材。128×128 分割を維持し、全体の色調と合わせると馴染みます。',
                 'guest_anim_1': '訪客アニメセット 1（32×32 分割）。ピクセル感と輪郭太さを既存キャラに合わせてください。',
-                'guest_anim_2': '訪客アニメセット 2（32×32 分割）。ピクセル感と輪郭太さを既存キャラに合わせてください。',
+                'guest_anim_2': '訪客ア��メセット 2（32×32 分割）。ピクセル感と輪郭太さを既存キャラに合わせてください。',
                 'guest_anim_3': '訪客アニメセット 3（32×32 分割）。ピクセル感と輪郭太さを既存キャラに合わせてください。',
                 'guest_anim_4': '訪客アニメセット 4（32×32 分割）。ピクセル感と輪郭太さを既存キャラに合わせてください。',
                 'guest_anim_5': '訪客アニメセット 5（32×32 分割）。ピクセル感と輪郭太さを既存キャラに合わせてください。',
@@ -1974,7 +1968,7 @@
                 'guest_role_1': '訪客静止フォールバック画像 1。対応する guest_anim とデザインを揃えると切替時に自然です。',
                 'guest_role_2': '訪客静止フォールバック画像 2。対応する guest_anim とデザインを揃えると切替時に自然です。',
                 'guest_role_3': '訪客静止フォールバック画像 3。対応する guest_anim とデザインを揃えると切替時に自然です。',
-                'guest_role_4': '訪客静止フォールバック画像 4。対応する guest_anim とデザインを揃えると切替時に自然です。',
+                'guest_role_4': '訪客静止フォールバック画像 4。対応する guest_anim とデザインを��えると切替時に自然です。',
                 'guest_role_5': '訪客静止フォールバック画像 5。対応する guest_anim とデザインを揃えると切替時に自然です。',
                 'guest_role_6': '訪客静止フォールバック画像 6。対応する guest_anim とデザインを揃えると切替時に自然です。'
             }
@@ -2591,7 +2585,7 @@
                         try {
                             // 替换到新纹理
                             if (sprite.setTexture) sprite.setTexture(newKey);
-                            // 同 key 角色（如多个同材质装饰）一起替换
+                            // 同 key 角色（如多个同材质装饰）��起替换
                             getSceneChildren().forEach(ch => {
                                 if (ch !== sprite && ch.texture && ch.texture.key === oldKey && ch.setTexture) {
                                     ch.setTexture(newKey);
@@ -2982,7 +2976,7 @@ function toggleBrokerPanel() {
                 const data = await _startAndPollGeneration(
                     { prompt, speed_mode: speedMode },
                     out,
-                    '🏘️ 正在按中介方案生成底图'
+                    '🏘️ 正在按中��方案生成底图'
                 );
                 if (!data.ok) {
                     _handleGenError(data, out);
@@ -3045,7 +3039,7 @@ function toggleBrokerPanel() {
             }
 
             setWorkingStatus('正在回老家');
-            // 点击即刻显示遮罩，先于任何网络调用
+            // 点击即刻显示遮罩，先于任��网络调用
             showRoomLoadingOverlay();
             out.textContent = '🏡 正在回老家（恢复初始底图）...';
             try {
@@ -3074,7 +3068,7 @@ function toggleBrokerPanel() {
             flashButtonActive(btn);
             const out = document.getElementById('asset-move-result') || document.getElementById('asset-upload-result');
 
-            const confirmMsg = '⚠️ 将回退到最近一次生成的房间背景，确定继续吗？';
+            const confirmMsg = '⚠️ 将回退到最近一次生成的房间背��，确定继续吗？';
             if (!window.confirm(confirmMsg)) {
                 out.textContent = '已取消回退';
                 return;
@@ -3248,7 +3242,7 @@ function toggleBrokerPanel() {
                 if (out) out.textContent = '请先选择一个资产';
                 return;
             }
-            if (!window.confirm(`⚠️ 确定将 ${path} 回退到上一版吗？`)) return;
+            if (!window.confirm(`⚠�� 确定将 ${path} 回退到上一版吗？`)) return;
             try {
                 const res = await fetch('/assets/restore-prev', {
                     method: 'POST',
@@ -3277,7 +3271,7 @@ function toggleBrokerPanel() {
             assetDrawerOpen = next;
             drawer.classList.toggle('open', next);
             if (backdrop) backdrop.classList.toggle('open', next);
-            // 移动端 body 锁定：打开时冻结滚动位置，关闭时恢复
+            // 移动端 body 锁定：打��时冻结滚动位置，关闭时恢复
             if (next) {
                 _drawerScrollY = window.scrollY;
                 document.body.style.top = `-${_drawerScrollY}px`;
@@ -3794,7 +3788,7 @@ function toggleBrokerPanel() {
                 };
             });
 
-            // 状态切换时：每一位 demo 都立即冒泡（强制），用于清晰验证链路
+            // 状态切换时：每一位 demo 都立即冒泡（强制），用于清晰���证链路
             try {
                 if (typeof game !== 'undefined' && game) {
                     // 找出状态实际变了的 demo visitor，给他们强制冒泡
@@ -3863,7 +3857,7 @@ function toggleBrokerPanel() {
                                 // 只欢迎第一个新来的（避免同一时刻多人加入刷屏）
                                 const newAgent = (merged || []).find(a => a.agentId === newIds[0]);
                                 if (newAgent && newAgent.name) {
-                                    // 临时将 currentState 视为 writing 以允许 showBubble 展示
+                                    // 临时将 currentState 视为 writing 以允许 showBubble 展��
                                     const oldState = currentState;
                                     currentState = 'writing';
                                     // 临时更换 bubble 文案

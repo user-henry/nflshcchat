@@ -17,7 +17,7 @@ ENV FLASK_ENV=production
 # Security: strong secrets for production mode
 ENV FLASK_SECRET_KEY=staroffice-nflshcchat-railway-deploy-2025-secret-key
 ENV STAR_OFFICE_SECRET=staroffice-nflshcchat-railway-deploy-2025-strong-secret
-ENV ASSET_DRAWER_PASS=nflshc2025
+ENV ASSET_DRAWER_PASS=hellonfls
 
 EXPOSE 19000
 

@@ -131,7 +131,7 @@ const BUBBLE_TEXTS = {
     '今天的进度，明天的底气',
     '先收敛，再发散',
     '让系统变得更可解释',
-    '稳住，我们能赢'
+    '稳���，我们能赢'
   ],
   researching: [
     '我在挖证据链',
@@ -196,8 +196,8 @@ let showCoords = false;
 const FETCH_INTERVAL = 2000;
 const BLINK_INTERVAL = 2500;
 const BUBBLE_INTERVAL = 8000;
-const CAT_BUBBLE_INTERVAL = 18000;
-let lastCatBubble = 0;
+// CAT_BUBBLE_INTERVAL removed
+// lastCatBubble removed
 const TYPEWRITER_DELAY = 50;
 let agents = {}; // agentId -> sprite/container
 let lastAgentsFetch = 0;
@@ -220,7 +220,7 @@ const NAME_TAG_COLORS = {
   default: 0x1f2937
 };
 
-// breakroom / writing / error 区域的 agent 分布位置（多 agent 时错开）
+// breakroom / writing / error 区域的 agent ��布位置（多 agent 时错开）
 const AREA_POSITIONS = {
   breakroom: [
     { x: 620, y: 180 },
@@ -311,7 +311,7 @@ function preload() {
   this.load.spritesheet('serverroom', '/static/serverroom-spritesheet' + getExt('serverroom-spritesheet.png'), { frameWidth: 180, frameHeight: 251 });
 
   this.load.spritesheet('error_bug', '/static/error-bug-spritesheet-grid' + (supportsWebP ? '.webp' : '.png'), { frameWidth: 180, frameHeight: 180 });
-  this.load.spritesheet('cats', '/static/cats-spritesheet' + (supportsWebP ? '.webp' : '.png'), { frameWidth: 160, frameHeight: 160 });
+  // cats spritesheet removed (replaced by desktop pet system)
   this.load.image('desk', '/static/desk' + getExt('desk.png'));
   this.load.spritesheet('star_working', '/static/star-working-spritesheet-grid' + (supportsWebP ? '.webp' : '.png'), { frameWidth: 230, frameHeight: 144 });
   this.load.spritesheet('sync_anim', '/static/sync-animation-spritesheet-grid' + (supportsWebP ? '.webp' : '.png'), { frameWidth: 256, frameHeight: 256 });
@@ -551,7 +551,7 @@ function create() {
   coordsToggle.addEventListener('click', () => {
     showCoords = !showCoords;
     coordsOverlay.style.display = showCoords ? 'block' : 'none';
-    coordsToggle.textContent = showCoords ? '隐藏坐标' : '显示坐标';
+    coordsToggle.textContent = showCoords ? '隐藏坐标' : '显示��标';
     coordsToggle.style.background = showCoords ? '#e94560' : '#333';
   });
 
@@ -564,7 +564,7 @@ function create() {
     coordsOverlay.style.top = (pointer.y + 18) + 'px';
   });
 
-  loadMemo();
+  // loadMemo removed
   fetchStatus();
   fetchAgents();
 
@@ -676,10 +676,7 @@ function update(time) {
     showBubble();
     lastBubble = time;
   }
-  if (time - lastCatBubble > CAT_BUBBLE_INTERVAL) {
-    showCatBubble();
-    lastCatBubble = time;
-  }
+  // cat bubble removed
 
   if (typewriterIndex < typewriterTarget.length && time - lastTypewriter > TYPEWRITER_DELAY) {
     typewriterText += typewriterTarget[typewriterIndex];
@@ -896,20 +893,7 @@ function showBubble() {
   setTimeout(() => { if (bubble) { bubble.destroy(); bubble = null; } }, 3000);
 }
 
-function showCatBubble() {
-  if (!window.catSprite) return;
-  if (window.catBubble) { window.catBubble.destroy(); window.catBubble = null; }
-  const texts = BUBBLE_TEXTS.cat || ['喵~', '咕噜咕噜…'];
-  const text = texts[Math.floor(Math.random() * texts.length)];
-  const anchorX = window.catSprite.x;
-  const anchorY = window.catSprite.y - 60;
-  const bg = game.add.rectangle(anchorX, anchorY, text.length * 10 + 20, 24, 0xfffbeb, 0.95);
-  bg.setStrokeStyle(2, 0xd4a574);
-  const txt = game.add.text(anchorX, anchorY, text, { fontFamily: 'ArkPixel, monospace', fontSize: '11px', fill: '#8b6914', align: 'center' }).setOrigin(0.5);
-  window.catBubble = game.add.container(0, 0, [bg, txt]);
-  window.catBubble.setDepth(2100);
-  setTimeout(() => { if (window.catBubble) { window.catBubble.destroy(); window.catBubble = null; } }, 4000);
-}
+// showCatBubble removed
 
 function fetchAgents() {
   fetch('/agents?t=' + Date.now(), { cache: 'no-store' })
