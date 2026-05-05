@@ -2,17 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy and install dependencies FIRST (cached layer)
+# Copy and install dependencies
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy entire app (cached)
+# Copy entire app
 COPY . .
 
-# Railway sets PORT env var; Flask needs it
-EXPOSE 19000
+# Railway sets PORT env var
 ENV PORT=19000
 ENV FLASK_ENV=production
+EXPOSE 19000
 
-# Start command
-CMD ["python3", "backend/app.py"]
+# Use absolute path, no 'cd' needed
+CMD ["python3", "/app/backend/app.py"]
