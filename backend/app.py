@@ -140,6 +140,26 @@ def add_no_cache_headers(response):
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
+    
+    # CORS support for cross-origin requests
+    origin = request.headers.get('Origin')
+    if origin:
+        # Allow requests from Railway domain and GitHub Pages
+        allowed_origins = [
+            'https://nflshcchat-production.up.railway.app',
+            'https://user-henry.github.io',
+            'http://localhost:19000',
+            'http://localhost:3000',
+            'http://localhost:8080'
+        ]
+        if origin in allowed_origins or origin.endswith('.up.railway.app') or origin.endswith('.github.io'):
+            response.headers['Access-Control-Allow-Origin'] = origin
+        else:
+            response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    
     return response
 
 # Default state
@@ -246,6 +266,20 @@ ensure_electron_standalone_snapshot()
 
 
 _INDEX_HTML_CACHE = None
+
+
+# Handle CORS preflight requests for all routes
+@app.route("/", methods=["OPTIONS"])
+@app.route("/<path:path>", methods=["OPTIONS"])
+def handle_options(path=None):
+    """Handle CORS preflight requests"""
+    response = make_response()
+    origin = request.headers.get('Origin', '*')
+    response.headers['Access-Control-Allow-Origin'] = origin if origin != '*' else '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 
 @app.route("/", methods=["GET"])
@@ -869,7 +903,7 @@ def get_agents():
             except Exception:
                 pass
 
-        # 2) 超时未推送自动离线（超过5分钟）
+        # 2) 超时未推送自动��线（超过5分钟）
         last_push_at_str = a.get("lastPushAt")
         if auth_status == "approved" and last_push_at_str:
             try:
@@ -1504,7 +1538,7 @@ def assets_restore_reference_background():
             except Exception:
                 fast_copied = False
 
-        # 慢路径：仅在必要时重编码
+        # ��路径：仅在必要时重编码
         if not fast_copied:
             if Image is None:
                 return jsonify({"ok": False, "msg": "Pillow 不可用"}), 500
