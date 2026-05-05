@@ -9,10 +9,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy entire app
 COPY . .
 
-# Railway sets PORT env var
+# Railway sets PORT env var; map it to STAR_BACKEND_PORT for app.py
 ENV PORT=19000
+ENV STAR_BACKEND_PORT=${PORT}
 ENV FLASK_ENV=production
 EXPOSE 19000
 
-# Use absolute path, no 'cd' needed
 CMD ["python3", "/app/backend/app.py"]
