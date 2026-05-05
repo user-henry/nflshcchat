@@ -1,230 +1,295 @@
-# NFLSHC Chat 🎓💬
+# Star Office UI
 
-> 南外仙林分校学生聊天平台 — 纯前端 + GitHub Issues 驱动，零服务器、零数据库
+🌐 Language: **中文** | [English](./README.en.md) | [日本語](./README.ja.md)
 
-🌐 **在线体验**: [user-henry.github.io/nflshcchat](https://user-henry.github.io/nflshcchat)
+![Star Office UI 封面](docs/screenshots/readme-cover-2.jpg)
 
----
+**一个像素风格的 AI 办公室看板** —— 把 AI 助手的工作状态实时可视化，让你直观看到"谁在做什么、昨天做了什么、现在是否在线"。
 
-## 📖 项目简介
+支持多 Agent 协作、中英日三语、AI 生图装修、桌面宠物模式。
+与 [OpenClaw](https://github.com/openclaw/openclaw) 深度集成时体验最佳，也可以独立部署作为状态看板使用。
 
-NFLSHC Chat 是一个为南京外国语学校仙林分校（NFLSHC）学生打造的在线聊天平台。项目最大的特点是**完全不依赖任何后端服务器和数据库**，而是巧妙地利用 GitHub Issues 作为数据存储层——每个 GitHub Label 相当于一张"数据表"，每条 Issue 相当于一条"记录"，Issue Body 中存储 JSON 格式的业务数据。
-
-这种设计让项目部署成本为零（GitHub Pages 免费托管），同时通过 GitHub REST API 实现了完整的聊天、用户管理、数据统计等功能。虽然受限于 GitHub API 的速率限制（认证后 5000 次/小时），但对于校园场景的小规模使用完全够用。
-
----
-
-## ✨ 功能详情
-
-### 💬 聊天核心
-
-| 功能 | 说明 |
-|------|------|
-| **多聊天室** | 支持创建多个聊天室，每个聊天室对应一个 GitHub Issue（label: `chatroom`） |
-| **文字消息** | 基于 GitHub Issues（label: `chatmessage`）实时发送和接收文字消息 |
-| **引用回复** | 消息支持引用回复功能，回复时显示被引用消息的预览栏 |
-| **消息置顶** | 管理员可置顶重要消息，置顶横幅始终显示在消息列表最顶部 |
-| **代码高亮** | 集成 highlight.js（atom-one-dark 主题），代码块支持一键复制 |
-| **语音消息** | 内置 MediaRecorder 录音，base64 编码存储（约 50KB 限制） |
-| **图片发送** | 支持在聊天中发送图片 |
-| **键盘快捷键** | 常用操作支持快捷键，详见 `shortcuts.js` |
-
-### 👤 用户系统
-
-| 功能 | 说明 |
-|------|------|
-| **注册 / 登录** | 基于 GitHub Issues（label: `user`）的用户认证系统，无需第三方账号 |
-| **个人资料** | 完整的个人资料页面（`profile.html`），可修改昵称、个性签名等 |
-| **自定义头像** | 支持 URL 输入自定义头像，头像通过 `loadUserAvatars()` 批量获取并缓存 |
-| **用户等级** | 基于消息活跃度的等级积分系统：`等级 = Math.floor(Math.sqrt(经验值/10)) + 1` |
-| | 等级样式分四档：Lv.1-3 绿色 → Lv.4-6 蓝色 → Lv.7-9 紫色 → Lv.10+ 金色 |
-| **好友系统** | 独立的好友管理页面（`friends.html`），基于 label: `friend` 存储好友关系 |
-
-### 📊 数据与搜索
-
-| 功能 | 说明 |
-|------|------|
-| **数据仪表盘** | 统计卡片（总消息/活跃成员/日均/活跃天数）+ Chart.js 图表 |
-| | 包含：30天消息趋势折线图、24小时消息分布图、词云、Top10 发言排行 |
-| **全局搜索** | 关键词搜索消息内容，搜索结果高亮匹配，支持多条件过滤 |
-| | 分页加载（每页20条），覆盖所有聊天室 |
-| **数据导出** | 支持 JSON / HTML 两种格式导出聊天数据（`export.html`） |
-| **收藏功能** | 收藏重要消息，独立收藏管理页（label: `favorite`） |
-
-### 🎨 界面与主题
-
-| 功能 | 说明 |
-|------|------|
-| **5 套主题** | Default（暗色）/ Light（浅色）/ Blue（蓝色）/ Purple（紫色）/ Green（绿色） |
-| | 主题定义在 `css/themes.css`，一键切换，即时生效 |
-| **展示页** | `showcase.html` — 炫酷动画展示页，用于项目介绍和效果演示 |
-| **校园文化** | `about.html` 中嵌入校歌播放（MP3）和校园宣传片视频 |
-| **公告系统** | 管理员发布通知公告（`notice.html`） |
-| **建议反馈** | 用户可提交建议（`suggestions.html`），管理员可查看管理（`admin-suggestions.html`） |
-
-### 🛠️ 管理与 AI
-
-| 功能 | 说明 |
-|------|------|
-| **管理面板** | `admin.html` — 管理员专属控制面板，管理用户、消息、公告等 |
-| **AI 天气查询** | `hzyai.html` — 内置天气查询功能，输入城市名即可获取实时天气 |
-| **统计页面** | `stats.html` — 独立的数据统计页面 |
+> 本项目由 **[Ring Hyacinth](https://x.com/ring_hyacinth)** 与 **[Simon Lee](https://x.com/simonxxoo)** 共同创建（co-created project），并与社区开发者（[@Zhaohan-Wang](https://github.com/Zhaohan-Wang)、[@Jah-yee](https://github.com/Jah-yee)、[@liaoandi](https://github.com/liaoandi)）一起持续维护和共建。
+> 欢迎提交 Issue 和 PR，也感谢每一位贡献者的支持。
 
 ---
 
-## 🏗️ 技术架构
+## ✨ 快速体验
 
-```
-┌─────────────────────────────────────────────────┐
-│                    浏览器                        │
-│    纯 HTML / CSS / JavaScript（零框架）           │
-│         Chart.js · highlight.js · MediaRecorder  │
-└────────────────────┬────────────────────────────┘
-                     │ GitHub REST API
-                     ▼
-┌─────────────────────────────────────────────────┐
-│              GitHub Issues 数据层                 │
-│                                                   │
-│  label: chatmessage  →  聊天消息（JSON body）     │
-│  label: chatroom     →  聊天室元数据              │
-│  label: user         →  用户信息                  │
-│  label: favorite     →  收藏记录                  │
-│  label: friend       →  好友关系                  │
-│  label: media        →  媒体文件                  │
-│  label: notice       →  公告通知                  │
-│  label: suggestion   →  建议反馈                  │
-└─────────────────────────────────────────────────┘
+### 方式一：让龙虾帮你部署（推荐给 OpenClaw 用户）
+
+如果你正在使用 [OpenClaw](https://github.com/openclaw/openclaw)，直接把下面这句话发给你的龙虾：
+
+```text
+请按照这个 SKILL.md 帮我完成 Star Office UI 的部署：
+https://github.com/ringhyacinth/Star-Office-UI/blob/master/SKILL.md
 ```
 
-### 核心设计理念
+龙虾会自动完成 clone、安装依赖、启动后端、配置状态同步，并把访问地址发给你。
 
-1. **GitHub Issues 即数据库** — 每个 Label 是一张"表"，每条 Issue 是一条"记录"，Body 存 JSON
-2. **零后端成本** — GitHub Pages 免费托管 + GitHub API 免费额度
-3. **纯前端架构** — 无需 Node.js / Python 后端，浏览器直接调用 GitHub REST API
-4. **Token 认证** — 通过 Personal Access Token 实现用户认证和 API 写入
+### 方式二：30 秒手动部署
 
-### 数据存储格式示例
+> **环境要求：Python 3.10+**（代码使用了 `X | Y` union type 语法，不支持 3.9 及更低版本）
 
-```json
-// 一条聊天消息（Issue with label: chatmessage）
-{
-  "username": "张三",
-  "content": "大家好！",
-  "roomName": "高一(1)班",
-  "timestamp": 1714492800000,
-  "replyTo": null,
-  "isPinned": false
-}
+```bash
+# 1) 下载仓库
+git clone https://github.com/ringhyacinth/Star-Office-UI.git
+cd Star-Office-UI
 
-// 一个用户（Issue with label: user）
-{
-  "username": "张三",
-  "password": "加密存储",
-  "nickname": "小三",
-  "avatarUrl": "https://example.com/avatar.png",
-  "xp": 150,
-  "level": 4,
-  "bio": "热爱编程"
-}
+# 2) 安装依赖（需要 Python 3.10+）
+python3 -m pip install -r backend/requirements.txt
+
+# 3) 准备状态文件（首次）
+cp state.sample.json state.json
+
+# 4) 启动后端
+cd backend
+python3 app.py
 ```
+
+打开 **http://127.0.0.1:19000** 然后试试切状态：
+
+```bash
+python3 set_state.py writing "正在整理文档"
+python3 set_state.py error "发现问题，排查中"
+python3 set_state.py idle "待命中"
+```
+
+![Star Office UI 预览](docs/screenshots/readme-cover-1.jpg)
+
+---
+
+## 🤔 适合谁用？
+
+### 有 OpenClaw / AI Agent 的用户
+这是**完整体验**。Agent 在工作时自动切换状态，办公室里的像素角色会实时走到对应区域——你只需要打开网页，就能看到 AI 此刻在做什么。
+
+### 没有 OpenClaw 的用户
+也完全可以部署。你可以：
+- 用 `set_state.py` 或 API 手动 / 脚本推送状态
+- 把它当成一个像素风的个人状态页 / 远程办公看板
+- 接入任何能发 HTTP 请求的系统来驱动状态
+
+
+---
+
+## 📋 功能一览
+
+1. **状态可视化** —— 6 种状态（`idle` / `writing` / `researching` / `executing` / `syncing` / `error`）自动映射到办公室不同区域，动画 + 气泡实时展示
+2. **昨日小记** —— 自动从 `memory/*.md` 读取最近一天的工作记录，脱敏后展示为"昨日小记"卡片
+3. **多 Agent 协作** —— 通过 join key 邀请其他 Agent 加入你的办公室，实时查看多人状态
+4. **中英日三语** —— CN / EN / JP 一键切换，界面文案、气泡、加载提示全部联动
+5. **美术资产自定义** —— 侧边栏管理角色 / 场景 / 装饰素材，支持动态帧同步，避免闪烁
+6. **AI 生图装修** —— 接入 Gemini API，用 AI 给办公室换背景；不接入 API 也能正常使用核心功能
+7. **移动端适配** —— 手机直接打开即可查看，适合外出时快速瞄一眼
+8. **安全加固** —— 侧边栏密码保护、生产环境弱密码拦截、Session Cookie 加固
+9. **灵活公网访问** —— 推荐 Cloudflare Tunnel 一键公网化，也可用自有域名 / 反向代理
+10. **桌面宠物版** —— 可选的 Electron 桌面封装，把办公室变成透明窗口的桌面宠物（见下方说明）
+
+---
+
+## 🚀 详细部署指南
+
+### 1) 安装依赖
+
+```bash
+cd Star-Office-UI
+python3 -m pip install -r backend/requirements.txt
+```
+
+### 2) 初始化状态文件
+
+```bash
+cp state.sample.json state.json
+```
+
+### 3) 启动后端
+
+```bash
+cd backend
+python3 app.py
+```
+
+打开 `http://127.0.0.1:19000`
+
+> ✅ 首次部署可以先保留默认配置；在生产环境中，请复制 `.env.example` 为 `.env` 并设置强随机的 `FLASK_SECRET_KEY` 与 `ASSET_DRAWER_PASS`，避免弱密码和会话泄露。
+
+### 4) 切换状态
+
+```bash
+python3 set_state.py writing "正在整理文档"
+python3 set_state.py syncing "同步进度中"
+python3 set_state.py error "发现问题，排查中"
+python3 set_state.py idle "待命中"
+```
+
+### 5) 公网访问（可选）
+
+```bash
+cloudflared tunnel --url http://127.0.0.1:19000
+```
+
+拿到 `https://xxx.trycloudflare.com` 链接即可分享。
+
+### 6) 验证安装（可选）
+
+```bash
+python3 scripts/smoke_test.py --base-url http://127.0.0.1:19000
+```
+
+所有检查显示 `OK` 即表示部署成功。
+
+---
+
+## 🦞 OpenClaw 深度集成
+
+> 以下内容面向 [OpenClaw](https://github.com/openclaw/openclaw) 用户。如果你不使用 OpenClaw，可以跳过这一节。
+
+### 状态自动同步
+
+在你的 `SOUL.md`（或 Agent 规则文件）中加入以下规则，让 Agent 自觉维护状态：
+
+```markdown
+## Star Office 状态同步规则
+- 接到任务时：先执行 `python3 set_state.py <状态> "<描述>"` 再开始工作
+- 完成任务后：执行 `python3 set_state.py idle "待命中"` 再回复
+```
+
+**6 种状态 → 3 个区域的映射：**
+
+| 状态 | 办公室区域 | 触发场景 |
+|------|-----------|---------|
+| `idle` | 🛋 休息区（沙发） | 待命 / 任务完成 |
+| `writing` | 💻 工作区（办公桌） | 写代码 / 写文档 |
+| `researching` | 💻 工作区 | 搜索 / 调研 |
+| `executing` | 💻 工作区 | 执行命令 / 跑任务 |
+| `syncing` | 💻 工作区 | 同步数据 / 推送 |
+| `error` | 🐛 Bug 区 | 报错 / 异常排查 |
+
+### 邀请其他 Agent 加入办公室
+
+**Step 1：准备 join key**
+
+首次启动后端时，如果当前目录下不存在 `join-keys.json`，服务会自动根据 `join-keys.sample.json` 生成一个运行时的 `join-keys.json`（内含示例 key，例如 `ocj_example_team_01`）。你可以在生成后的 `join-keys.json` 中自行添加、修改或删除 key，每个 key 默认支持最多 3 人同时在线。
+
+**Step 2：让访客 Agent 运行推送脚本**
+
+访客只需下载 `office-agent-push.py`，填写 3 个变量即可：
+
+```python
+JOIN_KEY = "ocj_starteam02"          # 你分配的 key
+AGENT_NAME = "小明的龙虾"            # 显示名称
+OFFICE_URL = "https://office.hyacinth.im"  # 你的办公室地址
+```
+
+```bash
+python3 office-agent-push.py
+```
+
+脚本会自动加入办公室并每 15 秒推送一次状态。访客会出现在看板上，根据状态自动走到对应区域。
+
+**Step 3（可选）：访客安装 Skill**
+
+访客也可以把 `frontend/join-office-skill.md` 作为 Skill 使用，Agent 会自动完成配置和推送。
+
+> 详细的访客接入说明见 [`frontend/join-office-skill.md`](./frontend/join-office-skill.md)
+
+---
+
+## 📡 常用 API
+
+| 端点 | 说明 |
+|------|------|
+| `GET /health` | 健康检查 |
+| `GET /status` | 获取主 Agent 状态 |
+| `POST /set_state` | 设置主 Agent 状态 |
+| `GET /agents` | 获取多 Agent 列表 |
+| `POST /join-agent` | 访客加入办公室 |
+| `POST /agent-push` | 访客推送状态 |
+| `POST /leave-agent` | 访客离开 |
+| `GET /yesterday-memo` | 获取昨日小记 |
+| `GET /config/gemini` | 获取 Gemini API 配置 |
+| `POST /config/gemini` | 设置 Gemini API 配置 |
+| `GET /assets/generate-rpg-background/poll` | 轮询生图进度 |
+
+---
+
+## 🖥 桌面宠物版（可选）
+
+`desktop-pet/` 目录提供了一个基于 **Electron** 的桌面封装版本，可以把像素办公室变成一个透明窗口的桌面宠物。
+
+```bash
+cd desktop-pet
+npm install
+npm run dev
+```
+
+- 启动时自动拉起 Python 后端
+- 窗口默认指向 `http://127.0.0.1:19000/?desktop=1`
+- 支持通过环境变量自定义项目路径和 Python 路径
+
+> ⚠️ 这是一个**可选的实验性功能**，目前主要在 macOS 上开发测试。详见 [`desktop-pet/README.md`](./desktop-pet/README.md)。
+>
+> 🙏 桌面宠物版由 [@Zhaohan-Wang](https://github.com/Zhaohan-Wang) 独立开发，感谢他的贡献！
+
+---
+
+## 🎨 美术资产与开源许可
+
+### 资产来源
+
+访客角色动画使用了 **LimeZu** 的免费资产：
+- [Animated Mini Characters 2 (Platformer) [FREE]](https://limezu.itch.io/animated-mini-characters-2-platform-free)
+
+请在二次发布 / 演示时保留来源说明，并遵守原作者许可条款。
+
+### 许可协议
+
+- **代码 / 逻辑：MIT**（见 [`LICENSE`](./LICENSE)）
+- **美术资产：禁止商用**（仅学习 / 演示 / 交流用途）
+
+> 如需商用，请将所有美术资产替换为你自己的原创素材。
+
+---
+
+## 📝 更新日志
+
+| 日期 | 概要 | 详情 |
+|------|------|------|
+| 2026-03-06 | 🔌 默认端口调整 — 默认后端端口从 18791 调整为 19000，以避开 OpenClaw Browser Control 端口冲突；同步更新脚本、桌面壳与文档默认值 | [`docs/CHANGELOG_2026-03.md`](./docs/CHANGELOG_2026-03.md) |
+| 2026-03-05 | 📱 稳定性修复 — CDN 缓存修复、生图异步化、移动端侧边栏优化、Join Key 过期与并发控制 | [`docs/UPDATE_REPORT_2026-03-05.md`](./docs/UPDATE_REPORT_2026-03-05.md) |
+| 2026-03-04 | 🔒 P0/P1 安全加固 — 弱密码拦截、后端模块拆分、stale 状态自动回 idle、首屏骨架屏优化 | [`docs/UPDATE_REPORT_2026-03-04_P0_P1.md`](./docs/UPDATE_REPORT_2026-03-04_P0_P1.md) |
+| 2026-03-03 | 📋 开源发布检查清单完成 | [`docs/OPEN_SOURCE_RELEASE_CHECKLIST.md`](./docs/OPEN_SOURCE_RELEASE_CHECKLIST.md) |
+| 2026-03-01 | 🎉 **v2 重制发布** — 新增三语支持、资产管理系统、AI 生图装修、美术资产全面替换 | [`docs/FEATURES_NEW_2026-03-01.md`](./docs/FEATURES_NEW_2026-03-01.md) |
 
 ---
 
 ## 📁 项目结构
 
-```
-nflshcchat/
-├── index.html              # 入口 / 登录页
-├── register.html           # 注册页
-├── chat.html               # 聊天主页面（核心，108KB）
-│   ├── 消息收发与渲染
-│   ├── 引用回复 / 消息置顶
-│   ├── 代码高亮（highlight.js）
-│   ├── 语音消息（MediaRecorder）
-│   └── 用户等级 / 头像缓存
-├── profile.html            # 个人资料编辑
-├── friends.html            # 好友系统
-├── dashboard.html          # 数据仪表盘（Chart.js）
-├── search.html             # 全局搜索
-├── favorites.html          # 收藏管理
-├── export.html             # 数据导出
-├── about.html              # 关于页面（校歌 / 宣传片）
-├── notice.html             # 公告系统
-├── suggestions.html        # 建议反馈
-├── showcase.html           # 动画展示页
-├── stats.html              # 数据统计
-├── hzyai.html              # AI 天气查询
-├── admin.html              # 管理面板
-├── admin-profile.html      # 管理员资料
-├── admin-suggestions.html  # 建议管理
-├── ai-profile.html         # AI 个人资料
-├── presentation.html       # 演示页
-├── css/
-│   └── themes.css          # 5 套主题样式
-├── shortcuts.js            # 键盘快捷键
-├── patches.css             # 样式补丁
-├── LOGO.png                # 项目 Logo
-├── HZYAI LOGO.png          # AI 功能 Logo
-├── NFLSHC 校歌.mp3          # 校歌音频
-├── NFLSHC Chat.apk         # Android 客户端
-└── .github/workflows/
-    └── deploy.yml          # GitHub Pages 部署工作流
+```text
+Star-Office-UI/
+├── backend/            # Flask 后端
+│   ├── app.py
+│   ├── requirements.txt
+│   └── run.sh
+├── frontend/           # 前端页面与资产
+│   ├── index.html
+│   ├── join.html
+│   ├── invite.html
+│   └── layout.js
+├── desktop-pet/        # Electron 桌面宠物版（可选）
+├── docs/               # 文档与截图
+│   └── screenshots/
+├── office-agent-push.py  # 访客推送脚本
+├── set_state.py          # 状态切换脚本
+├── state.sample.json     # 状态文件模板
+├── join-keys.sample.json # Join Key 模板（启动时生成 join-keys.json）
+├── SKILL.md              # OpenClaw Skill
+└── LICENSE               # MIT 许可
 ```
 
 ---
 
-## 🚀 部署指南
+## ⭐ Star History
 
-### 方式一：GitHub Pages（推荐）
-
-1. **Fork 本仓库** 到你的 GitHub 账号
-2. **创建 Token**：GitHub Settings → Developer settings → Personal access tokens → 生成一个有 `repo` 权限的 Token
-3. **配置 Secret**：仓库 Settings → Secrets and variables → Actions → 添加 `TOKEN`，值为上一步生成的 Token
-4. **启用 Pages**：仓库 Settings → Pages → Source 选择 "GitHub Actions"
-5. **推送代码** 即可自动部署
-
-### 方式二：本地开发
-
-```bash
-# 克隆仓库
-git clone https://github.com/user-henry/nflshcchat.git
-cd nflshcchat
-
-# 本地配置（修改 config.js 中的 GitHub 信息）
-# 然后用任意 HTTP 服务器打开
-npx serve .
-# 或
-python3 -m http.server 8080
-```
-
----
-
-## ⚠️ 注意事项
-
-| 注意点 | 说明 |
-|--------|------|
-| **数据公开可见** | GitHub Issues 是公开的，请勿在聊天中分享敏感个人信息 |
-| **API 速率限制** | 未认证 60 次/小时，认证后 5000 次/小时，多人同时使用可能触发限制 |
-| **语音消息大小** | base64 编码存储在 Issue Body 中，单条约 50KB 上限 |
-| **好友页主题** | `friends.html` 使用硬编码暗色主题，与 `themes.css` 的主题切换不联动（已知问题） |
-| **头像功能** | 当前仅支持 URL 输入方式，不支持本地上传（之前尝试了 Imgur/Catbox 等上传方案均不可靠） |
-
----
-
-## 🔧 技术栈
-
-| 技术 | 用途 |
-|------|------|
-| HTML / CSS / JavaScript | 前端（零框架，原生实现） |
-| GitHub REST API v3 | 数据存储与用户认证 |
-| Chart.js | 数据可视化（趋势图 / 分布图 / 词云） |
-| highlight.js | 代码语法高亮（atom-one-dark 主题） |
-| MediaRecorder API | 浏览器端录音 |
-| GitHub Pages | 静态网站托管 |
-| GitHub Actions | 自动部署 |
-
----
-
-## 📄 开源协议
-
-MIT License — 欢迎学习和参考，但请注意本项目仅适用于教育和学习目的，不建议用于生产环境。
+[![Star History Chart](https://api.star-history.com/image?repos=ringhyacinth/Star-Office-UI&type=date&legend=top-left)](https://www.star-history.com/?repos=ringhyacinth%2FStar-Office-UI&type=date&legend=top-left)
