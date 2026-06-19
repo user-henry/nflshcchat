@@ -100,6 +100,28 @@
             font-size: 12px;
             color: var(--text-secondary);
         }
+
+        /* ===== Footer ===== */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 30px;
+        }
+        .footer-logo {
+            height: 40px;
+            width: auto;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .footer-logo:hover {
+            opacity: 1;
+        }
+        .footer p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
     </style>
     <script src="config.js"></script>
 </head>
@@ -168,17 +190,21 @@
         </div>
     </div>
 
+    <!-- ===== Footer ===== -->
+    <div class="footer">
+        <img src="https://cdn.luogu.com.cn/upload/image_hosting/nvzqygaz.png" alt="NFLSHC Logo" class="footer-logo">
+        <p>NFLSHC Chat · 基于 GitHub Issues 构建 · NFLSHC 202401 社区项目</p>
+    </div>
+
     <script>
         let currentUser = null;
         let allRooms = [];
         let allMessages = [];
 
         function logout() { 
-            // 清除 localStorage 和 sessionStorage 中的登录状态
             localStorage.removeItem('nflshc_currentUser');
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('nflshc_user');
-            // 如果有全局清除函数也调用一下
             if (window.clearLoginState) window.clearLoginState();
             window.location.href = 'index.html'; 
         }
@@ -223,7 +249,7 @@
                 
                 showProgress(Math.min(5 + page * 2, 30), `已扫描 ${page * 100} 条消息...`);
                 page++;
-                if (page > 50) break; // 最多加载50页（5000条）
+                if (page > 50) break;
             }
             
             return allMsg;
@@ -291,7 +317,7 @@
         function showProgress(percent, text) {
             const card = document.getElementById('progressCard');
             card.style.display = 'block';
-            document.getElementById('progressFill').style.width = `${percent}%`;
+            document.getElementById('progressFill').style.width = percent + '%';
             document.getElementById('progressText').innerHTML = text;
         }
 
@@ -355,7 +381,7 @@
                 messages: roomMessages
             };
             showProgress(100, '导出完成！');
-            downloadFile(JSON.stringify(exportData, null, 2), `${room.name}_export_${Date.now()}.json`);
+            downloadFile(JSON.stringify(exportData, null, 2), room.name + '_export_' + Date.now() + '.json');
             hideProgress();
         }
 
@@ -369,39 +395,41 @@
             const roomMessages = await loadRoomMessages(roomId);
             roomMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             statsDiv.innerHTML = `聊天室「${room.name}」共有 ${roomMessages.length} 条消息`;
-            showProgress(80, `生成 HTML 文件中...`);
+            showProgress(80, '生成 HTML 文件中...');
             
-            const htmlContent = `<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>${room.name} 聊天记录导出</title>
-<style>
-body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }
-h1 { color: #333; border-bottom: 2px solid #ffd700; }
-.message { margin-bottom: 15px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.sender { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
-.content { color: #333; line-height: 1.5; }
-.time { font-size: 11px; color: #999; margin-top: 5px; }
-.footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #999; }
-</style>
-</head>
-<body>
-<h1>📋 ${escapeHtml(room.name)} 聊天记录</h1>
-<p>导出时间: ${new Date().toLocaleString()} | 消息总数: ${roomMessages.length}</p>
-${roomMessages.map(msg => `
-<div class="message">
-    <div class="sender">${escapeHtml(msg.sender)}</div>
-    <div class="content">${escapeHtml(msg.content)}</div>
-    <div class="time">${new Date(msg.timestamp).toLocaleString()}</div>
-</div>
-`).join('')}
-<div class="footer">
-    <p>导出自 NFLSHC Chat | 导出时间: ${new Date().toLocaleString()}</p>
-</div>
-    <script src="shortcuts.js"></script>
-</body>
-</html>`;
+            var messagesHtml = roomMessages.map(function(msg) {
+                return '<div class="message">' +
+                    '<div class="sender">' + escapeHtml(msg.sender) + '</div>' +
+                    '<div class="content">' + escapeHtml(msg.content) + '</div>' +
+                    '<div class="time">' + new Date(msg.timestamp).toLocaleString() + '</div>' +
+                '</div>';
+            }).join('');
+            
+            var htmlContent = '<!DOCTYPE html>\n' +
+                '<html>\n' +
+                '<head><meta charset="UTF-8"><title>' + room.name + ' 聊天记录导出</title>\n' +
+                '<style>\n' +
+                'body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; background: #f5f5f5; }\n' +
+                'h1 { color: #333; border-bottom: 2px solid #ffd700; }\n' +
+                '.message { margin-bottom: 15px; padding: 10px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }\n' +
+                '.sender { font-weight: bold; color: #ffd700; margin-bottom: 5px; }\n' +
+                '.content { color: #333; line-height: 1.5; }\n' +
+                '.time { font-size: 11px; color: #999; margin-top: 5px; }\n' +
+                '.footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; font-size: 12px; color: #999; }\n' +
+                '</style>\n' +
+                '</head>\n' +
+                '<body>\n' +
+                '<h1>📋 ' + escapeHtml(room.name) + ' 聊天记录</h1>\n' +
+                '<p>导出时间: ' + new Date().toLocaleString() + ' | 消息总数: ' + roomMessages.length + '</p>\n' +
+                messagesHtml +
+                '<div class="footer">\n' +
+                '    <p>导出自 NFLSHC Chat | 导出时间: ' + new Date().toLocaleString() + '</p>\n' +
+                '</div>\n' +
+                '</body>\n' +
+                '</html>';
+            
             showProgress(100, '导出完成！');
-            downloadFile(htmlContent, `${room.name}_export_${Date.now()}.html`, 'text/html');
+            downloadFile(htmlContent, room.name + '_export_' + Date.now() + '.html', 'text/html');
             hideProgress();
         }
 
@@ -416,28 +444,28 @@ ${roomMessages.map(msg => `
             const end = new Date(endDate);
             end.setHours(23, 59, 59);
             
-            const filtered = messages.filter(m => {
-                const msgDate = new Date(m.timestamp);
+            const filtered = messages.filter(function(m) {
+                var msgDate = new Date(m.timestamp);
                 return msgDate >= start && msgDate <= end;
             });
-            statsDiv.innerHTML = `时间段内共有 ${filtered.length} 条消息`;
-            showProgress(80, `正在打包 ${filtered.length} 条消息...`);
+            statsDiv.innerHTML = '时间段内共有 ' + filtered.length + ' 条消息';
+            showProgress(80, '正在打包 ' + filtered.length + ' 条消息...');
             
             const exportData = {
                 exportTime: new Date().toISOString(),
                 user: currentUser.username,
-                startDate, endDate,
+                startDate: startDate,
+                endDate: endDate,
                 totalMessages: filtered.length,
                 messages: filtered
             };
             showProgress(100, '导出完成！');
-            downloadFile(JSON.stringify(exportData, null, 2), `chat_export_${startDate}_${endDate}.json`);
+            downloadFile(JSON.stringify(exportData, null, 2), 'chat_export_' + startDate + '_' + endDate + '.json');
             hideProgress();
         }
 
         currentUser = checkAuth();
         if (currentUser) loadRooms();
     </script>
-    <script src="shortcuts.js"></script>
 </body>
 </html>
