@@ -1999,11 +1999,10 @@
             try {
                 let imageUrl = '';
 
-                // 智谱 Cogview-3-Flash（异步生成，需要轮询）
+                // 智谱 Cogview-3-Flash（同步调用）
                 if (model === 'cogview-3-flash') {
-                    // 创建任务
-                    const createUrl = `${BIGMODEL_CONFIG.baseUrl}/async/images/generations`;
-                    const createResponse = await fetch(createUrl, {
+                    const url = `${BIGMODEL_CONFIG.baseUrl}/images/generations`;
+                    const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`,
@@ -2015,39 +2014,14 @@
                             size: size
                         })
                     });
-                    const createData = await createResponse.json();
-                    if (!createData || !createData.id) {
-                        throw new Error('创建任务失败');
-                    }
-                    const taskId = createData.id;
-
-                    // 轮询结果
-                    let attempts = 0;
-                    const maxAttempts = 30;
-                    while (attempts < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        const resultUrl = `${BIGMODEL_CONFIG.baseUrl}/async-result/${taskId}`;
-                        const resultResponse = await fetch(resultUrl, {
-                            headers: {
-                                'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`
-                            }
-                        });
-                        const resultData = await resultResponse.json();
-                        if (resultData && resultData.task_status === 'SUCCESS' && resultData.image_result && resultData
-                            .image_result[0] && resultData.image_result[0].url) {
-                            imageUrl = resultData.image_result[0].url;
-                            break;
-                        }
-                        if (resultData && resultData.task_status === 'FAIL') {
-                            throw new Error('生成失败');
-                        }
-                        attempts++;
-                    }
-                    if (!imageUrl) {
-                        throw new Error('生成超时，请稍后重试');
+                    const data = await response.json();
+                    if (data && data.data && data.data[0] && data.data[0].url) {
+                        imageUrl = data.data[0].url;
+                    } else {
+                        throw new Error(data.error?.message || '生成失败');
                     }
 
-                    // 智谱 Agnese Image
+                // Agnes Image
                 } else {
                     const payload = {
                         model: model,
