@@ -393,7 +393,7 @@
             background: #16213e;
             border-bottom: 1px solid #2a2a3e;
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -401,15 +401,32 @@
             background: #2a2a3e;
             color: #ffd700;
             border: none;
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .sync-btn:hover {
             background: #ffd700;
             color: #1a1a2e;
+        }
+        .sync-btn.sync-character {
+            background: #9b59b6;
+            color: white;
+        }
+        .sync-btn.sync-character:hover {
+            background: #8e44ad;
+            color: white;
+        }
+        .sync-btn.sync-task {
+            background: #e67e22;
+            color: white;
+        }
+        .sync-btn.sync-task:hover {
+            background: #d35400;
+            color: white;
         }
         .sync-warning {
             font-size: 11px;
@@ -959,6 +976,380 @@
             white-space: pre-wrap;
         }
 
+        /* ===== 定时任务模式 ===== */
+        .task-mode {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 20px;
+            background: #0f172a;
+            overflow-y: auto;
+        }
+        .task-mode.active {
+            display: flex;
+        }
+        .task-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .task-header h2 {
+            font-size: 24px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .task-header p {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .task-input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 700px;
+            margin: 0 auto 16px;
+            width: 100%;
+        }
+        .task-input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .task-input-row select,
+        .task-input-row input {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: white;
+            font-size: 13px;
+        }
+        .task-input-row select:focus,
+        .task-input-row input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .task-input-row .prompt-input {
+            flex: 3;
+            min-width: 160px;
+        }
+        .task-generate-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+        .task-generate-btn:hover {
+            transform: scale(1.02);
+        }
+        .task-generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .task-result-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 240px;
+            background: #0a0f1c;
+            border-radius: 14px;
+            border: 1px dashed #2a2a3e;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .task-result-area .placeholder {
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+        }
+        .task-result-area .placeholder .icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .task-result-area .loading-spinner {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .task-result-area .loading-spinner.active {
+            display: flex;
+        }
+        .task-result-area .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #2a2a3e;
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .task-result-area .loading-text {
+            color: #888;
+            font-size: 13px;
+        }
+        .task-result-area .output-text {
+            display: none;
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            color: #ddd;
+            padding: 16px;
+            background: #0a0f1c;
+            border-radius: 8px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .task-history {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+        .task-history-item {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #aaa;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .task-history-item:hover {
+            border-color: #ffd700;
+        }
+
+        /* ===== 角色管理模式 ===== */
+        .character-mode {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 20px;
+            background: #0f172a;
+            overflow-y: auto;
+        }
+        .character-mode.active {
+            display: flex;
+        }
+        .character-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .character-header h2 {
+            font-size: 24px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .character-header p {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .character-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .character-card:hover {
+            border-color: #ffd700;
+            transform: translateY(-2px);
+        }
+        .character-card .name {
+            color: #ffd700;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .character-card .persona {
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .character-card .tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        .character-card .tags span {
+            background: #2a2a3e;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            color: #888;
+        }
+        .character-card .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .character-card .actions button {
+            flex: 1;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .character-card .actions .edit-btn {
+            background: #3498db;
+            color: white;
+        }
+        .character-card .actions .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+        .character-card .actions .select-btn {
+            background: #2ecc71;
+            color: #1a1a2e;
+        }
+        .character-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .character-modal.show {
+            display: flex;
+        }
+        .character-modal-content {
+            background: #16213e;
+            border: 1px solid #ffd700;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .character-modal-content h3 {
+            color: #ffd700;
+            margin-bottom: 16px;
+        }
+        .character-modal-content label {
+            color: #aaa;
+            font-size: 13px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .character-modal-content input,
+        .character-modal-content textarea,
+        .character-modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: white;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        .character-modal-content textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .character-modal-content input:focus,
+        .character-modal-content textarea:focus,
+        .character-modal-content select:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .character-modal-content .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .character-modal-content .modal-actions button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .character-modal-content .modal-actions .cancel-btn {
+            background: #2a2a3e;
+            color: white;
+        }
+        .character-modal-content .modal-actions .save-btn {
+            background: #ffd700;
+            color: #1a1a2e;
+        }
+
+        /* ===== 对话角色选择器 ===== */
+        .chat-role-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            border: 1px solid #2a2a3e;
+        }
+        .chat-role-selector select {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 12px;
+            padding: 4px 0;
+            cursor: pointer;
+        }
+        .chat-role-selector select:focus {
+            outline: none;
+        }
+        .chat-role-selector .role-badge {
+            font-size: 10px;
+            background: #ffd700;
+            color: #1a1a2e;
+            padding: 1px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
         .info-sidebar {
             position: fixed;
             right: 0;
@@ -1135,6 +1526,16 @@
                 min-width: unset;
                 width: 100%;
             }
+            .character-grid {
+                grid-template-columns: 1fr;
+            }
+            .chat-role-selector {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .task-history-item {
+                max-width: 100%;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -1185,6 +1586,8 @@
                 <button class="mode-tab" data-mode="vision" onclick="switchMode('vision')">👁️ 视觉</button>
                 <button class="mode-tab" data-mode="draw" onclick="switchMode('draw')">🎨 绘图</button>
                 <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频</button>
+                <button class="mode-tab" data-mode="task" onclick="switchMode('task')">⏰ 定时任务</button>
+                <button class="mode-tab" data-mode="character" onclick="switchMode('character')">🎭 角色</button>
             </div>
 
             <!-- ====== 每日一言 ====== -->
@@ -1202,21 +1605,34 @@
                         <h1 id="chatTitle">新对话</h1>
                         <p>和 HZYAI 对话，基于思知 AI 或 Agnes AI (Claw 模型)</p>
                     </div>
-                    <div class="model-selector">
-                        <label for="chatModelSelect">🧠 模型：</label>
-                        <select id="chatModelSelect">
-                            <option value="sizhi">思知 AI (默认)</option>
-                            <option value="agnes">Agnes 2.0 Flash</option>
-                            <option value="glm-4.7-flash">智谱 GLM-4.7-Flash</option>
-                            <option value="glm-4-flash-250414">智谱 GLM-4-Flash</option>
-                        </select>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <div class="model-selector">
+                            <label for="chatModelSelect">🧠 模型：</label>
+                            <select id="chatModelSelect">
+                                <option value="sizhi">思知 AI (默认)</option>
+                                <option value="agnes">Agnes 2.0 Flash</option>
+                                <option value="glm-4.7-flash">智谱 GLM-4.7-Flash</option>
+                                <option value="glm-4-flash-250414">智谱 GLM-4-Flash</option>
+                            </select>
+                        </div>
+                        <div class="chat-role-selector">
+                            <span style="color:#888;font-size:11px;">🎭 角色：</span>
+                            <select id="chatRoleSelect">
+                                <option value="">无角色</option>
+                            </select>
+                            <span class="role-badge" id="currentRoleBadge" style="display:none;">已选</span>
+                        </div>
                     </div>
                 </div>
                 <div class="sync-bar">
-                    <button class="sync-btn" onclick="pullFromGitHub()" id="pullBtn">📥 爬取 GitHub Issues</button>
-                    <button class="sync-btn" onclick="pushToGitHub()" id="pushBtn">📤 更新至 GitHub</button>
+                    <button class="sync-btn" onclick="pullFromGitHub()" id="pullBtn">📥 爬取对话</button>
+                    <button class="sync-btn" onclick="pushToGitHub()" id="pushBtn">📤 同步对话</button>
+                    <button class="sync-btn sync-character" onclick="syncAllCharactersToGitHub()">🎭 同步角色</button>
+                    <button class="sync-btn sync-character" onclick="pullCharactersFromGitHub()">📥 拉取角色</button>
+                    <button class="sync-btn sync-task" onclick="syncAllTasksToGitHub()">⏰ 同步任务</button>
+                    <button class="sync-btn sync-task" onclick="pullTasksFromGitHub()">📥 拉取任务</button>
                     <button class="sync-btn" onclick="exportCurrentChatMD()" id="exportMdBtn" style="background:#2ecc71;color:#1a1a2e;">📝 导出 MD</button>
-                    <div class="sync-warning">⚠️ 爬取需要时间，请耐心等待</div>
+                    <div class="sync-warning">⚠️ 爬取需要时间</div>
                     <div class="sync-status" id="syncStatus"></div>
                 </div>
                 <div class="messages-area" id="messagesArea">
@@ -1364,13 +1780,59 @@
                 </div>
                 <div class="draw-history" id="videoHistory"></div>
             </div>
+
+            <!-- ====== 定时任务模式 ====== -->
+            <div class="task-mode" id="taskMode">
+                <div class="task-header">
+                    <h2>⏰ 定时任务</h2>
+                    <p>设置定时推送，AI 将按计划为你推送新闻、天气或提醒</p>
+                </div>
+                <div class="task-input-area">
+                    <div class="task-input-row">
+                        <select id="taskType">
+                            <option value="news">📰 新闻</option>
+                            <option value="weather">🌤️ 天气</option>
+                            <option value="reminder">⏰ 提醒</option>
+                            <option value="custom">📝 自定义</option>
+                        </select>
+                        <input type="text" id="taskPrompt" class="prompt-input" placeholder="输入任务内容，如：每日早间新闻" onkeydown="if(event.key==='Enter') createTask()">
+                        <input type="time" id="taskTime" value="08:00">
+                        <button class="task-generate-btn" id="taskCreateBtn" onclick="createTask()">⏰ 创建任务</button>
+                    </div>
+                </div>
+                <div class="task-result-area" id="taskResult">
+                    <div class="placeholder" id="taskPlaceholder">
+                        <span class="icon">⏰</span>
+                        设置定时任务，AI 将按时推送<br>
+                        <span style="font-size:12px;color:#555;">支持新闻、天气、提醒和自定义内容</span>
+                    </div>
+                    <div class="loading-spinner" id="taskLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">⏳ 正在创建任务...</div>
+                    </div>
+                    <div class="output-text" id="taskOutput"></div>
+                </div>
+                <div class="task-history" id="taskHistory"></div>
+            </div>
+
+            <!-- ====== 角色管理模式 ====== -->
+            <div class="character-mode" id="characterMode">
+                <div class="character-header">
+                    <h2>🎭 虚拟角色定制</h2>
+                    <p>创建自定义 AI 角色，设定人设、语气、知识领域，每个对话可选择不同角色</p>
+                    <button class="draw-generate-btn" onclick="showCharacterModal()" style="margin-top:10px;">+ 创建角色</button>
+                </div>
+                <div class="character-grid" id="characterGrid">
+                    <div style="text-align:center;color:#666;padding:40px;width:100%;">暂无角色，点击上方创建</div>
+                </div>
+            </div>
         </div>
 
         <!-- ===== 右侧信息面板 ===== -->
         <div class="info-sidebar">
             <div class="info-section">
                 <h3>🤖 关于 HZYAI</h3>
-                <p>基于思知 AI + Agnes AI + 智谱 GLM 的多模态对话助手，支持对话、视觉理解、绘图、视频生成。</p>
+                <p>基于思知 AI + Agnes AI + 智谱 GLM 的多模态对话助手，支持对话、视觉理解、绘图、视频生成、定时任务、虚拟角色。</p>
                 <p>对话记录<strong>本地存储</strong>，支持 GitHub Issues 云端同步。</p>
             </div>
             <div class="info-section">
@@ -1383,26 +1845,43 @@
                 <h3>✨ 功能列表</h3>
                 <ul class="feature-list">
                     <li>💬 智能对话 (思知 AI / Agnes AI / 智谱 GLM)</li>
-                    <li>👁️ 视觉理解 (智谱 GLM-4.6V-Flash / GLM-4.1V-Thinking-Flash / GLM-4V-Flash)</li>
-                    <li>🎨 AI 绘图 (Agnes Image 2.1 Flash / 智谱 Cogview-3-Flash)</li>
-                    <li>🎬 AI 视频生成 (Agnes Video V2.0 / 智谱 CogVideoX-Flash)</li>
-                    <li>📝 编程辅助 & 代码解释</li>
-                    <li>✍️ 写作助手 & 文案生成</li>
+                    <li>👁️ 视觉理解</li>
+                    <li>🎨 AI 绘图</li>
+                    <li>🎬 AI 视频生成</li>
+                    <li>⏰ 定时任务</li>
+                    <li>🎭 虚拟角色定制</li>
                 </ul>
             </div>
-            <div class="info-section">
-                <h3>💡 使用技巧</h3>
-                <div class="command-example">📝 Python 如何读取 CSV？</div>
-                <div class="command-example">👁️ 分析这张图片的内容</div>
-                <div class="command-example">🎨 一只在太空中的猫，写实风格</div>
-                <div class="command-example">🎬 日落时分的海滩，5秒</div>
-            </div>
-            <div class="info-section">
-                <h3>📦 数据同步</h3>
-                <p>点击「爬取 GitHub Issues 消息」可拉取云端历史对话；点击「更新消息至 GitHub Issues」可上传当前对话。</p>
-                <p style="font-size: 11px; color: #f39c12;">⚠️ 首次使用建议先爬取云端数据，避免覆盖已有记录。</p>
-            </div>
             <div class="footer-note">HZYAI · 让创作更自由</div>
+        </div>
+    </div>
+
+    <!-- ===== 角色创建/编辑模态框 ===== -->
+    <div class="character-modal" id="characterModal">
+        <div class="character-modal-content">
+            <h3 id="characterModalTitle">创建角色</h3>
+            <label>角色名称</label>
+            <input type="text" id="charName" placeholder="如：苏格拉底">
+            <label>人设描述</label>
+            <textarea id="charPersona" placeholder="描述角色的性格、背景、说话方式等"></textarea>
+            <label>语气风格</label>
+            <select id="charTone">
+                <option value="formal">正式</option>
+                <option value="casual">随意</option>
+                <option value="humorous">幽默</option>
+                <option value="serious">严肃</option>
+                <option value="warm">温暖</option>
+                <option value="philosophical">哲学</option>
+                <option value="creative">创意</option>
+            </select>
+            <label>知识领域（逗号分隔）</label>
+            <input type="text" id="charKnowledge" placeholder="如：哲学,逻辑学,古希腊">
+            <label>初始记忆（可选）</label>
+            <textarea id="charMemory" placeholder="角色的初始记忆，如：我是古希腊哲学家苏格拉底..."></textarea>
+            <div class="modal-actions">
+                <button class="cancel-btn" onclick="closeCharacterModal()">取消</button>
+                <button class="save-btn" onclick="saveCharacter()">保存</button>
+            </div>
         </div>
     </div>
 
@@ -1421,7 +1900,6 @@
             avatar: '🤖'
         };
 
-        // Agnes AI 配置
         const AGNES_CONFIG = {
             baseUrl: 'https://apihub.agnes-ai.com/v1',
             apiKey: 'sk-VNgflStoqtTeFqIfpntpL21vjl8Hx4RPQYRmDzrooHLB0IOi',
@@ -1430,7 +1908,6 @@
             videoModel: 'agnes-video-v2.0'
         };
 
-        // 智谱 AI (BigModel) 配置
         const BIGMODEL_CONFIG = {
             baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
             apiKey: '88d6967ec4a14b2fa4b012cf4b93af39.z6dem7x033Vti4jd',
@@ -1456,12 +1933,27 @@
         let visionFiles = [];
         let visionFileType = '';
 
+        // ===== 角色系统 =====
+        let characters = [];
+        let editingCharacterId = null;
+        let currentConversationRole = null;
+
+        // ===== 任务系统 =====
+        let tasks = [];
+        let taskIntervals = {};
+
         // ============================================================
         //  存储管理
         // ============================================================
+        const STORAGE_KEYS = {
+            conversations: 'hzyai_conversations_',
+            characters: 'hzyai_characters',
+            tasks: 'hzyai_tasks'
+        };
+
         function loadConversationsFromLocal() {
             if (!currentUser) return;
-            const key = `hzyai_conversations_${currentUser.username}`;
+            const key = STORAGE_KEYS.conversations + currentUser.username;
             const saved = localStorage.getItem(key);
             if (saved) {
                 conversations = JSON.parse(saved);
@@ -1473,7 +1965,8 @@
                         timestamp: new Date().toISOString() }],
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
-                    synced: true
+                    synced: true,
+                    roleId: null
                 }];
                 saveConversationsToLocal();
             }
@@ -1481,12 +1974,29 @@
 
         function saveConversationsToLocal() {
             if (!currentUser) return;
-            const key = `hzyai_conversations_${currentUser.username}`;
-            localStorage.setItem(key, JSON.stringify(conversations));
+            localStorage.setItem(STORAGE_KEYS.conversations + currentUser.username, JSON.stringify(conversations));
+        }
+
+        function loadCharactersFromLocal() {
+            const saved = localStorage.getItem(STORAGE_KEYS.characters);
+            characters = saved ? JSON.parse(saved) : [];
+        }
+
+        function saveCharactersToLocal() {
+            localStorage.setItem(STORAGE_KEYS.characters, JSON.stringify(characters));
+        }
+
+        function loadTasksFromLocal() {
+            const saved = localStorage.getItem(STORAGE_KEYS.tasks);
+            tasks = saved ? JSON.parse(saved) : [];
+        }
+
+        function saveTasksToLocal() {
+            localStorage.setItem(STORAGE_KEYS.tasks, JSON.stringify(tasks));
         }
 
         // ============================================================
-        //  GitHub Issues 同步
+        //  GitHub Issues 同步 (对话)
         // ============================================================
         function getGitHubLabel() {
             return `hzyai_${currentUser.username}`;
@@ -1563,7 +2073,7 @@
         async function pullFromGitHub() {
             if (isSyncing) return;
             isSyncing = true;
-            setSyncStatus('🔄 正在从 GitHub 爬取...', 'warning');
+            setSyncStatus('🔄 正在从 GitHub 爬取对话...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
 
@@ -1612,7 +2122,7 @@
         async function pushToGitHub() {
             if (isSyncing) return;
             isSyncing = true;
-            setSyncStatus('🔄 正在上传至 GitHub...', 'warning');
+            setSyncStatus('🔄 正在上传对话至 GitHub...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
 
@@ -1630,6 +2140,237 @@
                 isSyncing = false;
                 document.getElementById('pullBtn').disabled = false;
                 document.getElementById('pushBtn').disabled = false;
+            }
+        }
+
+        // ============================================================
+        //  🎭 角色 GitHub 同步
+        // ============================================================
+        function getCharacterLabel() {
+            return `hzyai_character_${currentUser.username}`;
+        }
+
+        async function loadCharactersFromGitHub() {
+            try {
+                const url =
+                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getCharacterLabel()}&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                const loadedChars = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const charData = JSON.parse(match[1]);
+                            loadedChars.push(charData);
+                        } catch (e) {}
+                    }
+                }
+                return loadedChars;
+            } catch (error) {
+                console.error('从 GitHub 加载角色失败:', error);
+                return [];
+            }
+        }
+
+        async function saveCharacterToGitHub(character) {
+            try {
+                const existingChars = await loadCharactersFromGitHub();
+                const existing = existingChars.find(c => c.id === character.id);
+
+                const issueBody = `HZYAI角色数据\n\`\`\`json\n${JSON.stringify(character, null, 2)}\n\`\`\``;
+                const labels = [getCharacterLabel()];
+
+                if (existing && existing.issueNumber) {
+                    await fetch(
+                        `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ body: issueBody })
+                        });
+                } else {
+                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: `HZYAI角色: ${character.name}`,
+                            body: issueBody,
+                            labels: labels
+                        })
+                    });
+                }
+                return true;
+            } catch (error) {
+                console.error('保存角色到 GitHub 失败:', error);
+                return false;
+            }
+        }
+
+        async function syncAllCharactersToGitHub() {
+            if (!currentUser) return;
+            setSyncStatus('🔄 正在同步角色到 GitHub...', 'warning');
+            let successCount = 0;
+            for (const char of characters) {
+                if (await saveCharacterToGitHub(char)) successCount++;
+            }
+            setSyncStatus(`✅ 角色同步完成！已同步 ${successCount}/${characters.length} 个角色`, 'success');
+            setTimeout(() => setSyncStatus('', ''), 3000);
+        }
+
+        async function pullCharactersFromGitHub() {
+            if (!currentUser) return;
+            setSyncStatus('🔄 正在从 GitHub 拉取角色...', 'warning');
+            try {
+                const githubChars = await loadCharactersFromGitHub();
+                let addedCount = 0,
+                    updatedCount = 0;
+
+                for (const githubChar of githubChars) {
+                    const localChar = characters.find(c => c.id === githubChar.id);
+                    if (localChar) {
+                        Object.assign(localChar, githubChar);
+                        updatedCount++;
+                    } else {
+                        characters.push(githubChar);
+                        addedCount++;
+                    }
+                }
+
+                saveCharactersToLocal();
+                populateRoleSelect();
+                renderCharactersGrid();
+                setSyncStatus(`✅ 角色拉取完成！新增 ${addedCount} 个，更新 ${updatedCount} 个`, 'success');
+                setTimeout(() => setSyncStatus('', ''), 3000);
+            } catch (error) {
+                setSyncStatus(`❌ 角色拉取失败: ${error.message}`, 'error');
+            }
+        }
+
+        // ============================================================
+        //  ⏰ 任务 GitHub 同步
+        // ============================================================
+        function getTaskLabel() {
+            return `hzyai_task_${currentUser.username}`;
+        }
+
+        async function loadTasksFromGitHub() {
+            try {
+                const url =
+                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getTaskLabel()}&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                const loadedTasks = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const taskData = JSON.parse(match[1]);
+                            loadedTasks.push(taskData);
+                        } catch (e) {}
+                    }
+                }
+                return loadedTasks;
+            } catch (error) {
+                console.error('从 GitHub 加载任务失败:', error);
+                return [];
+            }
+        }
+
+        async function saveTaskToGitHub(task) {
+            try {
+                const existingTasks = await loadTasksFromGitHub();
+                const existing = existingTasks.find(t => t.id === task.id);
+
+                const issueBody = `HZYAI任务数据\n\`\`\`json\n${JSON.stringify(task, null, 2)}\n\`\`\``;
+                const labels = [getTaskLabel()];
+
+                if (existing && existing.issueNumber) {
+                    await fetch(
+                        `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ body: issueBody })
+                        });
+                } else {
+                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: `HZYAI任务: ${task.prompt.substring(0, 30)}`,
+                            body: issueBody,
+                            labels: labels
+                        })
+                    });
+                }
+                return true;
+            } catch (error) {
+                console.error('保存任务到 GitHub 失败:', error);
+                return false;
+            }
+        }
+
+        async function syncAllTasksToGitHub() {
+            if (!currentUser) return;
+            setSyncStatus('🔄 正在同步任务到 GitHub...', 'warning');
+            let successCount = 0;
+            for (const task of tasks) {
+                if (await saveTaskToGitHub(task)) successCount++;
+            }
+            setSyncStatus(`✅ 任务同步完成！已同步 ${successCount}/${tasks.length} 个任务`, 'success');
+            setTimeout(() => setSyncStatus('', ''), 3000);
+        }
+
+        async function pullTasksFromGitHub() {
+            if (!currentUser) return;
+            setSyncStatus('🔄 正在从 GitHub 拉取任务...', 'warning');
+            try {
+                const githubTasks = await loadTasksFromGitHub();
+                let addedCount = 0,
+                    updatedCount = 0;
+
+                for (const githubTask of githubTasks) {
+                    const localTask = tasks.find(t => t.id === githubTask.id);
+                    if (localTask) {
+                        Object.assign(localTask, githubTask);
+                        updatedCount++;
+                    } else {
+                        tasks.push(githubTask);
+                        addedCount++;
+                    }
+                }
+
+                saveTasksToLocal();
+                renderTasks();
+                setSyncStatus(`✅ 任务拉取完成！新增 ${addedCount} 个，更新 ${updatedCount} 个`, 'success');
+                setTimeout(() => setSyncStatus('', ''), 3000);
+            } catch (error) {
+                setSyncStatus(`❌ 任务拉取失败: ${error.message}`, 'error');
             }
         }
 
@@ -1651,16 +2392,19 @@
                 container.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">暂无对话</div>';
                 return;
             }
-            container.innerHTML = conversations.map(conv => `
+            container.innerHTML = conversations.map(conv => {
+                const role = characters.find(c => c.id === conv.roleId);
+                const roleTag = role ? `🎭 ${role.name}` : '';
+                return `
                 <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" onclick="switchConversation('${conv.id}')">
                     <div class="conversation-title">
-                        ${escapeHtml(conv.title)}
+                        ${escapeHtml(conv.title)} ${roleTag ? `<span style="font-size:10px;color:#ffd700;">${escapeHtml(roleTag)}</span>` : ''}
                         <button class="export-conv-btn" onclick="event.stopPropagation(); exportSingleChatMD('${conv.id}')" title="导出为 Markdown">📝</button>
                         <button class="delete-conv" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">🗑️</button>
                     </div>
                     <div class="conversation-time">${formatTime(conv.updatedAt)}</div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function switchConversation(convId) {
@@ -1668,6 +2412,13 @@
             const conversation = conversations.find(c => c.id === convId);
             if (conversation) {
                 document.getElementById('chatTitle').textContent = conversation.title;
+                if (conversation.roleId) {
+                    document.getElementById('chatRoleSelect').value = conversation.roleId;
+                    document.getElementById('currentRoleBadge').style.display = 'inline';
+                } else {
+                    document.getElementById('chatRoleSelect').value = '';
+                    document.getElementById('currentRoleBadge').style.display = 'none';
+                }
                 renderMessages(conversation.messages);
             }
             renderConversationsList();
@@ -1735,11 +2486,14 @@
                     timestamp: new Date().toISOString() }],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-                synced: false
+                synced: false,
+                roleId: null
             };
             conversations.unshift(newConv);
             saveConversationsToLocal();
             currentConversationId = newConv.id;
+            document.getElementById('chatRoleSelect').value = '';
+            document.getElementById('currentRoleBadge').style.display = 'none';
             renderConversationsList();
             document.getElementById('chatTitle').textContent = newConv.title;
             renderMessages(newConv.messages);
@@ -1770,7 +2524,7 @@
         }
 
         // ============================================================
-        //  🌟 每日一言 (思知 AI)
+        //  🌟 每日一言
         // ============================================================
         async function fetchDailyQuote() {
             const quoteContent = document.getElementById('quoteContent');
@@ -1805,17 +2559,41 @@
         }
 
         // ============================================================
-        //  聊天模型调用 (思知 AI / Agnes AI / 智谱 GLM)
+        //  聊天模型调用 + 角色系统
         // ============================================================
-        async function callChatModel(messages, model) {
-            // 思知 AI (免费)
+        function getRoleSystemPrompt(roleId) {
+            if (!roleId) return null;
+            const role = characters.find(c => c.id === roleId);
+            if (!role) return null;
+            let prompt = `你现在扮演一个名为"${role.name}"的角色。\n`;
+            prompt += `人设：${role.persona}\n`;
+            prompt += `语气风格：${role.tone}\n`;
+            prompt += `知识领域：${role.knowledge || '通用'}\n`;
+            if (role.memory) {
+                prompt += `记忆：${role.memory}\n`;
+            }
+            prompt += `请始终以这个角色的身份和语气回应。`;
+            return prompt;
+        }
+
+        async function callChatModel(messages, model, roleId) {
+            let systemPrompt = getRoleSystemPrompt(roleId);
+            let fullMessages = [...messages];
+            if (systemPrompt) {
+                fullMessages = [{ role: 'system', content: systemPrompt }, ...fullMessages];
+            }
+
             if (model === 'sizhi') {
                 try {
-                    const history = messages.slice(-10);
+                    const history = fullMessages.slice(-10);
                     const userMessage = history.filter(m => m.role === 'user').pop();
                     if (!userMessage) return null;
+                    let prompt = userMessage.content;
+                    if (systemPrompt) {
+                        prompt = `【系统设定】${systemPrompt}\n\n【用户】${prompt}`;
+                    }
                     const url =
-                        `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=${currentUser.username}&spoken=${encodeURIComponent(userMessage.content)}&memory=true`;
+                        `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=${currentUser.username}&spoken=${encodeURIComponent(prompt)}&memory=true`;
                     const response = await fetch(url);
                     const data = await response.json();
                     if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
@@ -1828,7 +2606,6 @@
                 }
             }
 
-            // Agnes AI (agnes-2.0-flash)
             if (model === 'agnes') {
                 try {
                     const url = `${AGNES_CONFIG.baseUrl}/chat/completions`;
@@ -1840,7 +2617,7 @@
                         },
                         body: JSON.stringify({
                             model: AGNES_CONFIG.chatModel,
-                            messages: messages.slice(-20).map(m => ({ role: m.role, content: m.content })),
+                            messages: fullMessages.slice(-20).map(m => ({ role: m.role, content: m.content })),
                             temperature: 0.7,
                             max_tokens: 4096,
                             chat_template_kwargs: {
@@ -1860,7 +2637,6 @@
                 }
             }
 
-            // 智谱 GLM 模型
             if (model === 'glm-4.7-flash' || model === 'glm-4-flash-250414') {
                 try {
                     const url = `${BIGMODEL_CONFIG.baseUrl}/chat/completions`;
@@ -1872,7 +2648,7 @@
                         },
                         body: JSON.stringify({
                             model: model,
-                            messages: messages.slice(-20).map(m => ({ role: m.role, content: m.content })),
+                            messages: fullMessages.slice(-20).map(m => ({ role: m.role, content: m.content })),
                             temperature: 0.8,
                             max_tokens: 4096,
                             thinking: {
@@ -1895,12 +2671,56 @@
             return null;
         }
 
+        // ===== 对话结束自动总结记忆 =====
+        async function summarizeAndSaveMemory(conversationId) {
+            const conv = conversations.find(c => c.id === conversationId);
+            if (!conv || !conv.roleId) return;
+            const role = characters.find(c => c.id === conv.roleId);
+            if (!role) return;
+
+            const recentMessages = conv.messages.slice(-10);
+            if (recentMessages.length < 2) return;
+
+            const summaryPrompt =
+                `请根据以下对话内容，用一段话总结出关键信息，以便AI记住这段对话的核心内容。只输出总结内容，不要有其他文字。\n\n对话：\n${recentMessages.map(m => `${m.role === 'user' ? '用户' : 'AI'}：${m.content}`).join('\n')}`;
+
+            try {
+                const url =
+                    `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=memory_summary&spoken=${encodeURIComponent(summaryPrompt)}&memory=true`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    const summary = data.data.info.text;
+                    const existingMemory = role.memory || '';
+                    role.memory = (existingMemory + '\n\n' + summary).trim();
+                    saveCharactersToLocal();
+                    populateRoleSelect();
+                    renderCharactersGrid();
+                    console.log('记忆已更新:', summary);
+                }
+            } catch (error) {
+                console.error('总结记忆失败:', error);
+            }
+        }
+
+        // ============================================================
+        //  发送消息
+        // ============================================================
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             if (!content || isWaiting) return;
 
             const model = document.getElementById('chatModelSelect').value;
+            const roleId = document.getElementById('chatRoleSelect').value || null;
+
+            const conv = conversations.find(c => c.id === currentConversationId);
+            if (conv) {
+                conv.roleId = roleId;
+                saveConversationsToLocal();
+                renderConversationsList();
+            }
+
             input.value = '';
             input.style.height = 'auto';
 
@@ -1916,7 +2736,7 @@
             scrollToBottom();
             isWaiting = true;
 
-            const reply = await callChatModel(conversation.messages, model);
+            const reply = await callChatModel(conversation.messages, model, roleId);
 
             thinkingDiv.remove();
             isWaiting = false;
@@ -1926,10 +2746,14 @@
             } else {
                 addMessage('assistant', '抱歉，我遇到了一些问题，请稍后再试。');
             }
+
+            setTimeout(() => {
+                summarizeAndSaveMemory(currentConversationId);
+            }, 1000);
         }
 
         // ============================================================
-        //  🎨 绘图功能 (Agnes Image 2.1 Flash + 智谱 Cogview-3-Flash)
+        //  🎨 绘图功能
         // ============================================================
         function handleDrawImageUpload(input) {
             const files = input.files;
@@ -1961,7 +2785,7 @@
                 preview.style.display = 'block';
                 document.getElementById('drawImageUploadLabel').classList.add('has-image');
                 document.getElementById('drawImageUploadLabel').innerHTML =
-                `📎 ${drawReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>`;
+                    `📎 ${drawReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>`;
             } else {
                 preview.style.display = 'none';
                 document.getElementById('drawImageUploadLabel').classList.remove('has-image');
@@ -1999,7 +2823,6 @@
             try {
                 let imageUrl = '';
 
-                // 智谱 Cogview-3-Flash（同步调用）
                 if (model === 'cogview-3-flash') {
                     const url = `${BIGMODEL_CONFIG.baseUrl}/images/generations`;
                     const response = await fetch(url, {
@@ -2020,8 +2843,6 @@
                     } else {
                         throw new Error(data.error?.message || '生成失败');
                     }
-
-                // Agnes Image
                 } else {
                     const payload = {
                         model: model,
@@ -2075,7 +2896,7 @@
         }
 
         // ============================================================
-        //  🎬 视频生成 (Agnes Video V2.0 + 智谱 CogVideoX-Flash)
+        //  🎬 视频生成
         // ============================================================
         function handleVideoImageUpload(input) {
             const files = input.files;
@@ -2145,7 +2966,6 @@
             try {
                 let videoUrl = '';
 
-                // 智谱 CogVideoX-Flash（异步生成，需要轮询）
                 if (model === 'cogvideox-flash') {
                     const createUrl = `${BIGMODEL_CONFIG.baseUrl}/videos/generations`;
                     const payload = {
@@ -2172,7 +2992,6 @@
                     }
                     const taskId = createData.id;
 
-                    // 轮询结果
                     let attempts = 0;
                     const maxAttempts = 60;
                     while (attempts < maxAttempts) {
@@ -2197,8 +3016,6 @@
                     if (!videoUrl) {
                         throw new Error('视频生成超时，请稍后重试');
                     }
-
-                    // Agnes Video V2.0
                 } else {
                     const payload = {
                         model: model,
@@ -2278,7 +3095,7 @@
         }
 
         // ============================================================
-        //  👁️ 视觉理解功能 (智谱 GLM-4.6V-Flash / GLM-4.1V-Thinking-Flash / GLM-4V-Flash)
+        //  👁️ 视觉理解
         // ============================================================
         function handleVisionUpload(input) {
             const files = input.files;
@@ -2342,7 +3159,6 @@
 
             try {
                 const content = [];
-                // 添加文件
                 for (const fileData of visionFiles) {
                     if (fileData.startsWith('data:image')) {
                         content.push({ type: 'image_url', image_url: { url: fileData } });
@@ -2392,6 +3208,285 @@
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = '🔍 分析';
             }
+        }
+
+        // ============================================================
+        //  ⏰ 定时任务
+        // ============================================================
+        function createTask() {
+            const type = document.getElementById('taskType').value;
+            const prompt = document.getElementById('taskPrompt').value.trim();
+            const time = document.getElementById('taskTime').value;
+
+            if (!prompt) { alert('请输入任务内容！'); return; }
+            if (!time) { alert('请选择时间！'); return; }
+
+            const task = {
+                id: Date.now().toString(),
+                type: type,
+                prompt: prompt,
+                time: time,
+                createdAt: new Date().toISOString(),
+                active: true,
+                lastRun: null
+            };
+
+            tasks.push(task);
+            saveTasksToLocal();
+            renderTasks();
+
+            executeTask(task.id);
+
+            document.getElementById('taskPrompt').value = '';
+            document.getElementById('taskOutput').style.display = 'block';
+            document.getElementById('taskOutput').textContent = '✅ 任务已创建，将在指定时间推送。';
+            document.getElementById('taskPlaceholder').style.display = 'none';
+        }
+
+        async function executeTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !task.active) return;
+
+            const typeMap = {
+                'news': '请给我今日的热点新闻摘要，返回简洁的要点。',
+                'weather': '请告诉我今天的天气情况，包括温度和降水概率。',
+                'reminder': `提醒：${task.prompt}`,
+                'custom': task.prompt
+            };
+
+            const prompt = typeMap[task.type] || task.prompt;
+
+            try {
+                const url =
+                    `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=task_${taskId}&spoken=${encodeURIComponent(prompt)}&memory=true`;
+                const response = await fetch(url);
+                const data = await response.json();
+                let result = '';
+                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    result = data.data.info.text;
+                } else {
+                    result = '任务执行失败，请稍后重试。';
+                }
+
+                task.lastRun = new Date().toISOString();
+                saveTasksToLocal();
+
+                const output = document.getElementById('taskOutput');
+                output.style.display = 'block';
+                const timeStr = new Date().toLocaleTimeString();
+                output.textContent = `⏰ [${timeStr}] ${task.prompt}\n\n${result}`;
+                document.getElementById('taskPlaceholder').style.display = 'none';
+
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('HZYAI 定时任务', {
+                        body: `${task.prompt}\n${result.substring(0, 100)}...`,
+                        icon: 'https://cdn.luogu.com.cn/upload/image_hosting/91if3kid.png'
+                    });
+                }
+
+                if (currentConversationId) {
+                    addMessage('assistant', `⏰ 定时任务推送：${task.prompt}\n\n${result}`);
+                }
+
+                renderTasks();
+
+            } catch (error) {
+                console.error('任务执行失败:', error);
+            }
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('taskHistory');
+            if (!container) return;
+            if (tasks.length === 0) {
+                container.innerHTML = '<div style="text-align:center;color:#666;padding:20px;width:100%;">暂无任务</div>';
+                return;
+            }
+            container.innerHTML = tasks.map(task => `
+                <div class="task-history-item" onclick="executeTask('${task.id}')">
+                    ${task.active ? '🟢' : '🔴'} ${task.type} - ${task.time}
+                    <span style="font-size:10px;color:#666;">${task.lastRun ? new Date(task.lastRun).toLocaleTimeString() : '未运行'}</span>
+                    <button onclick="event.stopPropagation(); deleteTask('${task.id}')" style="background:transparent;border:none;color:#dc3545;cursor:pointer;margin-left:6px;">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteTask(taskId) {
+            if (!confirm('确定要删除此任务吗？')) return;
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveTasksToLocal();
+            renderTasks();
+        }
+
+        function startTaskScheduler() {
+            setInterval(() => {
+                const now = new Date();
+                const currentTime =
+                    `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                for (const task of tasks) {
+                    if (task.active && task.time === currentTime) {
+                        if (task.lastRun) {
+                            const lastRun = new Date(task.lastRun);
+                            if (lastRun.getMinutes() === now.getMinutes() && lastRun.getHours() === now.getHours()) {
+                                continue;
+                            }
+                        }
+                        executeTask(task.id);
+                    }
+                }
+            }, 30000);
+        }
+
+        // ============================================================
+        //  🎭 角色系统
+        // ============================================================
+        function populateRoleSelect() {
+            const select = document.getElementById('chatRoleSelect');
+            if (!select) return;
+            select.innerHTML = '<option value="">无角色</option>';
+            for (const char of characters) {
+                select.innerHTML += `<option value="${char.id}">${escapeHtml(char.name)}</option>`;
+            }
+            if (currentConversationId) {
+                const conv = conversations.find(c => c.id === currentConversationId);
+                if (conv && conv.roleId) {
+                    select.value = conv.roleId;
+                    document.getElementById('currentRoleBadge').style.display = 'inline';
+                } else {
+                    select.value = '';
+                    document.getElementById('currentRoleBadge').style.display = 'none';
+                }
+            }
+        }
+
+        function renderCharactersGrid() {
+            const container = document.getElementById('characterGrid');
+            if (!container) return;
+            if (characters.length === 0) {
+                container.innerHTML =
+                    '<div style="text-align:center;color:#666;padding:40px;width:100%;">暂无角色，点击上方创建</div>';
+                return;
+            }
+            container.innerHTML = characters.map(char => `
+                <div class="character-card">
+                    <div class="name">${escapeHtml(char.name)}</div>
+                    <div class="persona">${escapeHtml(char.persona.substring(0, 60))}${char.persona.length > 60 ? '...' : ''}</div>
+                    <div class="tags">
+                        <span>${char.tone}</span>
+                        ${char.knowledge ? char.knowledge.split(',').slice(0,3).map(k => `<span>${escapeHtml(k.trim())}</span>`).join('') : ''}
+                    </div>
+                    <div class="actions">
+                        <button class="select-btn" onclick="selectRoleForChat('${char.id}')">🎯 选择</button>
+                        <button class="edit-btn" onclick="editCharacter('${char.id}')">✏️</button>
+                        <button class="delete-btn" onclick="deleteCharacter('${char.id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectRoleForChat(roleId) {
+            const role = characters.find(c => c.id === roleId);
+            if (!role) return;
+            const conv = conversations.find(c => c.id === currentConversationId);
+            if (conv) {
+                conv.roleId = roleId;
+                saveConversationsToLocal();
+                document.getElementById('chatRoleSelect').value = roleId;
+                document.getElementById('currentRoleBadge').style.display = 'inline';
+                renderConversationsList();
+                alert(`🎭 已选择角色「${role.name}」用于当前对话`);
+            } else {
+                alert('请先选择一个对话');
+            }
+        }
+
+        function showCharacterModal(editData) {
+            const modal = document.getElementById('characterModal');
+            modal.classList.add('show');
+            if (editData) {
+                document.getElementById('characterModalTitle').textContent = '编辑角色';
+                document.getElementById('charName').value = editData.name || '';
+                document.getElementById('charPersona').value = editData.persona || '';
+                document.getElementById('charTone').value = editData.tone || 'casual';
+                document.getElementById('charKnowledge').value = editData.knowledge || '';
+                document.getElementById('charMemory').value = editData.memory || '';
+                editingCharacterId = editData.id || null;
+            } else {
+                document.getElementById('characterModalTitle').textContent = '创建角色';
+                document.getElementById('charName').value = '';
+                document.getElementById('charPersona').value = '';
+                document.getElementById('charTone').value = 'casual';
+                document.getElementById('charKnowledge').value = '';
+                document.getElementById('charMemory').value = '';
+                editingCharacterId = null;
+            }
+        }
+
+        function closeCharacterModal() {
+            document.getElementById('characterModal').classList.remove('show');
+            editingCharacterId = null;
+        }
+
+        function saveCharacter() {
+            const name = document.getElementById('charName').value.trim();
+            const persona = document.getElementById('charPersona').value.trim();
+            const tone = document.getElementById('charTone').value;
+            const knowledge = document.getElementById('charKnowledge').value.trim();
+            const memory = document.getElementById('charMemory').value.trim();
+
+            if (!name || !persona) {
+                alert('请填写角色名称和人设描述！');
+                return;
+            }
+
+            if (editingCharacterId) {
+                const char = characters.find(c => c.id === editingCharacterId);
+                if (char) {
+                    char.name = name;
+                    char.persona = persona;
+                    char.tone = tone;
+                    char.knowledge = knowledge;
+                    char.memory = memory;
+                }
+            } else {
+                const newChar = {
+                    id: Date.now().toString(),
+                    name: name,
+                    persona: persona,
+                    tone: tone,
+                    knowledge: knowledge,
+                    memory: memory,
+                    createdAt: new Date().toISOString()
+                };
+                characters.push(newChar);
+            }
+
+            saveCharactersToLocal();
+            populateRoleSelect();
+            renderCharactersGrid();
+            closeCharacterModal();
+        }
+
+        function editCharacter(charId) {
+            const char = characters.find(c => c.id === charId);
+            if (char) {
+                showCharacterModal(char);
+            }
+        }
+
+        function deleteCharacter(charId) {
+            if (!confirm('确定要删除此角色吗？')) return;
+            characters = characters.filter(c => c.id !== charId);
+            saveCharactersToLocal();
+            populateRoleSelect();
+            renderCharactersGrid();
+            for (const conv of conversations) {
+                if (conv.roleId === charId) {
+                    conv.roleId = null;
+                }
+            }
+            saveConversationsToLocal();
+            renderConversationsList();
         }
 
         // ============================================================
@@ -2457,7 +3552,7 @@
         }
 
         // ============================================================
-        //  📝 Markdown 导出功能
+        //  📝 Markdown 导出
         // ============================================================
         function exportSingleChatMD(convId) {
             const conv = conversations.find(c => c.id === convId);
@@ -2473,10 +3568,14 @@
 
         function generateMarkdown(conv) {
             let md = `# ${conv.title}\n\n`;
+            const role = characters.find(c => c.id === conv.roleId);
+            if (role) {
+                md += `> 🎭 角色：${role.name}\n`;
+            }
             md += `> 导出时间：${new Date().toISOString()}\n> 消息数：${conv.messages.length}\n\n---\n\n`;
             conv.messages.forEach(msg => {
-                const role = msg.role === 'user' ? '👤 **用户**' : '🤖 **HZYAI**';
-                md += `### ${role}\n\n${msg.content}\n\n`;
+                const roleName = msg.role === 'user' ? '👤 **用户**' : '🤖 **HZYAI**';
+                md += `### ${roleName}\n\n${msg.content}\n\n`;
                 if (msg.mediaUrl) {
                     md += `![媒体](${msg.mediaUrl})\n\n`;
                 }
@@ -2502,12 +3601,14 @@
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'vision', 'draw', 'video'];
+            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character'];
             const elements = {
                 chat: document.getElementById('chatMode'),
                 vision: document.getElementById('visionMode'),
                 draw: document.getElementById('drawMode'),
-                video: document.getElementById('videoMode')
+                video: document.getElementById('videoMode'),
+                task: document.getElementById('taskMode'),
+                character: document.getElementById('characterMode')
             };
             const tabs = document.querySelectorAll('.mode-tab');
 
@@ -2527,6 +3628,8 @@
             else if (mode === 'vision') document.getElementById('visionPrompt')?.focus();
             else if (mode === 'draw') document.getElementById('drawPrompt')?.focus();
             else if (mode === 'video') document.getElementById('videoPrompt')?.focus();
+            else if (mode === 'task') document.getElementById('taskPrompt')?.focus();
+            else if (mode === 'character') renderCharactersGrid();
         }
 
         // ============================================================
@@ -2583,13 +3686,27 @@
                 document.getElementById('userRole').textContent = '管理员';
                 document.getElementById('userAvatar').textContent = '👑';
                 loadConversationsFromLocal();
+                loadCharactersFromLocal();
+                loadTasksFromLocal();
+                populateRoleSelect();
                 renderConversationsList();
+                renderCharactersGrid();
+                renderTasks();
                 if (conversations.length > 0) {
                     currentConversationId = conversations[0].id;
-                    document.getElementById('chatTitle').textContent = conversations[0].title;
-                    renderMessages(conversations[0].messages);
+                    const conv = conversations[0];
+                    document.getElementById('chatTitle').textContent = conv.title;
+                    if (conv.roleId) {
+                        document.getElementById('chatRoleSelect').value = conv.roleId;
+                        document.getElementById('currentRoleBadge').style.display = 'inline';
+                    }
+                    renderMessages(conv.messages);
                 }
                 fetchDailyQuote();
+                startTaskScheduler();
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
                 return;
             }
 
@@ -2617,13 +3734,27 @@
                     document.getElementById('userRole').textContent = '用户';
                     document.getElementById('userAvatar').textContent = foundUser.username.charAt(0).toUpperCase();
                     loadConversationsFromLocal();
+                    loadCharactersFromLocal();
+                    loadTasksFromLocal();
+                    populateRoleSelect();
                     renderConversationsList();
+                    renderCharactersGrid();
+                    renderTasks();
                     if (conversations.length > 0) {
                         currentConversationId = conversations[0].id;
-                        document.getElementById('chatTitle').textContent = conversations[0].title;
-                        renderMessages(conversations[0].messages);
+                        const conv = conversations[0];
+                        document.getElementById('chatTitle').textContent = conv.title;
+                        if (conv.roleId) {
+                            document.getElementById('chatRoleSelect').value = conv.roleId;
+                            document.getElementById('currentRoleBadge').style.display = 'inline';
+                        }
+                        renderMessages(conv.messages);
                     }
                     fetchDailyQuote();
+                    startTaskScheduler();
+                    if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission();
+                    }
                 } else if (foundUser && foundUser.isBanned) {
                     errorDiv.textContent = '账号已被封禁';
                 } else {
@@ -2665,13 +3796,27 @@
                     document.getElementById('userAvatar').textContent = currentUser.isAdmin ? '👑' : currentUser.username
                         .charAt(0).toUpperCase();
                     loadConversationsFromLocal();
+                    loadCharactersFromLocal();
+                    loadTasksFromLocal();
+                    populateRoleSelect();
                     renderConversationsList();
+                    renderCharactersGrid();
+                    renderTasks();
                     if (conversations.length > 0) {
                         currentConversationId = conversations[0].id;
-                        document.getElementById('chatTitle').textContent = conversations[0].title;
-                        renderMessages(conversations[0].messages);
+                        const conv = conversations[0];
+                        document.getElementById('chatTitle').textContent = conv.title;
+                        if (conv.roleId) {
+                            document.getElementById('chatRoleSelect').value = conv.roleId;
+                            document.getElementById('currentRoleBadge').style.display = 'inline';
+                        }
+                        renderMessages(conv.messages);
                     }
                     fetchDailyQuote();
+                    startTaskScheduler();
+                    if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission();
+                    }
                 } catch (e) {
                     console.error('恢复登录状态失败', e);
                     localStorage.removeItem('hzyai_currentUser');
@@ -2681,10 +3826,22 @@
 
             document.getElementById('refreshQuoteBtn').addEventListener('click', fetchDailyQuote);
 
-            // 设置自动调整输入框高度
             document.getElementById('messageInput').addEventListener('input', autoResizeTextarea);
 
-            // 移动端菜单
+            document.getElementById('chatRoleSelect').addEventListener('change', function() {
+                const conv = conversations.find(c => c.id === currentConversationId);
+                if (conv) {
+                    conv.roleId = this.value || null;
+                    saveConversationsToLocal();
+                    renderConversationsList();
+                    if (this.value) {
+                        document.getElementById('currentRoleBadge').style.display = 'inline';
+                    } else {
+                        document.getElementById('currentRoleBadge').style.display = 'none';
+                    }
+                }
+            });
+
             if (window.innerWidth <= 768) {
                 document.getElementById('menuBtn').style.display = 'block';
             }
@@ -2723,6 +3880,19 @@
         window.handleVisionUpload = handleVisionUpload;
         window.removeVisionFile = removeVisionFile;
         window.analyzeVision = analyzeVision;
+        window.createTask = createTask;
+        window.executeTask = executeTask;
+        window.deleteTask = deleteTask;
+        window.showCharacterModal = showCharacterModal;
+        window.closeCharacterModal = closeCharacterModal;
+        window.saveCharacter = saveCharacter;
+        window.editCharacter = editCharacter;
+        window.deleteCharacter = deleteCharacter;
+        window.selectRoleForChat = selectRoleForChat;
+        window.syncAllCharactersToGitHub = syncAllCharactersToGitHub;
+        window.pullCharactersFromGitHub = pullCharactersFromGitHub;
+        window.syncAllTasksToGitHub = syncAllTasksToGitHub;
+        window.pullTasksFromGitHub = pullTasksFromGitHub;
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
