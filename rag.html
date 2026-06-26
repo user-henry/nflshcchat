@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat · RAG 知识库</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a1a;
+            color: #eef4ff;
+            padding: 40px 20px;
+            line-height: 1.7;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 30px 0 40px;
+            border-bottom: 1px solid rgba(255,215,0,0.2);
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            font-size: 36px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p { color: #888; font-size: 16px; margin-top: 8px; }
+        .badge {
+            display: inline-block;
+            background: rgba(255,215,0,0.15);
+            color: #ffd700;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-left: 8px;
+            border: 1px solid rgba(255,215,0,0.2);
+        }
+        .section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+        }
+        .section h2 {
+            color: #ffd700;
+            font-size: 22px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,215,0,0.15);
+        }
+        .section h3 {
+            color: #ffd700;
+            font-size: 18px;
+            margin: 20px 0 12px;
+        }
+        .section h4 {
+            color: #eef4ff;
+            font-size: 15px;
+            margin: 16px 0 8px;
+        }
+        .section p { color: #c8d0dc; margin-bottom: 10px; }
+        .section ul, .section ol { padding-left: 24px; color: #c8d0dc; margin-bottom: 12px; }
+        .section li { margin-bottom: 4px; }
+        .section code {
+            background: rgba(255,215,0,0.08);
+            color: #ffd700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .section .highlight {
+            color: #ffd700;
+            font-weight: 500;
+        }
+        .section .tag {
+            display: inline-block;
+            background: rgba(255,215,0,0.1);
+            border: 1px solid rgba(255,215,0,0.15);
+            padding: 2px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #ffd700;
+            margin-right: 4px;
+        }
+        .section table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        .section th, .section td {
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .section th {
+            background: rgba(255,215,0,0.06);
+            color: #ffd700;
+        }
+        .section td { color: #c8d0dc; }
+        .footer {
+            text-align: center;
+            color: #555;
+            font-size: 13px;
+            padding: 30px 0 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 30px;
+        }
+        .meta-info {
+            color: #666;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+        @media (max-width: 768px) {
+            .section { padding: 20px; }
+            .header h1 { font-size: 26px; }
+            .section table { font-size: 12px; }
+            .section th, .section td { padding: 6px 8px; }
+        }
+        /* 为了 LLM 可读性，使用语义化标签 */
+        .llm-content { display: block; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>📚 NFLSHC Chat · RAG 知识库</h1>
+        <p>为 HZYAI LLM 提供结构化知识检索 · 版本 <span class="badge">v2.2.0</span></p>
+        <p class="meta-info">最后更新：2026年6月 | 专为 RAG 增强问答设计</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  一、项目概述                                                   -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>📖 一、项目概述</h2>
+        <p><strong>项目名称：</strong>NFLSHC Chat</p>
+        <p><strong>网站地址：</strong>https://user-henry.github.io/nflshcchat/</p>
+        <p><strong>项目简介：</strong>一款基于 GitHub Issues 构建的轻量级聊天平台，支持群聊、私聊、Markdown 消息、消息收藏、聊天记录导出、群聊统计、意见反馈、好友系统、用户等级、个人数据仪表盘等功能。</p>
+        <p><strong>开发者：</strong>HZY</p>
+        <p><strong>项目贡献者：</strong>NFLSHC 202401 社区成员</p>
+        <p><strong>当前版本：</strong>v2.2.0</p>
+        <p><strong>更新日期：</strong>2026年4月</p>
+        <p><strong>管理员用户名：</strong>huangzhiyuan</p>
+        <p><strong>技术架构：</strong>纯前端 HTML/CSS/JavaScript + GitHub REST API + GitHub Issues 作为数据库</p>
+        <p><strong>部署方式：</strong>GitHub Pages + GitHub Actions 自动部署</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  二、用户系统                                                   -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>👤 二、用户系统</h2>
+
+        <h3>2.1 注册</h3>
+        <ul>
+            <li>用户需要填写<strong>用户名</strong>、<strong>邮箱</strong>、<strong>密码</strong>（至少6位）进行注册</li>
+            <li>可以填写<strong>个人简介</strong>（选填）</li>
+            <li>注册成功后自动跳转到登录页面</li>
+            <li>数据存储：GitHub Issues（label: <code>user</code>）</li>
+        </ul>
+
+        <h3>2.2 登录</h3>
+        <ul>
+            <li>输入用户名和密码登录</li>
+            <li>管理员（huangzhiyuan）登录后跳转到管理后台（admin.html）</li>
+            <li>普通用户登录后跳转到聊天页面（chat.html）</li>
+            <li>支持<strong>忘记密码</strong>功能（通过邮箱找回，每月限200次）</li>
+        </ul>
+
+        <h3>2.3 个人资料（profile.html）</h3>
+        <ul>
+            <li>查看自己的用户名、个人简介、参与的聊天室</li>
+            <li>查看<strong>等级（Lv.）</strong>和<strong>经验值（XP）</strong>，经验值由消息数量决定</li>
+            <li>普通用户可查看注册时间，管理员可查看等级和统计</li>
+            <li>编辑个人简介、修改密码</li>
+            <li>设置<strong>自定义头像</strong>（通过头像图片URL）</li>
+            <li>查看他人资料（点击消息中的用户名）</li>
+            <li>管理员可通过个人资料页进入管理员中心</li>
+            <li>支持<strong>分享个人名片</strong>（生成个人资料链接）</li>
+        </ul>
+
+        <h3>2.4 用户等级系统</h3>
+        <ul>
+            <li>等级（Lv.）由经验值（XP）计算，XP = 消息数量</li>
+            <li>等级公式：<code>Lv. = floor(sqrt(XP / 10)) + 1</code></li>
+            <li>等级展示：Lv.1-3 绿色，Lv.4-6 蓝色，Lv.7-9 紫色，Lv.10+ 金色</li>
+            <li>等级徽章显示在消息发送者旁边和用户资料页</li>
+            <li>个人数据仪表盘展示详细等级进度条和下一级所需经验</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  三、聊天功能                                                   -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>💬 三、聊天功能</h2>
+
+        <h3>3.1 聊天室列表</h3>
+        <ul>
+            <li>左侧显示所有可用的聊天室</li>
+            <li>群聊显示绿色标签，私聊显示红色标签</li>
+            <li>需要验证码的群聊显示 🔐 图标</li>
+        </ul>
+
+        <h3>3.2 创建聊天室</h3>
+        <ul>
+            <li>点击「+ 创建聊天室」按钮</li>
+            <li>选择类型：<strong>群聊</strong> 或 <strong>私聊</strong></li>
+            <li>群聊可设置加入方式：<strong>公开</strong>（任何人可加入）或 <strong>需验证码加入</strong></li>
+            <li>验证码可自定义或随机生成</li>
+            <li>私聊需要输入对方用户名</li>
+            <li>提供「🤖 与 AI 小助手私聊」快捷按钮</li>
+        </ul>
+
+        <h3>3.3 加入群聊</h3>
+        <ul>
+            <li>点击群聊名称即可加入</li>
+            <li>如需验证码，输入正确验证码后加入</li>
+        </ul>
+
+        <h3>3.4 发送消息</h3>
+        <ul>
+            <li>支持 <strong>Markdown</strong> 格式（粗体、斜体、链接、代码块、列表、表格、引用等）</li>
+            <li>输入时下方显示<strong>实时预览</strong>效果</li>
+            <li>支持 <code>@用户名</code> 提到特定用户</li>
+            <li>支持 <code>@所有人</code> 通知全体成员（仅群聊）</li>
+            <li>按 <strong>Enter</strong> 键发送，<strong>Shift+Enter</strong> 换行</li>
+        </ul>
+
+        <h3>3.5 消息撤回</h3>
+        <ul>
+            <li>发送后 <strong>2 分钟</strong>内可以撤回</li>
+            <li>鼠标悬停在自己的消息上，点击「撤回」按钮</li>
+        </ul>
+
+        <h3>3.6 消息收藏</h3>
+        <ul>
+            <li>鼠标悬停在消息上，点击右下角 ⭐ 按钮即可收藏</li>
+            <li>收藏的消息在「我的收藏」页面查看</li>
+            <li>支持删除收藏</li>
+            <li>数据存储：GitHub Issues（label: <code>favorite</code>）</li>
+        </ul>
+
+        <h3>3.7 消息搜索（search.html）</h3>
+        <ul>
+            <li>支持按<strong>关键词</strong>搜索历史消息</li>
+            <li>支持按<strong>聊天室</strong>筛选</li>
+            <li>支持按<strong>发送者</strong>筛选</li>
+            <li>支持按<strong>日期范围</strong>筛选</li>
+            <li>搜索结果高亮显示关键词，分页加载（每页20条）</li>
+        </ul>
+
+        <h3>3.8 聊天记录导出（export.html）</h3>
+        <ul>
+            <li>导出所有聊天记录（JSON格式）</li>
+            <li>导出指定聊天室记录（JSON或HTML格式）</li>
+            <li>按时间范围导出</li>
+        </ul>
+
+        <h3>3.9 消息引用回复</h3>
+        <ul>
+            <li>鼠标悬停在任意消息上，点击「↩️」按钮进行引用回复</li>
+            <li>被回复的消息以引用缩略形式显示在回复上方</li>
+            <li>引用内容显示原消息发送者和内容摘要</li>
+        </ul>
+
+        <h3>3.10 语音消息</h3>
+        <ul>
+            <li>点击输入框旁边的 🎤 按钮开始录音</li>
+            <li>支持最长 <strong>60 秒</strong>录音</li>
+            <li>录制完成后自动发送语音消息</li>
+            <li>语音消息以音频播放器形式展示，点击可播放</li>
+            <li>技术实现：MediaRecorder API，base64 编码存储</li>
+        </ul>
+
+        <h3>3.11 代码语法高亮</h3>
+        <ul>
+            <li>代码块自动进行语法高亮（支持多种编程语言）</li>
+            <li>鼠标悬停在代码块上显示「📋 复制」按钮</li>
+            <li>点击复制按钮一键复制代码内容</li>
+            <li>集成 highlight.js（atom-one-dark 主题）</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  四、群聊管理                                                   -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>👥 四、群聊管理</h2>
+
+        <h3>4.1 群设置（仅群主和管理员）</h3>
+        <ul>
+            <li>编辑群公告</li>
+            <li>修改加入方式（公开/需验证码）</li>
+            <li>生成/修改验证码</li>
+            <li>添加/移除群管理员</li>
+            <li>退出群聊</li>
+        </ul>
+
+        <h3>4.2 群聊置顶消息</h3>
+        <ul>
+            <li>群主和管理员可置顶重要消息</li>
+            <li>鼠标悬停在消息上，点击「📍」按钮置顶（已置顶显示「📌」）</li>
+            <li>置顶消息在聊天室顶部显示横幅，点击可跳转查看</li>
+            <li>再次点击「📌」可取消置顶</li>
+        </ul>
+
+        <h3>4.3 群聊统计（stats.html）</h3>
+        <ul>
+            <li>总消息数</li>
+            <li>活跃成员数</li>
+            <li>日均消息量</li>
+            <li>活跃天数</li>
+            <li>消息趋势图（最近30天）</li>
+            <li>时段分布图（24小时）</li>
+            <li>高频词汇云</li>
+            <li>发言排行榜（Top 10）</li>
+            <li>技术实现：Chart.js</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  五、好友系统                                                   -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>👥 五、好友系统（friends.html）</h2>
+
+        <h3>5.1 添加好友</h3>
+        <ul>
+            <li>在「好友」页面输入用户名即可添加好友</li>
+            <li>系统自动验证用户是否存在</li>
+            <li>不可添加自己或 AI 小助手为好友</li>
+            <li>不可重复添加已添加的好友</li>
+            <li>数据存储：GitHub Issues（label: <code>friend</code>）</li>
+        </ul>
+
+        <h3>5.2 好友列表</h3>
+        <ul>
+            <li>显示所有已添加的好友</li>
+            <li>显示好友头像、等级（Lv.）、个人简介</li>
+            <li>支持搜索好友（按用户名筛选）</li>
+            <li>点击好友名称可查看其个人资料</li>
+        </ul>
+
+        <h3>5.3 与好友聊天</h3>
+        <ul>
+            <li>点击「💬 发消息」按钮直接进入私聊</li>
+            <li>点击「❌ 删除」按钮可移除好友</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  六、个人数据仪表盘                                              -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>📊 六、个人数据仪表盘（dashboard.html）</h2>
+
+        <h3>6.1 统计概览</h3>
+        <ul>
+            <li>总消息数</li>
+            <li>好友数</li>
+            <li>参与的聊天室数</li>
+            <li>收藏消息数</li>
+        </ul>
+
+        <h3>6.2 等级进度</h3>
+        <ul>
+            <li>显示当前等级（Lv.）和称号</li>
+            <li>进度条展示当前经验值距离下一级的进度</li>
+            <li>经验值来源：消息数量</li>
+        </ul>
+
+        <h3>6.3 数据图表</h3>
+        <ul>
+            <li>消息趋势图（最近14天）</li>
+            <li>活跃时段分布图（24小时）</li>
+            <li>聊天室消息分布</li>
+        </ul>
+
+        <h3>6.4 成就徽章</h3>
+        <ul>
+            <li>根据消息数、好友数、收藏数等达成成就</li>
+            <li>成就包括：初来乍到、话痨初级、话痨中级、话痨高级、超级话痨、社交新手、社交达人、人气之王等</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  七、管理员功能                                                  -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>👑 七、管理员功能</h2>
+
+        <h3>7.1 用户管理（admin.html）</h3>
+        <ul>
+            <li>查看所有用户列表</li>
+            <li>封禁/解封用户</li>
+            <li>发送系统通知</li>
+            <li>清除多余账号（合并因重复注册产生的相同用户名账号）</li>
+        </ul>
+
+        <h3>7.2 群聊管理</h3>
+        <ul>
+            <li>查看所有聊天室（包括私聊）</li>
+            <li>查看聊天室成员列表（基于消息记录统计）</li>
+            <li>封禁/解封群聊</li>
+        </ul>
+
+        <h3>7.3 公告管理（notice.html）</h3>
+        <ul>
+            <li>发布公告（支持 Markdown）</li>
+            <li>支持编写/预览双标签页</li>
+            <li>删除公告</li>
+            <li>公告按时间倒序排列</li>
+            <li>数据存储：GitHub Issues（label: <code>notice</code>）</li>
+        </ul>
+
+        <h3>7.4 建议审核（admin-suggestions.html）</h3>
+        <ul>
+            <li>查看用户提交的建议</li>
+            <li>更新建议状态：待审核、处理中、已完成、已驳回</li>
+            <li>添加备注说明</li>
+            <li>数据存储：GitHub Issues（label: <code>suggestion</code>）</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  八、AI 小助手                                                   -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>🤖 八、AI 小助手</h2>
+
+        <h3>8.1 如何与 AI 对话</h3>
+        <ul>
+            <li>群聊中输入 <code>@AI</code> 或 <code>@机器人</code> 加上问题</li>
+            <li>创建与「🤖 AI小助手」的私聊房间</li>
+        </ul>
+
+        <h3>8.2 AI 功能列表</h3>
+        <ul>
+            <li><strong>智能对话</strong>：@AI 你好</li>
+            <li><strong>天气查询</strong>：@AI 淮安天气</li>
+            <li><strong>中英翻译</strong>：@AI 翻译 hello</li>
+            <li><strong>讲笑话</strong>：@AI 笑话</li>
+            <li><strong>数学计算</strong>：@AI 计算 1+1</li>
+            <li><strong>古诗查询</strong>：@AI 早发白帝城怎么背</li>
+        </ul>
+
+        <h3>8.3 AI 个人资料页（ai-profile.html）</h3>
+        <ul>
+            <li>独立页面展示 AI 能力介绍</li>
+            <li>可通过导航栏「🤖 AI助手」访问</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  九、HZYAI 详细说明                                               -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>🧠 九、HZYAI</h2>
+        <p><strong>访问地址：</strong>https://user-henry.github.io/nflshcchat/hzyai</p>
+        <p><strong>简介：</strong>HZYAI 是基于思知 AI、Agnes AI 和智谱 GLM 构建的多模态智能对话助手，支持对话、绘图、视频生成、视觉理解、定时任务和虚拟角色定制。</p>
+
+        <h3>9.1 核心功能</h3>
+        <table>
+            <thead>
+                <tr><th>功能</th><th>说明</th><th>引擎</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>💬 智能对话</td><td>多模型切换</td><td>思知 AI / Agnes 2.0 Flash / 智谱 GLM-4.7-Flash / GLM-4-Flash-250414</td></tr>
+                <tr><td>🎨 AI 绘图</td><td>文生图 / 图生图（多图输入）</td><td>Agnes Image 2.1 Flash / 智谱 Cogview-3-Flash</td></tr>
+                <tr><td>🎬 AI 视频生成</td><td>文生视频 / 图生视频（异步）</td><td>Agnes Video V2.0 / 智谱 CogVideoX-Flash</td></tr>
+                <tr><td>👁️ 视觉理解</td><td>图片/视频/文件理解</td><td>智谱 GLM-4.6V-Flash / GLM-4.1V-Thinking-Flash / GLM-4V-Flash</td></tr>
+                <tr><td>⏰ 定时任务</td><td>新闻/天气/提醒 自动推送</td><td>思知 AI</td></tr>
+                <tr><td>🎭 虚拟角色</td><td>自定义人设、语气、记忆系统</td><td>本地存储 + GitHub Issues 同步</td></tr>
+            </tbody>
+        </table>
+
+        <h3>9.2 技术架构</h3>
+        <ul>
+            <li><strong>前端</strong>：纯原生 HTML/CSS/JavaScript，无第三方框架</li>
+            <li><strong>数据存储</strong>：浏览器 localStorage + GitHub Issues 云端同步</li>
+            <li><strong>语音输入</strong>：Web Speech API（Chrome/Edge 支持）</li>
+            <li><strong>角色记忆系统</strong>：对话结束后自动总结并写入角色记忆</li>
+        </ul>
+
+        <h3>9.3 模型选择指南</h3>
+        <ul>
+            <li><strong>思知 AI</strong>：完全免费，无限制，适合日常对话</li>
+            <li><strong>Agnes 2.0 Flash</strong>：多模态模型，支持工具调用、编码、图像理解</li>
+            <li><strong>智谱 GLM-4.7-Flash</strong>：30B 级 SOTA 模型，强化编码能力与长程规划</li>
+            <li><strong>智谱 GLM-4-Flash-250414</strong>：免费文本模型，128K 上下文</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  十、意见反馈系统                                                 -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>💡 十、意见反馈系统（suggestions.html）</h2>
+        <ul>
+            <li>用户可提交网站修改建议，提交后自动通知管理员</li>
+            <li>建议状态：待审核、处理中、已完成、已驳回</li>
+            <li>所有用户可查看已提交的建议及处理状态</li>
+            <li>建议按提交时间倒序排列</li>
+            <li>数据存储：GitHub Issues（label: <code>suggestion</code>）</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  十一、界面与体验                                                 -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>🎨 十一、界面与体验</h2>
+
+        <h3>11.1 通知系统</h3>
+        <ul>
+            <li>@提及通知：有人@你时发送系统通知</li>
+            <li>系统通知：接收系统公告和通知</li>
+            <li>未读通知显示红色数字角标</li>
+            <li>点击通知按钮查看详情</li>
+        </ul>
+
+        <h3>11.2 键盘快捷键</h3>
+        <ul>
+            <li>Ctrl+K：打开搜索</li>
+            <li>Ctrl+N：新建聊天</li>
+            <li>Esc：关闭弹窗</li>
+            <li>Ctrl+Shift+P：个人资料</li>
+            <li>Ctrl+Shift+S：统计</li>
+            <li>Ctrl+Shift+E：导出</li>
+            <li>Ctrl+Shift+N：公告</li>
+            <li>?：显示帮助面板</li>
+        </ul>
+
+        <h3>11.3 个人名片分享</h3>
+        <ul>
+            <li>聊天页面导航栏提供「📋 发名片」按钮</li>
+            <li>个人资料页提供「📋 分享个人名片」按钮</li>
+            <li>点击后将个人名片内容填入输入框，可发送给聊天对象</li>
+        </ul>
+
+        <h3>11.4 5 套主题</h3>
+        <ul>
+            <li>Default（暗色）/ Light（浅色）/ Blue（蓝色）/ Purple（紫色）/ Green（绿色）</li>
+            <li>主题定义在 <code>css/themes.css</code>，一键切换，即时生效</li>
+        </ul>
+
+        <h3>11.5 移动端适配</h3>
+        <ul>
+            <li>支持响应式设计，手机和电脑都可以正常使用</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  十二、Markdown 语法支持                                         -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>📝 十二、Markdown 语法支持</h2>
+        <ul>
+            <li><strong>粗体</strong>：<code>**文字**</code></li>
+            <li><strong>斜体</strong>：<code>*文字*</code></li>
+            <li><strong>粗斜体</strong>：<code>***文字***</code></li>
+            <li><strong>删除线</strong>：<code>~~文字~~</code></li>
+            <li><strong>链接</strong>：<code>[文字](url)</code></li>
+            <li><strong>行内代码</strong>：<code>`code`</code></li>
+            <li><strong>代码块</strong>：<code>``` 语言 </code></li>
+            <li><strong>无序列表</strong>：<code>- 项目</code></li>
+            <li><strong>有序列表</strong>：<code>1. 项目</code></li>
+            <li><strong>引用</strong>：<code>&gt; 引用文字</code></li>
+            <li><strong>表格</strong>：<code>| 列1 | 列2 |</code></li>
+            <li><strong>图片</strong>：<code>![描述](链接)</code></li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  十三、常见问题                                                  -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>❓ 十三、常见问题</h2>
+
+        <h3>账号相关</h3>
+        <ul>
+            <li><strong>忘记密码？</strong> 登录页点击「忘记密码？」，输入用户名和注册邮箱，系统会将密码发送到您的邮箱。</li>
+            <li><strong>账号被封禁？</strong> 联系管理员 <strong>huangzhiyuan</strong> 申诉解封。</li>
+            <li><strong>修改密码？</strong> 进入「个人资料」页，点击「编辑个人资料」，输入新密码即可。</li>
+            <li><strong>自定义头像？</strong> 在「个人资料」编辑页，输入头像图片的 URL 链接即可。</li>
+        </ul>
+
+        <h3>聊天相关</h3>
+        <ul>
+            <li><strong>消息发送失败？</strong> 检查网络连接，确认账号未被封禁，刷新页面后重试。</li>
+            <li><strong>撤回消息？</strong> 发送后 2 分钟内，鼠标悬停在自己的消息上，点击「撤回」按钮。</li>
+            <li><strong>引用回复？</strong> 鼠标悬停在任意消息上，点击「↩️」按钮即可引用回复。</li>
+            <li><strong>语音消息？</strong> 点击输入框旁边的 🎤 按钮开始录音，最长 60 秒。</li>
+        </ul>
+
+        <h3>群聊相关</h3>
+        <ul>
+            <li><strong>创建群聊？</strong> 点击「+ 创建聊天室」，选择「群聊」，填写名称和加入方式。</li>
+            <li><strong>设置验证码？</strong> 创建时选择「需验证码加入」，或在「群设置」中修改。</li>
+            <li><strong>成为管理员？</strong> 群主可以在「群设置」中添加管理员。</li>
+            <li><strong>置顶消息？</strong> 群主和管理员鼠标悬停在消息上，点击「📍」按钮即可置顶。</li>
+        </ul>
+
+        <h3>AI 相关</h3>
+        <ul>
+            <li><strong>AI 不回复？</strong> 确认在群聊中使用了 <code>@AI</code> 或 <code>@机器人</code> 触发词。</li>
+            <li><strong>HZYAI 是什么？</strong> 独立的 AI 对话工具，支持对话、绘图、视频生成。</li>
+        </ul>
+
+        <h3>数据相关</h3>
+        <ul>
+            <li><strong>数据保存在哪里？</strong> 所有数据保存在 GitHub Issues 中，完全透明。</li>
+            <li><strong>导出聊天记录？</strong> 点击导航栏「📤 导出」，选择导出范围和格式。</li>
+        </ul>
+
+        <h3>技术相关</h3>
+        <ul>
+            <li><strong>免费吗？</strong> 完全免费。</li>
+            <li><strong>支持移动端？</strong> 支持响应式设计。</li>
+            <li><strong>为什么卡？</strong> 基于 GitHub API，网络延迟或速率限制可能导致卡顿。</li>
+            <li><strong>有桌面版？</strong> 有 Windows 桌面版（v2.3.0）和 Android APK。</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  十四、版本更新日志                                               -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>🔄 十四、版本更新日志</h2>
+
+        <h3>v2.2.0 (2026年4月)</h3>
+        <ul>
+            <li>✅ 新增消息引用回复功能（↩️ 按钮）</li>
+            <li>✅ 新增群聊置顶消息功能（群主/管理员可置顶）</li>
+            <li>✅ 新增代码语法高亮 + 一键复制</li>
+            <li>✅ 新增好友系统（头像、等级、搜索、简介）</li>
+            <li>✅ 新增用户等级/积分系统（消息数=XP，等级徽章显示）</li>
+            <li>✅ 新增个人数据仪表盘（趋势图、成就徽章、最近活动）</li>
+            <li>✅ 新增语音消息功能（🎤 录音发送）</li>
+            <li>✅ 新增个人名片分享功能（📋 发名片）</li>
+            <li>✅ 新增键盘快捷键支持（Ctrl+K、Ctrl+N、? 帮助等）</li>
+            <li>🐛 修复多个已知 Bug</li>
+        </ul>
+
+        <h3>v2.1.0 (2026年4月)</h3>
+        <ul>
+            <li>✅ 新增 AI 群机器人功能</li>
+            <li>🐛 修复多个已知 Bug</li>
+        </ul>
+
+        <h3>v2.0.0 (2026年4月)</h3>
+        <ul>
+            <li>✅ 新增 Markdown 消息支持及实时预览</li>
+            <li>✅ 新增消息收藏功能</li>
+            <li>✅ 新增消息搜索功能</li>
+            <li>✅ 新增聊天记录导出功能</li>
+            <li>✅ 新增群聊统计面板（词云、趋势图、排行榜）</li>
+            <li>🐛 修复多个已知 Bug</li>
+        </ul>
+
+        <h3>v1.2.0 (2026年4月)</h3>
+        <ul>
+            <li>✅ 新增 @所有人 通知功能</li>
+            <li>✅ 优化 UI 界面</li>
+            <li>✅ 移动端适配</li>
+            <li>🐛 修复多个已知 Bug</li>
+        </ul>
+
+        <h3>v1.1.0 (2026年3月)</h3>
+        <ul>
+            <li>✅ 新增找回密码功能</li>
+            <li>🐛 修复多个已知 Bug</li>
+        </ul>
+
+        <h3>v1.0.0 (2026年3月)</h3>
+        <ul>
+            <li>✅ 基础聊天功能（群聊/私聊）</li>
+            <li>✅ 用户注册登录系统</li>
+            <li>✅ 管理员后台管理系统</li>
+            <li>✅ 公告发布系统</li>
+            <li>✅ 意见反馈系统</li>
+        </ul>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  十五、群规                                                      -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>📋 十五、群规</h2>
+        <ol>
+            <li><strong>尊重他人</strong>：请勿发布侮辱、歧视、攻击性言论</li>
+            <li><strong>禁止刷屏</strong>：请勿重复发送相同消息</li>
+            <li><strong>禁止广告</strong>：请勿发布垃圾广告或恶意链接</li>
+            <li><strong>禁止违法内容</strong>：请勿发布色情、暴力、违法信息</li>
+            <li><strong>禁止泄露隐私</strong>：请勿公开他人隐私信息</li>
+        </ol>
+        <p><strong>违规处理：</strong>首次警告，多次违规将封禁账号。</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  十六、联系管理员                                                -->
+    <!-- ============================================================ -->
+    <div class="section">
+        <h2>📧 十六、联系管理员</h2>
+        <p><strong>用户名：</strong>huangzhiyuan</p>
+        <p><strong>联系方式：</strong>在主站创建与 huangzhiyuan 的私聊房间。</p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  页脚                                                          -->
+    <!-- ============================================================ -->
+    <div class="footer">
+        <p>📚 NFLSHC Chat · RAG 知识库 v1.0</p>
+        <p>为 HZYAI LLM 提供结构化知识检索 · 基于 GitHub Issues 构建</p>
+        <p style="margin-top:4px; color:#444;">© 2026 NFLSHC 202401 社区</p>
+    </div>
+
+</div>
+</body>
+</html>
