@@ -5,13 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>HZYAI - 智能对话助手</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #1a1a2e;
             height: 100vh;
             overflow: hidden;
         }
+
         .login-container {
             position: fixed;
             top: 0;
@@ -523,31 +529,6 @@
         .input-wrapper textarea:focus {
             outline: none;
         }
-        .voice-btn {
-            background: none;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            font-size: 18px;
-            padding: 4px 8px;
-            border-radius: 50%;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .voice-btn:hover {
-            color: #ffd700;
-            background: rgba(255,215,0,0.1);
-        }
-        .voice-btn.listening {
-            color: #ff4444;
-            animation: pulse-voice 1s infinite;
-        }
-        @keyframes pulse-voice {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.15); opacity: 0.7; }
-        }
         .send-btn {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
@@ -584,7 +565,7 @@
             30% { opacity: 1; }
         }
 
-        /* ===== 绘图/视频模式 ===== */
+        /* ===== 绘图模式 ===== */
         .draw-mode {
             display: none;
             flex: 1;
@@ -778,34 +759,6 @@
             color: #888;
             font-size: 13px;
         }
-        .draw-result-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .draw-result-actions .action-btn {
-            padding: 6px 16px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 12px;
-            display: none;
-        }
-        .draw-result-actions .action-btn.download {
-            background: #2ecc71;
-            color: #1a1a2e;
-        }
-        .draw-result-actions .action-btn.publish {
-            background: #9b59b6;
-            color: white;
-        }
-        .draw-result-actions .action-btn.show {
-            display: inline-block;
-        }
-
         .draw-history {
             display: flex;
             gap: 10px;
@@ -824,7 +777,6 @@
             cursor: pointer;
             border: 2px solid transparent;
             transition: border-color 0.2s;
-            position: relative;
         }
         .draw-history-item:hover {
             border-color: #ffd700;
@@ -834,199 +786,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-        }
-        .draw-history-item .publish-badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: #9b59b6;
-            color: white;
-            font-size: 8px;
-            padding: 1px 4px;
-            border-radius: 4px;
-        }
-
-        /* ===== 社区画廊 ===== */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 16px;
-            margin-top: 12px;
-        }
-        .gallery-item {
-            background: #0f172a;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #2a2a3e;
-            transition: transform 0.2s, border-color 0.2s;
-            cursor: pointer;
-            position: relative;
-        }
-        .gallery-item:hover {
-            transform: translateY(-4px);
-            border-color: #ffd700;
-        }
-        .gallery-item img,
-        .gallery-item video {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            display: block;
-        }
-        .gallery-item .gallery-info {
-            padding: 8px 10px;
-            font-size: 11px;
-            color: #aaa;
-            background: #0a0f1c;
-        }
-        .gallery-item .gallery-info .prompt {
-            color: #ffd700;
-            font-size: 12px;
-            font-weight: 500;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .gallery-item .gallery-info .meta {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 4px;
-            font-size: 10px;
-            color: #666;
-        }
-        .gallery-item .reuse-btn {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: #ffd700;
-            color: #1a1a2e;
-            border: none;
-            border-radius: 20px;
-            padding: 2px 10px;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .gallery-item:hover .reuse-btn {
-            opacity: 1;
-        }
-        .gallery-item .public-badge {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(46,204,113,0.8);
-            color: white;
-            font-size: 9px;
-            padding: 2px 8px;
-            border-radius: 12px;
-        }
-        .gallery-filter-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .gallery-filter-bar select,
-        .gallery-filter-bar input {
-            padding: 6px 12px;
-            border-radius: 8px;
-            background: #1a1a2e;
-            border: 1px solid #2a2a3e;
-            color: white;
-            font-size: 13px;
-        }
-        .gallery-filter-bar input {
-            flex: 1;
-            min-width: 150px;
-        }
-        .gallery-filter-bar select:focus,
-        .gallery-filter-bar input:focus {
-            outline: none;
-            border-color: #ffd700;
-        }
-
-        /* ===== 反馈面板 ===== */
-        .feedback-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 500;
-            width: 340px;
-            max-height: 400px;
-            background: #16213e;
-            border-radius: 16px;
-            border: 1px solid #ffd700;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .feedback-panel.show {
-            display: flex;
-        }
-        .feedback-header {
-            padding: 12px 16px;
-            background: #0f0f1a;
-            border-bottom: 1px solid #2a2a3e;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #ffd700;
-        }
-        .feedback-header .close-btn {
-            background: none;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            font-size: 18px;
-        }
-        .feedback-body {
-            padding: 16px;
-            flex: 1;
-            overflow-y: auto;
-        }
-        .feedback-body textarea {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            background: #1a1a2e;
-            border: 1px solid #2a2a3e;
-            color: white;
-            resize: vertical;
-            min-height: 80px;
-            font-family: inherit;
-        }
-        .feedback-body .submit-btn {
-            margin-top: 10px;
-            background: #ffd700;
-            color: #1a1a2e;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .feedback-list {
-            margin-top: 12px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        .feedback-item {
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 13px;
-            color: #ccc;
-        }
-        .feedback-item .time {
-            font-size: 10px;
-            color: #666;
-            float: right;
         }
 
         .info-sidebar {
@@ -1058,20 +817,6 @@
             font-size: 13px;
             line-height: 1.6;
             margin-bottom: 8px;
-        }
-        .feedback-btn {
-            background: #2a2a3e;
-            border: none;
-            color: #ffd700;
-            padding: 6px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .feedback-btn:hover {
-            background: #ffd700;
-            color: #1a1a2e;
         }
         .feature-list {
             list-style: none;
@@ -1211,18 +956,6 @@
                 padding: 6px 12px;
                 font-size: 12px;
             }
-            .feedback-panel {
-                width: 90%;
-                right: 5%;
-                bottom: 10px;
-                max-height: 70vh;
-            }
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            }
-            .gallery-filter-bar {
-                flex-direction: column;
-            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -1239,8 +972,8 @@
             <input type="password" id="loginPassword" placeholder="密码">
             <button onclick="doLogin()">登录</button>
             <div id="loginError" class="login-error"></div>
-            <div style="margin-top:20px;text-align:center;font-size:12px;color:#666;">
-                <a href="../nflshcchat/chat.html" style="color:#ffd700;">← 返回 NFLSHC Chat</a>
+            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
+                <a href="../nflshcchat/chat.html" style="color: #ffd700;">← 返回 NFLSHC Chat</a>
             </div>
         </div>
     </div>
@@ -1253,7 +986,9 @@
                 <div class="sidebar-logo"></div>
                 <h2>HZYAI</h2>
             </div>
-            <button class="new-chat-btn" onclick="createNewConversation()">+ 新对话</button>
+            <button class="new-chat-btn" onclick="createNewConversation()">
+                + 新对话
+            </button>
             <div class="conversations-list" id="conversationsList"></div>
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar"></div>
@@ -1272,7 +1007,6 @@
                 <button class="mode-tab active" data-mode="chat" onclick="switchMode('chat')">💬 对话</button>
                 <button class="mode-tab" data-mode="draw" onclick="switchMode('draw')">🎨 绘图</button>
                 <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频</button>
-                <button class="mode-tab" data-mode="gallery" onclick="switchMode('gallery')">🖼️ 画廊</button>
             </div>
 
             <!-- ====== 每日一言 ====== -->
@@ -1283,12 +1017,12 @@
                 </div>
             </div>
 
-            <!-- ====== 对话模式 ====== -->
-            <div id="chatMode" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+            <!-- ====== 聊天模式 ====== -->
+            <div id="chatMode" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
                 <div class="chat-header">
                     <div>
                         <h1 id="chatTitle">新对话</h1>
-                        <p>和 HZYAI 对话，基于思知 AI 或 Agnes AI</p>
+                        <p>和 HZYAI 对话，基于思知 AI 或 Agnes AI (Claw 模型)</p>
                     </div>
                     <div class="model-selector">
                         <label for="chatModelSelect">🧠 模型：</label>
@@ -1302,36 +1036,35 @@
                     <button class="sync-btn" onclick="pullFromGitHub()" id="pullBtn">📥 爬取 GitHub Issues</button>
                     <button class="sync-btn" onclick="pushToGitHub()" id="pushBtn">📤 更新至 GitHub</button>
                     <button class="sync-btn" onclick="exportCurrentChatMD()" id="exportMdBtn" style="background:#2ecc71;color:#1a1a2e;">📝 导出 MD</button>
-                    <div class="sync-warning">⚠️ 爬取需要时间</div>
+                    <div class="sync-warning">⚠️ 爬取需要时间，请耐心等待</div>
                     <div class="sync-status" id="syncStatus"></div>
                 </div>
                 <div class="messages-area" id="messagesArea">
                     <div class="message assistant">
                         <div class="message-avatar">🤖</div>
-                        <div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI 的智能对话、绘图、视频生成、图生图、语音输入。选择模型后开始吧！</div>
+                        <div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！</div>
                     </div>
                 </div>
                 <div class="input-area">
                     <div class="input-wrapper">
                         <textarea id="messageInput" placeholder="发送消息... (Shift+Enter 换行，Enter 发送)" rows="1"></textarea>
-                        <button class="voice-btn" id="voiceBtn" title="语音输入" onclick="toggleVoiceInput()">🎙️</button>
                         <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
                     </div>
                 </div>
             </div>
 
-            <!-- ====== 绘图模式 ====== -->
+            <!-- ====== 绘图模式（新增图生图） ====== -->
             <div class="draw-mode" id="drawMode">
                 <div class="draw-header">
                     <h2>🎨 绘图模式</h2>
-                    <p>输入文字描述，或上传参考图 · 基于 Agnes Image 2.1 Flash</p>
+                    <p>输入文字描述，AI 将为你生成图像 · 基于 Agnes Image 2.1 Flash</p>
                 </div>
                 <div class="draw-input-area">
                     <div class="draw-input-row">
-                        <input type="text" id="drawPrompt" class="draw-prompt-input" placeholder="描述你想要生成的画面" onkeydown="if(event.key==='Enter') generateImage()">
-                        <input type="text" id="drawSize" placeholder="尺寸" value="1024x768" style="flex:0.8;min-width:100px;">
+                        <input type="text" id="drawPrompt" class="draw-prompt-input" placeholder="描述你想要生成的画面，例如：一只在太空中的猫" onkeydown="if(event.key==='Enter') generateImage()">
+                        <input type="text" id="drawSize" placeholder="尺寸，如 1024x768" value="1024x768" style="flex:0.8;min-width:120px;">
                         <label class="image-upload-btn" id="drawImageUploadLabel">📎 参考图
-                            <input type="file" id="drawImageInput" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)">
+                            <input type="file" id="drawImageInput" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>
                         </label>
                         <button class="draw-generate-btn" id="drawGenerateBtn" onclick="generateImage()">🎨 生成</button>
                     </div>
@@ -1339,82 +1072,68 @@
                         <img id="drawReferenceImg" alt="参考图">
                         <span class="remove-hint">✕ 移除</span>
                     </div>
-                    <div style="font-size:12px;color:#666;">💡 上传参考图后自动切换为图生图</div>
+                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
+                        <span>💡 支持文生图 · 图生图（多图输入） · 基于 Agnes Image 2.1 Flash · 输出 URL</span>
+                    </div>
                 </div>
                 <div class="draw-result-area" id="drawResult">
                     <div class="placeholder" id="drawPlaceholder">
                         <span class="icon">🖼️</span>
                         输入描述后点击「生成」<br>
-                        <span style="font-size:12px;color:#555;">支持文生图 · 图生图</span>
+                        <span style="font-size:12px; color:#555;">支持文生图 · 图生图（多图输入） · 基于 Agnes Image 2.1 Flash</span>
                     </div>
                     <div class="loading-spinner" id="drawLoading">
                         <div class="spinner"></div>
                         <div class="loading-text">⏳ AI 正在创作中...</div>
                     </div>
                     <img id="drawOutput" style="display:none;" alt="生成的图片">
-                    <div class="draw-result-actions">
-                        <button class="action-btn download" id="drawDownloadBtn" onclick="downloadCurrentMedia('image')">📥 下载</button>
-                        <button class="action-btn publish" id="drawPublishBtn" onclick="publishToGallery('image')">🌐 公开至画廊</button>
-                    </div>
+                    <button class="draw-generate-btn" id="drawDownloadBtn" style="display:none; margin-top:10px; background:#2ecc71; color:#1a1a2e;" onclick="downloadCurrentMedia('image')">📥 下载</button>
                 </div>
                 <div class="draw-history" id="drawHistory"></div>
             </div>
 
-            <!-- ====== 视频模式 ====== -->
+            <!-- ====== 视频模式（新增图生视频） ====== -->
             <div class="draw-mode" id="videoMode">
                 <div class="draw-header">
-                    <h2>🎬 视频生成</h2>
-                    <p>输入文字描述 · 基于 Agnes Video V2.0</p>
+                    <h2>🎬 视频生成模式</h2>
+                    <p>输入文字描述，AI 将为你生成视频 · 基于 Agnes Video V2.0</p>
                 </div>
                 <div class="draw-input-area">
                     <div class="draw-input-row">
-                        <input type="text" id="videoPrompt" class="draw-prompt-input" placeholder="描述视频内容" onkeydown="if(event.key==='Enter') generateVideo()">
+                        <input type="text" id="videoPrompt" class="draw-prompt-input" placeholder="描述你想要生成的视频，例如：日落时分的海滩" onkeydown="if(event.key==='Enter') generateVideo()">
                         <select id="videoDuration">
                             <option value="81">约 3 秒 (81帧)</option>
                             <option value="121" selected>约 5 秒 (121帧)</option>
                             <option value="241">约 10 秒 (241帧)</option>
                             <option value="441">约 18 秒 (441帧)</option>
                         </select>
+                        <label class="image-upload-btn" id="videoImageUploadLabel">📎 参考图
+                            <input type="file" id="videoImageInput" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>
+                        </label>
                         <button class="draw-generate-btn" id="videoGenerateBtn" onclick="generateVideo()">🎬 生成</button>
                     </div>
-                    <div style="font-size:12px;color:#666;">💡 异步生成 · 约 1-3 分钟</div>
+                    <div id="videoReferencePreview" class="reference-preview" onclick="removeVideoReferenceImage()">
+                        <img id="videoReferenceImg" alt="参考图">
+                        <span class="remove-hint">✕ 移除</span>
+                    </div>
+                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
+                        <span>💡 支持文生视频 · 图生视频（多图输入） · 基于 Agnes Video V2.0 · 异步生成 · 请耐心等待</span>
+                    </div>
                 </div>
                 <div class="draw-result-area" id="videoResult">
                     <div class="placeholder" id="videoPlaceholder">
                         <span class="icon">🎞️</span>
                         输入描述后点击「生成」<br>
-                        <span style="font-size:12px;color:#555;">支持文生视频</span>
+                        <span style="font-size:12px; color:#555;">支持文生视频 · 图生视频（多图输入） · 基于 Agnes Video V2.0 · 异步生成</span>
                     </div>
                     <div class="loading-spinner" id="videoLoading">
                         <div class="spinner"></div>
-                        <div class="loading-text">⏳ AI 正在生成视频...</div>
+                        <div class="loading-text">⏳ AI 正在生成视频，请稍候...</div>
                     </div>
                     <video id="videoOutput" style="display:none;" controls></video>
-                    <div class="draw-result-actions">
-                        <button class="action-btn download" id="videoDownloadBtn" onclick="downloadCurrentMedia('video')">📥 下载</button>
-                        <button class="action-btn publish" id="videoPublishBtn" onclick="publishToGallery('video')">🌐 公开至画廊</button>
-                    </div>
+                    <button class="draw-generate-btn" id="videoDownloadBtn" style="display:none; margin-top:10px; background:#2ecc71; color:#1a1a2e;" onclick="downloadCurrentMedia('video')">📥 下载</button>
                 </div>
                 <div class="draw-history" id="videoHistory"></div>
-            </div>
-
-            <!-- ====== 社区画廊 ====== -->
-            <div class="draw-mode" id="galleryMode">
-                <div class="draw-header">
-                    <h2>🖼️ 社区画廊</h2>
-                    <p>探索其他创作者的公开作品 · 点击「复用」一键复制提示词</p>
-                </div>
-                <div class="gallery-filter-bar">
-                    <select id="galleryFilter" onchange="renderGallery()">
-                        <option value="all">全部</option>
-                        <option value="image">图片</option>
-                        <option value="video">视频</option>
-                    </select>
-                    <input type="text" id="gallerySearch" placeholder="搜索提示词..." oninput="renderGallery()">
-                </div>
-                <div id="galleryContainer" class="gallery-grid">
-                    <div style="text-align:center;color:#666;padding:40px;width:100%;">加载中...</div>
-                </div>
             </div>
         </div>
 
@@ -1422,8 +1141,8 @@
         <div class="info-sidebar">
             <div class="info-section">
                 <h3>🤖 关于 HZYAI</h3>
-                <p>基于思知 AI + Agnes AI 的多模态助手，支持对话、绘图(图生图)、视频生成、语音输入。</p>
-                <p>对话记录<strong>本地存储</strong>，支持 GitHub 同步。</p>
+                <p>基于思知 AI + Agnes AI 的多模态对话助手，支持对话、绘图（含图生图）、视频生成（含图生视频）。</p>
+                <p>对话记录<strong>本地存储</strong>，支持 GitHub Issues 云端同步。</p>
             </div>
             <div class="info-section">
                 <h3>📺 产品介绍</h3>
@@ -1432,39 +1151,32 @@
                 </div>
             </div>
             <div class="info-section">
-                <h3>✨ 功能</h3>
+                <h3>✨ 功能列表</h3>
                 <ul class="feature-list">
-                    <li>💬 智能对话</li>
-                    <li>🎨 AI 绘图 (图生图)</li>
-                    <li>🎬 AI 视频生成</li>
-                    <li>🖼️ 社区画廊</li>
-                    <li>🎙️ 语音输入</li>
-                    <li>📝 导出 Markdown</li>
+                    <li>💬 智能对话 (思知 AI / Agnes AI)</li>
+                    <li>🎨 AI 绘图 (文生图 / 图生图)</li>
+                    <li>🎬 AI 视频生成 (文生视频 / 图生视频)</li>
+                    <li>📝 编程辅助 & 代码解释</li>
+                    <li>✍️ 写作助手 & 文案生成</li>
                 </ul>
             </div>
             <div class="info-section">
-                <h3>💬 反馈</h3>
-                <button class="feedback-btn" onclick="toggleFeedbackPanel()">📝 提交反馈</button>
+                <h3>💡 使用技巧</h3>
+                <div class="command-example">📝 Python 如何读取 CSV？</div>
+                <div class="command-example">🎨 一只在太空中的猫，写实风格</div>
+                <div class="command-example">🎬 日落时分的海滩，5秒</div>
+            </div>
+            <div class="info-section">
+                <h3>📦 数据同步</h3>
+                <p>点击「爬取 GitHub Issues 消息」可拉取云端历史对话；点击「更新消息至 GitHub Issues」可上传当前对话。</p>
+                <p style="font-size: 11px; color: #f39c12;">⚠️ 首次使用建议先爬取云端数据，避免覆盖已有记录。</p>
             </div>
             <div class="footer-note">HZYAI · 让创作更自由</div>
-        </div>
-
-        <!-- ===== 反馈面板 ===== -->
-        <div class="feedback-panel" id="feedbackPanel">
-            <div class="feedback-header">
-                <span>📝 用户反馈</span>
-                <button class="close-btn" onclick="toggleFeedbackPanel()">✕</button>
-            </div>
-            <div class="feedback-body">
-                <textarea id="feedbackInput" placeholder="描述你的建议或遇到的问题..."></textarea>
-                <button class="submit-btn" onclick="submitFeedback()">提交反馈</button>
-                <div class="feedback-list" id="feedbackList"></div>
-            </div>
         </div>
     </div>
 
     <!-- 移动端菜单按钮 -->
-    <button class="menu-btn" id="menuBtn" style="display:none;" onclick="toggleSidebar()">☰</button>
+    <button class="menu-btn" id="menuBtn" style="display: none;" onclick="toggleSidebar()">☰</button>
 
     <script src="config.js"></script>
     <script>
@@ -1477,17 +1189,14 @@
             name: 'HZYAI',
             avatar: '🤖'
         };
+
+        // Agnes AI 配置
         const AGNES_CONFIG = {
             baseUrl: 'https://apihub.agnes-ai.com/v1',
             apiKey: 'sk-VNgflStoqtTeFqIfpntpL21vjl8Hx4RPQYRmDzrooHLB0IOi',
             chatModel: 'agnes-2.0-flash',
             imageModel: 'agnes-image-2.1-flash',
             videoModel: 'agnes-video-v2.0'
-        };
-        const STORAGE_KEYS = {
-            conversations: 'hzyai_conversations_',
-            gallery: 'hzyai_gallery',
-            feedback: 'hzyai_feedback'
         };
 
         // ============================================================
@@ -1501,18 +1210,15 @@
         let currentMode = 'chat';
         let currentMediaUrl = '';
         let currentMediaType = 'image';
-        let drawReferenceImage = null;
-        let galleryData = [];
-        let feedbackData = [];
-        let isListening = false;
-        let recognition = null;
+        let drawReferenceImages = [];
+        let videoReferenceImages = [];
 
         // ============================================================
         //  存储管理
         // ============================================================
         function loadConversationsFromLocal() {
             if (!currentUser) return;
-            const key = STORAGE_KEYS.conversations + currentUser.username;
+            const key = `hzyai_conversations_${currentUser.username}`;
             const saved = localStorage.getItem(key);
             if (saved) {
                 conversations = JSON.parse(saved);
@@ -1520,7 +1226,7 @@
                 conversations = [{
                     id: Date.now().toString(),
                     title: '新对话',
-                    messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI 的智能对话、绘图、视频生成、图生图、语音输入。选择模型后开始吧！',
+                    messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！',
                         timestamp: new Date().toISOString() }],
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
@@ -1529,33 +1235,20 @@
                 saveConversationsToLocal();
             }
         }
+
         function saveConversationsToLocal() {
             if (!currentUser) return;
-            localStorage.setItem(STORAGE_KEYS.conversations + currentUser.username, JSON.stringify(conversations));
-        }
-        function loadGalleryFromLocal() {
-            const saved = localStorage.getItem(STORAGE_KEYS.gallery);
-            galleryData = saved ? JSON.parse(saved) : [];
-            // 兼容旧数据：确保每个条目有 prompt 字段
-            galleryData = galleryData.filter(item => item && item.url);
-        }
-        function saveGalleryToLocal() {
-            localStorage.setItem(STORAGE_KEYS.gallery, JSON.stringify(galleryData));
-        }
-        function loadFeedbackFromLocal() {
-            const saved = localStorage.getItem(STORAGE_KEYS.feedback);
-            feedbackData = saved ? JSON.parse(saved) : [];
-        }
-        function saveFeedbackToLocal() {
-            localStorage.setItem(STORAGE_KEYS.feedback, JSON.stringify(feedbackData));
+            const key = `hzyai_conversations_${currentUser.username}`;
+            localStorage.setItem(key, JSON.stringify(conversations));
         }
 
         // ============================================================
-        //  GitHub Issues 同步 (保持原有功能)
+        //  GitHub Issues 同步
         // ============================================================
         function getGitHubLabel() {
             return `hzyai_${currentUser.username}`;
         }
+
         async function loadFromGitHub() {
             if (!currentUser) return [];
             try {
@@ -1584,13 +1277,16 @@
                 return [];
             }
         }
+
         async function saveConversationToGitHub(conversation) {
             if (!currentUser) return;
             try {
                 const existingIssues = await loadFromGitHub();
                 const existing = existingIssues.find(c => c.id === conversation.id);
+
                 const issueBody = `HZYAI对话数据\n\`\`\`json\n${JSON.stringify(conversation, null, 2)}\n\`\`\``;
                 const labels = [getGitHubLabel()];
+
                 if (existing && existing.issueNumber) {
                     await fetch(
                         `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
@@ -1620,12 +1316,14 @@
                 return false;
             }
         }
+
         async function pullFromGitHub() {
             if (isSyncing) return;
             isSyncing = true;
             setSyncStatus('🔄 正在从 GitHub 爬取...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
+
             try {
                 const githubConvs = await loadFromGitHub();
                 let updatedCount = 0,
@@ -1667,12 +1365,14 @@
                 document.getElementById('pushBtn').disabled = false;
             }
         }
+
         async function pushToGitHub() {
             if (isSyncing) return;
             isSyncing = true;
             setSyncStatus('🔄 正在上传至 GitHub...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
+
             try {
                 let successCount = 0;
                 for (const conv of conversations) {
@@ -1689,6 +1389,7 @@
                 document.getElementById('pushBtn').disabled = false;
             }
         }
+
         function setSyncStatus(message, type) {
             const statusDiv = document.getElementById('syncStatus');
             if (statusDiv) {
@@ -1709,13 +1410,16 @@
             }
             container.innerHTML = conversations.map(conv => `
                 <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" onclick="switchConversation('${conv.id}')">
-                    <div class="conversation-title">${escapeHtml(conv.title)}</div>
-                    <button class="export-conv-btn" onclick="event.stopPropagation(); exportSingleChatMD('${conv.id}')" title="导出为 Markdown">📝</button>
-                    <button class="delete-conv" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">🗑️</button>
+                    <div class="conversation-title">
+                        ${escapeHtml(conv.title)}
+                        <button class="export-conv-btn" onclick="event.stopPropagation(); exportSingleChatMD('${conv.id}')" title="导出为 Markdown">📝</button>
+                        <button class="delete-conv" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">🗑️</button>
+                    </div>
                     <div class="conversation-time">${formatTime(conv.updatedAt)}</div>
                 </div>
             `).join('');
         }
+
         function switchConversation(convId) {
             currentConversationId = convId;
             const conversation = conversations.find(c => c.id === convId);
@@ -1728,12 +1432,13 @@
                 document.getElementById('sidebar').classList.remove('open');
             }
         }
+
         function renderMessages(messages) {
             const container = document.getElementById('messagesArea');
             if (!container) return;
             if (!messages || messages.length === 0) {
                 container.innerHTML =
-                    '<div class="message assistant"><div class="message-avatar">🤖</div><div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI 的智能对话、绘图、视频生成、图生图、语音输入。选择模型后开始吧！</div></div>';
+                    '<div class="message assistant"><div class="message-avatar">🤖</div><div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！</div></div>';
                 return;
             }
             container.innerHTML = messages.map(msg => {
@@ -1752,12 +1457,14 @@
             }).join('');
             scrollToBottom();
         }
+
         function renderMarkdown(content) {
             if (typeof marked !== 'undefined') {
                 try { return marked.parse(content); } catch (e) { return escapeHtml(content); }
             }
             return escapeHtml(content).replace(/\n/g, '<br>');
         }
+
         function addMessage(role, content, mediaUrl, mediaType) {
             const conversation = conversations.find(c => c.id === currentConversationId);
             if (!conversation) return;
@@ -1776,11 +1483,12 @@
             renderMessages(conversation.messages);
             renderConversationsList();
         }
+
         function createNewConversation() {
             const newConv = {
                 id: Date.now().toString(),
                 title: '新对话',
-                messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI 的智能对话、绘图、视频生成、图生图、语音输入。选择模型后开始吧！',
+                messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！',
                     timestamp: new Date().toISOString() }],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
@@ -1793,6 +1501,7 @@
             document.getElementById('chatTitle').textContent = newConv.title;
             renderMessages(newConv.messages);
         }
+
         function deleteConversation(convId) {
             if (conversations.length === 1) {
                 if (confirm('这是最后一个对话，删除后将创建新对话。确定删除吗？')) {
@@ -1823,13 +1532,16 @@
         async function fetchDailyQuote() {
             const quoteContent = document.getElementById('quoteContent');
             const refreshBtn = document.getElementById('refreshQuoteBtn');
+
             quoteContent.innerHTML = '<span class="quote-loading">⏳ 正在汲取智慧...</span>';
             refreshBtn.disabled = true;
+
             try {
                 const url =
                     `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=daily_quote&spoken=请给我一句今天的每日一言，要包含作者和出处，格式为Markdown的blockquote风格，不要有多余的解释内容。`;
                 const response = await fetch(url);
                 const data = await response.json();
+
                 if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
                     let renderedHtml = renderMarkdown(data.data.info.text);
                     if (!renderedHtml.includes('<blockquote>')) {
@@ -1853,6 +1565,7 @@
         //  聊天模型调用 (思知 AI / Agnes AI)
         // ============================================================
         async function callChatModel(messages, model) {
+            // 思知 AI (免费)
             if (model === 'sizhi') {
                 try {
                     const history = messages.slice(-10);
@@ -1871,6 +1584,8 @@
                     return null;
                 }
             }
+
+            // Agnes AI (agnes-2.0-flash)
             if (model === 'agnes') {
                 try {
                     const url = `${AGNES_CONFIG.baseUrl}/chat/completions`;
@@ -1885,9 +1600,12 @@
                             messages: messages.slice(-20).map(m => ({ role: m.role, content: m.content })),
                             temperature: 0.7,
                             max_tokens: 4096,
-                            chat_template_kwargs: { enable_thinking: true }
+                            chat_template_kwargs: {
+                                enable_thinking: true
+                            }
                         })
                     });
+
                     const data = await response.json();
                     if (data && data.choices && data.choices[0] && data.choices[0].message) {
                         return data.choices[0].message.content;
@@ -1898,16 +1616,21 @@
                     return null;
                 }
             }
+
             return null;
         }
+
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             if (!content || isWaiting) return;
+
             const model = document.getElementById('chatModelSelect').value;
             input.value = '';
             input.style.height = 'auto';
+
             addMessage('user', content);
+
             const conversation = conversations.find(c => c.id === currentConversationId);
             const container = document.getElementById('messagesArea');
             const thinkingDiv = document.createElement('div');
@@ -1917,9 +1640,12 @@
             container.appendChild(thinkingDiv);
             scrollToBottom();
             isWaiting = true;
+
             const reply = await callChatModel(conversation.messages, model);
+
             thinkingDiv.remove();
             isWaiting = false;
+
             if (reply) {
                 addMessage('assistant', reply);
             } else {
@@ -1928,123 +1654,112 @@
         }
 
         // ============================================================
-        //  🎙️ 语音输入 (Web Speech API)
-        // ============================================================
-        function toggleVoiceInput() {
-            const btn = document.getElementById('voiceBtn');
-            if (isListening) {
-                if (recognition) { recognition.stop(); }
-                isListening = false;
-                btn.classList.remove('listening');
-                btn.textContent = '🎙️';
-                return;
-            }
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert('您的浏览器不支持语音输入，请使用 Chrome 或 Edge。');
-                return;
-            }
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'zh-CN';
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.onstart = () => {
-                isListening = true;
-                btn.classList.add('listening');
-                btn.textContent = '🔴';
-            };
-            recognition.onend = () => {
-                isListening = false;
-                btn.classList.remove('listening');
-                btn.textContent = '🎙️';
-            };
-            recognition.onresult = (e) => {
-                let final = '';
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    if (e.results[i].isFinal) final += e.results[i][0].transcript;
-                }
-                if (final) {
-                    const input = document.getElementById('messageInput');
-                    input.value += final;
-                    input.dispatchEvent(new Event('input'));
-                }
-            };
-            recognition.start();
-        }
-
-        // ============================================================
-        //  🎨 绘图功能 (Agnes Image 2.1 Flash + 图生图)
+        //  🎨 绘图功能 (Agnes Image 2.1 Flash + 图生图/多图输入)
         // ============================================================
         function handleDrawImageUpload(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                drawReferenceImage = e.target.result;
-                const preview = document.getElementById('drawReferencePreview');
-                const img = document.getElementById('drawReferenceImg');
-                img.src = drawReferenceImage;
+            const files = input.files;
+            if (!files || files.length === 0) return;
+            
+            // 收集所有图片的 Base64
+            const promises = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+                const promise = new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+                promises.push(promise);
+            }
+            
+            Promise.all(promises).then((results) => {
+                drawReferenceImages = results;
+                updateDrawPreview();
+            });
+        }
+
+        function updateDrawPreview() {
+            const preview = document.getElementById('drawReferencePreview');
+            const img = document.getElementById('drawReferenceImg');
+            if (drawReferenceImages.length > 0) {
+                img.src = drawReferenceImages[0];
                 preview.style.display = 'block';
                 document.getElementById('drawImageUploadLabel').classList.add('has-image');
-                document.getElementById('drawImageUploadLabel').innerHTML = '📎 已上传 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)">';
-            };
-            reader.readAsDataURL(file);
+                document.getElementById('drawImageUploadLabel').innerHTML = `📎 ${drawReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>`;
+            } else {
+                preview.style.display = 'none';
+                document.getElementById('drawImageUploadLabel').classList.remove('has-image');
+                document.getElementById('drawImageUploadLabel').innerHTML = '📎 参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>';
+            }
         }
+
         function removeReferenceImage() {
-            drawReferenceImage = null;
-            document.getElementById('drawReferencePreview').style.display = 'none';
-            document.getElementById('drawImageUploadLabel').classList.remove('has-image');
-            document.getElementById('drawImageUploadLabel').innerHTML =
-                '📎 参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)">';
+            drawReferenceImages = [];
+            updateDrawPreview();
             document.getElementById('drawImageInput').value = '';
         }
 
         async function generateImage() {
             const prompt = document.getElementById('drawPrompt').value.trim();
             const size = document.getElementById('drawSize').value.trim() || '1024x768';
+
             if (!prompt) { alert('请输入图片描述！'); return; }
+
             const generateBtn = document.getElementById('drawGenerateBtn');
             const loading = document.getElementById('drawLoading');
             const placeholder = document.getElementById('drawPlaceholder');
             const output = document.getElementById('drawOutput');
             const downloadBtn = document.getElementById('drawDownloadBtn');
-            const publishBtn = document.getElementById('drawPublishBtn');
 
             generateBtn.disabled = true;
             generateBtn.textContent = '⏳ 生成中...';
             loading.classList.add('active');
             placeholder.style.display = 'none';
             output.style.display = 'none';
-            downloadBtn.classList.remove('show');
-            publishBtn.classList.remove('show');
+            downloadBtn.style.display = 'none';
 
             try {
                 const payload = {
                     model: AGNES_CONFIG.imageModel,
                     prompt: prompt,
                     size: size,
-                    extra_body: { response_format: 'url' }
+                    extra_body: {
+                        response_format: 'url'
+                    }
                 };
-                if (drawReferenceImage) {
-                    payload.extra_body.image = [drawReferenceImage];
+                
+                // 如果有参考图，添加到 payload
+                if (drawReferenceImages.length > 0) {
+                    payload.extra_body.image = drawReferenceImages;
                 }
-                const response = await fetch(AGNES_CONFIG.baseUrl + '/images/generations', {
+
+                const url = `${AGNES_CONFIG.baseUrl}/images/generations`;
+                const response = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + AGNES_CONFIG.apiKey, 'Content-Type': 'application/json' },
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(payload)
                 });
+
                 const data = await response.json();
+
                 if (data && data.data && data.data[0] && data.data[0].url) {
                     const imageUrl = data.data[0].url;
                     currentMediaUrl = imageUrl;
                     currentMediaType = 'image';
+
                     output.src = imageUrl;
                     output.style.display = 'block';
-                    downloadBtn.classList.add('show');
-                    publishBtn.classList.add('show');
+                    downloadBtn.style.display = 'inline-block';
                     loading.classList.remove('active');
+
                     addToHistory('image', imageUrl, prompt);
                     addMessage('assistant', `🎨 生成的图片：${prompt}`, imageUrl, 'image');
+                    
+                    // 生成后清空参考图
                     removeReferenceImage();
                 } else {
                     throw new Error(data.error?.message || '生成失败');
@@ -2054,7 +1769,7 @@
                 loading.classList.remove('active');
                 placeholder.style.display = 'block';
                 placeholder.innerHTML =
-                    `<span class="icon">❌</span>生成失败：${error.message}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
             } finally {
                 generateBtn.disabled = false;
                 generateBtn.textContent = '🎨 生成';
@@ -2062,84 +1777,164 @@
         }
 
         // ============================================================
-        //  🎬 视频生成 (Agnes Video V2.0)
+        //  🎬 视频生成 (Agnes Video V2.0 + 图生视频/多图输入)
         // ============================================================
+        function handleVideoImageUpload(input) {
+            const files = input.files;
+            if (!files || files.length === 0) return;
+            
+            const promises = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+                const promise = new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+                promises.push(promise);
+            }
+            
+            Promise.all(promises).then((results) => {
+                videoReferenceImages = results;
+                updateVideoPreview();
+            });
+        }
+
+        function updateVideoPreview() {
+            const preview = document.getElementById('videoReferencePreview');
+            const img = document.getElementById('videoReferenceImg');
+            if (videoReferenceImages.length > 0) {
+                img.src = videoReferenceImages[0];
+                preview.style.display = 'block';
+                document.getElementById('videoImageUploadLabel').classList.add('has-image');
+                document.getElementById('videoImageUploadLabel').innerHTML = `📎 ${videoReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>`;
+            } else {
+                preview.style.display = 'none';
+                document.getElementById('videoImageUploadLabel').classList.remove('has-image');
+                document.getElementById('videoImageUploadLabel').innerHTML = '📎 参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>';
+            }
+        }
+
+        function removeVideoReferenceImage() {
+            videoReferenceImages = [];
+            updateVideoPreview();
+            document.getElementById('videoImageInput').value = '';
+        }
+
         async function generateVideo() {
             const prompt = document.getElementById('videoPrompt').value.trim();
             const numFrames = parseInt(document.getElementById('videoDuration').value);
+
             if (!prompt) { alert('请输入视频描述！'); return; }
+
             const generateBtn = document.getElementById('videoGenerateBtn');
             const loading = document.getElementById('videoLoading');
             const placeholder = document.getElementById('videoPlaceholder');
             const output = document.getElementById('videoOutput');
             const downloadBtn = document.getElementById('videoDownloadBtn');
-            const publishBtn = document.getElementById('videoPublishBtn');
 
             generateBtn.disabled = true;
-            generateBtn.textContent = '⏳ 提交...';
+            generateBtn.textContent = '⏳ 提交任务...';
             loading.classList.add('active');
             placeholder.style.display = 'none';
             output.style.display = 'none';
-            downloadBtn.classList.remove('show');
-            publishBtn.classList.remove('show');
+            downloadBtn.style.display = 'none';
 
             try {
-                const response = await fetch(AGNES_CONFIG.baseUrl + '/videos', {
+                const payload = {
+                    model: AGNES_CONFIG.videoModel,
+                    prompt: prompt,
+                    num_frames: numFrames,
+                    frame_rate: 24,
+                    height: 768,
+                    width: 1152
+                };
+                
+                // 如果有参考图（多图输入），添加到 payload
+                if (videoReferenceImages.length > 0) {
+                    payload.extra_body = {
+                        image: videoReferenceImages
+                    };
+                }
+
+                // Step 1: 创建视频任务
+                const url = `${AGNES_CONFIG.baseUrl}/videos`;
+                const response = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + AGNES_CONFIG.apiKey, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        model: AGNES_CONFIG.videoModel,
-                        prompt: prompt,
-                        num_frames: numFrames,
-                        frame_rate: 24,
-                        height: 768,
-                        width: 1152
-                    })
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
                 });
+
                 const data = await response.json();
-                if (!data || !data.video_id) throw new Error('创建任务失败');
+
+                if (!data || !data.video_id) {
+                    throw new Error(data.error?.message || '创建任务失败');
+                }
+
                 const videoId = data.video_id;
-                loading.querySelector('.loading-text').textContent = '⏳ 视频生成中 (约 1-3 分钟)...';
-                let attempts = 0,
-                    maxAttempts = 60,
-                    videoUrl = null;
+                loading.querySelector('.loading-text').textContent = '⏳ 视频生成中 (约 1-3 分钟)，请耐心等待...';
+
+                // Step 2: 轮询获取结果
+                let attempts = 0;
+                const maxAttempts = 60;
+                let videoUrl = null;
+
                 while (attempts < maxAttempts) {
                     await new Promise(resolve => setTimeout(resolve, 3000));
+
                     const resultUrl = `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`;
                     const resultResponse = await fetch(resultUrl, {
                         method: 'GET',
-                        headers: { 'Authorization': 'Bearer ' + AGNES_CONFIG.apiKey }
+                        headers: {
+                            'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`
+                        }
                     });
+
                     const resultData = await resultResponse.json();
+
                     if (resultData && resultData.status === 'completed' && resultData.remixed_from_video_id) {
                         videoUrl = resultData.remixed_from_video_id;
                         break;
                     }
+
                     if (resultData && resultData.status === 'failed') {
                         throw new Error(resultData.error || '视频生成失败');
                     }
+
                     attempts++;
                 }
-                if (!videoUrl) throw new Error('视频生成超时');
+
+                if (!videoUrl) {
+                    throw new Error('视频生成超时，请稍后重试');
+                }
+
                 currentMediaUrl = videoUrl;
                 currentMediaType = 'video';
                 output.src = videoUrl;
                 output.style.display = 'block';
-                downloadBtn.classList.add('show');
-                publishBtn.classList.add('show');
+                downloadBtn.style.display = 'inline-block';
                 loading.classList.remove('active');
+
                 addToHistory('video', videoUrl, prompt);
                 addMessage('assistant', `🎬 生成的视频：${prompt}`, videoUrl, 'video');
+                
+                // 生成后清空参考图
+                removeVideoReferenceImage();
+
             } catch (error) {
                 console.error('视频生成错误:', error);
                 loading.classList.remove('active');
                 placeholder.style.display = 'block';
                 placeholder.innerHTML =
-                    `<span class="icon">❌</span>生成失败：${error.message}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
             } finally {
                 generateBtn.disabled = false;
                 generateBtn.textContent = '🎬 生成';
-                loading.querySelector('.loading-text').textContent = '⏳ AI 正在生成视频...';
+                loading.querySelector('.loading-text').textContent = '⏳ AI 正在生成视频，请稍候...';
             }
         }
 
@@ -2147,9 +1942,13 @@
         //  历史记录与下载
         // ============================================================
         function addToHistory(type, url, prompt) {
-            const historyMap = { image: 'drawHistory', video: 'videoHistory' };
+            const historyMap = {
+                image: 'drawHistory',
+                video: 'videoHistory'
+            };
             const container = document.getElementById(historyMap[type]);
             if (!container) return;
+
             const item = document.createElement('div');
             item.className = 'draw-history-item';
             if (type === 'video') {
@@ -2160,44 +1959,36 @@
                 item.onclick = () => loadHistoryMedia(url, 'image');
             }
             item.title = escapeHtml(prompt);
-            // 检查是否已公开
-            const isPublished = galleryData.some(g => g.url === url);
-            if (isPublished) {
-                const badge = document.createElement('span');
-                badge.className = 'publish-badge';
-                badge.textContent = '🌐';
-                item.appendChild(badge);
-            }
             container.prepend(item);
+
             while (container.children.length > 12) {
                 container.removeChild(container.lastChild);
             }
         }
+
         function loadHistoryMedia(url, type) {
             currentMediaUrl = url;
             currentMediaType = type;
+
             if (type === 'image') {
                 const output = document.getElementById('drawOutput');
                 const downloadBtn = document.getElementById('drawDownloadBtn');
-                const publishBtn = document.getElementById('drawPublishBtn');
                 const placeholder = document.getElementById('drawPlaceholder');
                 output.src = url;
                 output.style.display = 'block';
                 placeholder.style.display = 'none';
-                downloadBtn.classList.add('show');
-                publishBtn.classList.add('show');
+                downloadBtn.style.display = 'inline-block';
             } else if (type === 'video') {
                 const output = document.getElementById('videoOutput');
                 const downloadBtn = document.getElementById('videoDownloadBtn');
-                const publishBtn = document.getElementById('videoPublishBtn');
                 const placeholder = document.getElementById('videoPlaceholder');
                 output.src = url;
                 output.style.display = 'block';
                 placeholder.style.display = 'none';
-                downloadBtn.classList.add('show');
-                publishBtn.classList.add('show');
+                downloadBtn.style.display = 'inline-block';
             }
         }
+
         function downloadCurrentMedia(type) {
             if (!currentMediaUrl) return;
             const ext = type === 'video' ? 'mp4' : 'jpg';
@@ -2210,130 +2001,7 @@
         }
 
         // ============================================================
-        //  🌐 公开至画廊
-        // ============================================================
-        function publishToGallery(type) {
-            if (!currentMediaUrl) { alert('没有可公开的内容'); return; }
-            const prompt = type === 'image' ?
-                document.getElementById('drawPrompt').value.trim() :
-                document.getElementById('videoPrompt').value.trim();
-            // 检查是否已存在
-            if (galleryData.some(item => item.url === currentMediaUrl)) {
-                alert('该作品已在画廊中');
-                return;
-            }
-            const entry = {
-                id: Date.now().toString(),
-                type: type,
-                url: currentMediaUrl,
-                prompt: prompt || '未提供提示词',
-                author: currentUser ? currentUser.username : '匿名',
-                createdAt: new Date().toISOString()
-            };
-            galleryData.unshift(entry);
-            saveGalleryToLocal();
-            // 更新历史记录中的标记
-            renderGallery();
-            // 更新历史列表中的徽章
-            const historyMap = { image: 'drawHistory', video: 'videoHistory' };
-            const container = document.getElementById(historyMap[type]);
-            if (container) {
-                const items = container.querySelectorAll('.draw-history-item');
-                for (const item of items) {
-                    const img = item.querySelector('img, video');
-                    if (img && img.src === currentMediaUrl) {
-                        if (!item.querySelector('.publish-badge')) {
-                            const badge = document.createElement('span');
-                            badge.className = 'publish-badge';
-                            badge.textContent = '🌐';
-                            item.appendChild(badge);
-                        }
-                        break;
-                    }
-                }
-            }
-            alert('✅ 已公开至社区画廊！');
-        }
-
-        // ============================================================
-        //  🖼️ 社区画廊
-        // ============================================================
-        function renderGallery() {
-            const container = document.getElementById('galleryContainer');
-            const filter = document.getElementById('galleryFilter').value;
-            const search = document.getElementById('gallerySearch').value.toLowerCase();
-            let filtered = galleryData;
-            if (filter !== 'all') {
-                filtered = filtered.filter(item => item.type === filter);
-            }
-            if (search) {
-                filtered = filtered.filter(item => item.prompt && item.prompt.toLowerCase().includes(search));
-            }
-            if (filtered.length === 0) {
-                container.innerHTML = '<div style="text-align:center;color:#666;padding:40px;width:100%;">暂无公开作品，成为第一个分享的人吧！</div>';
-                return;
-            }
-            container.innerHTML = filtered.map(item => `
-                <div class="gallery-item" onclick="viewGalleryItem('${item.id}')">
-                    ${item.type === 'video' ? 
-                        `<video src="${item.url}" muted preload="metadata"></video>` :
-                        `<img src="${item.url}" alt="${escapeHtml(item.prompt)}">`
-                    }
-                    <div class="gallery-info">
-                        <div class="prompt">${escapeHtml(item.prompt)}</div>
-                        <div class="meta">
-                            <span>${escapeHtml(item.author)}</span>
-                            <span>${formatTime(item.createdAt)}</span>
-                        </div>
-                    </div>
-                    <button class="reuse-btn" onclick="event.stopPropagation(); reusePrompt('${escapeHtml(item.prompt)}', '${item.type}')">📋 复用</button>
-                </div>
-            `).join('');
-        }
-        function viewGalleryItem(id) {
-            const item = galleryData.find(g => g.id === id);
-            if (!item) return;
-            // 切换到对应模式并加载
-            if (item.type === 'image') {
-                switchMode('draw');
-                document.getElementById('drawPrompt').value = item.prompt;
-                document.getElementById('drawOutput').src = item.url;
-                document.getElementById('drawOutput').style.display = 'block';
-                document.getElementById('drawPlaceholder').style.display = 'none';
-                document.getElementById('drawDownloadBtn').classList.add('show');
-                document.getElementById('drawPublishBtn').classList.remove('show');
-                currentMediaUrl = item.url;
-                currentMediaType = 'image';
-            } else if (item.type === 'video') {
-                switchMode('video');
-                document.getElementById('videoPrompt').value = item.prompt;
-                document.getElementById('videoOutput').src = item.url;
-                document.getElementById('videoOutput').style.display = 'block';
-                document.getElementById('videoPlaceholder').style.display = 'none';
-                document.getElementById('videoDownloadBtn').classList.add('show');
-                document.getElementById('videoPublishBtn').classList.remove('show');
-                currentMediaUrl = item.url;
-                currentMediaType = 'video';
-            }
-        }
-        function reusePrompt(prompt, type) {
-            // 复制提示词到剪贴板
-            navigator.clipboard.writeText(prompt).then(() => {
-                alert('✅ 提示词已复制到剪贴板！\n\n切换到 ' + (type === 'image' ? '绘图' : '视频') + ' 模式粘贴使用。');
-            }).catch(() => {
-                // 降级方案
-                const ta = document.createElement('textarea');
-                ta.value = prompt;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                alert('✅ 提示词已复制到剪贴板！');
-            });
-        }
-
-        // ============================================================
-        //  📝 导出 Markdown
+        //  📝 Markdown 导出功能
         // ============================================================
         function exportSingleChatMD(convId) {
             const conv = conversations.find(c => c.id === convId);
@@ -2341,12 +2009,15 @@
             const md = generateMarkdown(conv);
             downloadFile(md, `HZYAI_${conv.title}_${Date.now()}.md`, 'text/markdown');
         }
+
         function exportCurrentChatMD() {
             if (!currentConversationId) return alert('请先选择一个对话');
             exportSingleChatMD(currentConversationId);
         }
+
         function generateMarkdown(conv) {
-            let md = `# ${conv.title}\n\n> 导出时间：${new Date().toISOString()}\n> 消息数：${conv.messages.length}\n\n---\n\n`;
+            let md = `# ${conv.title}\n\n`;
+            md += `> 导出时间：${new Date().toISOString()}\n> 消息数：${conv.messages.length}\n\n---\n\n`;
             conv.messages.forEach(msg => {
                 const role = msg.role === 'user' ? '👤 **用户**' : '🤖 **HZYAI**';
                 md += `### ${role}\n\n${msg.content}\n\n`;
@@ -2357,6 +2028,7 @@
             });
             return md;
         }
+
         function downloadFile(content, filename, type) {
             const blob = new Blob([content], { type });
             const url = URL.createObjectURL(blob);
@@ -2370,67 +2042,22 @@
         }
 
         // ============================================================
-        //  💬 用户反馈 (仅自己或管理员可见)
-        // ============================================================
-        function toggleFeedbackPanel() {
-            const panel = document.getElementById('feedbackPanel');
-            panel.classList.toggle('show');
-            if (panel.classList.contains('show')) {
-                renderFeedbackList();
-            }
-        }
-        function submitFeedback() {
-            const input = document.getElementById('feedbackInput');
-            const text = input.value.trim();
-            if (!text) { alert('请填写反馈内容'); return; }
-            const entry = {
-                id: Date.now().toString(),
-                content: text,
-                author: currentUser ? currentUser.username : '匿名',
-                createdAt: new Date().toISOString()
-            };
-            feedbackData.unshift(entry);
-            saveFeedbackToLocal();
-            input.value = '';
-            renderFeedbackList();
-            alert('✅ 反馈已提交，感谢你的建议！');
-        }
-        function renderFeedbackList() {
-            const container = document.getElementById('feedbackList');
-            if (!container) return;
-            // 仅显示当前用户或管理员的反馈
-            const isAdmin = currentUser && currentUser.username === 'huangzhiyuan';
-            const myUsername = currentUser ? currentUser.username : '';
-            const filtered = feedbackData.filter(f => f.author === myUsername || isAdmin);
-            if (filtered.length === 0) {
-                container.innerHTML = '<div style="color:#666;font-size:12px;text-align:center;padding:10px;">暂无反馈记录</div>';
-                return;
-            }
-            container.innerHTML = filtered.map(f => `
-                <div class="feedback-item">
-                    <span class="time">${formatTime(f.createdAt)}</span>
-                    <div style="margin-bottom:4px;">${escapeHtml(f.content)}</div>
-                    <div style="font-size:10px;color:#666;">by ${escapeHtml(f.author)}</div>
-                </div>
-            `).join('');
-        }
-
-        // ============================================================
         //  模式切换
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'draw', 'video', 'gallery'];
+            const modes = ['chat', 'draw', 'video'];
             const elements = {
                 chat: document.getElementById('chatMode'),
                 draw: document.getElementById('drawMode'),
-                video: document.getElementById('videoMode'),
-                gallery: document.getElementById('galleryMode')
+                video: document.getElementById('videoMode')
             };
             const tabs = document.querySelectorAll('.mode-tab');
+
             tabs.forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.mode === mode);
             });
+
             modes.forEach(m => {
                 if (m === 'chat') {
                     elements[m].style.display = (mode === 'chat') ? 'flex' : 'none';
@@ -2438,9 +2065,7 @@
                     elements[m].classList.toggle('active', mode === m);
                 }
             });
-            if (mode === 'gallery') {
-                renderGallery();
-            }
+
             if (mode === 'chat') document.getElementById('messageInput')?.focus();
             else if (mode === 'draw') document.getElementById('drawPrompt')?.focus();
             else if (mode === 'video') document.getElementById('videoPrompt')?.focus();
@@ -2455,6 +2080,7 @@
                 setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
             }
         }
+
         function formatTime(isoString) {
             const date = new Date(isoString);
             const now = new Date();
@@ -2464,12 +2090,14 @@
             if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
             return `${date.getMonth()+1}/${date.getDate()}`;
         }
+
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
+
         function autoResizeTextarea() {
             const textarea = document.getElementById('messageInput');
             if (textarea) {
@@ -2485,7 +2113,9 @@
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginError');
+
             if (!username || !password) { errorDiv.textContent = '请填写用户名和密码'; return; }
+
             if (username === 'huangzhiyuan' && password === '15240254891') {
                 currentUser = { username: 'huangzhiyuan', isAdmin: true };
                 localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
@@ -2495,8 +2125,6 @@
                 document.getElementById('userRole').textContent = '管理员';
                 document.getElementById('userAvatar').textContent = '👑';
                 loadConversationsFromLocal();
-                loadGalleryFromLocal();
-                loadFeedbackFromLocal();
                 renderConversationsList();
                 if (conversations.length > 0) {
                     currentConversationId = conversations[0].id;
@@ -2506,6 +2134,7 @@
                 fetchDailyQuote();
                 return;
             }
+
             try {
                 const url =
                     `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
@@ -2530,8 +2159,6 @@
                     document.getElementById('userRole').textContent = '用户';
                     document.getElementById('userAvatar').textContent = foundUser.username.charAt(0).toUpperCase();
                     loadConversationsFromLocal();
-                    loadGalleryFromLocal();
-                    loadFeedbackFromLocal();
                     renderConversationsList();
                     if (conversations.length > 0) {
                         currentConversationId = conversations[0].id;
@@ -2548,6 +2175,7 @@
                 errorDiv.textContent = '登录失败：' + error.message;
             }
         }
+
         function logout() {
             currentUser = null;
             conversations = [];
@@ -2559,6 +2187,7 @@
             document.getElementById('loginPassword').value = '';
             document.getElementById('loginError').textContent = '';
         }
+
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
         }
@@ -2578,8 +2207,6 @@
                     document.getElementById('userAvatar').textContent = currentUser.isAdmin ? '👑' : currentUser.username
                         .charAt(0).toUpperCase();
                     loadConversationsFromLocal();
-                    loadGalleryFromLocal();
-                    loadFeedbackFromLocal();
                     renderConversationsList();
                     if (conversations.length > 0) {
                         currentConversationId = conversations[0].id;
@@ -2593,13 +2220,39 @@
                 }
             }
             document.getElementById('chatModelSelect').value = 'sizhi';
+
             document.getElementById('refreshQuoteBtn').addEventListener('click', fetchDailyQuote);
-            // 设置自动调整输入框高度
-            document.getElementById('messageInput').addEventListener('input', autoResizeTextarea);
-            // 移动端菜单
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+
+            const textarea = document.getElementById('messageInput');
+            if (textarea) {
+                textarea.addEventListener('input', autoResizeTextarea);
+                textarea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault();
+                        sendMessage(); }
+                });
+            }
+
+            ['drawPrompt', 'videoPrompt'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (id === 'drawPrompt') generateImage();
+                            else if (id === 'videoPrompt') generateVideo();
+                        }
+                    });
+                }
+            });
+
             if (window.innerWidth <= 768) {
                 document.getElementById('menuBtn').style.display = 'block';
             }
+
             window.addEventListener('resize', function() {
                 if (window.innerWidth <= 768) {
                     document.getElementById('menuBtn').style.display = 'block';
@@ -2608,10 +2261,11 @@
                     document.getElementById('sidebar').classList.remove('open');
                 }
             });
-            switchMode('chat');
-        }
 
-        // 暴露全局函数给 HTML 调用
+            switchMode('chat');
+        });
+
+        // 暴露全局函数
         window.generateImage = generateImage;
         window.generateVideo = generateVideo;
         window.downloadCurrentMedia = downloadCurrentMedia;
@@ -2625,19 +2279,12 @@
         window.logout = logout;
         window.toggleSidebar = toggleSidebar;
         window.fetchDailyQuote = fetchDailyQuote;
-        window.toggleVoiceInput = toggleVoiceInput;
-        window.handleDrawImageUpload = handleDrawImageUpload;
-        window.removeReferenceImage = removeReferenceImage;
-        window.publishToGallery = publishToGallery;
-        window.renderGallery = renderGallery;
-        window.viewGalleryItem = viewGalleryItem;
-        window.reusePrompt = reusePrompt;
         window.exportSingleChatMD = exportSingleChatMD;
         window.exportCurrentChatMD = exportCurrentChatMD;
-        window.toggleFeedbackPanel = toggleFeedbackPanel;
-        window.submitFeedback = submitFeedback;
-
-        document.addEventListener('DOMContentLoaded', init);
+        window.handleDrawImageUpload = handleDrawImageUpload;
+        window.handleVideoImageUpload = handleVideoImageUpload;
+        window.removeReferenceImage = removeReferenceImage;
+        window.removeVideoReferenceImage = removeVideoReferenceImage;
     </script>
 </body>
 </html>
