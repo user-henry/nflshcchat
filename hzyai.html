@@ -261,15 +261,6 @@
             background: #ffd700;
             color: #1a1a2e;
         }
-        .mode-tab .badge {
-            font-size: 9px;
-            background: #f39c12;
-            color: #1a1a2e;
-            padding: 1px 6px;
-            border-radius: 10px;
-            margin-left: 4px;
-            font-weight: 700;
-        }
 
         .main-chat {
             margin-left: 280px;
@@ -574,20 +565,6 @@
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
-        }
-        .draw-header .beta-badge {
-            background: #f39c12;
-            color: #1a1a2e;
-            padding: 2px 14px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            animation: pulse-badge 2s ease-in-out infinite;
-        }
-        @keyframes pulse-badge {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
         }
         .draw-header p {
             color: #888;
@@ -966,8 +943,8 @@
             <!-- 模式切换标签 -->
             <div class="mode-tabs" id="modeTabs">
                 <button class="mode-tab active" data-mode="chat" onclick="switchMode('chat')">💬 对话</button>
-                <button class="mode-tab" data-mode="draw" onclick="switchMode('draw')">🎨 绘图 <span class="badge">Beta</span></button>
-                <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频 <span class="badge">Beta</span></button>
+                <button class="mode-tab" data-mode="draw" onclick="switchMode('draw')">🎨 绘图</button>
+                <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频</button>
             </div>
 
             <!-- ====== 每日一言 ====== -->
@@ -1016,15 +993,12 @@
             <!-- ====== 绘图模式 ====== -->
             <div class="draw-mode" id="drawMode">
                 <div class="draw-header">
-                    <h2>🎨 绘图模式 <span class="beta-badge">⚡ Beta 灰度测试中</span></h2>
+                    <h2>🎨 绘图模式</h2>
                     <p>输入文字描述，AI 将为你生成图像 · 基于 Agnes Image 2.1 Flash</p>
                 </div>
                 <div class="draw-input-area">
                     <div class="draw-input-row">
                         <input type="text" id="drawPrompt" class="draw-prompt-input" placeholder="描述你想要生成的画面，例如：一只在太空中的猫" onkeydown="if(event.key==='Enter') generateImage()">
-                        <select id="drawModel" style="display:none;">
-                            <option value="agnes-image-2.1-flash">Agnes Image 2.1 Flash</option>
-                        </select>
                         <input type="text" id="drawSize" placeholder="尺寸，如 1024x768" value="1024x768" style="flex:0.8;min-width:120px;">
                         <button class="draw-generate-btn" id="drawGenerateBtn" onclick="generateImage()">🎨 生成</button>
                     </div>
@@ -1051,7 +1025,7 @@
             <!-- ====== 视频模式 ====== -->
             <div class="draw-mode" id="videoMode">
                 <div class="draw-header">
-                    <h2>🎬 视频生成模式 <span class="beta-badge">⚡ Beta 灰度测试中</span></h2>
+                    <h2>🎬 视频生成模式</h2>
                     <p>输入文字描述，AI 将为你生成视频 · 基于 Agnes Video V2.0</p>
                 </div>
                 <div class="draw-input-area">
@@ -1142,7 +1116,7 @@
         // Agnes AI 配置
         const AGNES_CONFIG = {
             baseUrl: 'https://apihub.agnes-ai.com/v1',
-            apiKey: 'sk-VNgflStoqtTeFqIfpntpL21vjl8Hx4RPQYRmDzrooHLB0IOi', // 您提供的密钥
+            apiKey: 'sk-VNgflStoqtTeFqIfpntpL21vjl8Hx4RPQYRmDzrooHLB0IOi',
             chatModel: 'agnes-2.0-flash',
             imageModel: 'agnes-image-2.1-flash',
             videoModel: 'agnes-video-v2.0'
@@ -1720,11 +1694,11 @@
 
                 // Step 2: 轮询获取结果
                 let attempts = 0;
-                const maxAttempts = 60; // 最多轮询 60 次 (约 3 分钟)
+                const maxAttempts = 60;
                 let videoUrl = null;
 
                 while (attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, 3000)); // 每 3 秒轮询一次
+                    await new Promise(resolve => setTimeout(resolve, 3000));
 
                     const resultUrl = `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`;
                     const resultResponse = await fetch(resultUrl, {
@@ -1752,7 +1726,6 @@
                     throw new Error('视频生成超时，请稍后重试');
                 }
 
-                // 显示视频
                 currentMediaUrl = videoUrl;
                 currentMediaType = 'video';
                 output.src = videoUrl;
