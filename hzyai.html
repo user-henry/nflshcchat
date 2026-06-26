@@ -18,7 +18,6 @@
             overflow: hidden;
         }
 
-        /* 登录页面样式 */
         .login-container {
             position: fixed;
             top: 0;
@@ -31,7 +30,6 @@
             align-items: center;
             z-index: 1000;
         }
-
         .login-card {
             background: #16213e;
             border-radius: 20px;
@@ -40,7 +38,6 @@
             border: 1px solid #2a2a3e;
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
-
         .login-logo {
             width: 60px;
             height: 60px;
@@ -50,7 +47,6 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-
         .login-card h1 {
             font-size: 28px;
             margin-bottom: 8px;
@@ -60,14 +56,12 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
         .login-card .subtitle {
             color: #888;
             margin-bottom: 30px;
             font-size: 14px;
             text-align: center;
         }
-
         .login-card input {
             width: 100%;
             padding: 12px 16px;
@@ -78,12 +72,10 @@
             color: white;
             font-size: 14px;
         }
-
         .login-card input:focus {
             outline: none;
             border-color: #ffd700;
         }
-
         .login-card button {
             width: 100%;
             padding: 12px;
@@ -95,11 +87,9 @@
             cursor: pointer;
             font-size: 16px;
         }
-
         .login-card button:hover {
             transform: translateY(-1px);
         }
-
         .login-error {
             color: #dc3545;
             font-size: 13px;
@@ -107,13 +97,11 @@
             text-align: center;
         }
 
-        /* 主应用布局 */
         .app {
             display: none;
             height: 100vh;
         }
 
-        /* 侧边栏 */
         .sidebar {
             width: 280px;
             background: #0f0f1a;
@@ -125,7 +113,6 @@
             top: 0;
             bottom: 0;
         }
-
         .sidebar-header {
             padding: 20px;
             border-bottom: 1px solid #2a2a3e;
@@ -133,7 +120,6 @@
             align-items: center;
             gap: 12px;
         }
-
         .sidebar-logo {
             width: 36px;
             height: 36px;
@@ -142,7 +128,6 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-
         .sidebar-header h2 {
             font-size: 20px;
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
@@ -150,7 +135,6 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-
         .new-chat-btn {
             margin: 16px 20px;
             padding: 12px;
@@ -165,17 +149,14 @@
             justify-content: center;
             gap: 8px;
         }
-
         .new-chat-btn:hover {
             opacity: 0.9;
         }
-
         .conversations-list {
             flex: 1;
             overflow-y: auto;
             padding: 0 12px;
         }
-
         .conversation-item {
             padding: 12px;
             border-radius: 10px;
@@ -184,16 +165,13 @@
             transition: all 0.2s;
             background: #1a1a2e;
         }
-
         .conversation-item:hover {
             background: #2a2a3e;
         }
-
         .conversation-item.active {
             background: #2a2a3e;
             border-left: 3px solid #ffd700;
         }
-
         .conversation-title {
             font-size: 14px;
             font-weight: 500;
@@ -202,12 +180,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .conversation-time {
             font-size: 11px;
             color: #666;
         }
-
         .delete-conv {
             float: right;
             opacity: 0;
@@ -215,15 +191,12 @@
             color: #888;
             cursor: pointer;
         }
-
         .conversation-item:hover .delete-conv {
             opacity: 1;
         }
-
         .delete-conv:hover {
             color: #dc3545;
         }
-
         .user-info {
             padding: 16px 20px;
             border-top: 1px solid #2a2a3e;
@@ -231,7 +204,6 @@
             align-items: center;
             gap: 12px;
         }
-
         .user-avatar {
             width: 36px;
             height: 36px;
@@ -243,17 +215,14 @@
             font-weight: bold;
             color: #1a1a2e;
         }
-
         .user-name {
             font-size: 14px;
             font-weight: 500;
         }
-
         .user-role {
             font-size: 11px;
             color: #888;
         }
-
         .logout-btn {
             margin-left: auto;
             background: none;
@@ -263,7 +232,45 @@
             font-size: 18px;
         }
 
-        /* 主聊天区域 - 两栏布局 */
+        .mode-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 8px 16px;
+            background: #0f0f1a;
+            border-bottom: 1px solid #2a2a3e;
+            flex-wrap: wrap;
+        }
+        .mode-tab {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .mode-tab:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+        .mode-tab.active {
+            background: #ffd700;
+            color: #1a1a2e;
+        }
+        .mode-tab .badge {
+            font-size: 9px;
+            background: #f39c12;
+            color: #1a1a2e;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+            font-weight: 700;
+        }
+
         .main-chat {
             margin-left: 280px;
             margin-right: 300px;
@@ -272,26 +279,102 @@
             flex-direction: column;
             background: #1a1a2e;
         }
-
         .chat-header {
-            padding: 16px 24px;
+            padding: 12px 24px;
             border-bottom: 1px solid #2a2a3e;
             background: #16213e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
         }
-
         .chat-header h1 {
-            font-size: 20px;
+            font-size: 18px;
             color: #ffd700;
         }
-
         .chat-header p {
-            font-size: 13px;
+            font-size: 12px;
             color: #888;
         }
+        .chat-header .model-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chat-header .model-selector label {
+            font-size: 12px;
+            color: #888;
+        }
+        .chat-header .model-selector select {
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: white;
+            border: 1px solid #2a2a3e;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .chat-header .model-selector select:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
 
-        /* 同步按钮区域 */
+        .daily-quote {
+            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
+            border-left: 3px solid #ffd700;
+            padding: 8px 16px;
+            margin: 6px 24px 0 24px;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            min-height: 40px;
+        }
+        .daily-quote .refresh-btn {
+            background: none;
+            border: none;
+            color: #ffd700;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .daily-quote .refresh-btn:hover {
+            background: rgba(255,215,0,0.15);
+        }
+        .daily-quote .quote-content {
+            flex: 1;
+            min-width: 100px;
+        }
+        .daily-quote .quote-content blockquote {
+            margin: 0;
+            padding: 0;
+            border: none;
+            color: #ddd;
+            font-style: italic;
+        }
+        .daily-quote .quote-content blockquote p {
+            margin: 0;
+        }
+        .daily-quote .quote-content blockquote footer {
+            font-style: normal;
+            color: #888;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .daily-quote .quote-loading {
+            color: #666;
+            font-style: italic;
+        }
+
         .sync-bar {
-            padding: 12px 24px;
+            padding: 8px 24px;
             background: #16213e;
             border-bottom: 1px solid #2a2a3e;
             display: flex;
@@ -299,23 +382,20 @@
             align-items: center;
             flex-wrap: wrap;
         }
-
         .sync-btn {
             background: #2a2a3e;
             color: #ffd700;
             border: none;
-            padding: 6px 14px;
+            padding: 4px 12px;
             border-radius: 20px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
             transition: all 0.2s;
         }
-
         .sync-btn:hover {
             background: #ffd700;
             color: #1a1a2e;
         }
-
         .sync-warning {
             font-size: 11px;
             color: #f39c12;
@@ -323,7 +403,6 @@
             align-items: center;
             gap: 6px;
         }
-
         .sync-status {
             font-size: 11px;
             color: #888;
@@ -333,132 +412,93 @@
         .messages-area {
             flex: 1;
             overflow-y: auto;
-            padding: 24px;
+            padding: 20px;
         }
-
         .message {
             display: flex;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             animation: fadeIn 0.3s ease;
         }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         .message.user {
             flex-direction: row-reverse;
         }
-
         .message-avatar {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 16px;
             flex-shrink: 0;
         }
-
         .message.user .message-avatar {
             background: #2a2a3e;
-            margin-left: 12px;
+            margin-left: 10px;
         }
-
         .message.assistant .message-avatar {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            margin-right: 12px;
+            margin-right: 10px;
         }
-
         .message-content {
             max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 18px;
+            padding: 10px 14px;
+            border-radius: 16px;
             line-height: 1.5;
             font-size: 14px;
         }
-
         .message.user .message-content {
             background: #2a2a3e;
             color: white;
         }
-
         .message.assistant .message-content {
             background: #16213e;
             color: #ddd;
         }
-
         .message-content pre {
             background: #0f0f1a;
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 8px 0;
-        }
-        .code-block-wrapper {
-            position: relative;
-        }
-        .code-block-wrapper .copy-code-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: rgba(255,255,255,0.15);
-            border: none;
-            color: #ccc;
-            padding: 4px 10px;
+            padding: 10px;
             border-radius: 6px;
-            font-size: 11px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 5;
+            overflow-x: auto;
+            margin: 6px 0;
         }
-        .code-block-wrapper:hover .copy-code-btn {
-            opacity: 1;
-        }
-        .code-block-wrapper .copy-code-btn:hover {
-            background: rgba(255,255,255,0.3);
-            color: white;
-        }
-
-        .reply-quote {
-            border-left: 3px solid #6c5ce7;
-            padding: 4px 10px;
-            margin-bottom: 6px;
-            background: rgba(108, 92, 231, 0.1);
-            border-radius: 4px;
-            font-size: 12px;
-            color: #aaa;
-            word-break: break-word;
-        }
-
         .message-content code {
             font-family: 'Consolas', monospace;
-            font-size: 13px;
+            font-size: 12px;
         }
-
-        /* 输入区域 */
-        .input-area {
-            padding: 20px 24px;
-            border-top: 1px solid #2a2a3e;
-            background: #16213e;
+        .message-content img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 6px 0;
+            border: 1px solid #2a2a3e;
         }
-
-        .input-wrapper {
-            display: flex;
-            gap: 12px;
-            background: #1a1a2e;
-            border-radius: 16px;
-            padding: 8px 12px;
+        .message-content video {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 6px 0;
             border: 1px solid #2a2a3e;
         }
 
+        .input-area {
+            padding: 16px 24px;
+            border-top: 1px solid #2a2a3e;
+            background: #16213e;
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            background: #1a1a2e;
+            border-radius: 14px;
+            padding: 6px 12px;
+            border: 1px solid #2a2a3e;
+        }
         .input-wrapper:focus-within {
             border-color: #ffd700;
         }
-
         .input-wrapper textarea {
             flex: 1;
             background: none;
@@ -467,56 +507,238 @@
             font-size: 14px;
             resize: none;
             font-family: inherit;
-            padding: 8px 0;
-            min-height: 24px;
-            max-height: 120px;
+            padding: 6px 0;
+            min-height: 20px;
+            max-height: 100px;
         }
-
         .input-wrapper textarea:focus {
             outline: none;
         }
-
         .send-btn {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             color: #1a1a2e;
             border: none;
-            border-radius: 12px;
-            padding: 8px 20px;
+            border-radius: 10px;
+            padding: 6px 16px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 14px;
         }
-
         .send-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-
         .thinking {
             display: flex;
             gap: 4px;
-            padding: 12px 16px;
+            padding: 10px 14px;
             background: #16213e;
-            border-radius: 18px;
+            border-radius: 16px;
             width: fit-content;
         }
-
         .thinking span {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: #888;
             border-radius: 50%;
             animation: blink 1.4s infinite;
         }
-
         .thinking span:nth-child(2) { animation-delay: 0.2s; }
         .thinking span:nth-child(3) { animation-delay: 0.4s; }
-
         @keyframes blink {
             0%, 60%, 100% { opacity: 0.3; }
             30% { opacity: 1; }
         }
 
-        /* 右侧介绍面板 */
+        /* ===== 绘图模式 ===== */
+        .draw-mode {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 20px;
+            background: #0f172a;
+            overflow-y: auto;
+        }
+        .draw-mode.active {
+            display: flex;
+        }
+        .draw-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .draw-header h2 {
+            font-size: 24px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .draw-header .beta-badge {
+            background: #f39c12;
+            color: #1a1a2e;
+            padding: 2px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            animation: pulse-badge 2s ease-in-out infinite;
+        }
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .draw-header p {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .draw-input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 700px;
+            margin: 0 auto 16px;
+            width: 100%;
+        }
+        .draw-input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .draw-input-row input,
+        .draw-input-row select {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: white;
+            font-size: 13px;
+        }
+        .draw-input-row input:focus,
+        .draw-input-row select:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .draw-input-row select option {
+            background: #1a1a2e;
+        }
+        .draw-prompt-input {
+            flex: 3;
+            min-width: 160px;
+        }
+        .draw-generate-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+        .draw-generate-btn:hover {
+            transform: scale(1.02);
+        }
+        .draw-generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .draw-result-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 240px;
+            background: #0a0f1c;
+            border-radius: 14px;
+            border: 1px dashed #2a2a3e;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .draw-result-area .placeholder {
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+        }
+        .draw-result-area .placeholder .icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .draw-result-area img {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .draw-result-area video {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .draw-result-area .loading-spinner {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .draw-result-area .loading-spinner.active {
+            display: flex;
+        }
+        .draw-result-area .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #2a2a3e;
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .draw-result-area .loading-text {
+            color: #888;
+            font-size: 13px;
+        }
+        .draw-history {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+        .draw-history-item {
+            width: 70px;
+            height: 70px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .draw-history-item:hover {
+            border-color: #ffd700;
+        }
+        .draw-history-item img,
+        .draw-history-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .info-sidebar {
             position: fixed;
             right: 0;
@@ -526,107 +748,94 @@
             background: #0f0f1a;
             border-left: 1px solid #2a2a3e;
             overflow-y: auto;
-            padding: 24px 20px;
+            padding: 20px;
         }
-
         .info-section {
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
-
         .info-section h3 {
             color: #ffd700;
-            font-size: 16px;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
+            font-size: 15px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
             border-bottom: 1px solid #2a2a3e;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-
         .info-section p {
             color: #aaa;
             font-size: 13px;
             line-height: 1.6;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
-
         .feature-list {
             list-style: none;
         }
-
         .feature-list li {
             color: #ccc;
             font-size: 13px;
-            padding: 6px 0;
+            padding: 4px 0;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-
         .feature-list li::before {
             content: "✨";
         }
-
         .command-example {
             background: #1a1a2e;
-            padding: 8px 12px;
-            border-radius: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
             font-family: monospace;
             font-size: 12px;
             color: #ffd700;
-            margin: 5px 0;
+            margin: 4px 0;
         }
-
         .footer-note {
             text-align: center;
-            padding-top: 20px;
-            margin-top: 20px;
+            padding-top: 16px;
+            margin-top: 16px;
             border-top: 1px solid #2a2a3e;
             font-size: 11px;
             color: #666;
         }
 
-        /* 视频容器样式 */
         .video-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 宽高比 */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
-            border-radius: 12px;
-            margin-top: 10px;
+            border-radius: 10px;
+            margin-top: 8px;
             background: #000;
         }
-        .video-container video {
+        .video-container iframe {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border-radius: 12px;
+            border: none;
         }
         .video-caption {
             font-size: 12px;
             color: #aaa;
-            margin-top: 8px;
+            margin-top: 6px;
             text-align: center;
         }
 
-        /* 滚动条 */
         ::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
-
         ::-webkit-scrollbar-track {
             background: #1a1a2e;
         }
-
         ::-webkit-scrollbar-thumb {
             background: #2a2a3e;
             border-radius: 3px;
         }
 
-        /* 移动端适配 */
         @media (max-width: 900px) {
             .info-sidebar {
                 display: none;
@@ -635,7 +844,6 @@
                 margin-right: 0;
             }
         }
-
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -653,36 +861,74 @@
             .menu-btn {
                 display: block;
                 position: fixed;
-                top: 16px;
-                left: 16px;
+                top: 14px;
+                left: 14px;
                 z-index: 101;
                 background: #2a2a3e;
                 border: none;
                 color: white;
-                padding: 8px 12px;
-                border-radius: 8px;
+                padding: 6px 10px;
+                border-radius: 6px;
                 cursor: pointer;
             }
             .sync-bar {
-                padding: 10px 16px;
+                padding: 6px 12px;
             }
             .sync-btn {
-                padding: 4px 10px;
+                padding: 3px 8px;
                 font-size: 10px;
+            }
+            .draw-input-row {
+                flex-direction: column;
+            }
+            .draw-input-row input,
+            .draw-input-row select {
+                min-width: unset;
+                width: 100%;
+            }
+            .draw-generate-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .mode-tabs {
+                padding: 4px 8px;
+                gap: 2px;
+            }
+            .mode-tab {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+            .draw-header h2 {
+                font-size: 18px;
+                flex-wrap: wrap;
+            }
+            .chat-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .chat-header .model-selector {
+                justify-content: flex-start;
+            }
+            .chat-header .model-selector select {
+                flex: 1;
+            }
+            .daily-quote {
+                margin: 4px 12px 0 12px;
+                padding: 6px 12px;
+                font-size: 12px;
             }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
-    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
 </head>
 <body>
-    <!-- 登录页面 -->
+
+    <!-- ===== 登录页面 ===== -->
     <div id="loginPage" class="login-container">
         <div class="login-card">
             <div class="login-logo"></div>
             <h1>HZYAI</h1>
-            <div class="subtitle">智能对话助手 · 基于思知AI</div>
+            <div class="subtitle">智能对话助手 · 多模态 AI</div>
             <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
             <input type="password" id="loginPassword" placeholder="密码">
             <button onclick="doLogin()">登录</button>
@@ -693,7 +939,7 @@
         </div>
     </div>
 
-    <!-- 主应用 -->
+    <!-- ===== 主应用 ===== -->
     <div id="app" class="app">
         <!-- 侧边栏 -->
         <div class="sidebar" id="sidebar">
@@ -715,86 +961,166 @@
             </div>
         </div>
 
-        <!-- 主聊天区域 -->
-        <div class="main-chat">
-            <div class="chat-header">
-                <h1 id="chatTitle">新对话</h1>
-                <p>和 HZYAI 对话，提问、写作、编程都可以</p>
-            </div>
-            
-            <!-- 同步按钮栏 -->
-            <div class="sync-bar">
-                <button class="sync-btn" onclick="pullFromGitHub()" id="pullBtn">📥 爬取 GitHub Issues 消息</button>
-                <button class="sync-btn" onclick="pushToGitHub()" id="pushBtn">📤 更新消息至 GitHub Issues</button>
-                <div class="sync-warning">
-                    ⚠️ 爬取 GitHub Issues 消息需要时间，请耐心等待
-                </div>
-                <div class="sync-status" id="syncStatus"></div>
+        <!-- ===== 主内容区域 ===== -->
+        <div class="main-chat" id="mainChat">
+            <!-- 模式切换标签 -->
+            <div class="mode-tabs" id="modeTabs">
+                <button class="mode-tab active" data-mode="chat" onclick="switchMode('chat')">💬 对话</button>
+                <button class="mode-tab" data-mode="draw" onclick="switchMode('draw')">🎨 绘图 <span class="badge">Beta</span></button>
+                <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频 <span class="badge">Beta</span></button>
             </div>
 
-            <div class="messages-area" id="messagesArea">
-                <div class="message assistant">
-                    <div class="message-avatar">🤖</div>
-                    <div class="message-content">你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。</div>
+            <!-- ====== 每日一言 ====== -->
+            <div class="daily-quote" id="dailyQuote">
+                <button class="refresh-btn" id="refreshQuoteBtn" title="刷新一言">⟳</button>
+                <div class="quote-content" id="quoteContent">
+                    <span class="quote-loading">📖 加载每日一言...</span>
                 </div>
             </div>
-            <div class="input-area">
-                <div class="input-wrapper">
-                    <textarea id="messageInput" placeholder="发送消息... (Shift+Enter 换行，Enter 发送)" rows="1"></textarea>
-                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+
+            <!-- ====== 聊天模式 ====== -->
+            <div id="chatMode" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
+                <div class="chat-header">
+                    <div>
+                        <h1 id="chatTitle">新对话</h1>
+                        <p>和 HZYAI 对话，基于思知 AI 或 Agnes AI (Claw 模型)</p>
+                    </div>
+                    <div class="model-selector">
+                        <label for="chatModelSelect">🧠 模型：</label>
+                        <select id="chatModelSelect">
+                            <option value="sizhi">思知 AI (默认)</option>
+                            <option value="agnes">Agnes 2.0 Flash</option>
+                        </select>
+                    </div>
                 </div>
+                <div class="sync-bar">
+                    <button class="sync-btn" onclick="pullFromGitHub()" id="pullBtn">📥 爬取 GitHub Issues</button>
+                    <button class="sync-btn" onclick="pushToGitHub()" id="pushBtn">📤 更新至 GitHub</button>
+                    <div class="sync-warning">⚠️ 爬取需要时间，请耐心等待</div>
+                    <div class="sync-status" id="syncStatus"></div>
+                </div>
+                <div class="messages-area" id="messagesArea">
+                    <div class="message assistant">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！</div>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <div class="input-wrapper">
+                        <textarea id="messageInput" placeholder="发送消息... (Shift+Enter 换行，Enter 发送)" rows="1"></textarea>
+                        <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== 绘图模式 ====== -->
+            <div class="draw-mode" id="drawMode">
+                <div class="draw-header">
+                    <h2>🎨 绘图模式 <span class="beta-badge">⚡ Beta 灰度测试中</span></h2>
+                    <p>输入文字描述，AI 将为你生成图像 · 基于 Agnes Image 2.1 Flash</p>
+                </div>
+                <div class="draw-input-area">
+                    <div class="draw-input-row">
+                        <input type="text" id="drawPrompt" class="draw-prompt-input" placeholder="描述你想要生成的画面，例如：一只在太空中的猫" onkeydown="if(event.key==='Enter') generateImage()">
+                        <select id="drawModel" style="display:none;">
+                            <option value="agnes-image-2.1-flash">Agnes Image 2.1 Flash</option>
+                        </select>
+                        <input type="text" id="drawSize" placeholder="尺寸，如 1024x768" value="1024x768" style="flex:0.8;min-width:120px;">
+                        <button class="draw-generate-btn" id="drawGenerateBtn" onclick="generateImage()">🎨 生成</button>
+                    </div>
+                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
+                        <span>💡 支持文生图 · 基于 Agnes Image 2.1 Flash · 输出 URL</span>
+                    </div>
+                </div>
+                <div class="draw-result-area" id="drawResult">
+                    <div class="placeholder" id="drawPlaceholder">
+                        <span class="icon">🖼️</span>
+                        输入描述后点击「生成」<br>
+                        <span style="font-size:12px; color:#555;">支持文生图 · 基于 Agnes Image 2.1 Flash</span>
+                    </div>
+                    <div class="loading-spinner" id="drawLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">⏳ AI 正在创作中...</div>
+                    </div>
+                    <img id="drawOutput" style="display:none;" alt="生成的图片">
+                    <button class="draw-generate-btn" id="drawDownloadBtn" style="display:none; margin-top:10px; background:#2ecc71; color:#1a1a2e;" onclick="downloadCurrentMedia('image')">📥 下载</button>
+                </div>
+                <div class="draw-history" id="drawHistory"></div>
+            </div>
+
+            <!-- ====== 视频模式 ====== -->
+            <div class="draw-mode" id="videoMode">
+                <div class="draw-header">
+                    <h2>🎬 视频生成模式 <span class="beta-badge">⚡ Beta 灰度测试中</span></h2>
+                    <p>输入文字描述，AI 将为你生成视频 · 基于 Agnes Video V2.0</p>
+                </div>
+                <div class="draw-input-area">
+                    <div class="draw-input-row">
+                        <input type="text" id="videoPrompt" class="draw-prompt-input" placeholder="描述你想要生成的视频，例如：日落时分的海滩" onkeydown="if(event.key==='Enter') generateVideo()">
+                        <select id="videoDuration">
+                            <option value="81">约 3 秒 (81帧)</option>
+                            <option value="121" selected>约 5 秒 (121帧)</option>
+                            <option value="241">约 10 秒 (241帧)</option>
+                            <option value="441">约 18 秒 (441帧)</option>
+                        </select>
+                        <button class="draw-generate-btn" id="videoGenerateBtn" onclick="generateVideo()">🎬 生成</button>
+                    </div>
+                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
+                        <span>💡 基于 Agnes Video V2.0 · 异步生成 · 请耐心等待</span>
+                    </div>
+                </div>
+                <div class="draw-result-area" id="videoResult">
+                    <div class="placeholder" id="videoPlaceholder">
+                        <span class="icon">🎞️</span>
+                        输入描述后点击「生成」<br>
+                        <span style="font-size:12px; color:#555;">支持文生视频 · 基于 Agnes Video V2.0 · 异步生成</span>
+                    </div>
+                    <div class="loading-spinner" id="videoLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">⏳ AI 正在生成视频，请稍候...</div>
+                    </div>
+                    <video id="videoOutput" style="display:none;" controls></video>
+                    <button class="draw-generate-btn" id="videoDownloadBtn" style="display:none; margin-top:10px; background:#2ecc71; color:#1a1a2e;" onclick="downloadCurrentMedia('video')">📥 下载</button>
+                </div>
+                <div class="draw-history" id="videoHistory"></div>
             </div>
         </div>
 
-        <!-- 右侧介绍面板（包含视频） -->
+        <!-- ===== 右侧信息面板 ===== -->
         <div class="info-sidebar">
             <div class="info-section">
                 <h3>🤖 关于 HZYAI</h3>
-                <p>HZYAI 是基于思知 AI 大模型构建的智能对话助手，响应快速，适合只有 AI 工具的使用需求的用户。</p>
-                <p>所有对话都会<strong>本地存储</strong>，同时支持同步到 GitHub Issues，换设备登录后一键爬取，记录永不丢失。</p>
+                <p>基于思知 AI + Agnes AI 的多模态对话助手，支持对话、绘图、视频生成。</p>
+                <p>对话记录<strong>本地存储</strong>，支持 GitHub Issues 云端同步。</p>
             </div>
-            
-            <!-- ========== 介绍视频板块（方案一：直接嵌入视频播放器） ========== -->
             <div class="info-section">
-                <h3>📺 产品介绍视频</h3>
+                <h3>📺 产品介绍</h3>
                 <div class="video-container">
-                    <video 
-                        controls 
-                        preload="metadata"
-                        poster="https://cdn.luogu.com.cn/upload/image_hosting/91if3kid.png">
-                        <source src="https://nsj.tipian01.cn/video/2026/04/18/7a8fa91aca4cf08a086888e52d4d23aa.H_1080.mp4?sign=78577b8f584eae7d8ca3d90aabf0433b&t=69e38d89" type="video/mp4">
-                        您的浏览器不支持 video 标签。
-                    </video>
+                    <iframe frameborder="0" allowfullscreen mozallowfullscreen webkitallowfullscreen src="https://share.plvideo.cn/front/video/preview?vid=o8415a648d7e64810f9646f76baf4649_o"></iframe>
                 </div>
-                <div class="video-caption">✨ 一分钟了解 HZYAI 的强大功能</div>
             </div>
-            <!-- ========== 视频板块结束 ========== -->
-            
             <div class="info-section">
-                <h3>✨ 功能特点</h3>
+                <h3>✨ 功能列表</h3>
                 <ul class="feature-list">
-                    <li>智能对话 & 问答</li>
-                    <li>编程辅助 & 代码解释</li>
-                    <li>写作助手 & 文案生成</li>
-                    <li>翻译 & 语言学习</li>
-                    <li>创意激发 & 头脑风暴</li>
+                    <li>💬 智能对话 (思知 AI / Agnes AI)</li>
+                    <li>🎨 AI 绘图 (Agnes Image 2.1 Flash)</li>
+                    <li>🎬 AI 视频生成 (Agnes Video V2.0)</li>
+                    <li>📝 编程辅助 & 代码解释</li>
+                    <li>✍️ 写作助手 & 文案生成</li>
                 </ul>
             </div>
             <div class="info-section">
                 <h3>💡 使用技巧</h3>
-                <div class="command-example">📝 编程问题：Python 如何读取文件？</div>
-                <div class="command-example">✍️ 写作帮助：帮我写一封请假邮件</div>
-                <div class="command-example">🌐 翻译：把"你好"翻译成英语</div>
-                <div class="command-example">💬 闲聊：讲个笑话</div>
+                <div class="command-example">📝 Python 如何读取 CSV？</div>
+                <div class="command-example">🎨 一只在太空中的猫，写实风格</div>
+                <div class="command-example">🎬 日落时分的海滩，5秒</div>
             </div>
             <div class="info-section">
                 <h3>📦 数据同步</h3>
                 <p>点击「爬取 GitHub Issues 消息」可拉取云端历史对话；点击「更新消息至 GitHub Issues」可上传当前对话。</p>
                 <p style="font-size: 11px; color: #f39c12;">⚠️ 首次使用建议先爬取云端数据，避免覆盖已有记录。</p>
             </div>
-            <div class="footer-note">
-                HZYAI · 让对话更智能
-            </div>
+            <div class="footer-note">HZYAI · 让创作更自由</div>
         </div>
     </div>
 
@@ -803,22 +1129,40 @@
 
     <script src="config.js"></script>
     <script>
-        // ========== 配置 ==========
+        // ============================================================
+        //  🌟 配置
+        // ============================================================
         const AI_CONFIG = {
-            apiUrl: 'https://api.sizhi.com/chat',
-            appid: 'd18408ec60b14c5f844d5004881808eb',
+            sizhiApiUrl: 'https://api.sizhi.com/chat',
+            sizhiAppid: 'd18408ec60b14c5f844d5004881808eb',
             name: 'HZYAI',
             avatar: '🤖'
         };
 
-        // 全局变量
+        // Agnes AI 配置
+        const AGNES_CONFIG = {
+            baseUrl: 'https://apihub.agnes-ai.com/v1',
+            apiKey: 'sk-VNgflStoqtTeFqIfpntpL21vjl8Hx4RPQYRmDzrooHLB0IOi', // 您提供的密钥
+            chatModel: 'agnes-2.0-flash',
+            imageModel: 'agnes-image-2.1-flash',
+            videoModel: 'agnes-video-v2.0'
+        };
+
+        // ============================================================
+        //  全局状态
+        // ============================================================
         let currentUser = null;
         let conversations = [];
         let currentConversationId = null;
         let isWaiting = false;
         let isSyncing = false;
+        let currentMode = 'chat';
+        let currentMediaUrl = '';
+        let currentMediaType = 'image';
 
-        // ========== 存储管理 (localStorage) ==========
+        // ============================================================
+        //  存储管理
+        // ============================================================
         function loadConversationsFromLocal() {
             if (!currentUser) return;
             const key = `hzyai_conversations_${currentUser.username}`;
@@ -829,9 +1173,8 @@
                 conversations = [{
                     id: Date.now().toString(),
                     title: '新对话',
-                    messages: [
-                        { role: 'assistant', content: '你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。', timestamp: new Date().toISOString() }
-                    ],
+                    messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！',
+                        timestamp: new Date().toISOString() }],
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     synced: true
@@ -846,7 +1189,9 @@
             localStorage.setItem(key, JSON.stringify(conversations));
         }
 
-        // ========== GitHub Issues 存储 ==========
+        // ============================================================
+        //  GitHub Issues 同步
+        // ============================================================
         function getGitHubLabel() {
             return `hzyai_${currentUser.username}`;
         }
@@ -854,7 +1199,8 @@
         async function loadFromGitHub() {
             if (!currentUser) return [];
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getGitHubLabel()}&state=open`;
+                const url =
+                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getGitHubLabel()}&state=open`;
                 const response = await fetch(url, {
                     headers: {
                         'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
@@ -884,20 +1230,21 @@
             try {
                 const existingIssues = await loadFromGitHub();
                 const existing = existingIssues.find(c => c.id === conversation.id);
-                
+
                 const issueBody = `HZYAI对话数据\n\`\`\`json\n${JSON.stringify(conversation, null, 2)}\n\`\`\``;
                 const labels = [getGitHubLabel()];
-                
+
                 if (existing && existing.issueNumber) {
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ body: issueBody })
-                    });
+                    await fetch(
+                        `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ body: issueBody })
+                        });
                 } else {
                     await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
                         method: 'POST',
@@ -917,35 +1264,22 @@
             }
         }
 
-        async function saveAllConversationsToGitHub() {
-            if (!currentUser) return;
-            setSyncStatus('正在同步到 GitHub...', 'warning');
-            let successCount = 0;
-            for (const conv of conversations) {
-                const success = await saveConversationToGitHub(conv);
-                if (success) successCount++;
-            }
-            saveConversationsToLocal();
-            setSyncStatus(`✅ 同步完成！已同步 ${successCount}/${conversations.length} 个对话`, 'success');
-            setTimeout(() => setSyncStatus('', ''), 3000);
-        }
-
         async function pullFromGitHub() {
             if (isSyncing) return;
             isSyncing = true;
-            setSyncStatus('🔄 正在从 GitHub 爬取消息，请稍候...', 'warning');
+            setSyncStatus('🔄 正在从 GitHub 爬取...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
-            
+
             try {
                 const githubConvs = await loadFromGitHub();
-                let updatedCount = 0;
-                let newCount = 0;
-                
+                let updatedCount = 0,
+                    newCount = 0;
                 for (const githubConv of githubConvs) {
                     const localConv = conversations.find(c => c.id === githubConv.id);
                     if (localConv) {
-                        const localMessageIds = new Set(localConv.messages.map(m => `${m.role}_${m.timestamp}_${m.content.substring(0, 50)}`));
+                        const localMessageIds = new Set(localConv.messages.map(m =>
+                            `${m.role}_${m.timestamp}_${m.content.substring(0, 50)}`));
                         const newMessages = githubConv.messages.filter(m => {
                             const key = `${m.role}_${m.timestamp}_${m.content.substring(0, 50)}`;
                             return !localMessageIds.has(key);
@@ -962,20 +1296,16 @@
                         newCount++;
                     }
                 }
-                
                 saveConversationsToLocal();
                 renderConversationsList();
                 if (currentConversationId) {
                     const currentConv = conversations.find(c => c.id === currentConversationId);
-                    if (currentConv) {
-                        renderMessages(currentConv.messages);
-                    }
+                    if (currentConv) renderMessages(currentConv.messages);
                 }
-                
-                setSyncStatus(`✅ 爬取完成！更新了 ${updatedCount} 个对话，新增了 ${newCount} 个对话`, 'success');
+                setSyncStatus(`✅ 完成！更新 ${updatedCount} 个，新增 ${newCount} 个`, 'success');
                 setTimeout(() => setSyncStatus('', ''), 3000);
             } catch (error) {
-                setSyncStatus(`❌ 爬取失败: ${error.message}`, 'error');
+                setSyncStatus(`❌ 失败: ${error.message}`, 'error');
             } finally {
                 isSyncing = false;
                 document.getElementById('pullBtn').disabled = false;
@@ -989,12 +1319,11 @@
             setSyncStatus('🔄 正在上传至 GitHub...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
-            
+
             try {
                 let successCount = 0;
                 for (const conv of conversations) {
-                    const success = await saveConversationToGitHub(conv);
-                    if (success) successCount++;
+                    if (await saveConversationToGitHub(conv)) successCount++;
                 }
                 saveConversationsToLocal();
                 setSyncStatus(`✅ 上传完成！已同步 ${successCount}/${conversations.length} 个对话`, 'success');
@@ -1016,16 +1345,16 @@
             }
         }
 
-        // ========== 对话管理 ==========
+        // ============================================================
+        //  对话管理
+        // ============================================================
         function renderConversationsList() {
             const container = document.getElementById('conversationsList');
             if (!container) return;
-            
             if (conversations.length === 0) {
-                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无对话</div>';
+                container.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">暂无对话</div>';
                 return;
             }
-            
             container.innerHTML = conversations.map(conv => `
                 <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" onclick="switchConversation('${conv.id}')">
                     <div class="conversation-title">
@@ -1045,7 +1374,6 @@
                 renderMessages(conversation.messages);
             }
             renderConversationsList();
-            
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('open');
             }
@@ -1054,80 +1382,49 @@
         function renderMessages(messages) {
             const container = document.getElementById('messagesArea');
             if (!container) return;
-            
             if (!messages || messages.length === 0) {
-                container.innerHTML = '<div class="message assistant"><div class="message-avatar">🤖</div><div class="message-content">你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。</div></div>';
+                container.innerHTML =
+                    '<div class="message assistant"><div class="message-avatar">🤖</div><div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！</div></div>';
                 return;
             }
-            
-            container.innerHTML = messages.map(msg => `
-                <div class="message ${msg.role}">
-                    <div class="message-avatar">${msg.role === 'user' ? '👤' : AI_CONFIG.avatar}</div>
-                    <div class="message-content">${msg.replyTo ? `<div class="reply-quote">↩️ ${escapeHtml(msg.replyTo.sender || '用户')}: ${escapeHtml(msg.replyTo.content || '')}</div>` : ''}${renderMarkdown(msg.content)}</div>
-                </div>
-            `).join('');
-            // Apply syntax highlighting
-            if (typeof hljs !== 'undefined') {
-                container.querySelectorAll('pre code').forEach(block => {
-                    hljs.highlightElement(block);
-                });
-            }
+            container.innerHTML = messages.map(msg => {
+                let content = renderMarkdown(msg.content);
+                if (msg.mediaUrl) {
+                    if (msg.mediaType === 'image') content += `<br><img src="${msg.mediaUrl}" alt="生成的图片">`;
+                    else if (msg.mediaType === 'video') content +=
+                        `<br><video src="${msg.mediaUrl}" controls style="max-width:100%;max-height:300px;"></video>`;
+                }
+                return `
+                    <div class="message ${msg.role}">
+                        <div class="message-avatar">${msg.role === 'user' ? '👤' : '🤖'}</div>
+                        <div class="message-content">${content}</div>
+                    </div>
+                `;
+            }).join('');
             scrollToBottom();
         }
 
         function renderMarkdown(content) {
             if (typeof marked !== 'undefined') {
-                try {
-                    let html = marked.parse(content);
-                    // Wrap <pre> blocks with code-block-wrapper and add copy button
-                    html = html.replace(/<pre>([\s\S]*?)<\/pre>/g, (match, innerContent) => {
-                        return `<div class="code-block-wrapper"><button class="copy-code-btn" onclick="copyCodeBlock(this)">📋 复制</button><pre>${innerContent}</pre></div>`;
-                    });
-                    return html;
-                } catch (e) {
-                    return escapeHtml(content);
-                }
+                try { return marked.parse(content); } catch (e) { return escapeHtml(content); }
             }
             return escapeHtml(content).replace(/\n/g, '<br>');
         }
 
-        function copyCodeBlock(button) {
-            const codeBlock = button.parentElement.querySelector('code');
-            if (codeBlock) {
-                navigator.clipboard.writeText(codeBlock.textContent).then(() => {
-                    button.textContent = '✅ 已复制';
-                    setTimeout(() => { button.textContent = '📋 复制'; }, 2000);
-                }).catch(() => {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = codeBlock.textContent;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    button.textContent = '✅ 已复制';
-                    setTimeout(() => { button.textContent = '📋 复制'; }, 2000);
-                });
-            }
-        }
-
-        function addMessage(role, content) {
+        function addMessage(role, content, mediaUrl, mediaType) {
             const conversation = conversations.find(c => c.id === currentConversationId);
             if (!conversation) return;
-            
-            conversation.messages.push({
-                role: role,
-                content: content,
-                timestamp: new Date().toISOString()
-            });
+            const msg = { role, content, timestamp: new Date().toISOString() };
+            if (mediaUrl) { msg.mediaUrl = mediaUrl;
+                msg.mediaType = mediaType || 'image'; }
+            conversation.messages.push(msg);
             conversation.updatedAt = new Date().toISOString();
             conversation.synced = false;
-            
             if (conversation.title === '新对话' && role === 'user') {
                 const newTitle = content.length > 30 ? content.substring(0, 30) + '...' : content;
                 conversation.title = newTitle;
                 document.getElementById('chatTitle').textContent = newTitle;
             }
-            
             saveConversationsToLocal();
             renderMessages(conversation.messages);
             renderConversationsList();
@@ -1137,9 +1434,8 @@
             const newConv = {
                 id: Date.now().toString(),
                 title: '新对话',
-                messages: [
-                    { role: 'assistant', content: '你好！我是 HZYAI，一个智能对话助手。你可以问我任何问题，我会尽力帮你解答。', timestamp: new Date().toISOString() }
-                ],
+                messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！',
+                    timestamp: new Date().toISOString() }],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 synced: false
@@ -1161,7 +1457,6 @@
                 }
                 return;
             }
-            
             conversations = conversations.filter(c => c.id !== convId);
             if (currentConversationId === convId) {
                 currentConversationId = conversations[0]?.id || null;
@@ -1177,82 +1472,126 @@
             renderConversationsList();
         }
 
-        // ========== AI 调用 ==========
-        async function callAI(messages) {
+        // ============================================================
+        //  🌟 每日一言 (思知 AI)
+        // ============================================================
+        async function fetchDailyQuote() {
+            const quoteContent = document.getElementById('quoteContent');
+            const refreshBtn = document.getElementById('refreshQuoteBtn');
+
+            quoteContent.innerHTML = '<span class="quote-loading">⏳ 正在汲取智慧...</span>';
+            refreshBtn.disabled = true;
+
             try {
-                const history = messages.slice(-10);
-                const userMessage = history.filter(m => m.role === 'user').pop();
-                if (!userMessage) return null;
-                
-                const url = `${AI_CONFIG.apiUrl}?appid=${AI_CONFIG.appid}&userid=${currentUser.username}&spoken=${encodeURIComponent(userMessage.content)}&memory=true`;
+                const url =
+                    `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=daily_quote&spoken=请给我一句今天的每日一言，要包含作者和出处，格式为Markdown的blockquote风格，不要有多余的解释内容。`;
                 const response = await fetch(url);
                 const data = await response.json();
-                
+
                 if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
-                    return data.data.info.text;
+                    let renderedHtml = renderMarkdown(data.data.info.text);
+                    if (!renderedHtml.includes('<blockquote>')) {
+                        renderedHtml = `<blockquote>${renderedHtml}</blockquote>`;
+                    }
+                    quoteContent.innerHTML = renderedHtml;
+                } else {
+                    quoteContent.innerHTML =
+                        '<blockquote>今日一言暂不可得，但你的到来已是最好的开始。<footer>—— HZYAI</footer></blockquote>';
                 }
-                return null;
             } catch (error) {
-                console.error('AI 调用失败:', error);
-                return null;
+                console.error('获取每日一言失败:', error);
+                quoteContent.innerHTML =
+                    '<blockquote>有时，沉默比言语更有力量。不妨静下心来，聆听自己的声音。<footer>—— HZYAI</footer></blockquote>';
+            } finally {
+                refreshBtn.disabled = false;
             }
+        }
+
+        // ============================================================
+        //  聊天模型调用 (思知 AI / Agnes AI)
+        // ============================================================
+        async function callChatModel(messages, model) {
+            // 思知 AI (免费)
+            if (model === 'sizhi') {
+                try {
+                    const history = messages.slice(-10);
+                    const userMessage = history.filter(m => m.role === 'user').pop();
+                    if (!userMessage) return null;
+                    const url =
+                        `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=${currentUser.username}&spoken=${encodeURIComponent(userMessage.content)}&memory=true`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                        return data.data.info.text;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('思知 AI 调用失败:', error);
+                    return null;
+                }
+            }
+
+            // Agnes AI (agnes-2.0-flash)
+            if (model === 'agnes') {
+                try {
+                    const url = `${AGNES_CONFIG.baseUrl}/chat/completions`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: AGNES_CONFIG.chatModel,
+                            messages: messages.slice(-20).map(m => ({ role: m.role, content: m.content })),
+                            temperature: 0.7,
+                            max_tokens: 4096,
+                            chat_template_kwargs: {
+                                enable_thinking: true
+                            }
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                        return data.choices[0].message.content;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('Agnes AI 调用失败:', error);
+                    return null;
+                }
+            }
+
+            return null;
         }
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             if (!content || isWaiting) return;
-            
+
+            const model = document.getElementById('chatModelSelect').value;
             input.value = '';
             input.style.height = 'auto';
-            
+
             addMessage('user', content);
-            
-            // Feature #18: AI Schedule Assistant in HZYAI
-            const scheduleMatch = content.match(/(?:提醒我|提醒|日程|闹钟|定时)\s*(\d{1,2}):(\d{2})\s+(.{1,50})/);
-            const relScheduleMatch = content.match(/(?:提醒我|提醒|日程|闹钟|定时)\s*(\d+)\s*(?:分钟|min|小时|hour)(?:后)?\s+(.{1,50})/);
-            if (scheduleMatch) {
-                const now = new Date();
-                const schedHour = parseInt(scheduleMatch[1]);
-                const schedMin = parseInt(scheduleMatch[2]);
-                const schedContent = scheduleMatch[3].trim();
-                let schedTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), schedHour, schedMin, 0);
-                if (schedTime <= now) schedTime.setDate(schedTime.getDate() + 1);
-                const delay = schedTime.getTime() - Date.now();
-                const replyText = '⏰ 好的！我会在 ' + schedTime.toLocaleString() + ' 提醒你：' + schedContent;
-                addMessage('assistant', replyText);
-                setTimeout(function() { addMessage('assistant', '⏰ 提醒你：' + schedContent); }, delay);
-                return;
-            }
-            if (relScheduleMatch) {
-                const amount = parseInt(relScheduleMatch[1]);
-                const isHour = /小时|hour/i.test(content);
-                const delayMs = isHour ? amount * 3600000 : amount * 60000;
-                const schedContent = relScheduleMatch[2].trim();
-                const schedTime = new Date(Date.now() + delayMs);
-                const replyText = '⏰ 好的！我会在 ' + schedTime.toLocaleString() + ' 提醒你：' + schedContent;
-                addMessage('assistant', replyText);
-                setTimeout(function() { addMessage('assistant', '⏰ 提醒你：' + schedContent); }, delayMs);
-                return;
-            }
-            
+
             const conversation = conversations.find(c => c.id === currentConversationId);
             const container = document.getElementById('messagesArea');
             const thinkingDiv = document.createElement('div');
             thinkingDiv.className = 'message assistant';
-            thinkingDiv.innerHTML = `
-                <div class="message-avatar">${AI_CONFIG.avatar}</div>
-                <div class="thinking"><span></span><span></span><span></span></div>
-            `;
+            thinkingDiv.innerHTML =
+                `<div class="message-avatar">🤖</div><div class="thinking"><span></span><span></span><span></span></div>`;
             container.appendChild(thinkingDiv);
             scrollToBottom();
             isWaiting = true;
-            
-            const reply = await callAI(conversation.messages);
-            
+
+            const reply = await callChatModel(conversation.messages, model);
+
             thinkingDiv.remove();
             isWaiting = false;
-            
+
             if (reply) {
                 addMessage('assistant', reply);
             } else {
@@ -1260,13 +1599,282 @@
             }
         }
 
-        // ========== 辅助函数 ==========
+        // ============================================================
+        //  🎨 绘图功能 (Agnes Image 2.1 Flash)
+        // ============================================================
+        async function generateImage() {
+            const prompt = document.getElementById('drawPrompt').value.trim();
+            const size = document.getElementById('drawSize').value.trim() || '1024x768';
+
+            if (!prompt) { alert('请输入图片描述！'); return; }
+
+            const generateBtn = document.getElementById('drawGenerateBtn');
+            const loading = document.getElementById('drawLoading');
+            const placeholder = document.getElementById('drawPlaceholder');
+            const output = document.getElementById('drawOutput');
+            const downloadBtn = document.getElementById('drawDownloadBtn');
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = '⏳ 生成中...';
+            loading.classList.add('active');
+            placeholder.style.display = 'none';
+            output.style.display = 'none';
+            downloadBtn.style.display = 'none';
+
+            try {
+                const url = `${AGNES_CONFIG.baseUrl}/images/generations`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: AGNES_CONFIG.imageModel,
+                        prompt: prompt,
+                        size: size,
+                        extra_body: {
+                            response_format: 'url'
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data && data.data && data.data[0] && data.data[0].url) {
+                    const imageUrl = data.data[0].url;
+                    currentMediaUrl = imageUrl;
+                    currentMediaType = 'image';
+
+                    output.src = imageUrl;
+                    output.style.display = 'block';
+                    downloadBtn.style.display = 'inline-block';
+                    loading.classList.remove('active');
+
+                    addToHistory('image', imageUrl, prompt);
+                    addMessage('assistant', `🎨 生成的图片：${prompt}`, imageUrl, 'image');
+                } else {
+                    throw new Error(data.error?.message || '生成失败');
+                }
+            } catch (error) {
+                console.error('绘图错误:', error);
+                loading.classList.remove('active');
+                placeholder.style.display = 'block';
+                placeholder.innerHTML =
+                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🎨 生成';
+            }
+        }
+
+        // ============================================================
+        //  🎬 视频生成 (Agnes Video V2.0)
+        // ============================================================
+        async function generateVideo() {
+            const prompt = document.getElementById('videoPrompt').value.trim();
+            const numFrames = parseInt(document.getElementById('videoDuration').value);
+
+            if (!prompt) { alert('请输入视频描述！'); return; }
+
+            const generateBtn = document.getElementById('videoGenerateBtn');
+            const loading = document.getElementById('videoLoading');
+            const placeholder = document.getElementById('videoPlaceholder');
+            const output = document.getElementById('videoOutput');
+            const downloadBtn = document.getElementById('videoDownloadBtn');
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = '⏳ 提交任务...';
+            loading.classList.add('active');
+            placeholder.style.display = 'none';
+            output.style.display = 'none';
+            downloadBtn.style.display = 'none';
+
+            try {
+                // Step 1: 创建视频任务
+                const url = `${AGNES_CONFIG.baseUrl}/videos`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: AGNES_CONFIG.videoModel,
+                        prompt: prompt,
+                        num_frames: numFrames,
+                        frame_rate: 24,
+                        height: 768,
+                        width: 1152
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data || !data.video_id) {
+                    throw new Error(data.error?.message || '创建任务失败');
+                }
+
+                const videoId = data.video_id;
+                loading.querySelector('.loading-text').textContent = '⏳ 视频生成中 (约 1-3 分钟)，请耐心等待...';
+
+                // Step 2: 轮询获取结果
+                let attempts = 0;
+                const maxAttempts = 60; // 最多轮询 60 次 (约 3 分钟)
+                let videoUrl = null;
+
+                while (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 3000)); // 每 3 秒轮询一次
+
+                    const resultUrl = `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`;
+                    const resultResponse = await fetch(resultUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`
+                        }
+                    });
+
+                    const resultData = await resultResponse.json();
+
+                    if (resultData && resultData.status === 'completed' && resultData.remixed_from_video_id) {
+                        videoUrl = resultData.remixed_from_video_id;
+                        break;
+                    }
+
+                    if (resultData && resultData.status === 'failed') {
+                        throw new Error(resultData.error || '视频生成失败');
+                    }
+
+                    attempts++;
+                }
+
+                if (!videoUrl) {
+                    throw new Error('视频生成超时，请稍后重试');
+                }
+
+                // 显示视频
+                currentMediaUrl = videoUrl;
+                currentMediaType = 'video';
+                output.src = videoUrl;
+                output.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                loading.classList.remove('active');
+
+                addToHistory('video', videoUrl, prompt);
+                addMessage('assistant', `🎬 生成的视频：${prompt}`, videoUrl, 'video');
+
+            } catch (error) {
+                console.error('视频生成错误:', error);
+                loading.classList.remove('active');
+                placeholder.style.display = 'block';
+                placeholder.innerHTML =
+                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '🎬 生成';
+                loading.querySelector('.loading-text').textContent = '⏳ AI 正在生成视频，请稍候...';
+            }
+        }
+
+        // ============================================================
+        //  历史记录与下载
+        // ============================================================
+        function addToHistory(type, url, prompt) {
+            const historyMap = {
+                image: 'drawHistory',
+                video: 'videoHistory'
+            };
+            const container = document.getElementById(historyMap[type]);
+            if (!container) return;
+
+            const item = document.createElement('div');
+            item.className = 'draw-history-item';
+            if (type === 'video') {
+                item.innerHTML = `<video src="${url}" muted preload="metadata"></video>`;
+                item.onclick = () => loadHistoryMedia(url, 'video');
+            } else {
+                item.innerHTML = `<img src="${url}" alt="${escapeHtml(prompt)}">`;
+                item.onclick = () => loadHistoryMedia(url, 'image');
+            }
+            item.title = escapeHtml(prompt);
+            container.prepend(item);
+
+            while (container.children.length > 12) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function loadHistoryMedia(url, type) {
+            currentMediaUrl = url;
+            currentMediaType = type;
+
+            if (type === 'image') {
+                const output = document.getElementById('drawOutput');
+                const downloadBtn = document.getElementById('drawDownloadBtn');
+                const placeholder = document.getElementById('drawPlaceholder');
+                output.src = url;
+                output.style.display = 'block';
+                placeholder.style.display = 'none';
+                downloadBtn.style.display = 'inline-block';
+            } else if (type === 'video') {
+                const output = document.getElementById('videoOutput');
+                const downloadBtn = document.getElementById('videoDownloadBtn');
+                const placeholder = document.getElementById('videoPlaceholder');
+                output.src = url;
+                output.style.display = 'block';
+                placeholder.style.display = 'none';
+                downloadBtn.style.display = 'inline-block';
+            }
+        }
+
+        function downloadCurrentMedia(type) {
+            if (!currentMediaUrl) return;
+            const ext = type === 'video' ? 'mp4' : 'jpg';
+            const link = document.createElement('a');
+            link.href = currentMediaUrl;
+            link.download = `hzyai_${type}_${Date.now()}.${ext}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ============================================================
+        //  模式切换
+        // ============================================================
+        function switchMode(mode) {
+            currentMode = mode;
+            const modes = ['chat', 'draw', 'video'];
+            const elements = {
+                chat: document.getElementById('chatMode'),
+                draw: document.getElementById('drawMode'),
+                video: document.getElementById('videoMode')
+            };
+            const tabs = document.querySelectorAll('.mode-tab');
+
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.mode === mode);
+            });
+
+            modes.forEach(m => {
+                if (m === 'chat') {
+                    elements[m].style.display = (mode === 'chat') ? 'flex' : 'none';
+                } else {
+                    elements[m].classList.toggle('active', mode === m);
+                }
+            });
+
+            if (mode === 'chat') document.getElementById('messageInput')?.focus();
+            else if (mode === 'draw') document.getElementById('drawPrompt')?.focus();
+            else if (mode === 'video') document.getElementById('videoPrompt')?.focus();
+        }
+
+        // ============================================================
+        //  辅助函数
+        // ============================================================
         function scrollToBottom() {
             const container = document.getElementById('messagesArea');
             if (container) {
-                setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                }, 100);
+                setTimeout(() => { container.scrollTop = container.scrollHeight; }, 100);
             }
         }
 
@@ -1274,7 +1882,6 @@
             const date = new Date(isoString);
             const now = new Date();
             const diff = now - date;
-            
             if (diff < 60000) return '刚刚';
             if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
             if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
@@ -1292,21 +1899,20 @@
             const textarea = document.getElementById('messageInput');
             if (textarea) {
                 textarea.style.height = 'auto';
-                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+                textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
             }
         }
 
-        // ========== 登录/登出 ==========
+        // ============================================================
+        //  登录 / 登出
+        // ============================================================
         async function doLogin() {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginError');
-            
-            if (!username || !password) {
-                errorDiv.textContent = '请填写用户名和密码';
-                return;
-            }
-            
+
+            if (!username || !password) { errorDiv.textContent = '请填写用户名和密码'; return; }
+
             if (username === 'huangzhiyuan' && password === '15240254891') {
                 currentUser = { username: 'huangzhiyuan', isAdmin: true };
                 localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
@@ -1322,31 +1928,25 @@
                     document.getElementById('chatTitle').textContent = conversations[0].title;
                     renderMessages(conversations[0].messages);
                 }
+                fetchDailyQuote();
                 return;
             }
-            
+
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const url =
+                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 let foundUser = null;
-                
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
                         const userData = JSON.parse(match[1]);
-                        if (userData.username === username && userData.password === password) {
-                            foundUser = userData;
-                            break;
-                        }
+                        if (userData.username === username && userData.password === password) { foundUser = userData; break; }
                     }
                 }
-                
                 if (foundUser && !foundUser.isBanned) {
                     currentUser = { username: foundUser.username, isAdmin: false };
                     localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
@@ -1362,6 +1962,7 @@
                         document.getElementById('chatTitle').textContent = conversations[0].title;
                         renderMessages(conversations[0].messages);
                     }
+                    fetchDailyQuote();
                 } else if (foundUser && foundUser.isBanned) {
                     errorDiv.textContent = '账号已被封禁';
                 } else {
@@ -1388,7 +1989,9 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        // ========== 初始化 ==========
+        // ============================================================
+        //  初始化
+        // ============================================================
         function init() {
             const savedUser = localStorage.getItem('hzyai_currentUser');
             if (savedUser) {
@@ -1398,7 +2001,8 @@
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('userName').textContent = currentUser.username;
                     document.getElementById('userRole').textContent = currentUser.isAdmin ? '管理员' : '用户';
-                    document.getElementById('userAvatar').textContent = currentUser.isAdmin ? '👑' : currentUser.username.charAt(0).toUpperCase();
+                    document.getElementById('userAvatar').textContent = currentUser.isAdmin ? '👑' : currentUser.username
+                        .charAt(0).toUpperCase();
                     loadConversationsFromLocal();
                     renderConversationsList();
                     if (conversations.length > 0) {
@@ -1406,31 +2010,46 @@
                         document.getElementById('chatTitle').textContent = conversations[0].title;
                         renderMessages(conversations[0].messages);
                     }
+                    fetchDailyQuote();
                 } catch (e) {
                     console.error('恢复登录状态失败', e);
                     localStorage.removeItem('hzyai_currentUser');
                 }
             }
+            document.getElementById('chatModelSelect').value = 'sizhi';
+
+            document.getElementById('refreshQuoteBtn').addEventListener('click', fetchDailyQuote);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             init();
-            
+
             const textarea = document.getElementById('messageInput');
             if (textarea) {
                 textarea.addEventListener('input', autoResizeTextarea);
                 textarea.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault();
+                        sendMessage(); }
                 });
             }
-            
+
+            ['drawPrompt', 'videoPrompt'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (id === 'drawPrompt') generateImage();
+                            else if (id === 'videoPrompt') generateVideo();
+                        }
+                    });
+                }
+            });
+
             if (window.innerWidth <= 768) {
                 document.getElementById('menuBtn').style.display = 'block';
             }
-            
+
             window.addEventListener('resize', function() {
                 if (window.innerWidth <= 768) {
                     document.getElementById('menuBtn').style.display = 'block';
@@ -1439,8 +2058,24 @@
                     document.getElementById('sidebar').classList.remove('open');
                 }
             });
+
+            switchMode('chat');
         });
+
+        // 暴露全局函数
+        window.generateImage = generateImage;
+        window.generateVideo = generateVideo;
+        window.downloadCurrentMedia = downloadCurrentMedia;
+        window.loadHistoryMedia = loadHistoryMedia;
+        window.switchMode = switchMode;
+        window.pullFromGitHub = pullFromGitHub;
+        window.pushToGitHub = pushToGitHub;
+        window.createNewConversation = createNewConversation;
+        window.sendMessage = sendMessage;
+        window.doLogin = doLogin;
+        window.logout = logout;
+        window.toggleSidebar = toggleSidebar;
+        window.fetchDailyQuote = fetchDailyQuote;
     </script>
-    <script src="shortcuts.js"></script>
 </body>
 </html>
