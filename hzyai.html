@@ -1588,6 +1588,7 @@
                 <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频</button>
                 <button class="mode-tab" data-mode="task" onclick="switchMode('task')">⏰ 定时任务</button>
                 <button class="mode-tab" data-mode="character" onclick="switchMode('character')">🎭 角色</button>
+                <button class="mode-tab" data-mode="rag" onclick="switchMode('rag')">📚 RAG 增强</button>
             </div>
 
             <!-- ====== 每日一言 ====== -->
@@ -1824,6 +1825,33 @@
                 </div>
                 <div class="character-grid" id="characterGrid">
                     <div style="text-align:center;color:#666;padding:40px;width:100%;">暂无角色，点击上方创建</div>
+                </div>
+            </div>
+
+            <!-- ====== RAG 增强模式 ====== -->
+            <div class="draw-mode" id="ragMode">
+                <div class="draw-header">
+                    <h2>📚 RAG 增强问答</h2>
+                    <p>基于 NFLSHC Chat 知识库的智能问答 · 快速获取项目信息</p>
+                </div>
+                <div class="draw-input-area">
+                    <div class="draw-input-row">
+                        <input type="text" id="ragPrompt" class="draw-prompt-input" placeholder="输入你关于 NFLSHC Chat 的问题，例如：如何创建群聊？" onkeydown="if(event.key==='Enter') askRAG()">
+                        <button class="draw-generate-btn" id="ragAskBtn" onclick="askRAG()">🔍 查询</button>
+                    </div>
+                    <div style="font-size:12px;color:#666;">💡 支持提问：功能介绍、使用方法、技术架构、常见问题等</div>
+                </div>
+                <div class="vision-result-area" id="ragResult">
+                    <div class="placeholder" id="ragPlaceholder">
+                        <span class="icon">📚</span>
+                        输入问题后点击「查询」<br>
+                        <span style="font-size:12px;color:#555;">基于 RAG 知识库检索</span>
+                    </div>
+                    <div class="loading-spinner" id="ragLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">⏳ 正在检索知识库...</div>
+                    </div>
+                    <div class="output-text" id="ragOutput"></div>
                 </div>
             </div>
         </div>
@@ -3597,18 +3625,103 @@
         }
 
         // ============================================================
+        //  📚 RAG 增强功能
+        // ============================================================
+        async function askRAG() {
+            const prompt = document.getElementById('ragPrompt').value.trim();
+            if (!prompt) { alert('请输入问题！'); return; }
+
+            const askBtn = document.getElementById('ragAskBtn');
+            const loading = document.getElementById('ragLoading');
+            const placeholder = document.getElementById('ragPlaceholder');
+            const output = document.getElementById('ragOutput');
+
+            askBtn.disabled = true;
+            askBtn.textContent = '⏳ 查询中...';
+            loading.classList.add('active');
+            placeholder.style.display = 'none';
+            output.style.display = 'none';
+
+            try {
+                // 1. 获取 RAG 知识库内容
+                const ragUrl = 'https://user-henry.github.io/help-nflshc202401/rag.html';
+                const response = await fetch(ragUrl);
+                const htmlText = await response.text();
+
+                // 2. 提取知识库文本内容
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const sections = doc.querySelectorAll('.section');
+                let knowledgeBase = '';
+                sections.forEach(section => {
+                    knowledgeBase += section.textContent + '\n\n';
+                });
+
+                if (!knowledgeBase || knowledgeBase.length < 100) {
+                    throw new Error('知识库内容加载失败，请稍后重试');
+                }
+
+                // 3. 构建 RAG 提示词
+                const ragPrompt = `
+你是一个专门回答 NFLSHC Chat 相关问题的 AI 助手。请基于以下知识库内容回答问题。
+
+【知识库内容】
+${knowledgeBase}
+
+【用户问题】
+${prompt}
+
+请根据知识库内容回答。如果知识库中没有相关信息，请如实告知用户。
+回答要简洁、准确、有条理。
+`;
+
+                // 4. 使用思知 AI 进行问答
+                const url = `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=rag_${currentUser.username}&spoken=${encodeURIComponent(ragPrompt)}&memory=true`;
+                const ragResponse = await fetch(url);
+                const data = await ragResponse.json();
+
+                loading.classList.remove('active');
+
+                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    const result = data.data.info.text;
+                    output.textContent = result;
+                    output.style.display = 'block';
+                    // 同时添加到对话记录
+                    addMessage('user', `📚 RAG查询：${prompt}`);
+                    addMessage('assistant', `📚 RAG回答：\n\n${result}`);
+                } else {
+                    throw new Error('AI 回答生成失败');
+                }
+
+            } catch (error) {
+                console.error('RAG 查询错误:', error);
+                loading.classList.remove('active');
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = `
+            <span class="icon">❌</span>
+            查询失败：${error.message || '未知错误'}<br>
+            <span style="font-size:12px;color:#555;">请检查网络连接或稍后重试</span>
+        `;
+            } finally {
+                askBtn.disabled = false;
+                askBtn.textContent = '🔍 查询';
+            }
+        }
+
+        // ============================================================
         //  模式切换
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character'];
+            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'rag'];
             const elements = {
                 chat: document.getElementById('chatMode'),
                 vision: document.getElementById('visionMode'),
                 draw: document.getElementById('drawMode'),
                 video: document.getElementById('videoMode'),
                 task: document.getElementById('taskMode'),
-                character: document.getElementById('characterMode')
+                character: document.getElementById('characterMode'),
+                rag: document.getElementById('ragMode')
             };
             const tabs = document.querySelectorAll('.mode-tab');
 
@@ -3630,6 +3743,7 @@
             else if (mode === 'video') document.getElementById('videoPrompt')?.focus();
             else if (mode === 'task') document.getElementById('taskPrompt')?.focus();
             else if (mode === 'character') renderCharactersGrid();
+            else if (mode === 'rag') document.getElementById('ragPrompt')?.focus();
         }
 
         // ============================================================
@@ -3893,6 +4007,7 @@
         window.pullCharactersFromGitHub = pullCharactersFromGitHub;
         window.syncAllTasksToGitHub = syncAllTasksToGitHub;
         window.pullTasksFromGitHub = pullTasksFromGitHub;
+        window.askRAG = askRAG;
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
