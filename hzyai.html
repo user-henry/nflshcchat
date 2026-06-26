@@ -788,6 +788,177 @@
             object-fit: cover;
         }
 
+        /* ===== 视觉模式 ===== */
+        .vision-mode {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 20px;
+            background: #0f172a;
+            overflow-y: auto;
+        }
+        .vision-mode.active {
+            display: flex;
+        }
+        .vision-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .vision-header h2 {
+            font-size: 24px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .vision-header p {
+            color: #888;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .vision-input-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 700px;
+            margin: 0 auto 16px;
+            width: 100%;
+        }
+        .vision-input-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .vision-input-row select,
+        .vision-input-row input {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: white;
+            font-size: 13px;
+        }
+        .vision-input-row select:focus,
+        .vision-input-row input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .vision-input-row .prompt-input {
+            flex: 3;
+            min-width: 160px;
+        }
+        .vision-upload-area {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .vision-upload-area .upload-btn {
+            background: #2a2a3e;
+            border: 1px solid #2a2a3e;
+            color: #aaa;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        .vision-upload-area .upload-btn:hover {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        .vision-upload-area .upload-btn.has-file {
+            border-color: #2ecc71;
+            color: #2ecc71;
+        }
+        .vision-preview {
+            display: none;
+            margin-top: 8px;
+            max-width: 120px;
+            border-radius: 8px;
+            border: 2px solid #ffd700;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+        }
+        .vision-preview img,
+        .vision-preview video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .vision-preview .remove-hint {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 0 0 0 8px;
+        }
+        .vision-result-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 240px;
+            background: #0a0f1c;
+            border-radius: 14px;
+            border: 1px dashed #2a2a3e;
+            padding: 20px;
+            overflow: hidden;
+        }
+        .vision-result-area .placeholder {
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+        }
+        .vision-result-area .placeholder .icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .vision-result-area .loading-spinner {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .vision-result-area .loading-spinner.active {
+            display: flex;
+        }
+        .vision-result-area .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #2a2a3e;
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .vision-result-area .loading-text {
+            color: #888;
+            font-size: 13px;
+        }
+        .vision-result-area .output-text {
+            display: none;
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            color: #ddd;
+            padding: 16px;
+            background: #0a0f1c;
+            border-radius: 8px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
         .info-sidebar {
             position: fixed;
             right: 0;
@@ -956,6 +1127,14 @@
                 padding: 6px 12px;
                 font-size: 12px;
             }
+            .vision-input-row {
+                flex-direction: column;
+            }
+            .vision-input-row input,
+            .vision-input-row select {
+                min-width: unset;
+                width: 100%;
+            }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -986,9 +1165,7 @@
                 <div class="sidebar-logo"></div>
                 <h2>HZYAI</h2>
             </div>
-            <button class="new-chat-btn" onclick="createNewConversation()">
-                + 新对话
-            </button>
+            <button class="new-chat-btn" onclick="createNewConversation()">+ 新对话</button>
             <div class="conversations-list" id="conversationsList"></div>
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar"></div>
@@ -1005,6 +1182,7 @@
             <!-- 模式切换标签 -->
             <div class="mode-tabs" id="modeTabs">
                 <button class="mode-tab active" data-mode="chat" onclick="switchMode('chat')">💬 对话</button>
+                <button class="mode-tab" data-mode="vision" onclick="switchMode('vision')">👁️ 视觉</button>
                 <button class="mode-tab" data-mode="draw" onclick="switchMode('draw')">🎨 绘图</button>
                 <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频</button>
             </div>
@@ -1029,6 +1207,8 @@
                         <select id="chatModelSelect">
                             <option value="sizhi">思知 AI (默认)</option>
                             <option value="agnes">Agnes 2.0 Flash</option>
+                            <option value="glm-4.7-flash">智谱 GLM-4.7-Flash</option>
+                            <option value="glm-4-flash-250414">智谱 GLM-4-Flash</option>
                         </select>
                     </div>
                 </div>
@@ -1042,7 +1222,7 @@
                 <div class="messages-area" id="messagesArea">
                     <div class="message assistant">
                         <div class="message-avatar">🤖</div>
-                        <div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！</div>
+                        <div class="message-content">你好！我是 HZYAI，支持思知 AI、Agnes AI 和智谱 GLM 系列模型的智能对话、视觉理解、绘图、视频生成。选择模型后开始吧！</div>
                     </div>
                 </div>
                 <div class="input-area">
@@ -1053,19 +1233,64 @@
                 </div>
             </div>
 
-            <!-- ====== 绘图模式（新增图生图） ====== -->
+            <!-- ====== 视觉模式 ====== -->
+            <div class="vision-mode" id="visionMode">
+                <div class="vision-header">
+                    <h2>👁️ 视觉理解模式</h2>
+                    <p>上传图片/视频/文件，AI 将理解并分析内容 · 基于智谱视觉模型</p>
+                </div>
+                <div class="vision-input-area">
+                    <div class="vision-input-row">
+                        <select id="visionModelSelect">
+                            <option value="glm-4.6v-flash">智谱 GLM-4.6V-Flash</option>
+                            <option value="glm-4.1v-thinking-flash">智谱 GLM-4.1V-Thinking-Flash</option>
+                            <option value="glm-4v-flash">智谱 GLM-4V-Flash</option>
+                        </select>
+                        <input type="text" id="visionPrompt" class="prompt-input" placeholder="输入你想问的问题，例如：这张图片里有什么？" onkeydown="if(event.key==='Enter') analyzeVision()">
+                        <button class="draw-generate-btn" id="visionAnalyzeBtn" onclick="analyzeVision()">🔍 分析</button>
+                    </div>
+                    <div class="vision-upload-area">
+                        <label class="upload-btn" id="visionUploadLabel">📎 上传文件
+                            <input type="file" id="visionFileInput" accept="image/*,video/*,.pdf,.txt,.docx,.xlsx,.pptx" style="display:none;" onchange="handleVisionUpload(this)" multiple>
+                        </label>
+                        <span style="font-size:12px;color:#666;">支持图片、视频、PDF、TXT、Word、Excel、PPT</span>
+                    </div>
+                    <div id="visionPreview" class="vision-preview" onclick="removeVisionFile()">
+                        <img id="visionPreviewImg" alt="预览">
+                        <span class="remove-hint">✕ 移除</span>
+                    </div>
+                </div>
+                <div class="vision-result-area" id="visionResult">
+                    <div class="placeholder" id="visionPlaceholder">
+                        <span class="icon">👁️</span>
+                        上传文件并输入问题后点击「分析」<br>
+                        <span style="font-size:12px;color:#555;">基于智谱视觉模型</span>
+                    </div>
+                    <div class="loading-spinner" id="visionLoading">
+                        <div class="spinner"></div>
+                        <div class="loading-text">⏳ AI 正在分析...</div>
+                    </div>
+                    <div class="output-text" id="visionOutput"></div>
+                </div>
+            </div>
+
+            <!-- ====== 绘图模式 ====== -->
             <div class="draw-mode" id="drawMode">
                 <div class="draw-header">
                     <h2>🎨 绘图模式</h2>
-                    <p>输入文字描述，AI 将为你生成图像 · 基于 Agnes Image 2.1 Flash</p>
+                    <p>输入文字描述，AI 将为你生成图像 · 基于 Agnes Image 2.1 Flash / 智谱 Cogview-3-Flash</p>
                 </div>
                 <div class="draw-input-area">
                     <div class="draw-input-row">
                         <input type="text" id="drawPrompt" class="draw-prompt-input" placeholder="描述你想要生成的画面，例如：一只在太空中的猫" onkeydown="if(event.key==='Enter') generateImage()">
-                        <input type="text" id="drawSize" placeholder="尺寸，如 1024x768" value="1024x768" style="flex:0.8;min-width:120px;">
+                        <input type="text" id="drawSize" placeholder="尺寸，如 1024x768" value="1024x1024" style="flex:0.8;min-width:120px;">
                         <label class="image-upload-btn" id="drawImageUploadLabel">📎 参考图
                             <input type="file" id="drawImageInput" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>
                         </label>
+                        <select id="drawModelSelect" style="flex:0.8;min-width:120px;">
+                            <option value="agnes-image-2.1-flash">Agnes Image 2.1 Flash</option>
+                            <option value="cogview-3-flash">智谱 Cogview-3-Flash</option>
+                        </select>
                         <button class="draw-generate-btn" id="drawGenerateBtn" onclick="generateImage()">🎨 生成</button>
                     </div>
                     <div id="drawReferencePreview" class="reference-preview" onclick="removeReferenceImage()">
@@ -1073,14 +1298,14 @@
                         <span class="remove-hint">✕ 移除</span>
                     </div>
                     <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
-                        <span>💡 支持文生图 · 图生图（多图输入） · 基于 Agnes Image 2.1 Flash · 输出 URL</span>
+                        <span>💡 支持文生图 · 图生图（多图输入） · 基于 Agnes Image 2.1 Flash / 智谱 Cogview-3-Flash · 输出 URL</span>
                     </div>
                 </div>
                 <div class="draw-result-area" id="drawResult">
                     <div class="placeholder" id="drawPlaceholder">
                         <span class="icon">🖼️</span>
                         输入描述后点击「生成」<br>
-                        <span style="font-size:12px; color:#555;">支持文生图 · 图生图（多图输入） · 基于 Agnes Image 2.1 Flash</span>
+                        <span style="font-size:12px; color:#555;">支持文生图 · 图生图（多图输入）</span>
                     </div>
                     <div class="loading-spinner" id="drawLoading">
                         <div class="spinner"></div>
@@ -1092,11 +1317,11 @@
                 <div class="draw-history" id="drawHistory"></div>
             </div>
 
-            <!-- ====== 视频模式（新增图生视频） ====== -->
+            <!-- ====== 视频模式 ====== -->
             <div class="draw-mode" id="videoMode">
                 <div class="draw-header">
                     <h2>🎬 视频生成模式</h2>
-                    <p>输入文字描述，AI 将为你生成视频 · 基于 Agnes Video V2.0</p>
+                    <p>输入文字描述，AI 将为你生成视频 · 基于 Agnes Video V2.0 / 智谱 CogVideoX-Flash</p>
                 </div>
                 <div class="draw-input-area">
                     <div class="draw-input-row">
@@ -1110,6 +1335,10 @@
                         <label class="image-upload-btn" id="videoImageUploadLabel">📎 参考图
                             <input type="file" id="videoImageInput" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>
                         </label>
+                        <select id="videoModelSelect" style="flex:0.8;min-width:120px;">
+                            <option value="agnes-video-v2.0">Agnes Video V2.0</option>
+                            <option value="cogvideox-flash">智谱 CogVideoX-Flash</option>
+                        </select>
                         <button class="draw-generate-btn" id="videoGenerateBtn" onclick="generateVideo()">🎬 生成</button>
                     </div>
                     <div id="videoReferencePreview" class="reference-preview" onclick="removeVideoReferenceImage()">
@@ -1117,14 +1346,14 @@
                         <span class="remove-hint">✕ 移除</span>
                     </div>
                     <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
-                        <span>💡 支持文生视频 · 图生视频（多图输入） · 基于 Agnes Video V2.0 · 异步生成 · 请耐心等待</span>
+                        <span>💡 基于 Agnes Video V2.0 / 智谱 CogVideoX-Flash · 异步生成 · 请耐心等待</span>
                     </div>
                 </div>
                 <div class="draw-result-area" id="videoResult">
                     <div class="placeholder" id="videoPlaceholder">
                         <span class="icon">🎞️</span>
                         输入描述后点击「生成」<br>
-                        <span style="font-size:12px; color:#555;">支持文生视频 · 图生视频（多图输入） · 基于 Agnes Video V2.0 · 异步生成</span>
+                        <span style="font-size:12px; color:#555;">支持文生视频 · 异步生成</span>
                     </div>
                     <div class="loading-spinner" id="videoLoading">
                         <div class="spinner"></div>
@@ -1141,7 +1370,7 @@
         <div class="info-sidebar">
             <div class="info-section">
                 <h3>🤖 关于 HZYAI</h3>
-                <p>基于思知 AI + Agnes AI 的多模态对话助手，支持对话、绘图（含图生图）、视频生成（含图生视频）。</p>
+                <p>基于思知 AI + Agnes AI + 智谱 GLM 的多模态对话助手，支持对话、视觉理解、绘图、视频生成。</p>
                 <p>对话记录<strong>本地存储</strong>，支持 GitHub Issues 云端同步。</p>
             </div>
             <div class="info-section">
@@ -1153,9 +1382,10 @@
             <div class="info-section">
                 <h3>✨ 功能列表</h3>
                 <ul class="feature-list">
-                    <li>💬 智能对话 (思知 AI / Agnes AI)</li>
-                    <li>🎨 AI 绘图 (文生图 / 图生图)</li>
-                    <li>🎬 AI 视频生成 (文生视频 / 图生视频)</li>
+                    <li>💬 智能对话 (思知 AI / Agnes AI / 智谱 GLM)</li>
+                    <li>👁️ 视觉理解 (智谱 GLM-4.6V-Flash / GLM-4.1V-Thinking-Flash / GLM-4V-Flash)</li>
+                    <li>🎨 AI 绘图 (Agnes Image 2.1 Flash / 智谱 Cogview-3-Flash)</li>
+                    <li>🎬 AI 视频生成 (Agnes Video V2.0 / 智谱 CogVideoX-Flash)</li>
                     <li>📝 编程辅助 & 代码解释</li>
                     <li>✍️ 写作助手 & 文案生成</li>
                 </ul>
@@ -1163,6 +1393,7 @@
             <div class="info-section">
                 <h3>💡 使用技巧</h3>
                 <div class="command-example">📝 Python 如何读取 CSV？</div>
+                <div class="command-example">👁️ 分析这张图片的内容</div>
                 <div class="command-example">🎨 一只在太空中的猫，写实风格</div>
                 <div class="command-example">🎬 日落时分的海滩，5秒</div>
             </div>
@@ -1199,6 +1430,16 @@
             videoModel: 'agnes-video-v2.0'
         };
 
+        // 智谱 AI (BigModel) 配置
+        const BIGMODEL_CONFIG = {
+            baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+            apiKey: '88d6967ec4a14b2fa4b012cf4b93af39.z6dem7x033Vti4jd',
+            chatModels: ['glm-4.7-flash', 'glm-4-flash-250414'],
+            visionModels: ['glm-4.6v-flash', 'glm-4.1v-thinking-flash', 'glm-4v-flash'],
+            imageModel: 'cogview-3-flash',
+            videoModel: 'cogvideox-flash'
+        };
+
         // ============================================================
         //  全局状态
         // ============================================================
@@ -1212,6 +1453,8 @@
         let currentMediaType = 'image';
         let drawReferenceImages = [];
         let videoReferenceImages = [];
+        let visionFiles = [];
+        let visionFileType = '';
 
         // ============================================================
         //  存储管理
@@ -1226,7 +1469,7 @@
                 conversations = [{
                     id: Date.now().toString(),
                     title: '新对话',
-                    messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！',
+                    messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI、Agnes AI 和智谱 GLM 系列模型的智能对话、视觉理解、绘图、视频生成。选择模型后开始吧！',
                         timestamp: new Date().toISOString() }],
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
@@ -1438,7 +1681,7 @@
             if (!container) return;
             if (!messages || messages.length === 0) {
                 container.innerHTML =
-                    '<div class="message assistant"><div class="message-avatar">🤖</div><div class="message-content">你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！</div></div>';
+                    '<div class="message assistant"><div class="message-avatar">🤖</div><div class="message-content">你好！我是 HZYAI，支持思知 AI、Agnes AI 和智谱 GLM 系列模型的智能对话、视觉理解、绘图、视频生成。选择模型后开始吧！</div></div>';
                 return;
             }
             container.innerHTML = messages.map(msg => {
@@ -1488,7 +1731,7 @@
             const newConv = {
                 id: Date.now().toString(),
                 title: '新对话',
-                messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI 和 Agnes AI (Claw 模型) 的智能对话、绘图、视频生成。选择模型后开始吧！',
+                messages: [{ role: 'assistant', content: '你好！我是 HZYAI，支持思知 AI、Agnes AI 和智谱 GLM 系列模型的智能对话、视觉理解、绘图、视频生成。选择模型后开始吧！',
                     timestamp: new Date().toISOString() }],
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
@@ -1562,7 +1805,7 @@
         }
 
         // ============================================================
-        //  聊天模型调用 (思知 AI / Agnes AI)
+        //  聊天模型调用 (思知 AI / Agnes AI / 智谱 GLM)
         // ============================================================
         async function callChatModel(messages, model) {
             // 思知 AI (免费)
@@ -1617,6 +1860,38 @@
                 }
             }
 
+            // 智谱 GLM 模型
+            if (model === 'glm-4.7-flash' || model === 'glm-4-flash-250414') {
+                try {
+                    const url = `${BIGMODEL_CONFIG.baseUrl}/chat/completions`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: model,
+                            messages: messages.slice(-20).map(m => ({ role: m.role, content: m.content })),
+                            temperature: 0.8,
+                            max_tokens: 4096,
+                            thinking: {
+                                type: 'enabled'
+                            }
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                        return data.choices[0].message.content;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('智谱 GLM 调用失败:', error);
+                    return null;
+                }
+            }
+
             return null;
         }
 
@@ -1654,13 +1929,12 @@
         }
 
         // ============================================================
-        //  🎨 绘图功能 (Agnes Image 2.1 Flash + 图生图/多图输入)
+        //  🎨 绘图功能 (Agnes Image 2.1 Flash + 智谱 Cogview-3-Flash)
         // ============================================================
         function handleDrawImageUpload(input) {
             const files = input.files;
             if (!files || files.length === 0) return;
-            
-            // 收集所有图片的 Base64
+
             const promises = [];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
@@ -1672,7 +1946,7 @@
                 });
                 promises.push(promise);
             }
-            
+
             Promise.all(promises).then((results) => {
                 drawReferenceImages = results;
                 updateDrawPreview();
@@ -1686,11 +1960,13 @@
                 img.src = drawReferenceImages[0];
                 preview.style.display = 'block';
                 document.getElementById('drawImageUploadLabel').classList.add('has-image');
-                document.getElementById('drawImageUploadLabel').innerHTML = `📎 ${drawReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>`;
+                document.getElementById('drawImageUploadLabel').innerHTML =
+                `📎 ${drawReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>`;
             } else {
                 preview.style.display = 'none';
                 document.getElementById('drawImageUploadLabel').classList.remove('has-image');
-                document.getElementById('drawImageUploadLabel').innerHTML = '📎 参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>';
+                document.getElementById('drawImageUploadLabel').innerHTML =
+                    '📎 参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleDrawImageUpload(this)" multiple>';
             }
         }
 
@@ -1702,7 +1978,8 @@
 
         async function generateImage() {
             const prompt = document.getElementById('drawPrompt').value.trim();
-            const size = document.getElementById('drawSize').value.trim() || '1024x768';
+            const size = document.getElementById('drawSize').value.trim() || '1024x1024';
+            const model = document.getElementById('drawModelSelect').value;
 
             if (!prompt) { alert('请输入图片描述！'); return; }
 
@@ -1720,50 +1997,97 @@
             downloadBtn.style.display = 'none';
 
             try {
-                const payload = {
-                    model: AGNES_CONFIG.imageModel,
-                    prompt: prompt,
-                    size: size,
-                    extra_body: {
-                        response_format: 'url'
+                let imageUrl = '';
+
+                // 智谱 Cogview-3-Flash（异步生成，需要轮询）
+                if (model === 'cogview-3-flash') {
+                    // 创建任务
+                    const createUrl = `${BIGMODEL_CONFIG.baseUrl}/async/images/generations`;
+                    const createResponse = await fetch(createUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'cogview-3-flash',
+                            prompt: prompt,
+                            size: size
+                        })
+                    });
+                    const createData = await createResponse.json();
+                    if (!createData || !createData.id) {
+                        throw new Error('创建任务失败');
                     }
-                };
-                
-                // 如果有参考图，添加到 payload
-                if (drawReferenceImages.length > 0) {
-                    payload.extra_body.image = drawReferenceImages;
-                }
+                    const taskId = createData.id;
 
-                const url = `${AGNES_CONFIG.baseUrl}/images/generations`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
+                    // 轮询结果
+                    let attempts = 0;
+                    const maxAttempts = 30;
+                    while (attempts < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        const resultUrl = `${BIGMODEL_CONFIG.baseUrl}/async-result/${taskId}`;
+                        const resultResponse = await fetch(resultUrl, {
+                            headers: {
+                                'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`
+                            }
+                        });
+                        const resultData = await resultResponse.json();
+                        if (resultData && resultData.task_status === 'SUCCESS' && resultData.image_result && resultData
+                            .image_result[0] && resultData.image_result[0].url) {
+                            imageUrl = resultData.image_result[0].url;
+                            break;
+                        }
+                        if (resultData && resultData.task_status === 'FAIL') {
+                            throw new Error('生成失败');
+                        }
+                        attempts++;
+                    }
+                    if (!imageUrl) {
+                        throw new Error('生成超时，请稍后重试');
+                    }
 
-                const data = await response.json();
-
-                if (data && data.data && data.data[0] && data.data[0].url) {
-                    const imageUrl = data.data[0].url;
-                    currentMediaUrl = imageUrl;
-                    currentMediaType = 'image';
-
-                    output.src = imageUrl;
-                    output.style.display = 'block';
-                    downloadBtn.style.display = 'inline-block';
-                    loading.classList.remove('active');
-
-                    addToHistory('image', imageUrl, prompt);
-                    addMessage('assistant', `🎨 生成的图片：${prompt}`, imageUrl, 'image');
-                    
-                    // 生成后清空参考图
-                    removeReferenceImage();
+                    // 智谱 Agnese Image
                 } else {
-                    throw new Error(data.error?.message || '生成失败');
+                    const payload = {
+                        model: model,
+                        prompt: prompt,
+                        size: size,
+                        extra_body: {
+                            response_format: 'url'
+                        }
+                    };
+                    if (drawReferenceImages.length > 0) {
+                        payload.extra_body.image = drawReferenceImages;
+                    }
+                    const url = `${AGNES_CONFIG.baseUrl}/images/generations`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    if (data && data.data && data.data[0] && data.data[0].url) {
+                        imageUrl = data.data[0].url;
+                    } else {
+                        throw new Error(data.error?.message || '生成失败');
+                    }
                 }
+
+                currentMediaUrl = imageUrl;
+                currentMediaType = 'image';
+                output.src = imageUrl;
+                output.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                loading.classList.remove('active');
+
+                addToHistory('image', imageUrl, prompt);
+                addMessage('assistant', `🎨 生成的图片：${prompt}`, imageUrl, 'image');
+                removeReferenceImage();
+
             } catch (error) {
                 console.error('绘图错误:', error);
                 loading.classList.remove('active');
@@ -1777,12 +2101,12 @@
         }
 
         // ============================================================
-        //  🎬 视频生成 (Agnes Video V2.0 + 图生视频/多图输入)
+        //  🎬 视频生成 (Agnes Video V2.0 + 智谱 CogVideoX-Flash)
         // ============================================================
         function handleVideoImageUpload(input) {
             const files = input.files;
             if (!files || files.length === 0) return;
-            
+
             const promises = [];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
@@ -1794,7 +2118,7 @@
                 });
                 promises.push(promise);
             }
-            
+
             Promise.all(promises).then((results) => {
                 videoReferenceImages = results;
                 updateVideoPreview();
@@ -1808,11 +2132,13 @@
                 img.src = videoReferenceImages[0];
                 preview.style.display = 'block';
                 document.getElementById('videoImageUploadLabel').classList.add('has-image');
-                document.getElementById('videoImageUploadLabel').innerHTML = `📎 ${videoReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>`;
+                document.getElementById('videoImageUploadLabel').innerHTML =
+                    `📎 ${videoReferenceImages.length}张参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>`;
             } else {
                 preview.style.display = 'none';
                 document.getElementById('videoImageUploadLabel').classList.remove('has-image');
-                document.getElementById('videoImageUploadLabel').innerHTML = '📎 参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>';
+                document.getElementById('videoImageUploadLabel').innerHTML =
+                    '📎 参考图 <input type="file" accept="image/*" style="display:none;" onchange="handleVideoImageUpload(this)" multiple>';
             }
         }
 
@@ -1825,6 +2151,7 @@
         async function generateVideo() {
             const prompt = document.getElementById('videoPrompt').value.trim();
             const numFrames = parseInt(document.getElementById('videoDuration').value);
+            const model = document.getElementById('videoModelSelect').value;
 
             if (!prompt) { alert('请输入视频描述！'); return; }
 
@@ -1842,74 +2169,114 @@
             downloadBtn.style.display = 'none';
 
             try {
-                const payload = {
-                    model: AGNES_CONFIG.videoModel,
-                    prompt: prompt,
-                    num_frames: numFrames,
-                    frame_rate: 24,
-                    height: 768,
-                    width: 1152
-                };
-                
-                // 如果有参考图（多图输入），添加到 payload
-                if (videoReferenceImages.length > 0) {
-                    payload.extra_body = {
-                        image: videoReferenceImages
+                let videoUrl = '';
+
+                // 智谱 CogVideoX-Flash（异步生成，需要轮询）
+                if (model === 'cogvideox-flash') {
+                    const createUrl = `${BIGMODEL_CONFIG.baseUrl}/videos/generations`;
+                    const payload = {
+                        model: 'cogvideox-flash',
+                        prompt: prompt,
+                        duration: numFrames === 81 ? 5 : 10,
+                        fps: 30,
+                        size: '1280x720'
                     };
-                }
-
-                // Step 1: 创建视频任务
-                const url = `${AGNES_CONFIG.baseUrl}/videos`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (!data || !data.video_id) {
-                    throw new Error(data.error?.message || '创建任务失败');
-                }
-
-                const videoId = data.video_id;
-                loading.querySelector('.loading-text').textContent = '⏳ 视频生成中 (约 1-3 分钟)，请耐心等待...';
-
-                // Step 2: 轮询获取结果
-                let attempts = 0;
-                const maxAttempts = 60;
-                let videoUrl = null;
-
-                while (attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-
-                    const resultUrl = `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`;
-                    const resultResponse = await fetch(resultUrl, {
-                        method: 'GET',
+                    if (videoReferenceImages.length > 0) {
+                        payload.image_url = videoReferenceImages[0];
+                    }
+                    const createResponse = await fetch(createUrl, {
+                        method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`
-                        }
+                            'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
                     });
+                    const createData = await createResponse.json();
+                    if (!createData || !createData.id) {
+                        throw new Error('创建任务失败');
+                    }
+                    const taskId = createData.id;
 
-                    const resultData = await resultResponse.json();
-
-                    if (resultData && resultData.status === 'completed' && resultData.remixed_from_video_id) {
-                        videoUrl = resultData.remixed_from_video_id;
-                        break;
+                    // 轮询结果
+                    let attempts = 0;
+                    const maxAttempts = 60;
+                    while (attempts < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        const resultUrl = `${BIGMODEL_CONFIG.baseUrl}/async-result/${taskId}`;
+                        const resultResponse = await fetch(resultUrl, {
+                            headers: {
+                                'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`
+                            }
+                        });
+                        const resultData = await resultResponse.json();
+                        if (resultData && resultData.task_status === 'SUCCESS' && resultData.video_result && resultData
+                            .video_result[0] && resultData.video_result[0].url) {
+                            videoUrl = resultData.video_result[0].url;
+                            break;
+                        }
+                        if (resultData && resultData.task_status === 'FAIL') {
+                            throw new Error('视频生成失败');
+                        }
+                        attempts++;
+                    }
+                    if (!videoUrl) {
+                        throw new Error('视频生成超时，请稍后重试');
                     }
 
-                    if (resultData && resultData.status === 'failed') {
-                        throw new Error(resultData.error || '视频生成失败');
+                    // Agnes Video V2.0
+                } else {
+                    const payload = {
+                        model: model,
+                        prompt: prompt,
+                        num_frames: numFrames,
+                        frame_rate: 24,
+                        height: 768,
+                        width: 1152
+                    };
+                    if (videoReferenceImages.length > 0) {
+                        payload.extra_body = {
+                            image: videoReferenceImages
+                        };
                     }
-
-                    attempts++;
-                }
-
-                if (!videoUrl) {
-                    throw new Error('视频生成超时，请稍后重试');
+                    const url = `${AGNES_CONFIG.baseUrl}/videos`;
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await response.json();
+                    if (!data || !data.video_id) {
+                        throw new Error(data.error?.message || '创建任务失败');
+                    }
+                    const videoId = data.video_id;
+                    loading.querySelector('.loading-text').textContent = '⏳ 视频生成中 (约 1-3 分钟)...';
+                    let attempts = 0,
+                        maxAttempts = 60;
+                    while (attempts < maxAttempts) {
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        const resultUrl = `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`;
+                        const resultResponse = await fetch(resultUrl, {
+                            headers: {
+                                'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`
+                            }
+                        });
+                        const resultData = await resultResponse.json();
+                        if (resultData && resultData.status === 'completed' && resultData.remixed_from_video_id) {
+                            videoUrl = resultData.remixed_from_video_id;
+                            break;
+                        }
+                        if (resultData && resultData.status === 'failed') {
+                            throw new Error(resultData.error || '视频生成失败');
+                        }
+                        attempts++;
+                    }
+                    if (!videoUrl) {
+                        throw new Error('视频生成超时');
+                    }
                 }
 
                 currentMediaUrl = videoUrl;
@@ -1921,8 +2288,6 @@
 
                 addToHistory('video', videoUrl, prompt);
                 addMessage('assistant', `🎬 生成的视频：${prompt}`, videoUrl, 'video');
-                
-                // 生成后清空参考图
                 removeVideoReferenceImage();
 
             } catch (error) {
@@ -1935,6 +2300,123 @@
                 generateBtn.disabled = false;
                 generateBtn.textContent = '🎬 生成';
                 loading.querySelector('.loading-text').textContent = '⏳ AI 正在生成视频，请稍候...';
+            }
+        }
+
+        // ============================================================
+        //  👁️ 视觉理解功能 (智谱 GLM-4.6V-Flash / GLM-4.1V-Thinking-Flash / GLM-4V-Flash)
+        // ============================================================
+        function handleVisionUpload(input) {
+            const files = input.files;
+            if (!files || files.length === 0) return;
+
+            const file = files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const result = e.target.result;
+                visionFiles = [result];
+                visionFileType = file.type.startsWith('image/') ? 'image' :
+                    file.type.startsWith('video/') ? 'video' : 'file';
+
+                const preview = document.getElementById('visionPreview');
+                const img = document.getElementById('visionPreviewImg');
+                if (visionFileType === 'image') {
+                    img.src = result;
+                    preview.style.display = 'block';
+                } else if (visionFileType === 'video') {
+                    img.src = result;
+                    preview.style.display = 'block';
+                } else {
+                    img.src = '';
+                    preview.style.display = 'block';
+                    img.alt = '📄 ' + file.name;
+                }
+                document.getElementById('visionUploadLabel').classList.add('has-file');
+                document.getElementById('visionUploadLabel').innerHTML =
+                    `📎 ${file.name} <input type="file" accept="image/*,video/*,.pdf,.txt,.docx,.xlsx,.pptx" style="display:none;" onchange="handleVisionUpload(this)" multiple>`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeVisionFile() {
+            visionFiles = [];
+            visionFileType = '';
+            document.getElementById('visionPreview').style.display = 'none';
+            document.getElementById('visionUploadLabel').classList.remove('has-file');
+            document.getElementById('visionUploadLabel').innerHTML =
+                '📎 上传文件 <input type="file" accept="image/*,video/*,.pdf,.txt,.docx,.xlsx,.pptx" style="display:none;" onchange="handleVisionUpload(this)" multiple>';
+            document.getElementById('visionFileInput').value = '';
+        }
+
+        async function analyzeVision() {
+            const prompt = document.getElementById('visionPrompt').value.trim();
+            const model = document.getElementById('visionModelSelect').value;
+
+            if (!prompt) { alert('请输入问题！'); return; }
+            if (visionFiles.length === 0) { alert('请先上传文件！'); return; }
+
+            const analyzeBtn = document.getElementById('visionAnalyzeBtn');
+            const loading = document.getElementById('visionLoading');
+            const placeholder = document.getElementById('visionPlaceholder');
+            const output = document.getElementById('visionOutput');
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '⏳ 分析中...';
+            loading.classList.add('active');
+            placeholder.style.display = 'none';
+            output.style.display = 'none';
+
+            try {
+                const content = [];
+                // 添加文件
+                for (const fileData of visionFiles) {
+                    if (fileData.startsWith('data:image')) {
+                        content.push({ type: 'image_url', image_url: { url: fileData } });
+                    } else if (fileData.startsWith('data:video')) {
+                        content.push({ type: 'video_url', video_url: { url: fileData } });
+                    } else {
+                        content.push({ type: 'text', text: '文件已上传' });
+                    }
+                }
+                content.push({ type: 'text', text: prompt });
+
+                const url = `${BIGMODEL_CONFIG.baseUrl}/chat/completions`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${BIGMODEL_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [{ role: 'user', content: content }],
+                        temperature: 0.8,
+                        max_tokens: 4096,
+                        thinking: { type: model === 'glm-4.1v-thinking-flash' ? 'enabled' : 'disabled' }
+                    })
+                });
+
+                const data = await response.json();
+                loading.classList.remove('active');
+
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                    const result = data.choices[0].message.content;
+                    output.textContent = result;
+                    output.style.display = 'block';
+                    addMessage('assistant', `👁️ 视觉分析结果：${result}`);
+                } else {
+                    throw new Error(data.error?.message || '分析失败');
+                }
+
+            } catch (error) {
+                console.error('视觉分析错误:', error);
+                loading.classList.remove('active');
+                placeholder.style.display = 'block';
+                placeholder.innerHTML =
+                    `<span class="icon">❌</span>分析失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🔍 分析';
             }
         }
 
@@ -2046,9 +2528,10 @@
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'draw', 'video'];
+            const modes = ['chat', 'vision', 'draw', 'video'];
             const elements = {
                 chat: document.getElementById('chatMode'),
+                vision: document.getElementById('visionMode'),
                 draw: document.getElementById('drawMode'),
                 video: document.getElementById('videoMode')
             };
@@ -2067,6 +2550,7 @@
             });
 
             if (mode === 'chat') document.getElementById('messageInput')?.focus();
+            else if (mode === 'vision') document.getElementById('visionPrompt')?.focus();
             else if (mode === 'draw') document.getElementById('drawPrompt')?.focus();
             else if (mode === 'video') document.getElementById('videoPrompt')?.focus();
         }
@@ -2222,37 +2706,14 @@
             document.getElementById('chatModelSelect').value = 'sizhi';
 
             document.getElementById('refreshQuoteBtn').addEventListener('click', fetchDailyQuote);
-        }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            init();
+            // 设置自动调整输入框高度
+            document.getElementById('messageInput').addEventListener('input', autoResizeTextarea);
 
-            const textarea = document.getElementById('messageInput');
-            if (textarea) {
-                textarea.addEventListener('input', autoResizeTextarea);
-                textarea.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault();
-                        sendMessage(); }
-                });
-            }
-
-            ['drawPrompt', 'videoPrompt'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (id === 'drawPrompt') generateImage();
-                            else if (id === 'videoPrompt') generateVideo();
-                        }
-                    });
-                }
-            });
-
+            // 移动端菜单
             if (window.innerWidth <= 768) {
                 document.getElementById('menuBtn').style.display = 'block';
             }
-
             window.addEventListener('resize', function() {
                 if (window.innerWidth <= 768) {
                     document.getElementById('menuBtn').style.display = 'block';
@@ -2263,7 +2724,7 @@
             });
 
             switchMode('chat');
-        });
+        }
 
         // 暴露全局函数
         window.generateImage = generateImage;
@@ -2285,6 +2746,11 @@
         window.handleVideoImageUpload = handleVideoImageUpload;
         window.removeReferenceImage = removeReferenceImage;
         window.removeVideoReferenceImage = removeVideoReferenceImage;
+        window.handleVisionUpload = handleVisionUpload;
+        window.removeVisionFile = removeVisionFile;
+        window.analyzeVision = analyzeVision;
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
