@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>角色竞技场 & 画廊 - HZYAI</title>
     <style>
-        /* ===== 样式 ===== */
         * {
             margin: 0;
             padding: 0;
@@ -88,7 +87,6 @@
         .header .back-link:hover {
             text-decoration: underline;
         }
-
         .tabs {
             display: flex;
             gap: 8px;
@@ -114,7 +112,6 @@
             background: #ffd700;
             color: #1a1a2e;
         }
-
         .panel {
             display: none;
             animation: fadeIn 0.3s ease;
@@ -126,7 +123,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
         .toolbar {
             display: flex;
             gap: 12px;
@@ -210,13 +206,11 @@
             outline: none;
             border-color: #ffd700;
         }
-
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
         }
-
         .character-card {
             background: #16213e;
             border: 1px solid #2a2a3e;
@@ -245,10 +239,6 @@
         }
         .character-card .badge.private {
             background: #6c757d;
-            color: #fff;
-        }
-        .character-card .badge.unknown {
-            background: #f39c12;
             color: #fff;
         }
         .character-card .name {
@@ -339,7 +329,6 @@
             border-top: 1px solid #2a2a3e;
             padding-top: 8px;
         }
-
         .media-card {
             background: #16213e;
             border: 1px solid #2a2a3e;
@@ -386,9 +375,6 @@
         }
         .media-card .media-preview .badge.private {
             background: rgba(108,117,125,0.9);
-        }
-        .media-card .media-preview .badge.unknown {
-            background: rgba(243,156,18,0.9);
         }
         .media-card .media-info {
             padding: 14px 16px;
@@ -468,7 +454,6 @@
             border-top: 1px solid #2a2a3e;
             padding-top: 8px;
         }
-
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -482,7 +467,6 @@
         .empty-state p {
             font-size: 15px;
         }
-
         .loading-overlay {
             display: none;
             text-align: center;
@@ -504,7 +488,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-
         .toast {
             position: fixed;
             bottom: 30px;
@@ -535,7 +518,6 @@
         .toast.warning {
             border-color: #f39c12;
         }
-
         .login-overlay {
             position: fixed;
             top: 0;
@@ -608,7 +590,6 @@
             text-align: center;
             margin-top: 12px;
         }
-
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -851,10 +832,11 @@
         }
 
         // ============================================================
-        //  工具函数 - 从 GitHub 加载数据
+        //  工具函数 - 从 GitHub 加载数据（带调试日志）
         // ============================================================
         async function loadIssuesWithLabel(label) {
             try {
+                console.log(`🔍 正在加载标签: ${label}`);
                 const url =
                     `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues?labels=${label}&state=open`;
                 const response = await fetch(url, {
@@ -864,26 +846,33 @@
                     }
                 });
                 if (!response.ok) {
-                    console.warn('GitHub API 返回:', response.status);
+                    console.warn(`⚠️ GitHub API 返回状态: ${response.status}`);
                     return [];
                 }
                 const issues = await response.json();
+                console.log(`📦 找到 ${issues.length} 个 issue，标签: ${label}`);
+
                 const results = [];
                 for (const issue of issues) {
+                    console.log(`  📄 Issue #${issue.number}: ${issue.title}`);
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
                         try {
                             const data = JSON.parse(match[1]);
                             data.issueNumber = issue.number;
                             results.push(data);
+                            console.log(`  ✅ 解析成功: ${data.name || data.title || '未知'}`);
                         } catch (e) {
-                            console.warn('解析 issue 数据失败:', e);
+                            console.warn(`  ❌ 解析失败:`, e.message);
                         }
+                    } else {
+                        console.warn(`  ⚠️ 未找到 JSON 代码块`);
                     }
                 }
+                console.log(`✅ 标签 ${label} 加载完成，共 ${results.length} 条数据`);
                 return results;
             } catch (error) {
-                console.error('加载 issues 失败:', error);
+                console.error('❌ 加载 issues 失败:', error);
                 return [];
             }
         }
@@ -905,74 +894,69 @@
             document.getElementById('characterGrid').innerHTML = '';
 
             try {
-                // 1. 从 GitHub 加载当前用户的私有角色 (hzyai_character_${username})
-                const myChars = await loadIssuesWithLabel(getCharacterLabel());
+                console.log('🚀 开始同步角色...');
 
-                // 2. 从 GitHub 加载所有公开角色 (hzyai_character_public)
+                // 1. 从 GitHub 加载当前用户的私有角色
+                const myChars = await loadIssuesWithLabel(getCharacterLabel());
+                console.log('📋 私有角色:', myChars);
+
+                // 2. 从 GitHub 加载所有公开角色
                 const publicChars = await loadIssuesWithLabel(getPublicCharacterLabel());
+                console.log('🌍 公开角色:', publicChars);
 
                 // 3. 从 localStorage 加载本地角色
                 const localChars = loadCharactersFromLocal();
+                console.log('💾 本地角色:', localChars);
 
                 // 4. 合并所有角色
                 const all = [];
+                const idSet = new Set();
 
-                // 先添加本地角色
-                for (const char of localChars) {
-                    // 检查是否在 GitHub 上有对应记录
-                    const githubMy = myChars.find(c => c.id === char.id);
-                    const githubPublic = publicChars.find(c => c.id === char.id);
-
-                    if (githubMy) {
+                // 先添加 GitHub 私有角色（优先级最高）
+                for (const char of myChars) {
+                    if (!idSet.has(char.id)) {
                         all.push({
                             ...char,
-                            ...githubMy,
-                            isPublic: githubMy.isPublic || false,
+                            isPublic: false,
                             fromLocal: false
                         });
-                    } else if (githubPublic) {
+                        idSet.add(char.id);
+                    }
+                }
+
+                // 添加公开角色
+                for (const char of publicChars) {
+                    if (!idSet.has(char.id)) {
                         all.push({
                             ...char,
-                            ...githubPublic,
                             isPublic: true,
                             fromLocal: false
                         });
+                        idSet.add(char.id);
                     } else {
+                        // 更新已有角色的公开状态
+                        const existing = all.find(c => c.id === char.id);
+                        if (existing) {
+                            existing.isPublic = true;
+                            existing.issueNumber = char.issueNumber;
+                        }
+                    }
+                }
+
+                // 添加本地角色（如果 GitHub 上没有）
+                for (const char of localChars) {
+                    if (!idSet.has(char.id)) {
                         all.push({
                             ...char,
                             owner: char.owner || currentUser.username,
                             isPublic: char.isPublic || false,
                             fromLocal: true
                         });
+                        idSet.add(char.id);
                     }
                 }
 
-                // 添加 GitHub 私有角色（本地没有的）
-                for (const char of myChars) {
-                    const exists = all.find(c => c.id === char.id);
-                    if (!exists) {
-                        all.push({
-                            ...char,
-                            isPublic: char.isPublic || false,
-                            fromLocal: false
-                        });
-                    }
-                }
-
-                // 添加公开角色（本地没有的）
-                for (const char of publicChars) {
-                    const exists = all.find(c => c.id === char.id);
-                    if (!exists) {
-                        all.push({
-                            ...char,
-                            isPublic: true,
-                            fromLocal: false
-                        });
-                    } else {
-                        exists.isPublic = true;
-                        exists.issueNumber = char.issueNumber;
-                    }
-                }
+                console.log('📊 合并后的角色列表:', all);
 
                 allCharacters = all;
                 filteredCharacters = [...all];
@@ -981,7 +965,7 @@
 
                 showToast(`✅ 角色同步完成！共 ${all.length} 个角色`, 'success');
             } catch (error) {
-                console.error('同步角色失败:', error);
+                console.error('❌ 同步角色失败:', error);
                 showToast('❌ 同步角色失败: ' + error.message, 'error');
             } finally {
                 loading.classList.remove('active');
@@ -992,12 +976,13 @@
             try {
                 const saved = localStorage.getItem('hzyai_characters');
                 if (saved) {
-                    return JSON.parse(saved);
+                    const chars = JSON.parse(saved);
+                    console.log('💾 从 localStorage 读取角色:', chars);
+                    return chars;
                 }
             } catch (e) {
                 console.error('读取本地角色失败:', e);
             }
-            // 如果没有角色，返回空数组（不自动创建）
             return [];
         }
 
@@ -1150,7 +1135,7 @@
         }
 
         // ============================================================
-        //  🖼️ 画廊同步（从对话中提取媒体）
+        //  🖼️ 画廊同步
         // ============================================================
         function getConversationLabel() {
             return `hzyai_${currentUser.username}`;
@@ -1166,16 +1151,22 @@
             document.getElementById('galleryGrid').innerHTML = '';
 
             try {
-                // 1. 从 GitHub 加载所有对话（提取媒体）
+                console.log('🚀 开始同步作品...');
+
+                // 1. 从 GitHub 加载所有对话
                 const conversations = await loadIssuesWithLabel(getConversationLabel());
+                console.log('💬 对话数量:', conversations.length);
 
                 // 2. 从 GitHub 加载公开媒体
                 const publicMedia = await loadIssuesWithLabel(getPublicMediaLabel());
+                console.log('🌍 公开媒体:', publicMedia);
 
                 // 3. 从本地加载媒体
                 const localMedia = loadMediaFromLocal();
+                console.log('💾 本地媒体:', localMedia);
 
                 const all = [];
+                const idSet = new Set();
 
                 // 从对话中提取媒体
                 for (const conv of conversations) {
@@ -1183,8 +1174,7 @@
                     for (const msg of conv.messages) {
                         if (msg.mediaUrl && (msg.mediaType === 'image' || msg.mediaType === 'video')) {
                             const id = msg.mediaUrl + '_' + (msg.timestamp || Date.now());
-                            const exists = all.find(m => m.id === id);
-                            if (!exists) {
+                            if (!idSet.has(id)) {
                                 let prompt = msg.content || '无提示词';
                                 const match = prompt.match(/(?:生成的图片|生成的视频)[：:]\s*(.+)/);
                                 if (match) {
@@ -1202,6 +1192,7 @@
                                     conversationTitle: conv.title || '未命名对话',
                                     fromLocal: false
                                 });
+                                idSet.add(id);
                             }
                         }
                     }
@@ -1209,12 +1200,12 @@
 
                 // 添加本地媒体
                 for (const item of localMedia) {
-                    const exists = all.find(m => m.id === item.id);
-                    if (!exists) {
+                    if (!idSet.has(item.id)) {
                         all.push({
                             ...item,
                             fromLocal: true
                         });
+                        idSet.add(item.id);
                     }
                 }
 
@@ -1229,15 +1220,17 @@
 
                 // 添加公开媒体（其他用户的）
                 for (const item of publicMedia) {
-                    const exists = all.find(m => m.id === item.id);
-                    if (!exists) {
+                    if (!idSet.has(item.id)) {
                         all.push({
                             ...item,
                             isPublic: true,
                             fromLocal: false
                         });
+                        idSet.add(item.id);
                     }
                 }
+
+                console.log('📊 合并后的媒体列表:', all);
 
                 allMedia = all;
                 filteredMedia = [...all];
@@ -1246,7 +1239,7 @@
 
                 showToast(`✅ 作品同步完成！共 ${all.length} 个作品`, 'success');
             } catch (error) {
-                console.error('同步作品失败:', error);
+                console.error('❌ 同步作品失败:', error);
                 showToast('❌ 同步作品失败: ' + error.message, 'error');
             } finally {
                 loading.classList.remove('active');
@@ -1352,6 +1345,14 @@
                                 body: JSON.stringify({ state: 'closed' })
                             });
                     }
+                }
+
+                // 更新本地媒体状态
+                const localMedia = loadMediaFromLocal();
+                const localIdx = localMedia.findIndex(m => m.id === mediaItem.id);
+                if (localIdx >= 0) {
+                    localMedia[localIdx].isPublic = mediaItem.isPublic;
+                    localMedia[localIdx].promptPublic = mediaItem.promptPublic;
                 }
 
                 return true;
@@ -1482,13 +1483,18 @@
                 return;
             }
 
+            // 立即更新 UI
             char.isPublic = !char.isPublic;
+            renderCharacters();
+
             const success = await saveCharacterToGitHub(char);
             if (success) {
                 showToast(`✅ 角色已${char.isPublic ? '公开' : '私有化'}`, 'success');
+                // 重新同步确保数据一致
                 await syncCharacters();
             } else {
                 char.isPublic = !char.isPublic;
+                renderCharacters();
                 showToast('❌ 操作失败，请重试', 'error');
             }
         }
@@ -1657,13 +1663,18 @@
                 return;
             }
 
+            // 立即更新 UI
             item.isPublic = !item.isPublic;
+            renderGallery();
+
             const success = await saveMediaToGitHub(item);
             if (success) {
                 showToast(`✅ 作品已${item.isPublic ? '公开' : '私有化'}`, 'success');
+                // 重新同步确保数据一致
                 await syncGallery();
             } else {
                 item.isPublic = !item.isPublic;
+                renderGallery();
                 showToast('❌ 操作失败，请重试', 'error');
             }
         }
@@ -1677,13 +1688,17 @@
                 return;
             }
 
+            // 立即更新 UI
             item.promptPublic = !item.promptPublic;
+            renderGallery();
+
             const success = await saveMediaToGitHub(item);
             if (success) {
                 showToast(`✅ 提示词已${item.promptPublic ? '公开' : '隐藏'}`, 'success');
                 await syncGallery();
             } else {
                 item.promptPublic = !item.promptPublic;
+                renderGallery();
                 showToast('❌ 操作失败，请重试', 'error');
             }
         }
