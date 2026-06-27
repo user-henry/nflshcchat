@@ -839,7 +839,7 @@
         }
 
         // ============================================================
-        //  工具函数 - 从 GitHub 加载数据（保留 issueNumber）
+        //  工具函数 - 从 GitHub 加载数据
         // ============================================================
         async function loadIssuesWithLabel(label) {
             try {
@@ -858,7 +858,6 @@
                     if (match) {
                         try {
                             const data = JSON.parse(match[1]);
-                            // 关键：保存 issueNumber 以便后续更新/删除
                             data.issueNumber = issue.number;
                             results.push(data);
                         } catch (e) {
@@ -874,7 +873,7 @@
         }
 
         // ============================================================
-        //  GitHub 数据同步 - 角色
+        //  🎭 角色同步 - 从本地 localStorage + GitHub
         // ============================================================
         function getCharacterLabel() {
             return `hzyai_character_${currentUser.username}`;
@@ -890,38 +889,55 @@
             document.getElementById('characterGrid').innerHTML = '';
 
             try {
-                // 加载当前用户的私有角色
+                // 1. 先从 localStorage 读取本地角色（与 HZYAI 共享）
+                const localChars = loadCharactersFromLocal();
+
+                // 2. 从 GitHub 加载当前用户的私有角色
                 const myChars = await loadIssuesWithLabel(getCharacterLabel());
-                // 加载所有公开角色
+
+                // 3. 从 GitHub 加载所有公开角色
                 const publicChars = await loadIssuesWithLabel(getPublicCharacterLabel());
 
-                // 合并：公开角色 + 当前用户自己的角色（去重，保留自己的完整数据）
-                const all = [...publicChars];
-                for (const myChar of myChars) {
-                    const exists = all.find(c => c.id === myChar.id);
-                    if (!exists) {
-                        all.push(myChar);
+                // 4. 合并所有角色
+                const all = [];
+
+                // 先添加本地角色（标记为本地来源）
+                for (const char of localChars) {
+                    all.push({
+                        ...char,
+                        owner: char.owner || currentUser.username,
+                        isPublic: char.isPublic || false,
+                        fromLocal: true
+                    });
+                }
+
+                // 添加 GitHub 私有角色（如果本地没有，或覆盖本地）
+                for (const char of myChars) {
+                    const exists = all.find(c => c.id === char.id);
+                    if (exists) {
+                        // 更新本地数据
+                        Object.assign(exists, char);
+                        exists.fromLocal = false;
                     } else {
-                        // 更新已有记录，保留私有数据
-                        Object.assign(exists, myChar);
-                        exists.isPublic = false; // 自己的角色默认私有，除非在公开列表中有记录
-                        // 检查是否在公开列表中有对应记录
-                        const inPublic = publicChars.find(c => c.id === myChar.id);
-                        if (inPublic) {
-                            exists.isPublic = true;
-                            exists.issueNumber = inPublic.issueNumber || exists.issueNumber;
-                        }
+                        all.push({
+                            ...char,
+                            fromLocal: false
+                        });
                     }
                 }
 
-                // 标记公开角色中属于当前用户的（但不在 myChars 中的情况）
-                for (const pub of publicChars) {
-                    if (pub.owner === currentUser.username) {
-                        const inMy = myChars.find(c => c.id === pub.id);
-                        if (!inMy) {
-                            // 这种情况是用户公开了角色但没有私有副本，直接使用公开数据
-                            all.push(pub);
-                        }
+                // 添加公开角色
+                for (const char of publicChars) {
+                    const exists = all.find(c => c.id === char.id);
+                    if (!exists) {
+                        all.push({
+                            ...char,
+                            isPublic: true,
+                            fromLocal: false
+                        });
+                    } else {
+                        exists.isPublic = true;
+                        exists.issueNumber = char.issueNumber;
                     }
                 }
 
@@ -930,7 +946,7 @@
                 renderCharacters();
                 updateCharCount();
 
-                showToast('✅ 角色同步完成', 'success');
+                showToast(`✅ 角色同步完成！共 ${all.length} 个角色`, 'success');
             } catch (error) {
                 console.error('同步角色失败:', error);
                 showToast('❌ 同步角色失败: ' + error.message, 'error');
@@ -939,103 +955,34 @@
             }
         }
 
-        async function saveCharacterToGitHub(character) {
+        // 从 localStorage 加载角色（与 HZYAI 共享）
+        function loadCharactersFromLocal() {
             try {
-                const label = character.isPublic ? getPublicCharacterLabel() : getCharacterLabel();
-
-                const issueBody = `HZYAI角色数据\n\`\`\`json\n${JSON.stringify(character, null, 2)}\n\`\`\``;
-                const labels = [label];
-
-                // 如果角色变为私有，且之前有公开的 issue，关闭它
-                if (!character.isPublic) {
-                    const publicIssues = await loadIssuesWithLabel(getPublicCharacterLabel());
-                    const publicIssue = publicIssues.find(c => c.id === character.id);
-                    if (publicIssue && publicIssue.issueNumber) {
-                        await fetch(
-                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${publicIssue.issueNumber}`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                                    'Accept': 'application/vnd.github.v3+json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ state: 'closed' })
-                            });
-                    }
+                const saved = localStorage.getItem('hzyai_characters');
+                if (saved) {
+                    const chars = JSON.parse(saved);
+                    return chars.map(c => ({
+                        ...c,
+                        owner: c.owner || currentUser.username
+                    }));
                 }
-
-                // 检查是否已存在同标签的 issue
-                const existingIssues = await loadIssuesWithLabel(label);
-                const existing = existingIssues.find(c => c.id === character.id);
-
-                if (existing && existing.issueNumber) {
-                    // 更新现有 issue
-                    await fetch(
-                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                body: issueBody,
-                                labels: labels,
-                                state: 'open'
-                            })
-                        });
-                } else {
-                    // 创建新 issue
-                    await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            title: `角色: ${character.name}`,
-                            body: issueBody,
-                            labels: labels
-                        })
-                    });
-                }
-                return true;
-            } catch (error) {
-                console.error('保存角色失败:', error);
-                return false;
+            } catch (e) {
+                console.error('读取本地角色失败:', e);
             }
+            return [];
         }
 
-        async function deleteCharacterFromGitHub(character) {
+        // 保存角色到 localStorage
+        function saveCharactersToLocal(chars) {
             try {
-                // 查找并关闭所有相关的 issues
-                const labels = [getCharacterLabel(), getPublicCharacterLabel()];
-                for (const label of labels) {
-                    const issues = await loadIssuesWithLabel(label);
-                    const target = issues.find(c => c.id === character.id);
-                    if (target && target.issueNumber) {
-                        await fetch(
-                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${target.issueNumber}`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                                    'Accept': 'application/vnd.github.v3+json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ state: 'closed' })
-                            });
-                    }
-                }
-                return true;
-            } catch (error) {
-                console.error('删除角色失败:', error);
-                return false;
+                localStorage.setItem('hzyai_characters', JSON.stringify(chars));
+            } catch (e) {
+                console.error('保存本地角色失败:', e);
             }
         }
 
         // ============================================================
-        //  GitHub 数据同步 - 媒体
+        //  🖼️ 画廊同步 - 从本地 + GitHub
         // ============================================================
         function getMediaLabel() {
             return `hzyai_media_${currentUser.username}`;
@@ -1051,31 +998,44 @@
             document.getElementById('galleryGrid').innerHTML = '';
 
             try {
+                // 1. 从 localStorage 读取本地媒体
+                const localMedia = loadMediaFromLocal();
+
+                // 2. 从 GitHub 加载私有媒体
                 const myMedia = await loadIssuesWithLabel(getMediaLabel());
+
+                // 3. 从 GitHub 加载公开媒体
                 const publicMedia = await loadIssuesWithLabel(getPublicMediaLabel());
 
-                const all = [...publicMedia];
-                for (const myItem of myMedia) {
-                    const exists = all.find(m => m.id === myItem.id);
-                    if (!exists) {
-                        all.push(myItem);
+                // 4. 合并
+                const all = [];
+
+                for (const item of localMedia) {
+                    all.push({
+                        ...item,
+                        owner: item.owner || currentUser.username,
+                        isPublic: item.isPublic || false,
+                        fromLocal: true
+                    });
+                }
+
+                for (const item of myMedia) {
+                    const exists = all.find(m => m.id === item.id);
+                    if (exists) {
+                        Object.assign(exists, item);
+                        exists.fromLocal = false;
                     } else {
-                        Object.assign(exists, myItem);
-                        exists.isPublic = false;
-                        const inPublic = publicMedia.find(m => m.id === myItem.id);
-                        if (inPublic) {
-                            exists.isPublic = true;
-                            exists.issueNumber = inPublic.issueNumber || exists.issueNumber;
-                        }
+                        all.push({ ...item, fromLocal: false });
                     }
                 }
 
-                for (const pub of publicMedia) {
-                    if (pub.owner === currentUser.username) {
-                        const inMy = myMedia.find(m => m.id === pub.id);
-                        if (!inMy) {
-                            all.push(pub);
-                        }
+                for (const item of publicMedia) {
+                    const exists = all.find(m => m.id === item.id);
+                    if (!exists) {
+                        all.push({ ...item, isPublic: true, fromLocal: false });
+                    } else {
+                        exists.isPublic = true;
+                        exists.issueNumber = item.issueNumber;
                     }
                 }
 
@@ -1084,7 +1044,7 @@
                 renderGallery();
                 updateGalleryCount();
 
-                showToast('✅ 作品同步完成', 'success');
+                showToast(`✅ 作品同步完成！共 ${all.length} 个作品`, 'success');
             } catch (error) {
                 console.error('同步作品失败:', error);
                 showToast('❌ 同步作品失败: ' + error.message, 'error');
@@ -1093,93 +1053,42 @@
             }
         }
 
-        async function saveMediaToGitHub(mediaItem) {
+        function loadMediaFromLocal() {
             try {
-                const label = mediaItem.isPublic ? getPublicMediaLabel() : getMediaLabel();
+                // 从对话历史中提取包含图片/视频的消息
+                const saved = localStorage.getItem('hzyai_conversations_' + currentUser.username);
+                if (!saved) return [];
 
-                const issueBody = `HZYAI媒体数据\n\`\`\`json\n${JSON.stringify(mediaItem, null, 2)}\n\`\`\``;
-                const labels = [label];
+                const conversations = JSON.parse(saved);
+                const mediaItems = [];
 
-                if (!mediaItem.isPublic) {
-                    const publicIssues = await loadIssuesWithLabel(getPublicMediaLabel());
-                    const publicIssue = publicIssues.find(m => m.id === mediaItem.id);
-                    if (publicIssue && publicIssue.issueNumber) {
-                        await fetch(
-                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${publicIssue.issueNumber}`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                                    'Accept': 'application/vnd.github.v3+json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ state: 'closed' })
-                            });
+                for (const conv of conversations) {
+                    for (const msg of conv.messages) {
+                        if (msg.mediaUrl && (msg.mediaType === 'image' || msg.mediaType === 'video')) {
+                            // 检查是否已存在
+                            const id = msg.mediaUrl + '_' + msg.timestamp;
+                            const exists = mediaItems.find(m => m.id === id);
+                            if (!exists) {
+                                mediaItems.push({
+                                    id: id,
+                                    prompt: msg.content || '无提示词',
+                                    mediaUrl: msg.mediaUrl,
+                                    mediaType: msg.mediaType || 'image',
+                                    owner: currentUser.username,
+                                    isPublic: false,
+                                    promptPublic: true,
+                                    createdAt: msg.timestamp || new Date().toISOString(),
+                                    fromLocal: true
+                                });
+                            }
+                        }
                     }
                 }
 
-                const existingIssues = await loadIssuesWithLabel(label);
-                const existing = existingIssues.find(m => m.id === mediaItem.id);
-
-                if (existing && existing.issueNumber) {
-                    await fetch(
-                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
-                            method: 'PATCH',
-                            headers: {
-                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                                'Accept': 'application/vnd.github.v3+json',
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                body: issueBody,
-                                labels: labels,
-                                state: 'open'
-                            })
-                        });
-                } else {
-                    await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                            'Accept': 'application/vnd.github.v3+json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            title: `作品: ${mediaItem.prompt ? mediaItem.prompt.substring(0, 30) : '无标题'}`,
-                            body: issueBody,
-                            labels: labels
-                        })
-                    });
-                }
-                return true;
-            } catch (error) {
-                console.error('保存媒体失败:', error);
-                return false;
-            }
-        }
-
-        async function deleteMediaFromGitHub(mediaItem) {
-            try {
-                const labels = [getMediaLabel(), getPublicMediaLabel()];
-                for (const label of labels) {
-                    const issues = await loadIssuesWithLabel(label);
-                    const target = issues.find(m => m.id === mediaItem.id);
-                    if (target && target.issueNumber) {
-                        await fetch(
-                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${target.issueNumber}`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
-                                    'Accept': 'application/vnd.github.v3+json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ state: 'closed' })
-                            });
-                    }
-                }
-                return true;
-            } catch (error) {
-                console.error('删除媒体失败:', error);
-                return false;
+                return mediaItems;
+            } catch (e) {
+                console.error('读取本地媒体失败:', e);
+                return [];
             }
         }
 
@@ -1193,7 +1102,7 @@
                     <div class="empty-state" style="grid-column:1/-1;">
                         <span class="icon">🎭</span>
                         <p>暂无角色</p>
-                        <p style="font-size:13px;color:#555;">点击「同步角色」从 GitHub 加载</p>
+                        <p style="font-size:13px;color:#555;">点击「同步角色」从本地或 GitHub 加载</p>
                     </div>
                 `;
                 return;
@@ -1204,6 +1113,7 @@
                 const isPublic = char.isPublic || false;
                 const badgeText = isPublic ? '🌍 公开' : '🔒 私有';
                 const badgeClass = isPublic ? 'public' : 'private';
+                const fromLocal = char.fromLocal ? '📁 本地' : '☁️ 云端';
 
                 return `
                     <div class="character-card">
@@ -1213,6 +1123,7 @@
                         <div class="meta">
                             <span>📝 ${escapeHtml(char.tone || '通用')}</span>
                             <span>📅 ${formatDate(char.createdAt)}</span>
+                            <span>${fromLocal}</span>
                         </div>
                         <div class="tags">
                             ${char.knowledge ? char.knowledge.split(',').slice(0,3).map(k => `<span>${escapeHtml(k.trim())}</span>`).join('') : '<span>无领域</span>'}
@@ -1281,6 +1192,8 @@
             }
 
             char.isPublic = !char.isPublic;
+
+            // 保存到 GitHub
             const success = await saveCharacterToGitHub(char);
             if (success) {
                 showToast(`✅ 角色已${char.isPublic ? '公开' : '私有化'}`, 'success');
@@ -1288,6 +1201,82 @@
             } else {
                 char.isPublic = !char.isPublic;
                 showToast('❌ 操作失败，请重试', 'error');
+            }
+        }
+
+        async function saveCharacterToGitHub(character) {
+            try {
+                const label = character.isPublic ? getPublicCharacterLabel() : getCharacterLabel();
+
+                const issueBody = `HZYAI角色数据\n\`\`\`json\n${JSON.stringify(character, null, 2)}\n\`\`\``;
+                const labels = [label];
+
+                // 如果变为私有，关闭公开的 issue
+                if (!character.isPublic) {
+                    const publicIssues = await loadIssuesWithLabel(getPublicCharacterLabel());
+                    const publicIssue = publicIssues.find(c => c.id === character.id);
+                    if (publicIssue && publicIssue.issueNumber) {
+                        await fetch(
+                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${publicIssue.issueNumber}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ state: 'closed' })
+                            });
+                    }
+                }
+
+                const existingIssues = await loadIssuesWithLabel(label);
+                const existing = existingIssues.find(c => c.id === character.id);
+
+                if (existing && existing.issueNumber) {
+                    await fetch(
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                body: issueBody,
+                                labels: labels,
+                                state: 'open'
+                            })
+                        });
+                } else {
+                    await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: `角色: ${character.name}`,
+                            body: issueBody,
+                            labels: labels
+                        })
+                    });
+                }
+
+                // 同时更新本地
+                const localChars = loadCharactersFromLocal();
+                const localIdx = localChars.findIndex(c => c.id === character.id);
+                if (localIdx >= 0) {
+                    localChars[localIdx] = { ...character };
+                } else {
+                    localChars.push({ ...character });
+                }
+                saveCharactersToLocal(localChars);
+
+                return true;
+            } catch (error) {
+                console.error('保存角色失败:', error);
+                return false;
             }
         }
 
@@ -1302,15 +1291,38 @@
 
             if (!confirm(`确定要删除角色 "${char.name}" 吗？`)) return;
 
-            const success = await deleteCharacterFromGitHub(char);
-            if (success) {
+            try {
+                // 从 GitHub 删除
+                const labels = [getCharacterLabel(), getPublicCharacterLabel()];
+                for (const label of labels) {
+                    const issues = await loadIssuesWithLabel(label);
+                    const target = issues.find(c => c.id === charId);
+                    if (target && target.issueNumber) {
+                        await fetch(
+                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${target.issueNumber}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ state: 'closed' })
+                            });
+                    }
+                }
+
+                // 从本地删除
+                const localChars = loadCharactersFromLocal();
+                const filtered = localChars.filter(c => c.id !== charId);
+                saveCharactersToLocal(filtered);
+
                 allCharacters = allCharacters.filter(c => c.id !== charId);
                 filteredCharacters = [...allCharacters];
                 renderCharacters();
                 updateCharCount();
                 showToast('✅ 角色已删除', 'success');
-            } else {
-                showToast('❌ 删除失败，请重试', 'error');
+            } catch (error) {
+                showToast('❌ 删除失败: ' + error.message, 'error');
             }
         }
 
@@ -1322,9 +1334,7 @@
             }
 
             try {
-                const saved = localStorage.getItem('hzyai_characters');
-                let localChars = saved ? JSON.parse(saved) : [];
-
+                const localChars = loadCharactersFromLocal();
                 const exists = localChars.find(c => c.id === char.id);
                 if (exists) {
                     showToast('⚠️ 角色已存在于本地', 'warning');
@@ -1337,7 +1347,7 @@
                     fromPublic: true
                 };
                 localChars.push(downloadChar);
-                localStorage.setItem('hzyai_characters', JSON.stringify(localChars));
+                saveCharactersToLocal(localChars);
 
                 showToast(`✅ 角色 "${char.name}" 已下载到本地，可在 HZYAI 中使用`, 'success');
             } catch (error) {
@@ -1356,7 +1366,7 @@
                     <div class="empty-state" style="grid-column:1/-1;">
                         <span class="icon">🖼️</span>
                         <p>暂无作品</p>
-                        <p style="font-size:13px;color:#555;">点击「同步作品」从 GitHub 加载</p>
+                        <p style="font-size:13px;color:#555;">点击「同步作品」从本地或 GitHub 加载</p>
                     </div>
                 `;
                 return;
@@ -1369,6 +1379,7 @@
                 const badgeText = isPublic ? '🌍 公开' : '🔒 私有';
                 const badgeClass = isPublic ? 'public' : 'private';
                 const isImage = item.mediaType === 'image' || !item.mediaType;
+                const fromLocal = item.fromLocal ? '📁 本地' : '☁️ 云端';
 
                 return `
                     <div class="media-card">
@@ -1388,6 +1399,7 @@
                             <div class="meta">
                                 <span>${isImage ? '🖼️ 图片' : '🎬 视频'}</span>
                                 <span>📅 ${formatDate(item.createdAt)}</span>
+                                <span>${fromLocal}</span>
                             </div>
                             <div class="actions">
                                 ${isOwner ? `
@@ -1467,6 +1479,70 @@
             }
         }
 
+        async function saveMediaToGitHub(mediaItem) {
+            try {
+                const label = mediaItem.isPublic ? getPublicMediaLabel() : getMediaLabel();
+
+                const issueBody = `HZYAI媒体数据\n\`\`\`json\n${JSON.stringify(mediaItem, null, 2)}\n\`\`\``;
+                const labels = [label];
+
+                if (!mediaItem.isPublic) {
+                    const publicIssues = await loadIssuesWithLabel(getPublicMediaLabel());
+                    const publicIssue = publicIssues.find(m => m.id === mediaItem.id);
+                    if (publicIssue && publicIssue.issueNumber) {
+                        await fetch(
+                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${publicIssue.issueNumber}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ state: 'closed' })
+                            });
+                    }
+                }
+
+                const existingIssues = await loadIssuesWithLabel(label);
+                const existing = existingIssues.find(m => m.id === mediaItem.id);
+
+                if (existing && existing.issueNumber) {
+                    await fetch(
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                body: issueBody,
+                                labels: labels,
+                                state: 'open'
+                            })
+                        });
+                } else {
+                    await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: `作品: ${mediaItem.prompt ? mediaItem.prompt.substring(0, 30) : '无标题'}`,
+                            body: issueBody,
+                            labels: labels
+                        })
+                    });
+                }
+                return true;
+            } catch (error) {
+                console.error('保存媒体失败:', error);
+                return false;
+            }
+        }
+
         async function togglePromptPublic(mediaId) {
             const item = allMedia.find(m => m.id === mediaId);
             if (!item) return;
@@ -1498,15 +1574,32 @@
 
             if (!confirm('确定要删除此作品吗？')) return;
 
-            const success = await deleteMediaFromGitHub(item);
-            if (success) {
+            try {
+                const labels = [getMediaLabel(), getPublicMediaLabel()];
+                for (const label of labels) {
+                    const issues = await loadIssuesWithLabel(label);
+                    const target = issues.find(m => m.id === mediaId);
+                    if (target && target.issueNumber) {
+                        await fetch(
+                            `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${target.issueNumber}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ state: 'closed' })
+                            });
+                    }
+                }
+
                 allMedia = allMedia.filter(m => m.id !== mediaId);
                 filteredMedia = [...allMedia];
                 renderGallery();
                 updateGalleryCount();
                 showToast('✅ 作品已删除', 'success');
-            } else {
-                showToast('❌ 删除失败，请重试', 'error');
+            } catch (error) {
+                showToast('❌ 删除失败: ' + error.message, 'error');
             }
         }
 
