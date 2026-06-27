@@ -1638,6 +1638,22 @@
                 justify-content: center;
             }
         }
+
+        .tts-btn {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .tts-btn:hover {
+            color: #ffd700;
+            background: rgba(255,215,0,0.1);
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -2581,10 +2597,14 @@
                     else if (msg.mediaType === 'video') content +=
                         `<br><video src="${msg.mediaUrl}" controls style="max-width:100%;max-height:300px;"></video>`;
                 }
+                // 语音播报按钮（仅对 assistant 消息显示）
+                const ttsButton = msg.role === 'assistant'
+                    ? `<button class="tts-btn" onclick="speakText('${escapeHtml(msg.content.replace(/"/g, '\\"'))}')" title="播报此消息">🔊</button>`
+                    : '';
                 return `
                     <div class="message ${msg.role}">
                         <div class="message-avatar">${msg.role === 'user' ? '👤' : '🤖'}</div>
-                        <div class="message-content">${content}</div>
+                        <div class="message-content">${content} ${ttsButton}</div>
                     </div>
                 `;
             }).join('');
@@ -2889,6 +2909,101 @@
             setTimeout(() => {
                 summarizeAndSaveMemory(currentConversationId);
             }, 1000);
+        }
+
+        // ============================================================
+        //  🔊 浏览器 TTS 语音播报
+        // ============================================================
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+
+        function speakText(text) {
+            // 停止当前正在播放的语音
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+                currentUtterance = null;
+            }
+
+            // 移除 Markdown 标记，只保留纯文本
+            const plainText = text
+                .replace(/\*\*/g, '')
+                .replace(/\*/g, '')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/`/g, '')
+                .replace(/#/g, '')
+                .replace(/[-_~>|]/g, '');
+
+            if (!plainText.trim()) {
+                alert('没有可播报的文本内容');
+                return;
+            }
+
+            const utterance = new SpeechSynthesisUtterance(plainText);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            // 尝试选择中文语音
+            const voices = speechSynthesis.getVoices();
+            const zhVoice = voices.find(v => v.lang.startsWith('zh'));
+            if (zhVoice) {
+                utterance.voice = zhVoice;
+            }
+
+            utterance.onstart = () => {
+                console.log('🔊 开始播报');
+                // 更新所有播报按钮状态
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '⏹️';
+                    btn.style.color = '#ffd700';
+                });
+            };
+
+            utterance.onend = () => {
+                console.log('🔊 播报结束');
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '🔊';
+                    btn.style.color = '#888';
+                });
+                currentUtterance = null;
+            };
+
+            utterance.onerror = (e) => {
+                console.error('TTS 播报错误:', e);
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '🔊';
+                    btn.style.color = '#888';
+                });
+                currentUtterance = null;
+            };
+
+            currentUtterance = utterance;
+            speechSynthesis.speak(utterance);
+        }
+
+        // 预加载语音列表
+        if (speechSynthesis) {
+            speechSynthesis.getVoices();
+            speechSynthesis.onvoiceschanged = () => {
+                speechSynthesis.getVoices();
+            };
+        }
+
+        // 停止播报
+        function stopSpeaking() {
+            if (speechSynthesis) {
+                speechSynthesis.cancel();
+                currentUtterance = null;
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '🔊';
+                    btn.style.color = '#888';
+                });
+            }
+        }
+
+        function testTTS() {
+            speakText('你好，我是 HZYAI 语音助手。这段文字用于测试语音播报功能是否正常工作。');
         }
 
         // ============================================================
@@ -4575,7 +4690,6 @@ v1.0.0 (2026年3月)
         // 暴露全局函数
         window.speakText = speakText;
         window.stopSpeaking = stopSpeaking;
-        window.toggleVoiceInput = toggleVoiceInput;
         window.testTTS = testTTS;
         window.generateImage = generateImage;
         window.generateVideo = generateVideo;
