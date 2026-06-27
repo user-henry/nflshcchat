@@ -1537,6 +1537,40 @@
                 max-width: 100%;
             }
         }
+        /* 语音输入按钮状态 */
+        .voice-input-btn.listening {
+            color: #ff4444 !important;
+            animation: pulse-voice 1s infinite;
+        }
+        .voice-input-btn.idle {
+            color: #888;
+        }
+        #voiceInputStatus {
+            display: none;
+        }
+        #voiceInputStatus.active {
+            display: inline-block;
+            animation: pulse-voice 1s infinite;
+        }
+        @keyframes pulse-voice {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+        .tts-btn {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 8px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .tts-btn:hover {
+            color: #ffd700;
+            background: rgba(255,215,0,0.1);
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -1644,6 +1678,13 @@
                 <div class="input-area">
                     <div class="input-wrapper">
                         <textarea id="messageInput" placeholder="发送消息... (Shift+Enter 换行，Enter 发送)" rows="1"></textarea>
+                        <!-- 语音输入按钮（AssemblyAI） -->
+                        <button class="voice-input-btn" id="voiceInputBtn" onclick="toggleVoiceInput()" title="点击开始/停止语音输入" style="background:none;border:none;color:#888;cursor:pointer;font-size:20px;padding:4px 8px;border-radius:50%;transition:all 0.3s;">
+                            🎤
+                        </button>
+                        <button class="voice-input-btn" id="voiceInputStatus" style="display:none;background:none;border:none;color:#ff4444;cursor:pointer;font-size:12px;padding:4px 8px;border-radius:50%;" title="正在录音...">
+                            🔴
+                        </button>
                         <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
                     </div>
                 </div>
@@ -1862,12 +1903,21 @@
                 <h3>✨ 功能列表</h3>
                 <ul class="feature-list">
                     <li>💬 智能对话 (思知 AI / Agnes AI / 智谱 GLM)</li>
+                    <li>🎤 语音输入 (AssemblyAI)</li>
+                    <li>🔊 TTS 语音播报</li>
                     <li>👁️ 视觉理解</li>
                     <li>🎨 AI 绘图</li>
                     <li>🎬 AI 视频生成</li>
                     <li>⏰ 定时任务</li>
                     <li>🎭 虚拟角色定制</li>
                 </ul>
+            </div>
+            <div class="info-section">
+                <h3>🔊 语音控制</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="stopSpeaking()" style="background:#2a2a3e;border:none;color:#ffd700;padding:6px 16px;border-radius:8px;cursor:pointer;">⏹️ 停止播报</button>
+                    <button onclick="testTTS()" style="background:#2a2a3e;border:none;color:#aaa;padding:6px 16px;border-radius:8px;cursor:pointer;">🔊 测试语音</button>
+                </div>
             </div>
             <div class="footer-note">HZYAI · 让创作更自由</div>
         </div>
@@ -1932,6 +1982,17 @@
             visionModels: ['glm-4.6v-flash', 'glm-4.1v-thinking-flash', 'glm-4v-flash'],
             imageModel: 'cogview-3-flash',
             videoModel: 'cogvideox-flash'
+        };
+
+        // ============================================================
+        //  AssemblyAI 语音输入配置
+        // ============================================================
+        const ASSEMBLYAI_CONFIG = {
+            apiKey: '27cd57b2316e443fa29f179ffa109e58',
+            // 注意：API Key 直接暴露在浏览器端
+            sampleRate: 16000,
+            speechModel: 'universal-3-5-pro',  // 最新实时模型
+            realtimeUrl: 'wss://streaming.assemblyai.com/v3/ws'
         };
 
         // ============================================================
@@ -2459,10 +2520,14 @@
                     else if (msg.mediaType === 'video') content +=
                         `<br><video src="${msg.mediaUrl}" controls style="max-width:100%;max-height:300px;"></video>`;
                 }
+                // 语音播报按钮（仅对 assistant 消息显示）
+                const ttsButton = msg.role === 'assistant' 
+                    ? `<button class="tts-btn" onclick="speakText('${escapeHtml(msg.content.replace(/"/g, '\\\\"'))}')" title="播报此消息">🔊</button>`
+                    : '';
                 return `
                     <div class="message ${msg.role}">
                         <div class="message-avatar">${msg.role === 'user' ? '👤' : '🤖'}</div>
-                        <div class="message-content">${content}</div>
+                        <div class="message-content">${content} ${ttsButton}</div>
                     </div>
                 `;
             }).join('');
@@ -2767,6 +2832,330 @@
             setTimeout(() => {
                 summarizeAndSaveMemory(currentConversationId);
             }, 1000);
+        }
+
+        // ============================================================
+        //  🎤 AssemblyAI 实时语音输入
+        // ============================================================
+        let assemblyAIClient = null;
+        let isVoiceRecording = false;
+        let audioContext = null;
+        let mediaStream = null;
+        let audioWorkletNode = null;
+        let scriptProcessor = null;
+
+        async function toggleVoiceInput() {
+            const btn = document.getElementById('voiceInputBtn');
+            const statusBtn = document.getElementById('voiceInputStatus');
+            
+            if (isVoiceRecording) {
+                // 停止录音
+                stopVoiceRecording();
+                btn.classList.remove('listening');
+                btn.classList.add('idle');
+                btn.textContent = '🎤';
+                statusBtn.classList.remove('active');
+                statusBtn.style.display = 'none';
+                isVoiceRecording = false;
+                return;
+            }
+            
+            // 开始录音
+            try {
+                btn.textContent = '⏳';
+                btn.disabled = true;
+                
+                // 请求麦克风权限
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        channelCount: 1, 
+                        sampleRate: ASSEMBLYAI_CONFIG.sampleRate,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    } 
+                });
+                
+                // 创建 AudioContext
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: ASSEMBLYAI_CONFIG.sampleRate
+                });
+                
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                
+                // 创建 ScriptProcessorNode 处理音频
+                scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                scriptProcessor.onaudioprocess = handleAudioProcess;
+                
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+                
+                // 连接 AssemblyAI WebSocket
+                await connectAssemblyAI();
+                
+                btn.textContent = '⏹️';
+                btn.disabled = false;
+                btn.classList.add('listening');
+                statusBtn.style.display = 'inline-block';
+                statusBtn.classList.add('active');
+                isVoiceRecording = true;
+                
+                console.log('🎤 语音输入已启动');
+                
+            } catch (error) {
+                console.error('语音输入启动失败:', error);
+                btn.textContent = '🎤';
+                btn.disabled = false;
+                alert('无法访问麦克风: ' + error.message);
+            }
+        }
+
+        function handleAudioProcess(event) {
+            if (!assemblyAIClient || assemblyAIClient.readyState !== WebSocket.OPEN) return;
+            
+            const inputData = event.inputBuffer.getChannelData(0);
+            // Float32 -> Int16 PCM
+            const pcmData = new Int16Array(inputData.length);
+            for (let i = 0; i < inputData.length; i++) {
+                const s = Math.max(-1, Math.min(1, inputData[i]));
+                pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            // 发送音频数据（二进制）
+            assemblyAIClient.send(pcmData.buffer);
+        }
+
+        async function connectAssemblyAI() {
+            return new Promise((resolve, reject) => {
+                const url = `${ASSEMBLYAI_CONFIG.realtimeUrl}?sample_rate=${ASSEMBLYAI_CONFIG.sampleRate}&speech_model=${ASSEMBLYAI_CONFIG.speechModel}`;
+                
+                assemblyAIClient = new WebSocket(url);
+                assemblyAIClient.binaryType = 'arraybuffer';
+                
+                // 设置超时
+                const timeout = setTimeout(() => {
+                    reject(new Error('WebSocket 连接超时'));
+                }, 10000);
+                
+                assemblyAIClient.onopen = () => {
+                    clearTimeout(timeout);
+                    console.log('🔗 AssemblyAI WebSocket 已连接');
+                    resolve();
+                };
+                
+                assemblyAIClient.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        handleAssemblyAIMessage(msg);
+                    } catch (e) {
+                        // 二进制数据忽略
+                    }
+                };
+                
+                assemblyAIClient.onerror = (error) => {
+                    clearTimeout(timeout);
+                    console.error('WebSocket 错误:', error);
+                    reject(error);
+                };
+                
+                assemblyAIClient.onclose = (event) => {
+                    console.log('WebSocket 关闭:', event.code, event.reason);
+                    if (isVoiceRecording) {
+                        // 意外断开，自动重连
+                        setTimeout(() => {
+                            if (isVoiceRecording) {
+                                console.log('🔄 尝试重新连接...');
+                                connectAssemblyAI().catch(() => {});
+                            }
+                        }, 2000);
+                    }
+                };
+            });
+        }
+
+        function handleAssemblyAIMessage(msg) {
+            if (msg.type === 'Turn') {
+                const transcript = msg.transcript || '';
+                const isFinal = msg.end_of_turn || false;
+                
+                if (isFinal && transcript.trim()) {
+                    // 最终结果：填入输入框并自动发送
+                    const input = document.getElementById('messageInput');
+                    if (input) {
+                        input.value = transcript;
+                        // 触发输入事件更新预览
+                        input.dispatchEvent(new Event('input'));
+                        // 自动发送
+                        setTimeout(() => {
+                            sendMessage();
+                        }, 300);
+                    }
+                    // 清空输入框（发送后会被清空，但这里做额外保险）
+                    setTimeout(() => {
+                        if (input) input.value = '';
+                    }, 500);
+                } else if (transcript) {
+                    // 实时结果：更新输入框预览
+                    const input = document.getElementById('messageInput');
+                    if (input) {
+                        input.value = transcript;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                }
+            } else if (msg.type === 'SpeechStarted') {
+                console.log('🗣️ 检测到语音开始');
+                // 可以清空输入框或显示状态
+                const statusBtn = document.getElementById('voiceInputStatus');
+                if (statusBtn) {
+                    statusBtn.textContent = '🔴 录音中...';
+                }
+            } else if (msg.type === 'Termination') {
+                console.log('✅ 语音会话结束，时长:', msg.audio_duration_seconds, '秒');
+            }
+        }
+
+        function stopVoiceRecording() {
+            // 发送终止信号
+            if (assemblyAIClient && assemblyAIClient.readyState === WebSocket.OPEN) {
+                try {
+                    assemblyAIClient.send(JSON.stringify({ type: 'Terminate' }));
+                } catch (e) {}
+                setTimeout(() => {
+                    if (assemblyAIClient) {
+                        assemblyAIClient.close();
+                        assemblyAIClient = null;
+                    }
+                }, 500);
+            }
+            
+            // 释放音频资源
+            if (scriptProcessor) {
+                scriptProcessor.disconnect();
+                scriptProcessor = null;
+            }
+            if (audioContext) {
+                audioContext.close().catch(() => {});
+                audioContext = null;
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            isVoiceRecording = false;
+            const btn = document.getElementById('voiceInputBtn');
+            const statusBtn = document.getElementById('voiceInputStatus');
+            if (btn) {
+                btn.textContent = '🎤';
+                btn.classList.remove('listening');
+                btn.disabled = false;
+            }
+            if (statusBtn) {
+                statusBtn.classList.remove('active');
+                statusBtn.style.display = 'none';
+                statusBtn.textContent = '🔴';
+            }
+            console.log('🎤 语音输入已停止');
+        }
+
+        // 页面关闭时清理资源
+        window.addEventListener('beforeunload', function() {
+            if (isVoiceRecording) {
+                stopVoiceRecording();
+            }
+        });
+
+        // ============================================================
+        //  🔊 浏览器 TTS 语音播报
+        // ============================================================
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+
+        function speakText(text) {
+            // 停止当前正在播放的语音
+            if (currentUtterance) {
+                speechSynthesis.cancel();
+                currentUtterance = null;
+            }
+            
+            // 移除 Markdown 标记，只保留纯文本
+            const plainText = text
+                .replace(/\*\*/g, '')
+                .replace(/\*/g, '')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                .replace(/`/g, '')
+                .replace(/#/g, '')
+                .replace(/[-_~>|]/g, '');
+            
+            if (!plainText.trim()) {
+                alert('没有可播报的文本内容');
+                return;
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(plainText);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // 尝试选择中文语音
+            const voices = speechSynthesis.getVoices();
+            const zhVoice = voices.find(v => v.lang.startsWith('zh'));
+            if (zhVoice) {
+                utterance.voice = zhVoice;
+            }
+            
+            utterance.onstart = () => {
+                console.log('🔊 开始播报');
+                // 更新所有播报按钮状态
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '⏹️';
+                    btn.style.color = '#ffd700';
+                });
+            };
+            
+            utterance.onend = () => {
+                console.log('🔊 播报结束');
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '🔊';
+                    btn.style.color = '#888';
+                });
+                currentUtterance = null;
+            };
+            
+            utterance.onerror = (e) => {
+                console.error('TTS 播报错误:', e);
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '🔊';
+                    btn.style.color = '#888';
+                });
+                currentUtterance = null;
+            };
+            
+            currentUtterance = utterance;
+            speechSynthesis.speak(utterance);
+        }
+
+        // 预加载语音列表
+        if (speechSynthesis) {
+            speechSynthesis.getVoices();
+            speechSynthesis.onvoiceschanged = () => {
+                speechSynthesis.getVoices();
+            };
+        }
+
+        // 停止播报（可选的全局函数）
+        function stopSpeaking() {
+            if (speechSynthesis) {
+                speechSynthesis.cancel();
+                currentUtterance = null;
+                document.querySelectorAll('.tts-btn').forEach(btn => {
+                    btn.textContent = '🔊';
+                    btn.style.color = '#888';
+                });
+            }
+        }
+
+        function testTTS() {
+            speakText('你好，我是 HZYAI 语音助手。这段文字用于测试语音播报功能是否正常工作。');
         }
 
         // ============================================================
@@ -4281,6 +4670,10 @@ v1.0.0 (2026年3月)
         }
 
         // 暴露全局函数
+        window.speakText = speakText;
+        window.stopSpeaking = stopSpeaking;
+        window.toggleVoiceInput = toggleVoiceInput;
+        window.testTTS = testTTS;
         window.generateImage = generateImage;
         window.generateVideo = generateVideo;
         window.downloadCurrentMedia = downloadCurrentMedia;
