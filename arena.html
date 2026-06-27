@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>角色竞技场 & 画廊 - HZYAI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #0f0f1a;
+            color: #ddd;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* 头部导航 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 16px 24px;
+            background: #16213e;
+            border-radius: 16px;
+            border: 1px solid #2a2a3e;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #1a1a2e;
+            font-size: 18px;
+        }
+        .header .user-name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .header .user-role {
+            font-size: 12px;
+            color: #888;
+        }
+        .header .logout-btn {
+            background: #2a2a3e;
+            border: none;
+            color: #888;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .header .logout-btn:hover {
+            background: #dc3545;
+            color: #fff;
+        }
+        .header .back-link {
+            color: #ffd700;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .header .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* 标签切换 */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            background: #1a1a2e;
+            color: #888;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .tab-btn:hover {
+            background: #2a2a3e;
+            color: #fff;
+        }
+        .tab-btn.active {
+            background: #ffd700;
+            color: #1a1a2e;
+        }
+
+        /* 面板 */
+        .panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .panel.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            background: #16213e;
+            border-radius: 12px;
+            border: 1px solid #2a2a3e;
+            align-items: center;
+        }
+        .toolbar .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,215,0,0.3);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #aaa;
+            border: 1px solid #2a2a3e;
+        }
+        .btn-outline:hover {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-success {
+            background: #28a745;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .toolbar .search-box {
+            flex: 1;
+            min-width: 150px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: #fff;
+            font-size: 13px;
+        }
+        .toolbar .search-box:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .toolbar .status-filter {
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .toolbar .status-filter:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+
+        /* 卡片网格 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* 角色卡片 */
+        .character-card {
+            background: #16213e;
+            border: 1px solid #2a2a3e;
+            border-radius: 14px;
+            padding: 18px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .character-card:hover {
+            border-color: #ffd700;
+            transform: translateY(-4px);
+        }
+        .character-card .badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: #2a2a3e;
+            color: #888;
+        }
+        .character-card .badge.public {
+            background: #28a745;
+            color: #fff;
+        }
+        .character-card .badge.private {
+            background: #6c757d;
+            color: #fff;
+        }
+        .character-card .name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 4px;
+            padding-right: 60px;
+        }
+        .character-card .persona {
+            font-size: 13px;
+            color: #aaa;
+            margin-bottom: 8px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .character-card .meta {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .character-card .meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .character-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        .character-card .tags span {
+            background: #2a2a3e;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #888;
+        }
+        .character-card .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .character-card .actions .btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .character-card .actions .btn-download {
+            background: #2ecc71;
+            color: #1a1a2e;
+        }
+        .character-card .actions .btn-download:hover {
+            background: #27ae60;
+        }
+        .character-card .actions .btn-toggle {
+            background: #3498db;
+            color: #fff;
+        }
+        .character-card .actions .btn-toggle:hover {
+            background: #2980b9;
+        }
+        .character-card .actions .btn-delete {
+            background: #dc3545;
+            color: #fff;
+        }
+        .character-card .actions .btn-delete:hover {
+            background: #c82333;
+        }
+        .character-card .owner-tag {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            border-top: 1px solid #2a2a3e;
+            padding-top: 8px;
+        }
+
+        /* 媒体卡片 */
+        .media-card {
+            background: #16213e;
+            border: 1px solid #2a2a3e;
+            border-radius: 14px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .media-card:hover {
+            border-color: #ffd700;
+            transform: translateY(-4px);
+        }
+        .media-card .media-preview {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #0a0f1c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .media-card .media-preview img,
+        .media-card .media-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .media-card .media-preview .no-preview {
+            color: #555;
+            font-size: 14px;
+        }
+        .media-card .media-preview .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+        }
+        .media-card .media-preview .badge.public {
+            background: rgba(40,167,69,0.9);
+        }
+        .media-card .media-preview .badge.private {
+            background: rgba(108,117,125,0.9);
+        }
+        .media-card .media-info {
+            padding: 14px 16px;
+        }
+        .media-card .media-info .prompt {
+            font-size: 13px;
+            color: #ccc;
+            margin-bottom: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .media-card .media-info .prompt-hidden {
+            color: #666;
+            font-style: italic;
+            font-size: 13px;
+        }
+        .media-card .media-info .meta {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .media-card .media-info .meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .media-card .media-info .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .media-card .media-info .actions .btn {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .media-card .media-info .actions .btn-download {
+            background: #2ecc71;
+            color: #1a1a2e;
+        }
+        .media-card .media-info .actions .btn-download:hover {
+            background: #27ae60;
+        }
+        .media-card .media-info .actions .btn-copy {
+            background: #3498db;
+            color: #fff;
+        }
+        .media-card .media-info .actions .btn-copy:hover {
+            background: #2980b9;
+        }
+        .media-card .media-info .actions .btn-toggle {
+            background: #f39c12;
+            color: #fff;
+        }
+        .media-card .media-info .actions .btn-toggle:hover {
+            background: #d68910;
+        }
+        .media-card .media-info .actions .btn-delete {
+            background: #dc3545;
+            color: #fff;
+        }
+        .media-card .media-info .actions .btn-delete:hover {
+            background: #c82333;
+        }
+        .media-card .media-info .owner-tag {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            border-top: 1px solid #2a2a3e;
+            padding-top: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .empty-state p {
+            font-size: 15px;
+        }
+
+        /* 加载状态 */
+        .loading-overlay {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .loading-overlay.active {
+            display: block;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #2a2a3e;
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast 通知 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            background: #16213e;
+            border: 1px solid #2a2a3e;
+            color: #fff;
+            font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            max-width: 400px;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            border-color: #28a745;
+        }
+        .toast.error {
+            border-color: #dc3545;
+        }
+        .toast.warning {
+            border-color: #f39c12;
+        }
+
+        /* 登录覆盖 */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+        }
+        .login-overlay.hidden {
+            display: none;
+        }
+        .login-box {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 40px;
+            width: 380px;
+            border: 1px solid #2a2a3e;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .login-box h2 {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .login-box .sub {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .login-box input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .login-box button:hover {
+            transform: translateY(-1px);
+        }
+        .login-box .error {
+            color: #dc3545;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .header .user-info {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .toolbar {
+                flex-direction: column;
+            }
+            .toolbar .search-box {
+                width: 100%;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .login-box {
+                width: 90%;
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ===== 登录覆盖 ===== -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>🎭 角色竞技场 & 画廊</h2>
+            <div class="sub">登录以查看你的角色和作品</div>
+            <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
+            <input type="password" id="loginPassword" placeholder="密码">
+            <button onclick="doLogin()">登录</button>
+            <div id="loginError" class="error"></div>
+            <div style="margin-top:16px;text-align:center;font-size:12px;color:#666;">
+                <a href="hzyai.html" style="color:#ffd700;">← 返回 HZYAI</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 主应用 ===== -->
+    <div class="container" id="app" style="display:none;">
+        <!-- 头部 -->
+        <div class="header">
+            <div>
+                <h1>🎭 角色竞技场 & 画廊</h1>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;">
+                    <a href="hzyai.html" class="back-link">← 返回 HZYAI</a>
+                </div>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">👤</div>
+                <div>
+                    <div class="user-name" id="userName">用户</div>
+                    <div class="user-role" id="userRole">用户</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">🚪 退出</button>
+            </div>
+        </div>
+
+        <!-- 标签切换 -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="characters" onclick="switchTab('characters')">🎭 角色竞技场</button>
+            <button class="tab-btn" data-tab="gallery" onclick="switchTab('gallery')">🖼️ 画廊</button>
+        </div>
+
+        <!-- ===== 角色面板 ===== -->
+        <div class="panel active" id="panelCharacters">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="syncCharacters()">🔄 同步角色</button>
+                <button class="btn btn-outline" onclick="refreshCharacters()">⟳ 刷新</button>
+                <input type="text" class="search-box" id="charSearch" placeholder="搜索角色名称..." oninput="filterCharacters()">
+                <select class="status-filter" id="charFilter" onchange="filterCharacters()">
+                    <option value="all">全部</option>
+                    <option value="public">公开</option>
+                    <option value="private">私有</option>
+                    <option value="mine">我的</option>
+                </select>
+                <span style="font-size:13px;color:#666;margin-left:auto;" id="charCount">0 个角色</span>
+            </div>
+            <div class="loading-overlay" id="charLoading">
+                <div class="spinner"></div>
+                <p>正在同步角色数据...</p>
+            </div>
+            <div class="grid" id="characterGrid"></div>
+        </div>
+
+        <!-- ===== 画廊面板 ===== -->
+        <div class="panel" id="panelGallery">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="syncGallery()">🔄 同步作品</button>
+                <button class="btn btn-outline" onclick="refreshGallery()">⟳ 刷新</button>
+                <input type="text" class="search-box" id="gallerySearch" placeholder="搜索提示词..." oninput="filterGallery()">
+                <select class="status-filter" id="galleryFilter" onchange="filterGallery()">
+                    <option value="all">全部</option>
+                    <option value="public">公开</option>
+                    <option value="private">私有</option>
+                    <option value="mine">我的</option>
+                </select>
+                <span style="font-size:13px;color:#666;margin-left:auto;" id="galleryCount">0 个作品</span>
+            </div>
+            <div class="loading-overlay" id="galleryLoading">
+                <div class="spinner"></div>
+                <p>正在同步作品数据...</p>
+            </div>
+            <div class="grid" id="galleryGrid"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================================
+        //  配置
+        // ============================================================
+        const CONFIG = window.CONFIG || {
+            GITHUB_USERNAME: 'user-henry',
+            GITHUB_REPO: 'nflshcchat',
+            GITHUB_TOKEN: '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'
+        };
+
+        // ============================================================
+        //  状态
+        // ============================================================
+        let currentUser = null;
+        let allCharacters = []; // { id, name, persona, tone, knowledge, memory, owner, isPublic, synced, createdAt }
+        let allMedia = []; // { id, prompt, mediaUrl, mediaType, owner, isPublic, promptPublic, createdAt }
+        let filteredCharacters = [];
+        let filteredMedia = [];
+
+        // ============================================================
+        //  登录 / 登出
+        // ============================================================
+        function doLogin() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (!username || !password) {
+                errorDiv.textContent = '请填写用户名和密码';
+                return;
+            }
+
+            if (username === 'huangzhiyuan' && password === '15240254891') {
+                currentUser = { username: 'huangzhiyuan', isAdmin: true };
+                localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
+                enterApp();
+                return;
+            }
+
+            // 从 GitHub 验证用户
+            verifyGitHubUser(username, password).then(user => {
+                if (user && !user.isBanned) {
+                    currentUser = { username: user.username, isAdmin: false };
+                    localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
+                    enterApp();
+                } else if (user && user.isBanned) {
+                    errorDiv.textContent = '账号已被封禁';
+                } else {
+                    errorDiv.textContent = '用户名或密码错误';
+                }
+            }).catch(err => {
+                errorDiv.textContent = '登录失败: ' + err.message;
+            });
+        }
+
+        async function verifyGitHubUser(username, password) {
+            try {
+                const url =
+                    `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const userData = JSON.parse(match[1]);
+                            if (userData.username === username && userData.password === password) {
+                                return userData;
+                            }
+                        } catch (e) {}
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error('验证用户失败:', error);
+                return null;
+            }
+        }
+
+        function enterApp() {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('userName').textContent = currentUser.username;
+            document.getElementById('userRole').textContent = currentUser.isAdmin ? '管理员' : '用户';
+            document.getElementById('userAvatar').textContent = currentUser.isAdmin ? '👑' : currentUser.username.charAt(0)
+            .toUpperCase();
+
+            // 自动加载数据
+            syncCharacters();
+            syncGallery();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('hzyai_currentUser');
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        // 检查本地登录状态
+        function checkAuth() {
+            const saved = localStorage.getItem('hzyai_currentUser');
+            if (saved) {
+                try {
+                    currentUser = JSON.parse(saved);
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('app').style.display = 'block';
+                    document.getElementById('userName').textContent = currentUser.username;
+                    document.getElementById('userRole').textContent = currentUser.isAdmin ? '管理员' : '用户';
+                    document.getElementById('userAvatar').textContent = currentUser.isAdmin ? '👑' : currentUser.username
+                        .charAt(0).toUpperCase();
+                    syncCharacters();
+                    syncGallery();
+                    return true;
+                } catch (e) {
+                    localStorage.removeItem('hzyai_currentUser');
+                }
+            }
+            return false;
+        }
+
+        // ============================================================
+        //  GitHub 数据同步 - 角色
+        // ============================================================
+        function getCharacterLabel() {
+            return `hzyai_character_${currentUser.username}`;
+        }
+
+        function getPublicCharacterLabel() {
+            return 'hzyai_character_public';
+        }
+
+        async function syncCharacters() {
+            const loading = document.getElementById('charLoading');
+            loading.classList.add('active');
+            document.getElementById('characterGrid').innerHTML = '';
+
+            try {
+                // 从 GitHub 拉取所有公开角色
+                const publicChars = await loadCharactersFromGitHub(true);
+                // 从 GitHub 拉取当前用户的所有角色（包括私有）
+                const myChars = await loadCharactersFromGitHub(false);
+
+                // 合并：公开角色 + 当前用户自己的角色（去重）
+                const all = [...publicChars];
+                for (const myChar of myChars) {
+                    const exists = all.find(c => c.id === myChar.id);
+                    if (!exists) {
+                        all.push(myChar);
+                    } else {
+                        // 更新已有记录（保留最新的 isPublic 状态）
+                        exists.isPublic = myChar.isPublic;
+                        exists.name = myChar.name;
+                        exists.persona = myChar.persona;
+                        exists.tone = myChar.tone;
+                        exists.knowledge = myChar.knowledge;
+                        exists.memory = myChar.memory;
+                    }
+                }
+
+                allCharacters = all;
+                filteredCharacters = [...all];
+                renderCharacters();
+                updateCharCount();
+
+                showToast('✅ 角色同步完成', 'success');
+            } catch (error) {
+                console.error('同步角色失败:', error);
+                showToast('❌ 同步角色失败: ' + error.message, 'error');
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        async function loadCharactersFromGitHub(publicOnly) {
+            const label = publicOnly ? getPublicCharacterLabel() : getCharacterLabel();
+            try {
+                const url =
+                    `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues?labels=${label}&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                const chars = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const data = JSON.parse(match[1]);
+                            // 如果是公开角色，确保 isPublic = true
+                            if (publicOnly) {
+                                data.isPublic = true;
+                            }
+                            chars.push(data);
+                        } catch (e) {}
+                    }
+                }
+                return chars;
+            } catch (error) {
+                console.error('加载角色失败:', error);
+                return [];
+            }
+        }
+
+        async function saveCharacterToGitHub(character) {
+            try {
+                const label = character.isPublic ? getPublicCharacterLabel() : getCharacterLabel();
+                // 检查是否已存在
+                const existing = await loadCharactersFromGitHub(false);
+                const existingChar = existing.find(c => c.id === character.id);
+                const existingPublic = await loadCharactersFromGitHub(true);
+                const existingPublicChar = existingPublic.find(c => c.id === character.id);
+
+                const issueBody = `HZYAI角色数据\n\`\`\`json\n${JSON.stringify(character, null, 2)}\n\`\`\``;
+                const labels = [label];
+
+                // 如果之前是公开的，需要从公开标签中删除
+                if (!character.isPublic && existingPublicChar && existingPublicChar.issueNumber) {
+                    // 关闭公开的 issue
+                    await fetch(
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${existingPublicChar.issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ state: 'closed' })
+                        });
+                }
+
+                const issueNumber = existingChar?.issueNumber || existingPublicChar?.issueNumber;
+
+                if (issueNumber) {
+                    await fetch(
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                body: issueBody,
+                                labels: labels,
+                                state: 'open'
+                            })
+                        });
+                } else {
+                    await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: `角色: ${character.name}`,
+                            body: issueBody,
+                            labels: labels
+                        })
+                    });
+                }
+                return true;
+            } catch (error) {
+                console.error('保存角色失败:', error);
+                return false;
+            }
+        }
+
+        async function deleteCharacterFromGitHub(character) {
+            try {
+                // 关闭所有相关的 issues
+                const labels = ['hzyai_character_' + currentUser.username, 'hzyai_character_public'];
+                for (const label of labels) {
+                    const url =
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues?labels=${label}&state=open`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    const issues = await response.json();
+                    for (const issue of issues) {
+                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                        if (match) {
+                            try {
+                                const data = JSON.parse(match[1]);
+                                if (data.id === character.id) {
+                                    await fetch(
+                                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${issue.number}`, {
+                                            method: 'PATCH',
+                                            headers: {
+                                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                                'Accept': 'application/vnd.github.v3+json',
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({ state: 'closed' })
+                                        });
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                return true;
+            } catch (error) {
+                console.error('删除角色失败:', error);
+                return false;
+            }
+        }
+
+        // ============================================================
+        //  GitHub 数据同步 - 媒体 (画廊)
+        // ============================================================
+        function getMediaLabel() {
+            return `hzyai_media_${currentUser.username}`;
+        }
+
+        function getPublicMediaLabel() {
+            return 'hzyai_media_public';
+        }
+
+        async function syncGallery() {
+            const loading = document.getElementById('galleryLoading');
+            loading.classList.add('active');
+            document.getElementById('galleryGrid').innerHTML = '';
+
+            try {
+                const publicMedia = await loadMediaFromGitHub(true);
+                const myMedia = await loadMediaFromGitHub(false);
+
+                const all = [...publicMedia];
+                for (const myItem of myMedia) {
+                    const exists = all.find(m => m.id === myItem.id);
+                    if (!exists) {
+                        all.push(myItem);
+                    } else {
+                        exists.isPublic = myItem.isPublic;
+                        exists.promptPublic = myItem.promptPublic;
+                        exists.prompt = myItem.prompt;
+                        exists.mediaUrl = myItem.mediaUrl;
+                    }
+                }
+
+                allMedia = all;
+                filteredMedia = [...all];
+                renderGallery();
+                updateGalleryCount();
+
+                showToast('✅ 作品同步完成', 'success');
+            } catch (error) {
+                console.error('同步作品失败:', error);
+                showToast('❌ 同步作品失败: ' + error.message, 'error');
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        async function loadMediaFromGitHub(publicOnly) {
+            const label = publicOnly ? getPublicMediaLabel() : getMediaLabel();
+            try {
+                const url =
+                    `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues?labels=${label}&state=open`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await response.json();
+                const media = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const data = JSON.parse(match[1]);
+                            if (publicOnly) {
+                                data.isPublic = true;
+                            }
+                            media.push(data);
+                        } catch (e) {}
+                    }
+                }
+                return media;
+            } catch (error) {
+                console.error('加载媒体失败:', error);
+                return [];
+            }
+        }
+
+        async function saveMediaToGitHub(mediaItem) {
+            try {
+                const label = mediaItem.isPublic ? getPublicMediaLabel() : getMediaLabel();
+                const existing = await loadMediaFromGitHub(false);
+                const existingItem = existing.find(m => m.id === mediaItem.id);
+                const existingPublic = await loadMediaFromGitHub(true);
+                const existingPublicItem = existingPublic.find(m => m.id === mediaItem.id);
+
+                const issueBody = `HZYAI媒体数据\n\`\`\`json\n${JSON.stringify(mediaItem, null, 2)}\n\`\`\``;
+                const labels = [label];
+
+                if (!mediaItem.isPublic && existingPublicItem && existingPublicItem.issueNumber) {
+                    await fetch(
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${existingPublicItem.issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ state: 'closed' })
+                        });
+                }
+
+                const issueNumber = existingItem?.issueNumber || existingPublicItem?.issueNumber;
+
+                if (issueNumber) {
+                    await fetch(
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                'Accept': 'application/vnd.github.v3+json',
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                body: issueBody,
+                                labels: labels,
+                                state: 'open'
+                            })
+                        });
+                } else {
+                    await fetch(`https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            title: `作品: ${mediaItem.prompt.substring(0, 30)}`,
+                            body: issueBody,
+                            labels: labels
+                        })
+                    });
+                }
+                return true;
+            } catch (error) {
+                console.error('保存媒体失败:', error);
+                return false;
+            }
+        }
+
+        async function deleteMediaFromGitHub(mediaItem) {
+            try {
+                const labels = ['hzyai_media_' + currentUser.username, 'hzyai_media_public'];
+                for (const label of labels) {
+                    const url =
+                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues?labels=${label}&state=open`;
+                    const response = await fetch(url, {
+                        headers: {
+                            'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    const issues = await response.json();
+                    for (const issue of issues) {
+                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                        if (match) {
+                            try {
+                                const data = JSON.parse(match[1]);
+                                if (data.id === mediaItem.id) {
+                                    await fetch(
+                                        `https://api.github.com/repos/${CONFIG.GITHUB_USERNAME}/${CONFIG.GITHUB_REPO}/issues/${issue.number}`, {
+                                            method: 'PATCH',
+                                            headers: {
+                                                'Authorization': `token ${CONFIG.GITHUB_TOKEN}`,
+                                                'Accept': 'application/vnd.github.v3+json',
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({ state: 'closed' })
+                                        });
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                return true;
+            } catch (error) {
+                console.error('删除媒体失败:', error);
+                return false;
+            }
+        }
+
+        // ============================================================
+        //  渲染 - 角色
+        // ============================================================
+        function renderCharacters() {
+            const grid = document.getElementById('characterGrid');
+            if (filteredCharacters.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column:1/-1;">
+                        <span class="icon">🎭</span>
+                        <p>暂无角色</p>
+                        <p style="font-size:13px;color:#555;">点击「同步角色」从 GitHub 加载</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredCharacters.map(char => {
+                const isOwner = char.owner === currentUser.username;
+                const isPublic = char.isPublic || false;
+                const badgeText = isPublic ? '🌍 公开' : '🔒 私有';
+                const badgeClass = isPublic ? 'public' : 'private';
+
+                return `
+                    <div class="character-card">
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                        <div class="name">${escapeHtml(char.name)}</div>
+                        <div class="persona">${escapeHtml(char.persona || '无描述')}</div>
+                        <div class="meta">
+                            <span>📝 ${escapeHtml(char.tone || '通用')}</span>
+                            <span>📅 ${formatDate(char.createdAt)}</span>
+                        </div>
+                        <div class="tags">
+                            ${char.knowledge ? char.knowledge.split(',').slice(0,3).map(k => `<span>${escapeHtml(k.trim())}</span>`).join('') : '<span>无领域</span>'}
+                        </div>
+                        <div class="actions">
+                            ${!isOwner ? `
+                                <button class="btn btn-download" onclick="downloadCharacter('${char.id}')">📥 下载</button>
+                            ` : `
+                                <button class="btn btn-toggle" onclick="toggleCharacterPublic('${char.id}')">
+                                    ${isPublic ? '🔒 设为私有' : '🌍 公开'}
+                                </button>
+                                <button class="btn btn-delete" onclick="deleteCharacter('${char.id}')">🗑️ 删除</button>
+                            `}
+                        </div>
+                        <div class="owner-tag">👤 ${escapeHtml(char.owner || '未知')} ${isOwner ? ' (我)' : ''}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCharacters() {
+            const search = document.getElementById('charSearch').value.toLowerCase();
+            const filter = document.getElementById('charFilter').value;
+
+            filteredCharacters = allCharacters.filter(char => {
+                const matchSearch = char.name.toLowerCase().includes(search) ||
+                    (char.persona && char.persona.toLowerCase().includes(search));
+                const isOwner = char.owner === currentUser.username;
+                const isPublic = char.isPublic || false;
+
+                let matchFilter = true;
+                if (filter === 'public') matchFilter = isPublic;
+                else if (filter === 'private') matchFilter = !isPublic;
+                else if (filter === 'mine') matchFilter = isOwner;
+
+                return matchSearch && matchFilter;
+            });
+
+            renderCharacters();
+            updateCharCount();
+        }
+
+        function updateCharCount() {
+            document.getElementById('charCount').textContent = `${filteredCharacters.length} 个角色`;
+        }
+
+        function refreshCharacters() {
+            filteredCharacters = [...allCharacters];
+            renderCharacters();
+            updateCharCount();
+            document.getElementById('charSearch').value = '';
+            document.getElementById('charFilter').value = 'all';
+            showToast('🔄 已刷新', 'success');
+        }
+
+        // ============================================================
+        //  操作 - 角色
+        // ============================================================
+        async function toggleCharacterPublic(charId) {
+            const char = allCharacters.find(c => c.id === charId);
+            if (!char) return;
+
+            if (char.owner !== currentUser.username) {
+                showToast('❌ 你只能修改自己的角色', 'error');
+                return;
+            }
+
+            char.isPublic = !char.isPublic;
+            const success = await saveCharacterToGitHub(char);
+            if (success) {
+                showToast(`✅ 角色已${char.isPublic ? '公开' : '私有化'}`, 'success');
+                await syncCharacters();
+            } else {
+                char.isPublic = !char.isPublic;
+                showToast('❌ 操作失败，请重试', 'error');
+            }
+        }
+
+        async function deleteCharacter(charId) {
+            const char = allCharacters.find(c => c.id === charId);
+            if (!char) return;
+
+            if (char.owner !== currentUser.username) {
+                showToast('❌ 你只能删除自己的角色', 'error');
+                return;
+            }
+
+            if (!confirm(`确定要删除角色 "${char.name}" 吗？`)) return;
+
+            const success = await deleteCharacterFromGitHub(char);
+            if (success) {
+                allCharacters = allCharacters.filter(c => c.id !== charId);
+                filteredCharacters = [...allCharacters];
+                renderCharacters();
+                updateCharCount();
+                showToast('✅ 角色已删除', 'success');
+            } else {
+                showToast('❌ 删除失败，请重试', 'error');
+            }
+        }
+
+        async function downloadCharacter(charId) {
+            const char = allCharacters.find(c => c.id === charId);
+            if (!char) {
+                showToast('❌ 角色不存在', 'error');
+                return;
+            }
+
+            // 下载到本地（存入 localStorage，供 HZYAI 使用）
+            try {
+                const saved = localStorage.getItem('hzyai_characters');
+                let localChars = saved ? JSON.parse(saved) : [];
+
+                // 检查是否已存在
+                const exists = localChars.find(c => c.id === char.id);
+                if (exists) {
+                    showToast('⚠️ 角色已存在于本地', 'warning');
+                    return;
+                }
+
+                // 确保角色数据完整，并标记为已下载
+                const downloadChar = {
+                    ...char,
+                    downloadedAt: new Date().toISOString(),
+                    fromPublic: true
+                };
+                localChars.push(downloadChar);
+                localStorage.setItem('hzyai_characters', JSON.stringify(localChars));
+
+                showToast(`✅ 角色 "${char.name}" 已下载到本地，可在 HZYAI 中使用`, 'success');
+            } catch (error) {
+                console.error('下载角色失败:', error);
+                showToast('❌ 下载失败: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================================
+        //  渲染 - 画廊
+        // ============================================================
+        function renderGallery() {
+            const grid = document.getElementById('galleryGrid');
+            if (filteredMedia.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column:1/-1;">
+                        <span class="icon">🖼️</span>
+                        <p>暂无作品</p>
+                        <p style="font-size:13px;color:#555;">点击「同步作品」从 GitHub 加载</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredMedia.map(item => {
+                const isOwner = item.owner === currentUser.username;
+                const isPublic = item.isPublic || false;
+                const promptPublic = item.promptPublic !== undefined ? item.promptPublic : true;
+                const badgeText = isPublic ? '🌍 公开' : '🔒 私有';
+                const badgeClass = isPublic ? 'public' : 'private';
+                const isImage = item.mediaType === 'image' || !item.mediaType;
+
+                return `
+                    <div class="media-card">
+                        <div class="media-preview">
+                            ${item.mediaUrl ? 
+                                (isImage ? `<img src="${item.mediaUrl}" alt="作品" loading="lazy" onerror="this.style.display='none'">` : 
+                                `<video src="${item.mediaUrl}" controls style="width:100%;height:100%;object-fit:cover;"></video>`) :
+                                `<span class="no-preview">🖼️ 无预览</span>`
+                            }
+                            <span class="badge ${badgeClass}">${badgeText}</span>
+                        </div>
+                        <div class="media-info">
+                            ${promptPublic ? 
+                                `<div class="prompt">💬 ${escapeHtml(item.prompt || '无提示词')}</div>` :
+                                `<div class="prompt-hidden">🔒 提示词已隐藏</div>`
+                            }
+                            <div class="meta">
+                                <span>${isImage ? '🖼️ 图片' : '🎬 视频'}</span>
+                                <span>📅 ${formatDate(item.createdAt)}</span>
+                            </div>
+                            <div class="actions">
+                                ${isOwner ? `
+                                    <button class="btn btn-toggle" onclick="toggleMediaPublic('${item.id}')">
+                                        ${isPublic ? '🔒 设为私有' : '🌍 公开'}
+                                    </button>
+                                    <button class="btn btn-toggle" onclick="togglePromptPublic('${item.id}')" style="background:#8e44ad;">
+                                        ${promptPublic ? '🔒 隐藏提示词' : '🔓 显示提示词'}
+                                    </button>
+                                    <button class="btn btn-delete" onclick="deleteMedia('${item.id}')">🗑️ 删除</button>
+                                ` : `
+                                    ${item.mediaUrl ? `<button class="btn btn-download" onclick="downloadMedia('${item.id}')">📥 下载</button>` : ''}
+                                    ${promptPublic && item.prompt ? `<button class="btn btn-copy" onclick="copyPrompt('${item.id}')">📋 复制提示词</button>` : ''}
+                                `}
+                            </div>
+                            <div class="owner-tag">👤 ${escapeHtml(item.owner || '未知')} ${isOwner ? ' (我)' : ''}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterGallery() {
+            const search = document.getElementById('gallerySearch').value.toLowerCase();
+            const filter = document.getElementById('galleryFilter').value;
+
+            filteredMedia = allMedia.filter(item => {
+                const matchSearch = item.prompt && item.prompt.toLowerCase().includes(search);
+                const isOwner = item.owner === currentUser.username;
+                const isPublic = item.isPublic || false;
+
+                let matchFilter = true;
+                if (filter === 'public') matchFilter = isPublic;
+                else if (filter === 'private') matchFilter = !isPublic;
+                else if (filter === 'mine') matchFilter = isOwner;
+
+                return matchSearch && matchFilter;
+            });
+
+            renderGallery();
+            updateGalleryCount();
+        }
+
+        function updateGalleryCount() {
+            document.getElementById('galleryCount').textContent = `${filteredMedia.length} 个作品`;
+        }
+
+        function refreshGallery() {
+            filteredMedia = [...allMedia];
+            renderGallery();
+            updateGalleryCount();
+            document.getElementById('gallerySearch').value = '';
+            document.getElementById('galleryFilter').value = 'all';
+            showToast('🔄 已刷新', 'success');
+        }
+
+        // ============================================================
+        //  操作 - 媒体
+        // ============================================================
+        async function toggleMediaPublic(mediaId) {
+            const item = allMedia.find(m => m.id === mediaId);
+            if (!item) return;
+
+            if (item.owner !== currentUser.username) {
+                showToast('❌ 你只能修改自己的作品', 'error');
+                return;
+            }
+
+            item.isPublic = !item.isPublic;
+            const success = await saveMediaToGitHub(item);
+            if (success) {
+                showToast(`✅ 作品已${item.isPublic ? '公开' : '私有化'}`, 'success');
+                await syncGallery();
+            } else {
+                item.isPublic = !item.isPublic;
+                showToast('❌ 操作失败，请重试', 'error');
+            }
+        }
+
+        async function togglePromptPublic(mediaId) {
+            const item = allMedia.find(m => m.id === mediaId);
+            if (!item) return;
+
+            if (item.owner !== currentUser.username) {
+                showToast('❌ 你只能修改自己的作品', 'error');
+                return;
+            }
+
+            item.promptPublic = !item.promptPublic;
+            const success = await saveMediaToGitHub(item);
+            if (success) {
+                showToast(`✅ 提示词已${item.promptPublic ? '公开' : '隐藏'}`, 'success');
+                await syncGallery();
+            } else {
+                item.promptPublic = !item.promptPublic;
+                showToast('❌ 操作失败，请重试', 'error');
+            }
+        }
+
+        async function deleteMedia(mediaId) {
+            const item = allMedia.find(m => m.id === mediaId);
+            if (!item) return;
+
+            if (item.owner !== currentUser.username) {
+                showToast('❌ 你只能删除自己的作品', 'error');
+                return;
+            }
+
+            if (!confirm('确定要删除此作品吗？')) return;
+
+            const success = await deleteMediaFromGitHub(item);
+            if (success) {
+                allMedia = allMedia.filter(m => m.id !== mediaId);
+                filteredMedia = [...allMedia];
+                renderGallery();
+                updateGalleryCount();
+                showToast('✅ 作品已删除', 'success');
+            } else {
+                showToast('❌ 删除失败，请重试', 'error');
+            }
+        }
+
+        function downloadMedia(mediaId) {
+            const item = allMedia.find(m => m.id === mediaId);
+            if (!item || !item.mediaUrl) {
+                showToast('❌ 作品无媒体内容', 'error');
+                return;
+            }
+
+            const ext = item.mediaType === 'video' ? 'mp4' : 'jpg';
+            const link = document.createElement('a');
+            link.href = item.mediaUrl;
+            link.download = `hzyai_${item.mediaType || 'image'}_${Date.now()}.${ext}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('✅ 开始下载', 'success');
+        }
+
+        function copyPrompt(mediaId) {
+            const item = allMedia.find(m => m.id === mediaId);
+            if (!item || !item.prompt) {
+                showToast('❌ 无提示词可复制', 'error');
+                return;
+            }
+
+            if (!item.promptPublic && item.owner !== currentUser.username) {
+                showToast('❌ 提示词未公开，无法复制', 'error');
+                return;
+            }
+
+            navigator.clipboard.writeText(item.prompt).then(() => {
+                showToast('✅ 提示词已复制', 'success');
+            }).catch(() => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = item.prompt;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('✅ 提示词已复制', 'success');
+            });
+        }
+
+        // ============================================================
+        //  标签切换
+        // ============================================================
+        function switchTab(tab) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            if (tab === 'characters') {
+                document.getElementById('panelCharacters').classList.add('active');
+                document.querySelector('[data-tab="characters"]').classList.add('active');
+            } else {
+                document.getElementById('panelGallery').classList.add('active');
+                document.querySelector('[data-tab="gallery"]').classList.add('active');
+            }
+        }
+
+        // ============================================================
+        //  工具函数
+        // ============================================================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(isoString) {
+            if (!isoString) return '未知';
+            const date = new Date(isoString);
+            return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+
+            clearTimeout(toast._hideTimeout);
+            toast._hideTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ============================================================
+        //  初始化
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) {
+                document.getElementById('loginOverlay').classList.remove('hidden');
+            }
+
+            // 回车登录
+            document.getElementById('loginPassword').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') doLogin();
+            });
+            document.getElementById('loginUsername').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+            });
+        });
+
+        // 暴露全局函数
+        window.doLogin = doLogin;
+        window.logout = logout;
+        window.switchTab = switchTab;
+        window.syncCharacters = syncCharacters;
+        window.syncGallery = syncGallery;
+        window.refreshCharacters = refreshCharacters;
+        window.refreshGallery = refreshGallery;
+        window.filterCharacters = filterCharacters;
+        window.filterGallery = filterGallery;
+        window.toggleCharacterPublic = toggleCharacterPublic;
+        window.deleteCharacter = deleteCharacter;
+        window.downloadCharacter = downloadCharacter;
+        window.toggleMediaPublic = toggleMediaPublic;
+        window.togglePromptPublic = togglePromptPublic;
+        window.deleteMedia = deleteMedia;
+        window.downloadMedia = downloadMedia;
+        window.copyPrompt = copyPrompt;
+    </script>
+</body>
+</html>
