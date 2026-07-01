@@ -1654,6 +1654,179 @@
             color: #ffd700;
             background: rgba(255,215,0,0.1);
         }
+
+        /* ===== AI 短片工作流样式 ===== */
+        .film-mode {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 20px;
+            background: #0f172a;
+            overflow-y: auto;
+        }
+        .film-mode.active {
+            display: flex;
+        }
+        .film-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .film-header h2 {
+            font-size: 26px;
+            color: #ffd700;
+        }
+        .film-header p {
+            color: #888;
+            font-size: 14px;
+        }
+        .film-workflow {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .film-step {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2a2a3e;
+        }
+        .film-step h3 {
+            color: #ffd700;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .film-input-area {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .film-input-area input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: white;
+            font-size: 14px;
+        }
+        .film-input-area input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .film-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        .film-btn:hover {
+            transform: scale(1.02);
+        }
+        .film-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .film-output {
+            margin-top: 12px;
+            padding: 14px;
+            background: #0a0f1c;
+            border-radius: 8px;
+            color: #ddd;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.7;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .film-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+        .film-scene-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .film-scene-card img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            border-radius: 4px;
+            background: #0a0f1c;
+        }
+        .film-scene-card .scene-label {
+            font-size: 12px;
+            color: #888;
+            margin: 8px 0 4px;
+        }
+        .film-scene-card .scene-prompt {
+            font-size: 11px;
+            color: #aaa;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .film-scene-card .scene-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            justify-content: center;
+        }
+        .film-scene-card .scene-actions button {
+            padding: 3px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .film-scene-card .scene-actions .gen-vid-btn {
+            background: #2ecc71;
+            color: #1a1a2e;
+        }
+        .film-scene-card .scene-actions .gen-vid-btn:disabled {
+            opacity: 0.5;
+        }
+        .film-scene-card .scene-actions .gen-img-btn {
+            background: #3498db;
+            color: white;
+        }
+        .film-scene-card video {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            border-radius: 4px;
+            background: #0a0f1c;
+        }
+        .film-preview {
+            background: #0a0f1c;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .film-preview video {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+        }
+        .loading-text {
+            color: #ffd700;
+        }
+        @media (max-width: 768px) {
+            .film-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -1705,6 +1878,7 @@
                 <button class="mode-tab" data-mode="video" onclick="switchMode('video')">🎬 视频</button>
                 <button class="mode-tab" data-mode="task" onclick="switchMode('task')">⏰ 定时任务</button>
                 <button class="mode-tab" data-mode="character" onclick="switchMode('character')">🎭 角色</button>
+                <button class="mode-tab" data-mode="film" onclick="switchMode('film')">🎬 AI 短片</button>
             </div>
 
             <!-- ====== 每日一言 ====== -->
@@ -1979,6 +2153,47 @@
                 </div>
                 <div class="character-grid" id="characterGrid">
                     <div style="text-align:center;color:#666;padding:40px;width:100%;">暂无角色，点击上方创建</div>
+                </div>
+            </div>
+
+            <!-- ====== AI 短片工作流模式 ====== -->
+            <div class="film-mode" id="filmMode">
+                <div class="film-header">
+                    <h2>🎬 AI 短片工作流</h2>
+                    <p>从剧本到成片，AI 带你完成短片创作全流程</p>
+                </div>
+
+                <div class="film-workflow">
+                    <!-- 步骤 1: 剧本生成 -->
+                    <div class="film-step" id="step1">
+                        <h3>📝 第一步：生成剧本</h3>
+                        <div class="film-input-area">
+                            <input type="text" id="filmIdea" placeholder="输入你的短片主题或想法，例如：一只会说话的猫在太空冒险">
+                            <button class="film-btn" id="generateScriptBtn" onclick="generateFilmScript()">🚀 生成剧本</button>
+                        </div>
+                        <div id="scriptOutput" class="film-output"></div>
+                    </div>
+
+                    <!-- 步骤 2: 分镜规划 -->
+                    <div class="film-step" id="step2" style="display:none;">
+                        <h3>🎥 第二步：分镜规划</h3>
+                        <button class="film-btn" onclick="generateStoryboard()">🎞️ 生成分镜</button>
+                        <div id="storyboardOutput" class="film-output"></div>
+                    </div>
+
+                    <!-- 步骤 3 & 4: 参考图与视频生成 -->
+                    <div class="film-step" id="step3" style="display:none;">
+                        <h3>🖼️ 第三步：生成参考图与视频</h3>
+                        <div id="sceneGrid" class="film-grid"></div>
+                        <button class="film-btn" onclick="generateAllScenes()" id="generateAllScenesBtn">⚡ 生成全部场景</button>
+                    </div>
+
+                    <!-- 步骤 5: 结果展示 -->
+                    <div class="film-step" id="step4" style="display:none;">
+                        <h3>🎬 第四步：短片预览</h3>
+                        <div id="filmPreview" class="film-preview"></div>
+                        <button class="film-btn" onclick="exportFilmProject()">📦 导出项目</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4021,18 +4236,309 @@
         }
 
         // ============================================================
+        //  🍞 Toast 通知
+        // ============================================================
+        function showToast(msg, type) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:8px;color:white;font-size:14px;z-index:9999;transition:opacity 0.3s;pointer-events:none;';
+            toast.style.background = type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#2ecc71';
+            toast.style.color = type === 'warning' ? '#1a1a2e' : 'white';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        // ============================================================
+        //  🎬 AI 短片工作流
+        // ============================================================
+        let filmProject = {
+            script: '',
+            storyboard: [],
+            scenes: [],
+            status: 'idle'
+        };
+
+        async function callAgnesChat(messages) {
+            try {
+                const response = await fetch(`${AGNES_CONFIG.baseUrl}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: AGNES_CONFIG.chatModel,
+                        messages: messages,
+                        temperature: 0.8,
+                        max_tokens: 4096
+                    })
+                });
+                const data = await response.json();
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                    return data.choices[0].message.content;
+                }
+                return null;
+            } catch (error) {
+                console.error('Agnes Chat 调用失败:', error);
+                return null;
+            }
+        }
+
+        async function generateFilmScript() {
+            const idea = document.getElementById('filmIdea').value.trim();
+            if (!idea) { alert('请输入短片主题！'); return; }
+
+            const btn = document.getElementById('generateScriptBtn');
+            const output = document.getElementById('scriptOutput');
+            btn.disabled = true;
+            btn.textContent = '⏳ 生成中...';
+            output.innerHTML = '<span class="loading-text">⏳ AI 正在构思剧本...</span>';
+
+            try {
+                const prompt = `你是一位专业的短剧编剧。请根据以下主题，生成一个完整的短片剧本，包含场景描述、角色对话和情绪指引。剧本应包含 2-4 个场景，适合 30-60 秒的短片。\n\n主题：${idea}\n\n请输出格式：\n场景 X：...\n[角色名]：...\n...`;
+                const reply = await callAgnesChat([{ role: 'user', content: prompt }]);
+
+                if (reply) {
+                    filmProject.script = reply;
+                    filmProject.status = 'scripted';
+                    output.innerHTML = `<pre style="white-space:pre-wrap;color:#ddd;">${escapeHtml(reply)}</pre>`;
+                    document.getElementById('step2').style.display = 'block';
+                    document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    output.innerHTML = '<span style="color:#dc3545;">❌ 生成失败，请重试</span>';
+                }
+            } catch (error) {
+                console.error('生成剧本失败:', error);
+                output.innerHTML = '<span style="color:#dc3545;">❌ 生成失败: ' + error.message + '</span>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 生成剧本';
+            }
+        }
+
+        async function generateStoryboard() {
+            if (!filmProject.script) { alert('请先生成剧本！'); return; }
+
+            const output = document.getElementById('storyboardOutput');
+            output.innerHTML = '<span class="loading-text">⏳ AI 正在规划分镜...</span>';
+
+            try {
+                const prompt = `你是一位专业的视频分镜师。请根据以下剧本，将其拆解为 2-4 个镜头，并为每个镜头生成一个详细的图片生成提示词（用于 AI 绘图，描述画面内容、风格、光照和构图）。\n\n剧本：\n${filmProject.script}\n\n请输出 JSON 数组格式，每个对象包含 "scene_name"（场景名）、"scene_description"（场景描述）、"image_prompt"（英文或中文图片提示词）。\n输出示例：\n[\n  {"scene_name": "开场", "scene_description": "太空背景，猫出现", "image_prompt": "A cat floating in space, wearing a space suit, stars in background, cinematic style, dramatic lighting"}, ...\n]`;
+                const reply = await callAgnesChat([{ role: 'user', content: prompt }]);
+
+                if (reply) {
+                    const jsonMatch = reply.match(/\[[\s\S]*\]/);
+                    if (jsonMatch) {
+                        const storyboard = JSON.parse(jsonMatch[0]);
+                        filmProject.storyboard = storyboard;
+                        filmProject.scenes = storyboard.map(scene => ({
+                            ...scene,
+                            imageUrl: null,
+                            videoUrl: null,
+                            status: 'pending'
+                        }));
+                        filmProject.status = 'storyboarded';
+                        renderStoryboard();
+                        document.getElementById('step3').style.display = 'block';
+                        document.getElementById('step3').scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        output.innerHTML = '<span style="color:#dc3545;">❌ 解析分镜数据失败，请重试</span>';
+                    }
+                } else {
+                    output.innerHTML = '<span style="color:#dc3545;">❌ 生成失败，请重试</span>';
+                }
+            } catch (error) {
+                console.error('生成分镜失败:', error);
+                output.innerHTML = '<span style="color:#dc3545;">❌ 生成失败: ' + error.message + '</span>';
+            }
+        }
+
+        function renderStoryboard() {
+            const grid = document.getElementById('sceneGrid');
+            if (!grid) return;
+            grid.innerHTML = filmProject.scenes.map((scene, index) => `
+                <div class="film-scene-card" data-index="${index}">
+                    <div class="scene-label">🎬 镜头 ${index + 1}</div>
+                    <div class="scene-prompt"><strong>${escapeHtml(scene.scene_name)}</strong></div>
+                    <div class="scene-prompt" style="margin:4px 0;">${escapeHtml(scene.scene_description)}</div>
+                    <div style="font-size:10px;color:#666;margin:4px 0;">提示词: ${escapeHtml(scene.image_prompt || '无')}</div>
+                    ${scene.imageUrl ? `<img src="${scene.imageUrl}" alt="参考图">` : '<div style="background:#0a0f1c;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#555;font-size:12px;">🖼️ 未生成</div>'}
+                    ${scene.videoUrl ? `<video src="${scene.videoUrl}" controls></video>` : ''}
+                    <div class="scene-actions">
+                        <button class="gen-img-btn" onclick="generateSceneImage(${index})">🎨 参考图</button>
+                        <button class="gen-vid-btn" onclick="generateSceneVideo(${index})" ${scene.videoUrl ? 'disabled' : ''}>🎬 生成视频</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function generateSceneImage(index) {
+            const scene = filmProject.scenes[index];
+            if (!scene || !scene.image_prompt) { alert('该镜头缺少图片提示词'); return; }
+
+            const card = document.querySelector(`.film-scene-card[data-index="${index}"]`);
+            const imgBtn = card.querySelector('.gen-img-btn');
+            imgBtn.disabled = true;
+            imgBtn.textContent = '⏳ 生成中...';
+
+            try {
+                const response = await fetch(`${AGNES_CONFIG.baseUrl}/images/generations`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'agnes-image-2.0-flash',
+                        prompt: scene.image_prompt,
+                        size: '1024x768',
+                        extra_body: { response_format: 'url' }
+                    })
+                });
+                const data = await response.json();
+                if (data && data.data && data.data[0] && data.data[0].url) {
+                    scene.imageUrl = data.data[0].url;
+                    renderStoryboard();
+                    showToast(`✅ 镜头 ${index + 1} 参考图已生成`, 'success');
+                } else {
+                    throw new Error(data.error?.message || '生成失败');
+                }
+            } catch (error) {
+                console.error('生成参考图失败:', error);
+                showToast(`❌ 参考图生成失败: ${error.message}`, 'error');
+            } finally {
+                imgBtn.disabled = false;
+                imgBtn.textContent = '🎨 参考图';
+            }
+        }
+
+        async function generateSceneVideo(index) {
+            const scene = filmProject.scenes[index];
+            if (!scene) { alert('场景不存在'); return; }
+
+            const card = document.querySelector(`.film-scene-card[data-index="${index}"]`);
+            const vidBtn = card.querySelector('.gen-vid-btn');
+            vidBtn.disabled = true;
+            vidBtn.textContent = '⏳ 生成中...';
+
+            try {
+                const videoPrompt = `根据以下场景描述生成视频：${scene.scene_description}。${scene.image_prompt ? `视觉风格参考：${scene.image_prompt}` : ''}`;
+                const payload = {
+                    model: AGNES_CONFIG.videoModel,
+                    prompt: videoPrompt,
+                    num_frames: 81,
+                    frame_rate: 24,
+                    height: 768,
+                    width: 1152
+                };
+                if (scene.imageUrl) {
+                    payload.extra_body = { image: [scene.imageUrl] };
+                }
+
+                const response = await fetch(`${AGNES_CONFIG.baseUrl}/videos`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!data || !data.video_id) {
+                    throw new Error(data.error?.message || '创建任务失败');
+                }
+
+                const videoId = data.video_id;
+                showToast(`⏳ 镜头 ${index + 1} 视频生成中 (约 1-3 分钟)...`, 'warning');
+
+                let attempts = 0, maxAttempts = 60;
+                let videoUrl = null;
+                while (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    const resultUrl = `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`;
+                    const resultResponse = await fetch(resultUrl, {
+                        headers: { 'Authorization': `Bearer ${AGNES_CONFIG.apiKey}` }
+                    });
+                    const resultData = await resultResponse.json();
+                    if (resultData && resultData.status === 'completed' && resultData.remixed_from_video_id) {
+                        videoUrl = resultData.remixed_from_video_id;
+                        break;
+                    }
+                    if (resultData && resultData.status === 'failed') {
+                        throw new Error(resultData.error || '视频生成失败');
+                    }
+                    attempts++;
+                }
+
+                if (!videoUrl) { throw new Error('视频生成超时'); }
+
+                scene.videoUrl = videoUrl;
+                renderStoryboard();
+                showToast(`✅ 镜头 ${index + 1} 视频已生成！`, 'success');
+                document.getElementById('step4').style.display = 'block';
+
+            } catch (error) {
+                console.error('生成视频失败:', error);
+                showToast(`❌ 视频生成失败: ${error.message}`, 'error');
+            } finally {
+                vidBtn.disabled = false;
+                vidBtn.textContent = '🎬 生成视频';
+            }
+        }
+
+        async function generateAllScenes() {
+            const btn = document.getElementById('generateAllScenesBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 批量生成中...';
+            for (let i = 0; i < filmProject.scenes.length; i++) {
+                const scene = filmProject.scenes[i];
+                if (!scene.imageUrl) {
+                    await generateSceneImage(i);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                if (!scene.videoUrl) {
+                    await generateSceneVideo(i);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
+            btn.disabled = false;
+            btn.textContent = '⚡ 生成全部场景';
+            showToast('✅ 全部场景处理完成！', 'success');
+        }
+
+        function exportFilmProject() {
+            const projectData = {
+                script: filmProject.script,
+                storyboard: filmProject.storyboard,
+                scenes: filmProject.scenes,
+                exportedAt: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `film_project_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('📦 项目已导出！', 'success');
+        }
+
+        // ============================================================
         //  模式切换
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character'];
+            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'film'];
             const elements = {
                 chat: document.getElementById('chatMode'),
                 vision: document.getElementById('visionMode'),
                 draw: document.getElementById('drawMode'),
                 video: document.getElementById('videoMode'),
                 task: document.getElementById('taskMode'),
-                character: document.getElementById('characterMode')
+                character: document.getElementById('characterMode'),
+                film: document.getElementById('filmMode')
             };
             const tabs = document.querySelectorAll('.mode-tab');
 
@@ -4693,6 +5199,12 @@ v1.0.0 (2026年3月)
         window.testTTS = testTTS;
         window.generateImage = generateImage;
         window.generateVideo = generateVideo;
+        window.generateFilmScript = generateFilmScript;
+        window.generateStoryboard = generateStoryboard;
+        window.generateSceneImage = generateSceneImage;
+        window.generateSceneVideo = generateSceneVideo;
+        window.generateAllScenes = generateAllScenes;
+        window.exportFilmProject = exportFilmProject;
         window.downloadCurrentMedia = downloadCurrentMedia;
         window.loadHistoryMedia = loadHistoryMedia;
         window.switchMode = switchMode;
