@@ -2017,6 +2017,7 @@
                         </label>
                         <select id="drawModelSelect" style="flex:0.8;min-width:120px;">
                             <option value="agnes-image-2.1-flash">Agnes Image 2.1 Flash</option>
+                            <option value="agnes-image-2.0-flash">Agnes Image 2.0 Flash</option>
                             <option value="cogview-3-flash">智谱 Cogview-3-Flash</option>
                         </select>
                         <button class="draw-generate-btn" id="drawGenerateBtn" onclick="generateImage()">🎨 生成</button>
@@ -2181,18 +2182,46 @@
                         <div id="storyboardOutput" class="film-output"></div>
                     </div>
 
-                    <!-- 步骤 3 & 4: 参考图与视频生成 -->
+                    <!-- 步骤 3: 参考图与视频生成 -->
                     <div class="film-step" id="step3" style="display:none;">
                         <h3>🖼️ 第三步：生成参考图与视频</h3>
                         <div id="sceneGrid" class="film-grid"></div>
-                        <button class="film-btn" onclick="generateAllScenes()" id="generateAllScenesBtn">⚡ 生成全部场景</button>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                            <button class="film-btn" onclick="generateAllScenes()" id="generateAllScenesBtn">⚡ 生成全部场景</button>
+                            <button class="film-btn" onclick="generateAllImages()" id="generateAllImagesBtn" style="background:#3498db;">🖼️ 生成全部参考图</button>
+                        </div>
                     </div>
 
-                    <!-- 步骤 5: 结果展示 -->
+                    <!-- 步骤 4: 合成与预览 -->
                     <div class="film-step" id="step4" style="display:none;">
-                        <h3>🎬 第四步：短片预览</h3>
-                        <div id="filmPreview" class="film-preview"></div>
-                        <button class="film-btn" onclick="exportFilmProject()">📦 导出项目</button>
+                        <h3>🎬 第四步：合成完整短片</h3>
+                        <div id="filmPreview" class="film-preview">
+                            <!-- 合成进度 -->
+                            <div id="compositeProgress" style="display:none; text-align:center; padding:20px;">
+                                <div class="spinner" style="margin:0 auto 12px;"></div>
+                                <p id="compositeProgressText" style="color:#ffd700;">⏳ 正在合成短片...</p>
+                                <div style="width:100%; max-width:400px; margin:12px auto; background:#1a1a2e; border-radius:8px; overflow:hidden; height:6px;">
+                                    <div id="compositeProgressBar" style="width:0%; height:100%; background:linear-gradient(135deg, #ffd700, #ffb347); transition:width 0.5s;"></div>
+                                </div>
+                            </div>
+                            <!-- 视频播放器 -->
+                            <video id="compositeVideo" controls style="width:100%; max-height:400px; border-radius:8px; display:none;"></video>
+                            <!-- 占位 -->
+                            <div id="compositePlaceholder" style="color:#666; text-align:center; padding:40px;">
+                                <span style="font-size:48px; display:block; margin-bottom:12px;">🎞️</span>
+                                <p>生成所有场景后，点击下方按钮合成完整短片</p>
+                                <p style="font-size:13px; color:#555; margin-top:8px;">需要至少 2 个场景的参考图</p>
+                            </div>
+                            <!-- 操作按钮 -->
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                                <button class="film-btn" onclick="compositeFilm()" id="compositeBtn">🔗 合成完整短片</button>
+                                <button class="film-btn" onclick="exportFilmProject()" style="background:#2ecc71;">📦 导出项目</button>
+                                <button class="film-btn" id="downloadCompositeBtn" style="display:none; background:#3498db;" onclick="downloadCompositeVideo()">📥 下载短片</button>
+                                <button class="film-btn" id="playAllBtn" style="display:none; background:#9b59b6;" onclick="playAllScenes()">▶️ 顺序播放全部片段</button>
+                            </div>
+                            <!-- 片段列表 -->
+                            <div id="sceneClipList" style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -4474,6 +4503,7 @@
 
                 scene.videoUrl = videoUrl;
                 renderStoryboard();
+                renderSceneClipList();
                 showToast(`✅ 镜头 ${index + 1} 视频已生成！`, 'success');
                 document.getElementById('step4').style.display = 'block';
 
@@ -4503,6 +4533,8 @@
             }
             btn.disabled = false;
             btn.textContent = '⚡ 生成全部场景';
+            document.getElementById('step4').style.display = 'block';
+            renderSceneClipList();
             showToast('✅ 全部场景处理完成！', 'success');
         }
 
@@ -4523,6 +4555,221 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             showToast('📦 项目已导出！', 'success');
+        }
+
+        // ============================================================
+        //  🎬 视频合并功能
+        // ============================================================
+        let compositeVideoUrl = null;
+        let isCompositing = false;
+
+        // 生成所有参考图（不生成视频）
+        async function generateAllImages() {
+            const btn = document.getElementById('generateAllImagesBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 生成中...';
+            for (let i = 0; i < filmProject.scenes.length; i++) {
+                const scene = filmProject.scenes[i];
+                if (!scene.imageUrl) {
+                    await generateSceneImage(i);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+            btn.disabled = false;
+            btn.textContent = '🖼️ 生成全部参考图';
+            showToast('✅ 所有参考图已生成！', 'success');
+        }
+
+        // 合成完整短片
+        async function compositeFilm() {
+            if (isCompositing) return;
+            
+            const imageUrls = filmProject.scenes.filter(s => s.imageUrl).map(s => s.imageUrl);
+            if (imageUrls.length < 2) {
+                showToast('⚠️ 至少需要 2 个场景的参考图才能合成短片', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('compositeBtn');
+            const progress = document.getElementById('compositeProgress');
+            const progressBar = document.getElementById('compositeProgressBar');
+            const progressText = document.getElementById('compositeProgressText');
+            const placeholder = document.getElementById('compositePlaceholder');
+            const video = document.getElementById('compositeVideo');
+            const downloadBtn = document.getElementById('downloadCompositeBtn');
+
+            isCompositing = true;
+            btn.disabled = true;
+            btn.textContent = '⏳ 合成中...';
+            progress.style.display = 'block';
+            progressBar.style.width = '10%';
+            progressText.textContent = '📝 准备合成...';
+            placeholder.style.display = 'none';
+            video.style.display = 'none';
+            downloadBtn.style.display = 'none';
+
+            try {
+                // 构建完整的视频提示词
+                const sceneDescriptions = filmProject.scenes
+                    .filter(s => s.imageUrl)
+                    .map((s, i) => `场景 ${i+1}: ${s.scene_description}`)
+                    .join('\n');
+                
+                const fullPrompt = `根据以下 ${imageUrls.length} 个场景，生成一个连贯的叙事短片，保持视觉风格一致：\n${sceneDescriptions}`;
+
+                progressBar.style.width = '30%';
+                progressText.textContent = '🎨 AI 正在创作短片...';
+
+                const payload = {
+                    model: AGNES_CONFIG.videoModel,
+                    prompt: fullPrompt,
+                    num_frames: 241,
+                    frame_rate: 24,
+                    height: 768,
+                    width: 1152,
+                    extra_body: { image: imageUrls }
+                };
+
+                const response = await fetch(`${AGNES_CONFIG.baseUrl}/videos`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!data || !data.video_id) throw new Error('创建任务失败');
+
+                progressBar.style.width = '50%';
+                progressText.textContent = '⏳ 短片生成中 (约 2-4 分钟)...';
+
+                const videoId = data.video_id;
+                showToast('⏳ 短片合成中 (约 2-4 分钟)...', 'warning');
+
+                let attempts = 0, maxAttempts = 80;
+                let videoUrl = null;
+                while (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    const resultUrl = `https://apihub.agnes-ai.com/agnesapi?video_id=${videoId}`;
+                    const resultResponse = await fetch(resultUrl, {
+                        headers: { 'Authorization': `Bearer ${AGNES_CONFIG.apiKey}` }
+                    });
+                    const resultData = await resultResponse.json();
+                    
+                    // 更新进度
+                    const progressPercent = 50 + Math.min(40, (attempts / maxAttempts) * 40);
+                    progressBar.style.width = progressPercent + '%';
+                    progressText.textContent = `⏳ 生成中 ${Math.round(progressPercent)}%...`;
+                    
+                    if (resultData && resultData.status === 'completed' && resultData.remixed_from_video_id) {
+                        videoUrl = resultData.remixed_from_video_id;
+                        break;
+                    }
+                    if (resultData && resultData.status === 'failed') {
+                        throw new Error(resultData.error || '视频生成失败');
+                    }
+                    attempts++;
+                }
+
+                if (!videoUrl) throw new Error('视频合成超时，请稍后重试');
+
+                progressBar.style.width = '100%';
+                progressText.textContent = '✅ 合成完成！';
+
+                compositeVideoUrl = videoUrl;
+                video.src = videoUrl;
+                video.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                document.getElementById('playAllBtn').style.display = 'inline-block';
+                progress.style.display = 'none';
+                
+                // 显示片段列表
+                renderSceneClipList();
+                
+                showToast('✅ 完整短片已合成！', 'success');
+                filmProject.status = 'done';
+
+            } catch (error) {
+                console.error('合成失败:', error);
+                progress.style.display = 'none';
+                placeholder.style.display = 'block';
+                placeholder.innerHTML = `
+                    <span style="font-size:48px; display:block; margin-bottom:12px;">❌</span>
+                    <p style="color:#dc3545;">合成失败：${error.message}</p>
+                    <p style="color:#666; font-size:13px; margin-top:8px;">请检查网络或稍后重试</p>
+                `;
+                showToast('❌ 合成失败: ' + error.message, 'error');
+            } finally {
+                isCompositing = false;
+                btn.disabled = false;
+                btn.textContent = '🔗 合成完整短片';
+            }
+        }
+
+        // 渲染片段列表
+        function renderSceneClipList() {
+            const container = document.getElementById('sceneClipList');
+            if (!container) return;
+            container.innerHTML = filmProject.scenes.map((scene, index) => {
+                const hasVideo = !!scene.videoUrl;
+                return `
+                    <div style="background:#1a1a2e; border:1px solid ${hasVideo ? '#2ecc71' : '#2a2a3e'}; border-radius:6px; padding:6px 12px; font-size:11px; display:flex; align-items:center; gap:6px;">
+                        <span>🎬 ${index + 1}</span>
+                        ${hasVideo ? '<span style="color:#2ecc71;">✅</span>' : '<span style="color:#666;">⏳</span>'}
+                        <span style="color:#888; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(scene.scene_name || '未命名')}</span>
+                        ${hasVideo ? `<button onclick="playSingleScene(${index})" style="background:transparent; border:none; color:#ffd700; cursor:pointer; font-size:12px;">▶️</button>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 播放单个场景
+        function playSingleScene(index) {
+            const scene = filmProject.scenes[index];
+            if (!scene || !scene.videoUrl) return;
+            const video = document.getElementById('compositeVideo');
+            video.src = scene.videoUrl;
+            video.style.display = 'block';
+            video.play();
+            showToast(`▶️ 播放镜头 ${index + 1}`, 'success');
+        }
+
+        // 顺序播放全部片段
+        async function playAllScenes() {
+            const video = document.getElementById('compositeVideo');
+            const videoUrls = filmProject.scenes.filter(s => s.videoUrl).map(s => s.videoUrl);
+            if (videoUrls.length === 0) {
+                showToast('⚠️ 没有可播放的视频片段', 'warning');
+                return;
+            }
+            
+            showToast(`▶️ 顺序播放 ${videoUrls.length} 个片段`, 'warning');
+            
+            for (let i = 0; i < videoUrls.length; i++) {
+                video.src = videoUrls[i];
+                video.style.display = 'block';
+                await new Promise((resolve) => {
+                    video.play();
+                    video.onended = resolve;
+                });
+            }
+            showToast('✅ 全部播放完成！', 'success');
+        }
+
+        // 下载合成的完整短片
+        function downloadCompositeVideo() {
+            if (!compositeVideoUrl) {
+                showToast('❌ 没有可下载的短片', 'error');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = compositeVideoUrl;
+            link.download = `film_project_${Date.now()}.mp4`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('📥 开始下载短片', 'success');
         }
 
         // ============================================================
