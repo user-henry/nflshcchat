@@ -1,0 +1,25 @@
+{
+  "name": "NFLSHC Chat",
+  "short_name": "NFLSHC",
+  "description": "基于 GitHub Issues 的轻量级聊天平台",
+  "start_url": "/nflshcchat/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#ffd700",
+  "orientation": "portrait-primary",
+  "categories": ["communication", "social"],
+  "icons": [
+    {
+      "src": "https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

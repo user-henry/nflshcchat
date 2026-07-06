@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>离线 - NFLSHC Chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #ddd;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .offline-box {
+            background: #16213e;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 400px;
+            border: 1px solid #2a2a3e;
+        }
+        .offline-box .icon { font-size: 64px; margin-bottom: 20px; display: block; }
+        .offline-box h1 { color: #ffd700; font-size: 24px; margin-bottom: 12px; }
+        .offline-box p { color: #888; font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+        .offline-box .retry-btn {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .offline-box .retry-btn:hover { opacity: 0.9; }
+        .offline-box .version {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-box">
+        <span class="icon">📡</span>
+        <h1>网络连接已断开</h1>
+        <p>请检查您的网络连接，然后点击下方按钮重试。<br>NFLSHC Chat 部分内容已缓存，您仍可查看历史消息。</p>
+        <button class="retry-btn" onclick="location.reload()">🔄 重新连接</button>
+        <p class="version">NFLSHC Chat · 离线模式 v2.2.0</p>
+    </div>
+</body>
+</html>
