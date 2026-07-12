@@ -57,13 +57,93 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.3s;
         }
-        button:hover { transform: translateY(-2px); }
+        button:hover:not(:disabled) { transform: translateY(-2px); }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
         p { margin-top: 20px; color: #666; }
         a { color: #ffd700; text-decoration: none; font-weight: bold; cursor: pointer; }
         a:hover { text-decoration: underline; }
         .message { margin-top: 15px; font-size: 14px; min-height: 40px; }
-        
+
+        /* ===== 滑块验证样式 ===== */
+        .slider-wrapper {
+            margin: 10px 0 18px 0;
+            width: 100%;
+        }
+        .slider-container {
+            width: 100%;
+            height: 44px;
+            background-color: #e8e8e8;
+            border-radius: 22px;
+            position: relative;
+            user-select: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .slider-container.verified {
+            border: 2px solid #4CAF50;
+            background-color: #e8f5e9;
+        }
+        .slider-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #a5d6a7, #66bb6a);
+            border-radius: 22px;
+            width: 0%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: width 0.05s linear;
+        }
+        .slider-track {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 13px;
+            position: relative;
+            z-index: 1;
+        }
+        .slider-thumb {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            border-radius: 50%;
+            position: absolute;
+            left: 2px;
+            top: 2px;
+            cursor: grab;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.35);
+            transition: box-shadow 0.2s ease, background 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            z-index: 2;
+        }
+        .slider-thumb:active {
+            cursor: grabbing;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.5);
+        }
+        .slider-thumb .arrow { font-size: 14px; font-weight: bold; }
+        .slider-container.verified .slider-thumb {
+            background: linear-gradient(135deg, #2196F3, #1565C0);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+        }
+        .slider-container.verified .slider-progress {
+            background: linear-gradient(90deg, #90caf9, #42a5f5);
+        }
+        .slider-container.verified .slider-track .hint-text {
+            color: #1565C0;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -99,7 +179,21 @@
         <h2>用户登录</h2>
         <input type="text" id="username" placeholder="用户名" autocomplete="off">
         <input type="password" id="password" placeholder="密码">
-        <button onclick="login()">登录</button>
+
+        <!-- 滑块验证 -->
+        <div class="slider-wrapper">
+            <div class="slider-container" id="slider">
+                <div class="slider-progress" id="progress"></div>
+                <div class="slider-track">
+                    <span class="hint-text" id="hintText">👉 拖动滑块验证</span>
+                    <div class="slider-thumb" id="thumb">
+                        <span class="arrow">▶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="loginBtn" disabled>登录</button>
         <p><a onclick="showForgotPassword()">忘记密码？</a> | <a onclick="showRegister()">立即注册</a></p>
         <div id="message" class="message"></div>
     </div>
@@ -119,11 +213,139 @@
 
     <script src="config.js"></script>
     <script>
+        // ============================================================
+        //  滑块验证逻辑
+        // ============================================================
+        (function() {
+            const slider = document.getElementById('slider');
+            const thumb = document.getElementById('thumb');
+            const progress = document.getElementById('progress');
+            const hintText = document.getElementById('hintText');
+            const loginBtn = document.getElementById('loginBtn');
+
+            let isDragging = false;
+            let isVerified = false;
+
+            const SLIDER_WIDTH = slider.offsetWidth || 400;
+            const THUMB_WIDTH = 40;
+            const MAX_OFFSET = SLIDER_WIDTH - THUMB_WIDTH - 4;
+
+            // 更新最大偏移量（窗口变化时重新计算）
+            function updateMaxOffset() {
+                const rect = slider.getBoundingClientRect();
+                return rect.width - THUMB_WIDTH - 4;
+            }
+
+            function handleStart(e) {
+                if (isVerified) return;
+                e.preventDefault();
+                isDragging = true;
+                thumb.style.cursor = 'grabbing';
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('mouseup', handleEnd);
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('touchend', handleEnd, { passive: false });
+            }
+
+            function handleMove(e) {
+                if (!isDragging || isVerified) return;
+                e.preventDefault();
+
+                let clientX;
+                if (e.type === 'touchmove') {
+                    clientX = e.touches[0].clientX;
+                } else {
+                    clientX = e.clientX;
+                }
+
+                const rect = slider.getBoundingClientRect();
+                const maxOffset = rect.width - THUMB_WIDTH - 4;
+                let offset = clientX - rect.left - THUMB_WIDTH / 2;
+                offset = Math.max(0, Math.min(offset, maxOffset));
+
+                thumb.style.left = offset + 'px';
+                progress.style.width = ((offset / maxOffset) * 100) + '%';
+
+                if (offset >= maxOffset - 2) {
+                    verifySuccess();
+                }
+            }
+
+            function handleEnd(e) {
+                if (!isDragging) return;
+                isDragging = false;
+                thumb.style.cursor = 'grab';
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('touchend', handleEnd);
+
+                if (!isVerified) {
+                    resetSlider();
+                }
+            }
+
+            function verifySuccess() {
+                if (isVerified) return;
+                isVerified = true;
+                slider.classList.add('verified');
+                hintText.textContent = '✅ 验证通过！';
+                loginBtn.disabled = false;
+                loginBtn.style.opacity = '1';
+                loginBtn.style.cursor = 'pointer';
+                // 固定在终点
+                const rect = slider.getBoundingClientRect();
+                const maxOffset = rect.width - THUMB_WIDTH - 4;
+                thumb.style.left = maxOffset + 'px';
+                progress.style.width = '100%';
+            }
+
+            function resetSlider() {
+                if (isVerified) {
+                    isVerified = false;
+                    slider.classList.remove('verified');
+                    hintText.textContent = '👉 拖动滑块验证';
+                    loginBtn.disabled = true;
+                }
+                thumb.style.left = '2px';
+                progress.style.width = '0%';
+                thumb.style.cursor = 'grab';
+                // 移除残留事件
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('touchend', handleEnd);
+            }
+
+            // 暴露重置方法供外部调用
+            window.resetSlider = resetSlider;
+
+            thumb.addEventListener('mousedown', handleStart);
+            thumb.addEventListener('touchstart', handleStart, { passive: false });
+
+            // 窗口大小变化时重新计算位置（防止变形）
+            window.addEventListener('resize', function() {
+                if (isVerified) {
+                    const rect = slider.getBoundingClientRect();
+                    const maxOffset = rect.width - THUMB_WIDTH - 4;
+                    thumb.style.left = maxOffset + 'px';
+                    progress.style.width = '100%';
+                }
+            });
+
+            // 监听登录按钮状态变化
+            loginBtn.disabled = true;
+        })();
+
+        // ============================================================
+        //  原有代码（完全保持不变）
+        // ============================================================
+
         // EmailJS 配置
         const EMAILJS_PUBLIC_KEY = 'A-3y5AHO_oj3PQU5l';
         const EMAILJS_SERVICE_ID = 'service_6iugtla';
         const EMAILJS_TEMPLATE_ID = 'template_03vba8b';
-        
+
         let emailJSInitialized = false;
 
         // 初始化 EmailJS
@@ -134,7 +356,7 @@
                 console.log('EmailJS 初始化成功');
             }
         }
-        
+
         window.addEventListener('load', initEmailJS);
 
         // ========== 统一的存储 Key ==========
@@ -142,25 +364,18 @@
 
         // ========== 检查登录状态并自动跳转 ==========
         function checkAndAutoRedirect() {
-            // 优先从 localStorage 读取
             let userStr = localStorage.getItem(STORAGE_KEY);
-            
-            // 如果 localStorage 没有，尝试从 sessionStorage 读取（兼容旧版本）
             if (!userStr) {
                 userStr = sessionStorage.getItem('currentUser');
                 if (userStr) {
-                    // 迁移到 localStorage
                     localStorage.setItem(STORAGE_KEY, userStr);
                 }
             }
-            
             if (userStr) {
                 try {
                     const user = JSON.parse(userStr);
                     if (user && user.username) {
-                        // 同步到 sessionStorage
                         sessionStorage.setItem('currentUser', userStr);
-                        // 根据角色跳转
                         if (user.isAdmin || user.username === 'huangzhiyuan') {
                             window.location.href = 'admin.html';
                         } else {
@@ -186,7 +401,7 @@
         window.clearLoginState = function() {
             localStorage.removeItem(STORAGE_KEY);
             sessionStorage.removeItem('currentUser');
-            sessionStorage.removeItem('nflshc_user'); // 兼容旧 key
+            sessionStorage.removeItem('nflshc_user');
             console.log('登录状态已清除');
         };
 
@@ -206,14 +421,14 @@
             const username = document.getElementById('forgotUsername').value.trim();
             const email = document.getElementById('forgotEmail').value.trim();
             const msgDiv = document.getElementById('forgotMessage');
-            
+
             if (!username || !email) {
                 msgDiv.innerHTML = '<span style="color: #dc3545;">请填写用户名和邮箱</span>';
                 return;
             }
-            
+
             msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 验证中...</span>';
-            
+
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const response = await fetch(url, {
@@ -231,33 +446,33 @@
                         }
                     }
                 }
-                
+
                 if (!foundUser) {
                     msgDiv.innerHTML = '<span style="color: #dc3545;">用户名或邮箱不匹配</span>';
                     return;
                 }
-                
+
                 if (!emailJSInitialized) {
                     msgDiv.innerHTML = '<span style="color: #dc3545;">邮件服务初始化中，请稍后再试</span>';
                     initEmailJS();
                     setTimeout(() => sendPasswordReset(), 1000);
                     return;
                 }
-                
+
                 msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 发送邮件中...</span>';
-                
+
                 const templateParams = {
                     username: username,
                     password: foundUser.password,
                     email: email
                 };
-                
+
                 const mailResponse = await emailjs.send(
                     EMAILJS_SERVICE_ID,
                     EMAILJS_TEMPLATE_ID,
                     templateParams
                 );
-                
+
                 if (mailResponse.status === 200) {
                     msgDiv.innerHTML = '<span style="color: #28a745;">✅ 密码已发送到您的邮箱，请查收</span>';
                     setTimeout(() => closeForgotModal(), 2000);
@@ -270,17 +485,24 @@
             }
         }
 
-        // 登录功能
+        // 登录功能（添加了滑块验证检查）
         async function login() {
+            // 检查滑块是否已验证
+            const slider = document.getElementById('slider');
+            if (!slider.classList.contains('verified')) {
+                document.getElementById('message').innerHTML = '<span style="color: red;">⚠️ 请先完成人机验证</span>';
+                return;
+            }
+
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const messageDiv = document.getElementById('message');
-            
+
             if (!username || !password) {
                 messageDiv.innerHTML = '<span style="color: red;">请填写用户名和密码</span>';
                 return;
             }
-            
+
             // 系统管理员特判
             if (username === 'huangzhiyuan' && password === '15240254891') {
                 const userData = { username: username, isAdmin: true };
@@ -289,7 +511,7 @@
                 setTimeout(() => window.location.href = 'admin.html', 1000);
                 return;
             }
-            
+
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
                 const response = await fetch(url, {
@@ -307,7 +529,7 @@
                         }
                     }
                 }
-                
+
                 if (foundUser) {
                     if (foundUser.isBanned) {
                         messageDiv.innerHTML = '<span style="color: red;">账号已被封禁，请联系管理员</span>';
@@ -319,24 +541,29 @@
                     setTimeout(() => window.location.href = 'chat.html', 1000);
                 } else {
                     messageDiv.innerHTML = '<span style="color: red;">用户名或密码错误</span>';
+                    // 登录失败时重置滑块
+                    if (window.resetSlider) window.resetSlider();
                 }
             } catch (error) {
                 messageDiv.innerHTML = `<span style="color: red;">登录失败: ${error.message}</span>`;
+                if (window.resetSlider) window.resetSlider();
             }
         }
 
-        function showRegister() { 
-            window.location.href = 'register.html'; 
+        function showRegister() {
+            window.location.href = 'register.html';
         }
-        
+
+        // 修改登录按钮的点击事件
+        document.getElementById('loginBtn').addEventListener('click', login);
+
         // 监听回车键
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') login();
         });
-        
+
         // ========== 页面启动时检查自动登录 ==========
         (function() {
-            // 延迟一点点执行，确保所有脚本加载完成
             setTimeout(() => {
                 checkAndAutoRedirect();
             }, 10);
