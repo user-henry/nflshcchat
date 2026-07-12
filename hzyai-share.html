@@ -112,9 +112,14 @@
             align-items: center;
             gap: 12px;
         }
-        .app-header .brand img {
+        .app-header .brand .brand-logo {
             width: 32px;
             height: 32px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/91if3kid.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            flex-shrink: 0;
         }
         .app-header .brand h1 {
             font-size: 22px;
@@ -268,28 +273,6 @@
         .conv-item.selected { background: #2a2a3e; border-left: 3px solid #ffd700; }
         .conv-item .conv-title { flex: 1; font-size: 14px; }
         .conv-item .conv-meta { font-size: 12px; color: #666; }
-        .conv-item .conv-check {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            border: 2px solid #2a2a3e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            transition: all 0.2s;
-            cursor: pointer;
-            flex-shrink: 0;
-            background: transparent;
-            color: transparent;
-        }
-        .conv-item .conv-check.checked {
-            background: #ffd700;
-            border-color: #ffd700;
-            color: #1a1a2e;
-        }
-        .conv-item .conv-check.checked::after { content: '✓'; }
-        .conv-item .conv-check:hover { border-color: #ffd700; }
 
         /* ===== 消息预览区 ===== */
         .message-preview {
@@ -652,7 +635,7 @@
         <!-- 顶部导航 -->
         <div class="app-header">
             <div class="brand">
-                <img src="https://cdn.luogu.com.cn/upload/image_hosting/91if3kid.png" alt="logo">
+                <div class="brand-logo"></div>
                 <h1>📤 HZYAI 分享</h1>
             </div>
             <div class="user-info">
