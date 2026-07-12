@@ -174,6 +174,28 @@
         .anthem-player audio::-webkit-media-controls-panel {
             background: var(--bg-secondary);
         }
+
+        /* ===== AI 快捷键提示 ===== */
+        .ai-shortcut-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .ai-shortcut-hint kbd {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 11px;
+            font-family: inherit;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
@@ -182,6 +204,7 @@
         <div>
             <span>欢迎，<span id="username"></span></span>
             <a href="chat.html">💬 聊天</a>
+            <a href="ai-chat.html">🤖 AI 问答</a>
             <a href="#" onclick="logout()">🚪 退出</a>
         </div>
     </div>
@@ -190,6 +213,12 @@
         <div class="hero">
             <h1>💬 NFLSHC Chat</h1>
             <p>一个安全、便捷、功能丰富的现代聊天平台</p>
+            <div style="margin-top: 12px;">
+                <span class="ai-shortcut-hint">
+                    <kbd>⌘</kbd> + <kbd>K</kbd> 或 <kbd>Ctrl</kbd> + <kbd>K</kbd>
+                    <span style="color:var(--accent-color);">🔍 AI 搜索</span>
+                </span>
+            </div>
         </div>
 
         <div class="card">
@@ -305,6 +334,7 @@
                 <span class="tech-tag">Chart.js (数据可视化)</span>
                 <span class="tech-tag">GitHub Pages</span>
                 <span class="tech-tag">GitHub Actions</span>
+                <span class="tech-tag">Cloudflare AI Search</span>
             </div>
         </div>
 
@@ -316,39 +346,39 @@
                 <span class="version-badge">数据存储: GitHub Issues</span>
             </div>
             <h3>📝 更新日志</h3>
-	    <p><strong>v2.2.0 (2026年4月)</strong><br>
-	    - 新增消息引用回复功能<br>
-	    - 新增群聊置顶消息功能<br>
-	    - 新增代码语法高亮 + 一键复制<br>
-	    - 新增好友系统（头像、等级、搜索）<br>
-	    - 新增用户等级/积分系统<br>
-	    - 新增个人数据仪表盘<br>
-	    - 新增语音消息功能<br>
-- 新增个人名片分享<br>
-	    - 新增键盘快捷键支持<br>
-	    - 修复多个已知 Bug</p>
-	    <p><strong>v2.1.1 (2026年4月)</strong><br>
-	    - 修复多个已知 Bug</p>
-	    <p><strong>v2.1.0 (2026年4月)</strong><br>
-	    - 新增 AI 群机器人功能<br>
-	    - 修复多个已知 Bug</p>
-	    <p><strong>v2.0.0 (2026年4月)</strong><br>
+        <p><strong>v2.2.0 (2026年4月)</strong><br>
+        - 新增消息引用回复功能<br>
+        - 新增群聊置顶消息功能<br>
+        - 新增代码语法高亮 + 一键复制<br>
+        - 新增好友系统（头像、等级、搜索）<br>
+        - 新增用户等级/积分系统<br>
+        - 新增个人数据仪表盘<br>
+        - 新增语音消息功能<br>
+        - 新增个人名片分享<br>
+        - 新增键盘快捷键支持<br>
+        - 修复多个已知 Bug</p>
+        <p><strong>v2.1.1 (2026年4月)</strong><br>
+        - 修复多个已知 Bug</p>
+        <p><strong>v2.1.0 (2026年4月)</strong><br>
+        - 新增 AI 群机器人功能<br>
+        - 修复多个已知 Bug</p>
+        <p><strong>v2.0.0 (2026年4月)</strong><br>
             - 新增 Markdown 消息支持及实时预览<br>
             - 新增消息收藏功能<br>
             - 新增消息搜索功能<br>
             - 新增聊天记录导出功能<br>
             - 新增群聊统计面板（词云、趋势图、排行榜）<br>
-	    - 修复多个已知 Bug</p>
-	    <p><strong>v1.2.1 (2026年4月)</strong><br>
-	    - 修复多个已知 Bug</p>
+        - 修复多个已知 Bug</p>
+        <p><strong>v1.2.1 (2026年4月)</strong><br>
+        - 修复多个已知 Bug</p>
             <p><strong>v1.2.0 (2026年4月)</strong><br>
             - 新增 @所有人 通知功能<br>
             - 优化 UI 界面（改进颜色搭配、圆角、阴影、间距等视觉元素）<br>
             - 移动端适配（响应式设计，在不同屏幕尺寸下正常显示）<br>
             - 修复多个已知 Bug</p>
-	    <p><strong>v1.1.0 (2026年3月)</strong><br>
-	    - 新增找回密码功能<br>
-	    - 修复多个已知 Bug</p>
+        <p><strong>v1.1.0 (2026年3月)</strong><br>
+        - 新增找回密码功能<br>
+        - 修复多个已知 Bug</p>
             <p><strong>v1.0.0 (2026年3月)</strong><br>
             - 基础聊天功能（群聊/私聊）<br>
             - 用户注册登录系统<br>
@@ -389,7 +419,11 @@
 
         function checkAuth() {
             const userStr = sessionStorage.getItem('currentUser');
-            if (!userStr) { window.location.href = 'index.html'; return null; }
+            if (!userStr) {
+                // 如果未登录，显示游客模式
+                document.getElementById('username').textContent = '游客';
+                return null;
+            }
             const user = JSON.parse(userStr);
             document.getElementById('username').textContent = user.username;
             return user;
@@ -398,5 +432,110 @@
         currentUser = checkAuth();
     </script>
     <script src="shortcuts.js"></script>
+
+    <!-- ============================================================ -->
+    <!--  Cloudflare AI Search 组件                                     -->
+    <!-- ============================================================ -->
+
+    <!-- 1. 引入 AI Search 组件库 -->
+    <script
+      type="module"
+      src="https://2c177107-5a66-4ac2-bf55-04f0bcad8fef.search.ai.cloudflare.com/assets/v0.0.40/search-snippet.es.js"
+    ></script>
+
+    <!-- 2. 搜索弹窗（按 Cmd/Ctrl+K 唤出） -->
+    <search-modal-snippet
+      api-url="https://2c177107-5a66-4ac2-bf55-04f0bcad8fef.search.ai.cloudflare.com/"
+      placeholder="搜索 NFLSHC Chat..."
+      shortcut="k"
+      show-url="true"
+      show-date="true"
+      max-results="20"
+      max-render-results="10"
+    >
+    </search-modal-snippet>
+
+    <!-- 3. 聊天气泡（固定在右下角） -->
+    <chat-bubble-snippet
+      api-url="https://2c177107-5a66-4ac2-bf55-04f0bcad8fef.search.ai.cloudflare.com/"
+      placeholder="输入问题，AI 帮你解答..."
+    >
+    </chat-bubble-snippet>
+
+    <!-- ============================================================ -->
+    <!--  自定义样式（匹配主站主题）                                    -->
+    <!-- ============================================================ -->
+    <style>
+        /* 主站使用主题变量，适配所有主题 */
+        search-modal-snippet {
+            --search-snippet-primary-color: var(--accent-color, #ffd700);
+            --search-snippet-border-radius: 12px;
+            --search-snippet-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        chat-bubble-snippet {
+            --search-snippet-primary-color: var(--accent-color, #ffd700);
+            --search-snippet-primary-hover: var(--accent-hover, #e6c200);
+            --search-snippet-border-radius: 12px;
+            --chat-bubble-button-size: 56px;
+            --chat-bubble-button-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+            --chat-bubble-button-icon-color: #1a1a2e;
+            --chat-bubble-button-z-index: 9999;
+        }
+        
+        /* 按钮使用金色渐变 */
+        chat-bubble-snippet::part(button) {
+            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #e6c200) 100%) !important;
+        }
+        
+        /* 深色主题适配 - Default 主题 (暗色) */
+        [data-theme="dark"] search-modal-snippet,
+        [data-theme="dark"] chat-bubble-snippet {
+            --search-snippet-background: #1a1a2e;
+            --search-snippet-surface: #16213e;
+            --search-snippet-text-color: #eef4ff;
+            --search-snippet-text-secondary: #888;
+            --search-snippet-border-color: #2a2a3e;
+            --search-snippet-assistant-message-bg: #16213e;
+            --search-snippet-assistant-message-text: #eef4ff;
+            --search-snippet-user-message-bg: #ffd700;
+            --search-snippet-user-message-text: #1a1a2e;
+        }
+        
+        /* 浅色主题适配 - Light 主题 */
+        [data-theme="light"] search-modal-snippet,
+        [data-theme="light"] chat-bubble-snippet {
+            --search-snippet-background: #ffffff;
+            --search-snippet-surface: #f8f9fa;
+            --search-snippet-text-color: #212529;
+            --search-snippet-text-secondary: #6c757d;
+            --search-snippet-border-color: #dee2e6;
+            --search-snippet-assistant-message-bg: #f1f3f5;
+            --search-snippet-assistant-message-text: #212529;
+            --search-snippet-user-message-bg: #ffd700;
+            --search-snippet-user-message-text: #1a1a2e;
+        }
+        
+        /* Blue 主题 */
+        [data-theme="blue"] search-modal-snippet,
+        [data-theme="blue"] chat-bubble-snippet {
+            --search-snippet-primary-color: #3b82f6;
+            --search-snippet-primary-hover: #2563eb;
+        }
+        
+        /* Purple 主题 */
+        [data-theme="purple"] search-modal-snippet,
+        [data-theme="purple"] chat-bubble-snippet {
+            --search-snippet-primary-color: #8b5cf6;
+            --search-snippet-primary-hover: #7c3aed;
+        }
+        
+        /* Green 主题 */
+        [data-theme="green"] search-modal-snippet,
+        [data-theme="green"] chat-bubble-snippet {
+            --search-snippet-primary-color: #22c55e;
+            --search-snippet-primary-hover: #16a34a;
+        }
+    </style>
 </body>
 </html>

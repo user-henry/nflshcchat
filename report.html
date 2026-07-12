@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 举报中心</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            color: #eef4ff;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #2a2a3e;
+            margin-bottom: 30px;
+        }
+        .header h1 { color: #ffd700; font-size: 32px; }
+        .header p { color: #888; margin-top: 8px; }
+        
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #2a2a3e;
+            margin-bottom: 20px;
+        }
+        .card h2 { color: #ffd700; font-size: 18px; margin-bottom: 16px; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; color: #aaa; font-size: 13px; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: white;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .submit-btn:hover { transform: translateY(-2px); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .status-msg {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            display: none;
+        }
+        .status-msg.success { display: block; background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid #2ecc71; }
+        .status-msg.error { display: block; background: rgba(220,53,69,0.15); color: #dc3545; border: 1px solid #dc3545; }
+        
+        .nav-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .nav-bar a {
+            color: #888;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .nav-bar a:hover { color: #ffd700; background: rgba(255,215,0,0.05); }
+        .nav-bar a.active { color: #ffd700; background: rgba(255,215,0,0.1); }
+        
+        .report-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .report-item {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 3px solid #dc3545;
+        }
+        .report-item .reporter { color: #ffd700; font-weight: bold; }
+        .report-item .target { color: #dc3545; font-weight: bold; }
+        .report-item .reason { color: #aaa; margin: 6px 0; }
+        .report-item .status { font-size: 12px; padding: 2px 10px; border-radius: 12px; display: inline-block; }
+        .report-item .status.pending { background: #f39c12; color: #1a1a2e; }
+        .report-item .status.resolved { background: #2ecc71; color: #1a1a2e; }
+        .report-item .status.rejected { background: #dc3545; color: white; }
+        .report-item .time { font-size: 11px; color: #666; margin-top: 4px; }
+        
+        .admin-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .admin-actions button {
+            padding: 4px 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .admin-actions .resolve-btn { background: #2ecc71; color: #1a1a2e; }
+        .admin-actions .reject-btn { background: #dc3545; color: white; }
+        .admin-actions .ban-btn { background: #f39c12; color: #1a1a2e; }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 24px; }
+            .nav-bar { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 举报中心</h1>
+            <p>举报违规用户，维护社区环境</p>
+        </div>
+        
+        <div class="nav-bar">
+            <a href="#" class="active" onclick="switchTab('report')">📝 举报用户</a>
+            <a href="#" onclick="switchTab('history')">📋 我的举报</a>
+            <a href="#" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">👑 审核管理</a>
+            <a href="chat.html">💬 返回聊天</a>
+        </div>
+        
+        <!-- 举报 Tab -->
+        <div id="reportTab">
+            <div class="card">
+                <h2>📝 举报用户</h2>
+                <div class="form-group">
+                    <label>被举报用户</label>
+                    <input type="text" id="targetUser" placeholder="输入用户名" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>举报原因</label>
+                    <select id="reportReason">
+                        <option value="骚扰">骚扰行为</option>
+                        <option value="辱骂">辱骂/人身攻击</option>
+                        <option value="广告">垃圾广告</option>
+                        <option value="色情">色情内容</option>
+                        <option value="违法">违法信息</option>
+                        <option value="诈骗">诈骗/欺诈</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>情况说明（请详细描述）</label>
+                    <textarea id="reportDescription" placeholder="请描述具体情况，包括时间、聊天室、具体言论等..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>证据链接（可选）</label>
+                    <input type="text" id="reportEvidence" placeholder="https://... 消息截图或相关链接">
+                </div>
+                <button class="submit-btn" id="submitReportBtn" onclick="submitReport()">🚨 提交举报</button>
+                <div id="reportStatus" class="status-msg"></div>
+            </div>
+        </div>
+        
+        <!-- 历史记录 Tab -->
+        <div id="historyTab" style="display:none;">
+            <div class="card">
+                <h2>📋 我的举报记录</h2>
+                <div class="report-list" id="reportHistory">
+                    <div style="color:#666;text-align:center;padding:40px;">暂无举报记录</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 管理员审核 Tab -->
+        <div id="adminTab" style="display:none;">
+            <div class="card">
+                <h2>👑 举报审核管理</h2>
+                <div class="report-list" id="adminReportList">
+                    <div style="color:#666;text-align:center;padding:40px;">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // ============================================================
+        //  状态
+        // ============================================================
+        let currentUser = null;
+        let isAdmin = false;
+        let allReports = [];
+        
+        const REPORTS_KEY = 'nflshc_reports';
+        
+        // ============================================================
+        //  检查登录
+        // ============================================================
+        function checkAuth() {
+            let userStr = sessionStorage.getItem('currentUser');
+            if (!userStr) {
+                userStr = localStorage.getItem('nflshc_currentUser');
+            }
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+                if (currentUser.isAdmin || currentUser.username === 'huangzhiyuan') {
+                    isAdmin = true;
+                }
+                return true;
+            }
+            return false;
+        }
+        
+        if (!checkAuth()) {
+            alert('请先登录');
+            window.location.href = 'index.html';
+        }
+        
+        // 显示管理员 Tab
+        if (isAdmin) {
+            document.getElementById('adminTabBtn').style.display = 'inline-block';
+        }
+        
+        // ============================================================
+        //  加载举报数据
+        // ============================================================
+        function loadReports() {
+            const saved = localStorage.getItem(REPORTS_KEY);
+            if (saved) {
+                try {
+                    allReports = JSON.parse(saved);
+                } catch(e) { allReports = []; }
+            } else {
+                allReports = [];
+            }
+            renderHistory();
+            if (isAdmin) renderAdminList();
+        }
+        
+        function saveReports() {
+            localStorage.setItem(REPORTS_KEY, JSON.stringify(allReports));
+            renderHistory();
+            if (isAdmin) renderAdminList();
+        }
+        
+        // ============================================================
+        //  提交举报
+        // ============================================================
+        async function submitReport() {
+            const targetUser = document.getElementById('targetUser').value.trim();
+            const reason = document.getElementById('reportReason').value;
+            const description = document.getElementById('reportDescription').value.trim();
+            const evidence = document.getElementById('reportEvidence').value.trim();
+            
+            if (!targetUser) {
+                showStatus('请填写被举报用户', 'error');
+                return;
+            }
+            if (!description) {
+                showStatus('请填写情况说明', 'error');
+                return;
+            }
+            if (targetUser === currentUser.username) {
+                showStatus('不能举报自己', 'error');
+                return;
+            }
+            
+            // 检查用户是否存在
+            const userExists = await checkUserExists(targetUser);
+            if (!userExists) {
+                showStatus(`用户 "${targetUser}" 不存在`, 'error');
+                return;
+            }
+            
+            const report = {
+                id: `report_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+                reporter: currentUser.username,
+                targetUser: targetUser,
+                reason: reason,
+                description: description,
+                evidence: evidence || '',
+                status: 'pending', // pending, resolved, rejected
+                createdAt: new Date().toISOString(),
+                resolvedAt: null,
+                resolvedBy: null,
+                adminNote: ''
+            };
+            
+            allReports.push(report);
+            saveReports();
+            
+            document.getElementById('targetUser').value = '';
+            document.getElementById('reportDescription').value = '';
+            document.getElementById('reportEvidence').value = '';
+            
+            showStatus('✅ 举报已提交，管理员将尽快审核', 'success');
+            
+            // 通知管理员
+            if (isAdmin) {
+                // 如果是管理员自己，直接刷新列表
+                renderAdminList();
+            } else {
+                // 发送通知到 GitHub
+                await notifyAdmin(report);
+            }
+        }
+        
+        async function checkUserExists(username) {
+            if (username === 'huangzhiyuan') return true;
+            try {
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        if (userData.username === username) return true;
+                    }
+                }
+                return false;
+            } catch { return false; }
+        }
+        
+        async function notifyAdmin(report) {
+            try {
+                const notifData = {
+                    id: `notif_${Date.now()}`,
+                    type: 'report',
+                    title: '🚨 新的举报',
+                    content: `用户 ${report.reporter} 举报了 ${report.targetUser}，原因：${report.reason}`,
+                    targetUser: 'huangzhiyuan',
+                    sender: report.reporter,
+                    reportId: report.id,
+                    sentAt: new Date().toISOString(),
+                    isRead: false
+                };
+                const issueBody = `系统通知\n\`\`\`json\n${JSON.stringify(notifData, null, 2)}\n\`\`\``;
+                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `系统通知: ${notifData.title}`, body: issueBody, labels: ['system_notification'] })
+                });
+            } catch (error) {
+                console.error('通知管理员失败:', error);
+            }
+        }
+        
+        function showStatus(msg, type) {
+            const el = document.getElementById('reportStatus');
+            el.textContent = msg;
+            el.className = 'status-msg ' + type;
+            setTimeout(() => {
+                el.className = 'status-msg';
+                el.textContent = '';
+            }, 4000);
+        }
+        
+        // ============================================================
+        //  渲染举报历史
+        // ============================================================
+        function renderHistory() {
+            const container = document.getElementById('reportHistory');
+            const userReports = allReports.filter(r => r.reporter === currentUser.username);
+            
+            if (userReports.length === 0) {
+                container.innerHTML = '<div style="color:#666;text-align:center;padding:40px;">暂无举报记录</div>';
+                return;
+            }
+            
+            container.innerHTML = userReports.slice().reverse().map(r => `
+                <div class="report-item">
+                    <div>
+                        <span class="reporter">👤 ${escapeHtml(r.reporter)}</span>
+                        → 
+                        <span class="target">${escapeHtml(r.targetUser)}</span>
+                    </div>
+                    <div class="reason">📌 ${escapeHtml(r.reason)}${r.evidence ? ` · <a href="${escapeHtml(r.evidence)}" target="_blank" style="color:#ffd700;">证据链接</a>` : ''}</div>
+                    <div class="reason" style="color:#888;font-size:13px;">${escapeHtml(r.description)}</div>
+                    <div>
+                        <span class="status ${r.status}">${r.status === 'pending' ? '⏳ 待审核' : r.status === 'resolved' ? '✅ 已处理' : '❌ 已驳回'}</span>
+                        ${r.resolvedAt ? `<span style="font-size:11px;color:#666;margin-left:8px;">处理时间: ${new Date(r.resolvedAt).toLocaleString()}</span>` : ''}
+                        ${r.adminNote ? `<div style="font-size:12px;color:#aaa;margin-top:4px;">📝 管理员备注: ${escapeHtml(r.adminNote)}</div>` : ''}
+                    </div>
+                    <div class="time">📅 ${new Date(r.createdAt).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+        
+        // ============================================================
+        //  管理员审核
+        // ============================================================
+        function renderAdminList() {
+            const container = document.getElementById('adminReportList');
+            const pendingReports = allReports.filter(r => r.status === 'pending');
+            const resolvedReports = allReports.filter(r => r.status !== 'pending');
+            
+            if (allReports.length === 0) {
+                container.innerHTML = '<div style="color:#666;text-align:center;padding:40px;">暂无举报</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            if (pendingReports.length > 0) {
+                html += `<h3 style="color:#f39c12;margin-bottom:12px;">⏳ 待审核 (${pendingReports.length})</h3>`;
+                html += pendingReports.map(r => `
+                    <div class="report-item" style="border-left-color:#f39c12;">
+                        <div>
+                            <span class="reporter">👤 ${escapeHtml(r.reporter)}</span>
+                            → 
+                            <span class="target">${escapeHtml(r.targetUser)}</span>
+                        </div>
+                        <div class="reason">📌 ${escapeHtml(r.reason)}</div>
+                        <div class="reason" style="color:#888;font-size:13px;">${escapeHtml(r.description)}</div>
+                        ${r.evidence ? `<div class="reason"><a href="${escapeHtml(r.evidence)}" target="_blank" style="color:#ffd700;">🔗 证据链接</a></div>` : ''}
+                        <div class="time">📅 ${new Date(r.createdAt).toLocaleString()}</div>
+                        <div class="admin-actions">
+                            <button class="resolve-btn" onclick="resolveReport('${r.id}')">✅ 处理</button>
+                            <button class="reject-btn" onclick="rejectReport('${r.id}')">❌ 驳回</button>
+                            <button class="ban-btn" onclick="banUserFromReport('${r.id}')">🚫 封禁用户</button>
+                            <input type="text" id="adminNote_${r.id}" placeholder="备注（可选）" style="flex:1;min-width:120px;padding:4px 8px;border-radius:4px;background:#1a1a2e;border:1px solid #2a2a3e;color:white;font-size:12px;">
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            if (resolvedReports.length > 0) {
+                html += `<h3 style="color:#2ecc71;margin-top:20px;margin-bottom:12px;">✅ 已处理 (${resolvedReports.length})</h3>`;
+                html += resolvedReports.slice(0, 10).map(r => `
+                    <div class="report-item" style="border-left-color:${r.status === 'resolved' ? '#2ecc71' : '#dc3545'};">
+                        <div>
+                            <span class="reporter">👤 ${escapeHtml(r.reporter)}</span>
+                            → 
+                            <span class="target">${escapeHtml(r.targetUser)}</span>
+                        </div>
+                        <div class="reason">📌 ${escapeHtml(r.reason)}</div>
+                        <div>
+                            <span class="status ${r.status}">${r.status === 'resolved' ? '✅ 已处理' : '❌ 已驳回'}</span>
+                            ${r.resolvedBy ? `<span style="font-size:11px;color:#666;margin-left:8px;">处理人: ${escapeHtml(r.resolvedBy)}</span>` : ''}
+                        </div>
+                        ${r.adminNote ? `<div style="font-size:12px;color:#aaa;">📝 ${escapeHtml(r.adminNote)}</div>` : ''}
+                        <div class="time">📅 ${new Date(r.createdAt).toLocaleString()}</div>
+                    </div>
+                `).join('');
+                if (resolvedReports.length > 10) {
+                    html += `<div style="color:#666;text-align:center;padding:8px;">还有 ${resolvedReports.length - 10} 条已处理记录</div>`;
+                }
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function resolveReport(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+            const note = document.getElementById(`adminNote_${reportId}`)?.value || '';
+            report.status = 'resolved';
+            report.resolvedAt = new Date().toISOString();
+            report.resolvedBy = currentUser.username;
+            report.adminNote = note;
+            saveReports();
+            renderAdminList();
+            alert('✅ 举报已标记为已处理');
+        }
+        
+        function rejectReport(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+            const note = document.getElementById(`adminNote_${reportId}`)?.value || '';
+            report.status = 'rejected';
+            report.resolvedAt = new Date().toISOString();
+            report.resolvedBy = currentUser.username;
+            report.adminNote = note;
+            saveReports();
+            renderAdminList();
+            alert('❌ 举报已驳回');
+        }
+        
+        async function banUserFromReport(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+            if (!confirm(`确定要封禁用户 ${report.targetUser} 吗？`)) return;
+            
+            // 调用封禁逻辑
+            const success = await toggleUserBan(report.targetUser, true);
+            if (success) {
+                report.status = 'resolved';
+                report.resolvedAt = new Date().toISOString();
+                report.resolvedBy = currentUser.username;
+                const note = document.getElementById(`adminNote_${reportId}`)?.value || '用户已被封禁';
+                report.adminNote = note;
+                saveReports();
+                renderAdminList();
+                alert(`✅ 用户 ${report.targetUser} 已被封禁`);
+            }
+        }
+        
+        async function toggleUserBan(username, shouldBan) {
+            try {
+                // 从 GitHub 获取用户数据
+                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                const issues = await res.json();
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        const userData = JSON.parse(match[1]);
+                        if (userData.username === username) {
+                            userData.isBanned = shouldBan;
+                            const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(userData, null, 2)}\n\`\`\``;
+                            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issue.number}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                                    'Accept': 'application/vnd.github.v3+json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ body: updatedBody })
+                            });
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            } catch (error) {
+                console.error('封禁失败:', error);
+                alert('封禁失败: ' + error.message);
+                return false;
+            }
+        }
+        
+        // ============================================================
+        //  Tab 切换
+        // ============================================================
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-bar a').forEach(a => a.classList.remove('active'));
+            document.getElementById('reportTab').style.display = 'none';
+            document.getElementById('historyTab').style.display = 'none';
+            document.getElementById('adminTab').style.display = 'none';
+            
+            if (tab === 'report') {
+                document.querySelector('.nav-bar a:first-child').classList.add('active');
+                document.getElementById('reportTab').style.display = 'block';
+            } else if (tab === 'history') {
+                document.querySelector('.nav-bar a:nth-child(2)').classList.add('active');
+                document.getElementById('historyTab').style.display = 'block';
+                renderHistory();
+            } else if (tab === 'admin') {
+                document.querySelector('.nav-bar a:nth-child(3)').classList.add('active');
+                document.getElementById('adminTab').style.display = 'block';
+                renderAdminList();
+            }
+        }
+        
+        // ============================================================
+        //  辅助
+        // ============================================================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // ============================================================
+        //  初始化
+        // ============================================================
+        loadReports();
+        
+        // 暴露全局函数
+        window.submitReport = submitReport;
+        window.switchTab = switchTab;
+        window.resolveReport = resolveReport;
+        window.rejectReport = rejectReport;
+        window.banUserFromReport = banUserFromReport;
+        
+        console.log('🚨 举报中心已加载，当前用户:', currentUser?.username);
+    </script>
+</body>
+</html>
