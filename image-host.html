@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC · 图床</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a1a;
+            color: #eef4ff;
+            min-height: 100vh;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(1200px 600px at 15% -10%, rgba(14, 165, 233, 0.12), transparent),
+                radial-gradient(900px 500px at 110% 10%, rgba(245, 158, 11, 0.10), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-blur-1 {
+            position: fixed; top: 120px; left: -80px;
+            width: 300px; height: 300px; border-radius: 50%;
+            background: rgba(14, 165, 233, 0.05); filter: blur(80px);
+            pointer-events: none; z-index: 0;
+        }
+        .bg-blur-2 {
+            position: fixed; bottom: 0; right: -100px;
+            width: 350px; height: 350px; border-radius: 50%;
+            background: rgba(245, 158, 11, 0.05); filter: blur(80px);
+            pointer-events: none; z-index: 0;
+        }
+
+        .container {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto;
+            padding: 20px 24px 40px;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+        }
+
+        /* ===== 顶部导航 ===== */
+        .header {
+            display: flex; flex-wrap: wrap;
+            justify-content: space-between; align-items: center;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-left .logo {
+            width: 44px; height: 44px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            border-radius: 10px;
+        }
+        .header-left .title {
+            font-size: 20px; font-weight: 700;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-left .subtitle {
+            font-size: 12px; color: #666; margin-top: 2px;
+        }
+        .header-left .subtitle .badge {
+            display: inline-block;
+            background: rgba(46, 204, 113, 0.15);
+            color: #2ecc71;
+            font-size: 10px;
+            padding: 1px 10px;
+            border-radius: 12px;
+            margin-left: 6px;
+        }
+        .header-right {
+            display: flex; align-items: center;
+            gap: 12px; flex-wrap: wrap;
+        }
+        .header-right .nav-link {
+            color: #888; text-decoration: none;
+            font-size: 13px; padding: 6px 14px;
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .header-right .nav-link:hover {
+            color: #f59e0b; background: rgba(245, 158, 11, 0.08);
+        }
+        .header-right .nav-link .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+        .header-right .nav-link .dot.online { background: #2ecc71; }
+        .header-right .nav-link .dot.offline { background: #dc3545; }
+        .user-badge {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px 6px 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            font-size: 13px;
+        }
+        .user-badge .avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #1a1a2e;
+        }
+        .user-badge .plan {
+            font-size: 10px; padding: 2px 10px; border-radius: 20px;
+            background: rgba(255,255,255,0.06); color: #888;
+        }
+
+        /* ===== Tab ===== */
+        .tabs {
+            display: flex; gap: 4px;
+            margin: 24px 0 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 14px; padding: 4px;
+            border: 1px solid rgba(255,255,255,0.06);
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 10px 20px; border: none; border-radius: 10px;
+            background: transparent; color: #888;
+            font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: all 0.3s;
+            display: flex; align-items: center; gap: 8px;
+            font-family: inherit;
+        }
+        .tab-btn:hover { color: #eef4ff; background: rgba(255,255,255,0.04); }
+        .tab-btn.active {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.04);
+        }
+        .tab-btn .badge {
+            font-size: 10px; background: rgba(255,255,255,0.06);
+            padding: 1px 8px; border-radius: 12px; color: #666;
+        }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== 统计卡片 ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px; padding: 16px 18px;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: rgba(245, 158, 11, 0.2); background: rgba(255,255,255,0.05); }
+        .stat-card .number { font-size: 26px; font-weight: 700; color: #f59e0b; }
+        .stat-card .label { font-size: 12px; color: #666; margin-top: 4px; }
+
+        /* ===== 工具栏 ===== */
+        .toolbar {
+            display: flex; flex-wrap: wrap;
+            justify-content: space-between; align-items: center;
+            gap: 12px; margin-bottom: 20px;
+        }
+        .toolbar-left { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .toolbar-right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .btn {
+            padding: 8px 18px; border: none; border-radius: 10px;
+            font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #1a1a2e;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #aaa;
+        }
+        .btn-outline:hover { border-color: #f59e0b; color: #f59e0b; }
+        .btn-ghost { background: transparent; color: #888; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: #eef4ff; }
+        .btn-danger { background: rgba(220, 53, 69, 0.12); color: #dc3545; }
+        .btn-danger:hover { background: rgba(220, 53, 69, 0.22); }
+        .btn-sm { padding: 4px 12px; font-size: 12px; }
+        .btn-xs { padding: 2px 8px; font-size: 11px; border-radius: 6px; }
+
+        .search-box {
+            display: flex; align-items: center;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px; padding: 0 14px;
+            transition: all 0.3s;
+        }
+        .search-box:focus-within {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(255,255,255,0.06);
+        }
+        .search-box input {
+            background: none; border: none;
+            padding: 8px 10px; color: #eef4ff;
+            font-size: 13px; outline: none; width: 160px;
+            font-family: inherit;
+        }
+        .search-box input::placeholder { color: #555; }
+        .search-box .icon { color: #555; font-size: 14px; }
+
+        /* ===== 图片网格 ===== */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .gallery-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: all 0.3s;
+            position: relative;
+            cursor: pointer;
+        }
+        .gallery-item:hover {
+            transform: translateY(-4px);
+            border-color: rgba(245, 158, 11, 0.2);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .gallery-item .img-wrapper {
+            position: relative; padding-top: 100%;
+            background: #0a0a1a; overflow: hidden;
+        }
+        .gallery-item .img-wrapper img {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s;
+        }
+        .gallery-item:hover .img-wrapper img { transform: scale(1.04); }
+        .gallery-item .img-wrapper .overlay {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            padding: 30px 12px 12px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .gallery-item:hover .img-wrapper .overlay { opacity: 1; }
+        .gallery-item .img-wrapper .overlay .actions {
+            display: flex; gap: 6px; justify-content: flex-end;
+        }
+        .gallery-item .img-wrapper .overlay .actions button {
+            background: rgba(0,0,0,0.5); border: none;
+            color: white; padding: 4px 10px; border-radius: 6px;
+            font-size: 11px; cursor: pointer;
+            transition: all 0.2s; backdrop-filter: blur(4px);
+        }
+        .gallery-item .img-wrapper .overlay .actions button:hover {
+            background: rgba(245, 158, 11, 0.8);
+        }
+        .gallery-item .info { padding: 10px 14px 12px; }
+        .gallery-item .info .filename {
+            font-size: 13px; font-weight: 500;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .gallery-item .info .meta {
+            font-size: 11px; color: #555; margin-top: 4px;
+            display: flex; justify-content: space-between;
+        }
+        .gallery-item .info .meta .cdn-badge {
+            font-size: 9px;
+            background: rgba(46, 204, 113, 0.12);
+            color: #2ecc71;
+            padding: 0 6px;
+            border-radius: 10px;
+        }
+
+        /* ===== 空状态 ===== */
+        .empty-state {
+            text-align: center; padding: 80px 20px; color: #555;
+        }
+        .empty-state .icon { font-size: 56px; display: block; margin-bottom: 16px; opacity: 0.5; }
+        .empty-state h3 { color: #888; font-size: 18px; margin-bottom: 8px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ===== 上传弹窗 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            z-index: 9999;
+            justify-content: center; align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #16213e; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+            max-width: 520px; width: 100%;
+            padding: 32px;
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal .modal-header h3 { color: #f59e0b; font-size: 20px; }
+        .modal .modal-header .close {
+            background: none; border: none; color: #666;
+            font-size: 24px; cursor: pointer;
+        }
+        .modal .modal-header .close:hover { color: #dc3545; }
+        .modal .drop-zone {
+            border: 2px dashed rgba(255,255,255,0.08);
+            border-radius: 14px; padding: 40px 20px;
+            text-align: center; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .modal .drop-zone:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.04); }
+        .modal .drop-zone.dragover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.08); }
+        .modal .drop-zone .icon { font-size: 40px; display: block; margin-bottom: 12px; color: #555; }
+        .modal .drop-zone p { color: #888; font-size: 14px; }
+        .modal .drop-zone .hint { font-size: 12px; color: #555; margin-top: 8px; }
+        .modal .drop-zone input { display: none; }
+        .modal .options-row {
+            display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap;
+        }
+        .modal .options-row label {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; color: #888; cursor: pointer;
+        }
+        .modal .options-row input[type="checkbox"] {
+            accent-color: #f59e0b; width: 14px; height: 14px;
+        }
+        .modal .progress-wrap { display: none; margin-top: 16px; }
+        .modal .progress-wrap .bar {
+            height: 4px; background: rgba(255,255,255,0.06);
+            border-radius: 4px; overflow: hidden;
+        }
+        .modal .progress-wrap .bar .fill {
+            height: 100%; background: linear-gradient(135deg, #f59e0b, #d97706);
+            width: 0%; transition: width 0.3s;
+        }
+        .modal .progress-wrap .text {
+            font-size: 12px; color: #888; margin-top: 8px; text-align: center;
+        }
+        .modal .powered-by {
+            margin-top: 16px; text-align: center;
+            font-size: 11px; color: #444;
+        }
+        .modal .powered-by a { color: #f59e0b; text-decoration: none; }
+
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 13px; z-index: 99999;
+            background: #16213e; border: 1px solid rgba(255,255,255,0.06);
+            color: #eef4ff; opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { border-color: #2ecc71; color: #2ecc71; }
+        .toast.error { border-color: #dc3545; color: #dc3545; }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .container { padding: 12px 16px; }
+            .header-left .title { font-size: 17px; }
+            .header-left .subtitle { display: none; }
+            .tabs { gap: 2px; padding: 3px; }
+            .tab-btn { padding: 6px 12px; font-size: 12px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .search-box input { width: 100%; }
+            .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .modal { padding: 20px; }
+            .modal .options-row { flex-direction: column; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-gradient"></div>
+<div class="bg-blur-1"></div>
+<div class="bg-blur-2"></div>
+
+<div class="container">
+
+    <!-- ===== 顶部导航 ===== -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo"></div>
+            <div>
+                <div class="title">NFLSHC 图床</div>
+                <div class="subtitle">
+                    配合 NFLSHC Chat 使用 · 全球 DNS 加速
+                    <span class="badge">🚀 CDN</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="nav-link" id="apiStatus">
+                <span class="dot online" id="statusDot"></span>
+                <span id="statusText">已连接</span>
+            </span>
+            <a href="#" onclick="loadImages()" class="nav-link">🔄 刷新</a>
+            <a href="chat.html" class="nav-link">💬 聊天</a>
+            <div class="user-badge">
+                <div class="avatar" id="userAvatar">U</div>
+                <span id="userName">用户</span>
+                <span class="plan" id="userPlan">免费</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== Tab 导航 ===== -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="albums" onclick="switchTab('albums')">
+            📸 相册 <span class="badge" id="albumCount">0</span>
+        </button>
+        <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">
+            📤 上传
+        </button>
+        <button class="tab-btn" data-tab="stats" onclick="switchTab('stats')">
+            📊 统计
+        </button>
+    </div>
+
+    <!-- ===== Tab: 相册 ===== -->
+    <div class="tab-content active" id="tab-albums">
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="number" id="totalImages">0</div>
+                <div class="label">📸 图片总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalSize">0 KB</div>
+                <div class="label">📦 总大小</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalViews">0</div>
+                <div class="label">👁️ 总浏览</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="cdnStatus">🌐</div>
+                <div class="label">⚡ CDN 加速</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <button class="btn btn-primary" onclick="openUploadModal()">
+                    <i class="fas fa-upload"></i> 上传
+                </button>
+                <button class="btn btn-outline" onclick="loadImages()">
+                    <i class="fas fa-sync"></i> 刷新
+                </button>
+                <button class="btn btn-ghost" onclick="clearSelection()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="toolbar-right">
+                <div class="search-box">
+                    <span class="icon"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" placeholder="搜索文件名..." oninput="filterImages()">
+                </div>
+            </div>
+        </div>
+
+        <div class="gallery-grid" id="galleryGrid">
+            <div class="empty-state" id="emptyState">
+                <span class="icon">🖼️</span>
+                <h3>暂无图片</h3>
+                <p>点击「上传」按钮上传第一张图片</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Tab: 上传 ===== -->
+    <div class="tab-content" id="tab-upload">
+        <div class="stats-grid" style="grid-template-columns: 1fr;">
+            <div class="stat-card" style="text-align:center;padding:40px;">
+                <div style="font-size:48px;margin-bottom:16px;">📤</div>
+                <h3 style="color:#f59e0b;font-size:20px;margin-bottom:8px;">上传图片到 NFLSHC 图床</h3>
+                <p style="color:#666;font-size:14px;margin-bottom:8px;">支持 JPG、PNG、GIF、WebP、SVG · 最大 5MB</p>
+                <p style="color:#555;font-size:12px;margin-bottom:20px;">
+                    🌐 全球 DNS 加速 · 图片自动同步到 GitHub Issues
+                </p>
+                <button class="btn btn-primary" onclick="openUploadModal()" style="font-size:16px;padding:12px 32px;">
+                    <i class="fas fa-upload"></i> 选择图片上传
+                </button>
+                <div style="margin-top:16px;font-size:12px;color:#444;line-height:1.8;">
+                    💡 由 <a href="https://www.imgurl.org" target="_blank" style="color:#f59e0b;text-decoration:none;">ImgURL</a> 提供技术支持
+                    <br>🚀 配合 NFLSHC Chat 使用 · 图片永久存储
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Tab: 统计 ===== -->
+    <div class="tab-content" id="tab-stats">
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="stat-card">
+                <div class="number" id="statTotal">0</div>
+                <div class="label">总图片数</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="statSize">0 KB</div>
+                <div class="label">总存储大小</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="statToday">0</div>
+                <div class="label">今日上传</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="statViews">0</div>
+                <div class="label">总浏览量</div>
+            </div>
+        </div>
+        <div class="stat-card" style="margin-top:16px;padding:20px;">
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <div style="color:#666;font-size:12px;">🔗 API 状态</div>
+                    <div style="color:#2ecc71;font-size:14px;" id="apiStatusDetail">✅ 已连接</div>
+                </div>
+                <div>
+                    <div style="color:#666;font-size:12px;">🌐 CDN 加速</div>
+                    <div style="color:#2ecc71;font-size:14px;">✅ 全球 DNS 加速</div>
+                </div>
+                <div>
+                    <div style="color:#666;font-size:12px;">💾 存储引擎</div>
+                    <div style="color:#f59e0b;font-size:14px;">ImgURL + GitHub Issues</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== 上传弹窗 ===== -->
+<div class="modal-overlay" id="uploadModal" onclick="if(event.target===this)closeUploadModal()">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>📤 上传图片</h3>
+            <button class="close" onclick="closeUploadModal()">✕</button>
+        </div>
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <span class="icon">📁</span>
+            <p>点击或拖拽图片到此处</p>
+            <div class="hint">支持 JPG、PNG、GIF、WebP、SVG · 最大 5MB</div>
+            <input type="file" id="fileInput" accept="image/*" multiple>
+        </div>
+        <div class="options-row">
+            <label>
+                <input type="checkbox" id="optDedup" checked> 去重
+            </label>
+            <label>
+                <input type="checkbox" id="optCompress"> 压缩图片
+            </label>
+            <label>
+                <input type="checkbox" id="optWatermark"> 水印
+            </label>
+        </div>
+        <div class="progress-wrap" id="progressWrap">
+            <div class="bar"><div class="fill" id="progressFill"></div></div>
+            <div class="text" id="progressText">上传中...</div>
+        </div>
+        <div class="powered-by">
+            ⚡ 由 <a href="https://www.imgurl.org" target="_blank">ImgURL</a> 提供支持 · 全球 DNS 加速
+        </div>
+    </div>
+</div>
+
+<!-- ===== Toast ===== -->
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+    // ============================================================
+    //  API 配置
+    // ============================================================
+    const API_TOKEN = 'sk-3MFTmxvC35FoUwJDVDcVRrBXNEvwZloqhQxeFBC4sha2DrzYZYT6p2e4D6NKh';
+    const API_BASE_URL = 'https://www.imgurl.org';
+
+    // ============================================================
+    //  状态
+    // ============================================================
+    let currentUser = null;
+    let allImages = [];
+    let filteredImages = [];
+    let isUploading = false;
+
+    // ============================================================
+    //  登录检查（必须登录，否则跳转）
+    // ============================================================
+    function checkAuth() {
+        let userStr = sessionStorage.getItem('currentUser') || localStorage.getItem('nflshc_currentUser');
+        if (!userStr) {
+            window.location.href = 'index.html';
+            return false;
+        }
+        try {
+            currentUser = JSON.parse(userStr);
+            document.getElementById('userName').textContent = currentUser.username;
+            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+            if (currentUser.isAdmin || currentUser.username === 'huangzhiyuan') {
+                document.getElementById('userPlan').textContent = '管理员';
+                document.getElementById('userPlan').style.color = '#f59e0b';
+            }
+            return true;
+        } catch(e) {
+            window.location.href = 'index.html';
+            return false;
+        }
+    }
+    if (!checkAuth()) {
+        // 如果 checkAuth 没有跳转，这里再确保一下
+        window.location.href = 'index.html';
+    }
+
+    // ============================================================
+    //  GitHub 存储 Key
+    // ============================================================
+    function getImageLabel() {
+        return `image_${currentUser.username}`;
+    }
+
+    // ============================================================
+    //  从 GitHub Issues 加载图片列表
+    // ============================================================
+    async function loadImagesFromGitHub() {
+        try {
+            const label = getImageLabel();
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${label}&state=open`;
+            const res = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            const issues = await res.json();
+            const images = [];
+
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try {
+                        const data = JSON.parse(match[1]);
+                        images.push({ ...data, issueNumber: issue.number });
+                    } catch(e) {}
+                }
+            }
+
+            images.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+            return images;
+        } catch (error) {
+            console.error('从 GitHub 加载失败:', error);
+            return [];
+        }
+    }
+
+    // ============================================================
+    //  保存图片列表到 GitHub Issues
+    // ============================================================
+    async function saveImageToGitHub(imageData) {
+        try {
+            const label = getImageLabel();
+            const issueBody = `图片信息\n\`\`\`json\n${JSON.stringify(imageData, null, 2)}\n\`\`\``;
+            const res = await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: `图片: ${imageData.filename}`,
+                    body: issueBody,
+                    labels: [label]
+                })
+            });
+            const data = await res.json();
+            return data.number;
+        } catch (error) {
+            console.error('保存到 GitHub 失败:', error);
+            return null;
+        }
+    }
+
+    // ============================================================
+    //  从 GitHub 删除图片
+    // ============================================================
+    async function deleteImageFromGitHub(issueNumber) {
+        try {
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: 'closed' })
+            });
+            return true;
+        } catch (error) {
+            console.error('从 GitHub 删除失败:', error);
+            return false;
+        }
+    }
+
+    // ============================================================
+    //  加载图片
+    // ============================================================
+    async function loadImages() {
+        if (!currentUser) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        try {
+            allImages = await loadImagesFromGitHub();
+            filteredImages = [...allImages];
+            renderGallery();
+            updateStats();
+            updateApiStatus(true);
+        } catch (error) {
+            console.error('加载失败:', error);
+            showToast('加载失败: ' + error.message, 'error');
+            updateApiStatus(false);
+        }
+    }
+
+    // ============================================================
+    //  ImgURL API 调用
+    // ============================================================
+    async function callImgURL(endpoint, options = {}) {
+        const url = `${API_BASE_URL}${endpoint}`;
+        const headers = {
+            'Authorization': `Bearer ${API_TOKEN}`,
+            ...options.headers
+        };
+        if (!(options.body instanceof FormData)) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        const config = {
+            method: options.method || 'GET',
+            headers: headers,
+            body: options.body,
+        };
+
+        const response = await fetch(url, config);
+        const data = await response.json();
+        if (data.code === 200) {
+            return data;
+        } else {
+            throw new Error(data.msg || 'API 请求失败');
+        }
+    }
+
+    // ============================================================
+    //  上传图片到 ImgURL
+    // ============================================================
+    async function uploadToImgURL(file, params = {}) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const extraParams = {
+            dedup: params.dedup !== undefined ? params.dedup : true,
+            compress: params.compress || false,
+            watermark: params.watermark || false,
+        };
+        formData.append('params', JSON.stringify(extraParams));
+
+        const data = await callImgURL('/api/v3/upload', {
+            method: 'POST',
+            body: formData,
+        });
+        return data.data;
+    }
+
+    // ============================================================
+    //  删除图片（ImgURL）
+    // ============================================================
+    async function deleteImagesFromImgURL(imageIds) {
+        if (!imageIds || imageIds.length === 0) return 0;
+        const data = await callImgURL('/api/v3/delete_images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_ids: imageIds }),
+        });
+        return data.data.count;
+    }
+
+    // ============================================================
+    //  处理上传
+    // ============================================================
+    async function handleUpload(files) {
+        if (!files || files.length === 0 || isUploading) return;
+
+        const progressWrap = document.getElementById('progressWrap');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        isUploading = true;
+        progressWrap.style.display = 'block';
+
+        const dedup = document.getElementById('optDedup').checked;
+        const compress = document.getElementById('optCompress').checked;
+        const watermark = document.getElementById('optWatermark').checked;
+
+        let success = 0, failed = 0;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const pct = Math.round(((i + 1) / files.length) * 100);
+            progressFill.style.width = pct + '%';
+            progressText.textContent = `上传中 ${i+1}/${files.length} (${pct}%)`;
+
+            try {
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast(`❌ ${file.name} 超过 5MB`, 'error');
+                    failed++;
+                    continue;
+                }
+                if (!file.type.startsWith('image/')) {
+                    showToast(`❌ ${file.name} 不是图片`, 'error');
+                    failed++;
+                    continue;
+                }
+
+                // 上传到 ImgURL
+                const result = await uploadToImgURL(file, { dedup, compress, watermark });
+
+                const imageData = {
+                    id: result.imgid,
+                    filename: result.filename || file.name,
+                    url: result.url,
+                    thumbnail_url: result.thumbnail_url || result.url,
+                    width: result.width || 0,
+                    height: result.height || 0,
+                    size: result.size || file.size,
+                    uploadedBy: currentUser.username,
+                    uploadedAt: new Date().toISOString(),
+                    views: 0
+                };
+
+                // 保存到 GitHub Issues
+                const issueNumber = await saveImageToGitHub(imageData);
+                if (issueNumber) {
+                    imageData.issueNumber = issueNumber;
+                }
+
+                allImages.unshift(imageData);
+                success++;
+
+            } catch (error) {
+                console.error('上传失败:', error);
+                showToast(`❌ ${file.name} 失败: ${error.message}`, 'error');
+                failed++;
+            }
+        }
+
+        progressFill.style.width = '100%';
+        progressText.textContent = `完成! 成功 ${success} 个，失败 ${failed} 个`;
+
+        setTimeout(() => {
+            progressWrap.style.display = 'none';
+            closeUploadModal();
+            filteredImages = [...allImages];
+            renderGallery();
+            updateStats();
+            showToast(`✅ 上传完成: 成功 ${success} 个，失败 ${failed} 个`, success > 0 ? 'success' : 'error');
+            isUploading = false;
+        }, 1500);
+    }
+
+    // ============================================================
+    //  删除图片
+    // ============================================================
+    async function deleteImage(imageId) {
+        if (!confirm('确定要删除这张图片吗？')) return;
+        const img = allImages.find(i => i.id === imageId);
+        if (!img) { showToast('图片不存在', 'error'); return; }
+
+        try {
+            // 从 ImgURL 删除
+            await deleteImagesFromImgURL([imageId]);
+
+            // 从 GitHub Issues 删除
+            if (img.issueNumber) {
+                await deleteImageFromGitHub(img.issueNumber);
+            }
+
+            // 从本地列表移除
+            allImages = allImages.filter(i => i.id !== imageId);
+            filteredImages = [...allImages];
+            renderGallery();
+            updateStats();
+            showToast('✅ 已删除', 'success');
+
+        } catch (error) {
+            showToast('❌ 删除失败: ' + error.message, 'error');
+        }
+    }
+
+    // ============================================================
+    //  渲染
+    // ============================================================
+    function renderGallery() {
+        const grid = document.getElementById('galleryGrid');
+        const items = filteredImages;
+
+        if (items.length === 0) {
+            grid.innerHTML = `<div class="empty-state">
+                <span class="icon">🖼️</span>
+                <h3>${allImages.length === 0 ? '暂无图片' : '没有匹配的图片'}</h3>
+                <p>${allImages.length === 0 ? '点击「上传」按钮上传第一张图片' : '试试其他搜索关键词'}</p>
+            </div>`;
+            return;
+        }
+
+        grid.innerHTML = items.map(img => `
+            <div class="gallery-item" data-id="${img.id}">
+                <div class="img-wrapper">
+                    <img src="${img.url}" alt="${img.filename}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%231a1a2e\'/%3E%3Ctext x=\'100\' y=\'100\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23555\' font-size=\'14\' font-family=\'sans-serif\'%3E加载失败%3C/text%3E%3C/svg%3E'">
+                    <div class="overlay">
+                        <div class="actions">
+                            <button onclick="event.stopPropagation();copyUrl('${img.url}')" title="复制链接">📋</button>
+                            <button onclick="event.stopPropagation();window.open('${img.url}','_blank')" title="查看">🔗</button>
+                            <button onclick="event.stopPropagation();deleteImage('${img.id}')" title="删除">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="info">
+                    <div class="filename" title="${img.filename}">${img.filename}</div>
+                    <div class="meta">
+                        <span>${formatFileSize(img.size)}</span>
+                        <span class="cdn-badge">🌐 CDN</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('albumCount').textContent = allImages.length;
+    }
+
+    // ============================================================
+    //  更新统计
+    // ============================================================
+    function updateStats() {
+        const total = allImages.length;
+        const size = allImages.reduce((s, i) => s + (i.size || 0), 0);
+        const views = allImages.reduce((s, i) => s + (i.views || 0), 0);
+        const today = allImages.filter(i => new Date(i.uploadedAt).toDateString() === new Date().toDateString()).length;
+
+        document.getElementById('totalImages').textContent = total;
+        document.getElementById('totalSize').textContent = formatFileSize(size);
+        document.getElementById('totalViews').textContent = views;
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statSize').textContent = formatFileSize(size);
+        document.getElementById('statToday').textContent = today;
+        document.getElementById('statViews').textContent = views;
+        document.getElementById('albumCount').textContent = total;
+        document.getElementById('cdnStatus').textContent = '🌐 已加速';
+    }
+
+    // ============================================================
+    //  API 状态
+    // ============================================================
+    function updateApiStatus(online) {
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+        if (online) {
+            dot.className = 'dot online';
+            text.textContent = 'API 已连接';
+            document.getElementById('apiStatusDetail').textContent = '✅ 已连接';
+        } else {
+            dot.className = 'dot offline';
+            text.textContent = 'API 离线';
+            document.getElementById('apiStatusDetail').textContent = '❌ 离线';
+        }
+    }
+
+    // ============================================================
+    //  工具函数
+    // ============================================================
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function showToast(msg, type = '') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast ' + type;
+        requestAnimationFrame(() => toast.classList.add('show'));
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function copyUrl(url) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => showToast('✅ 链接已复制', 'success'));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('✅ 链接已复制', 'success');
+        }
+    }
+
+    function filterImages() {
+        const q = document.getElementById('searchInput').value.toLowerCase().trim();
+        if (!q) { filteredImages = [...allImages]; renderGallery(); return; }
+        filteredImages = allImages.filter(img => img.filename.toLowerCase().includes(q));
+        renderGallery();
+    }
+
+    function clearSelection() {
+        document.getElementById('searchInput').value = '';
+        filteredImages = [...allImages];
+        renderGallery();
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+        if (tab === 'albums') renderGallery();
+    }
+
+    function openUploadModal() {
+        document.getElementById('uploadModal').classList.add('open');
+        document.getElementById('fileInput').value = '';
+        document.getElementById('progressWrap').style.display = 'none';
+    }
+
+    function closeUploadModal() {
+        document.getElementById('uploadModal').classList.remove('open');
+    }
+
+    // ============================================================
+    //  拖拽上传
+    // ============================================================
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) handleUpload(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) handleUpload(fileInput.files);
+        fileInput.value = '';
+    });
+
+    // ============================================================
+    //  初始化
+    // ============================================================
+    async function init() {
+        // 测试 API 连接
+        try {
+            await callImgURL('/api/v3/album_list');
+            updateApiStatus(true);
+        } catch (error) {
+            updateApiStatus(false);
+            showToast('⚠️ ImgURL API 连接失败，请检查网络', 'error');
+        }
+
+        await loadImages();
+        document.getElementById('cdnStatus').textContent = '🌐 全球加速';
+    }
+
+    // 暴露全局函数
+    window.loadImages = loadImages;
+    window.switchTab = switchTab;
+    window.openUploadModal = openUploadModal;
+    window.closeUploadModal = closeUploadModal;
+    window.handleUpload = handleUpload;
+    window.deleteImage = deleteImage;
+    window.copyUrl = copyUrl;
+    window.filterImages = filterImages;
+    window.clearSelection = clearSelection;
+
+    init();
+
+    console.log('📤 NFLSHC 图床已加载 (主仓库版本)');
+    console.log('👤 当前用户:', currentUser?.username);
+    console.log('🔗 ImgURL API: 已配置');
+    console.log('💾 存储: GitHub Issues');
+    console.log('🌐 CDN: 全球加速');
+</script>
+
+</body>
+</html>
