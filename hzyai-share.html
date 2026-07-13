@@ -607,6 +607,126 @@
             .msg-item { flex-wrap: wrap; }
             .msg-item .msg-content { width: 100%; }
         }
+        /* ===== 角色公开/复用样式 ===== */
+        .character-share-section {
+            background: #16213e;
+            border-radius: 12px;
+            border: 1px solid #2a2a3e;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .character-share-section h2 {
+            color: #ffd700;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .character-share-section .hint {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+        .public-char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .public-char-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+            padding: 14px;
+            transition: all 0.2s;
+        }
+        .public-char-card:hover {
+            border-color: #ffd700;
+            transform: translateY(-2px);
+        }
+        .public-char-card .char-name {
+            color: #ffd700;
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .public-char-card .char-author {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        .public-char-card .char-persona {
+            font-size: 12px;
+            color: #aaa;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .public-char-card .char-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .public-char-card .char-actions button {
+            flex: 1;
+            padding: 4px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .public-char-card .char-actions .import-btn {
+            background: #2ecc71;
+            color: #1a1a2e;
+        }
+        .public-char-card .char-actions .import-btn:hover {
+            opacity: 0.8;
+        }
+        .publish-char-btn {
+            background: #ffd700;
+            color: #1a1a2e;
+            padding: 6px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .publish-char-btn:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+        .publish-char-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 12px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .publish-char-list .char-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            gap: 8px;
+        }
+        .publish-char-list .char-item .char-info {
+            flex: 1;
+            font-size: 13px;
+            color: #ddd;
+        }
+        .publish-char-list .char-item .char-info span {
+            font-size: 11px;
+            color: #888;
+        }
+        @media (max-width: 768px) {
+            .public-char-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
     <!-- 引入 Marked 和 Highlight.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -652,6 +772,7 @@
         <div class="tabs">
             <button class="tab-btn active" data-tab="share" onclick="switchTab('share')">📤 分享对话</button>
             <button class="tab-btn" data-tab="browse" onclick="switchTab('browse')">📖 浏览公开对话</button>
+            <button class="tab-btn" data-tab="characters" onclick="switchTab('characters')">🎭 公开角色</button>
         </div>
 
         <!-- ===== Tab 1: 分享对话 ===== -->
@@ -699,6 +820,26 @@
                         <span class="icon">📖</span>
                         加载中...
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Tab 3: 公开角色 ===== -->
+        <div class="tab-content" id="tab-characters">
+            <!-- 发布角色 -->
+            <div class="character-share-section">
+                <h2>📤 发布角色</h2>
+                <div class="hint">将你在 HZYAI 中创建的角色公开分享给其他用户</div>
+                <div class="publish-char-list" id="publishCharList">
+                    <div style="color:#666;text-align:center;padding:20px;">⏳ 加载中...</div>
+                </div>
+            </div>
+            <!-- 浏览公开角色 -->
+            <div class="character-share-section">
+                <h2>🎭 公开角色</h2>
+                <div class="hint">浏览其他用户分享的角色，一键导入使用</div>
+                <div id="publicCharGrid" class="public-char-grid">
+                    <div style="color:#666;text-align:center;padding:20px;">⏳ 加载中...</div>
                 </div>
             </div>
         </div>
@@ -824,6 +965,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
             if (tab === 'browse') loadPublicChats();
+            if (tab === 'characters') { loadMyCharactersForPublish(); loadPublicCharactersFromGitHub(); }
         }
 
         // ============================================================
@@ -1309,6 +1451,182 @@
         window.closePublicDetail = closePublicDetail;
 
         document.addEventListener('DOMContentLoaded', init);
+
+        // ============================================================
+        //  🎭 角色公开与复用
+        // ============================================================
+        const PUBLIC_CHAR_LABEL = 'hzyai_public_character';
+        let publicCharacters = [];
+
+        // 加载本地角色列表供发布
+        function loadMyCharactersForPublish() {
+            const container = document.getElementById('publishCharList');
+            if (!container) return;
+            const characters = JSON.parse(localStorage.getItem('hzyai_characters') || '[]');
+            if (characters.length === 0) {
+                container.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">📭 暂无本地角色，请先在 HZYAI 中创建角色</div>';
+                return;
+            }
+            container.innerHTML = characters.map(char => `
+                <div class="char-item">
+                    <div class="char-info">${escapeHtml(char.name)} <span>${escapeHtml(char.tone)}</span></div>
+                    <button class="publish-char-btn" onclick="publishCharacterToGitHub('${char.id}')">📤 公开</button>
+                </div>
+            `).join('');
+        }
+
+        async function publishCharacterToGitHub(characterId) {
+            const characters = JSON.parse(localStorage.getItem('hzyai_characters') || '[]');
+            const char = characters.find(c => c.id === characterId);
+            if (!char) { alert('角色不存在'); return; }
+
+            const publicChar = {
+                id: 'pub_char_' + Date.now(),
+                name: char.name,
+                persona: char.persona,
+                tone: char.tone,
+                knowledge: char.knowledge,
+                author: currentUser.username,
+                publishedAt: new Date().toISOString(),
+                usageCount: 0,
+                sourceId: char.id
+            };
+
+            try {
+                const issueBody = 'HZYAI公开角色\n```json\n' + JSON.stringify(publicChar, null, 2) + '\n```';
+                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: 'HZYAI公开角色: ' + char.name,
+                        body: issueBody,
+                        labels: [PUBLIC_CHAR_LABEL]
+                    })
+                });
+                alert('✅ 角色 "' + char.name + '" 已公开分享！');
+                loadPublicCharactersFromGitHub();
+            } catch (error) {
+                console.error('发布角色失败:', error);
+                alert('❌ 发布失败: ' + error.message);
+            }
+        }
+
+        async function loadPublicCharactersFromGitHub() {
+            const container = document.getElementById('publicCharGrid');
+            if (!container) return;
+            container.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">⏳ 加载中...</div>';
+
+            try {
+                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=' + PUBLIC_CHAR_LABEL + '&state=open';
+                const res = await fetch(url, {
+                    headers: {
+                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                const issues = await res.json();
+                publicCharacters = [];
+
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const data = JSON.parse(match[1]);
+                            publicCharacters.push({ ...data, issueNumber: issue.number });
+                        } catch (e) {}
+                    }
+                }
+                renderPublicCharacters();
+            } catch (error) {
+                console.error('加载公开角色失败:', error);
+                container.innerHTML = '<div style="color:#dc3545;text-align:center;padding:20px;">❌ 加载失败: ' + error.message + '</div>';
+            }
+        }
+
+        function renderPublicCharacters() {
+            const container = document.getElementById('publicCharGrid');
+            if (!container) return;
+            if (publicCharacters.length === 0) {
+                container.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">📭 暂无公开角色</div>';
+                return;
+            }
+            container.innerHTML = publicCharacters.map(c => {
+                let deleteBtn = '';
+                if (c.author === (currentUser ? currentUser.username : '')) {
+                    deleteBtn = '<button onclick="deletePublicCharacter(\'' + c.id + '\')" style="background:#dc3545;color:white;">🗑️ 删除</button>';
+                }
+                return '<div class="public-char-card"><div class="char-name">' + escapeHtml(c.name) + '</div><div class="char-author">👤 ' + escapeHtml(c.author) + ' · ' + formatTime(c.publishedAt) + '</div><div class="char-persona">' + escapeHtml(c.persona.substring(0, 80)) + (c.persona.length > 80 ? '...' : '') + '</div><div style="font-size:10px;color:#555;margin-top:4px;">❤️ ' + (c.usageCount || 0) + ' 次使用</div><div class="char-actions"><button class="import-btn" onclick="importPublicCharacter(\'' + c.id + '\')">📥 导入使用</button>' + deleteBtn + '</div></div>';
+            }).join('');
+        }
+
+        function importPublicCharacter(charId) {
+            const char = publicCharacters.find(c => c.id === charId);
+            if (!char) { alert('角色不存在'); return; }
+            const localChars = JSON.parse(localStorage.getItem('hzyai_characters') || '[]');
+            if (localChars.some(c => c.name === char.name && c.persona === char.persona)) {
+                if (!confirm('已存在相同角色，是否覆盖？')) return;
+                const existingIndex = localChars.findIndex(c => c.name === char.name && c.persona === char.persona);
+                if (existingIndex !== -1) {
+                    localChars[existingIndex] = { id: localChars[existingIndex].id, name: char.name, persona: char.persona, tone: char.tone || 'casual', knowledge: char.knowledge || '', memory: '已从公开角色导入\n来源: ' + char.author, createdAt: new Date().toISOString() };
+                }
+            } else {
+                localChars.push({ id: 'imported_' + Date.now(), name: char.name, persona: char.persona, tone: char.tone || 'casual', knowledge: char.knowledge || '', memory: '已从公开角色导入\n来源: ' + char.author, createdAt: new Date().toISOString() });
+            }
+            localStorage.setItem('hzyai_characters', JSON.stringify(localChars));
+            updatePublicCharacterUsage(charId);
+            alert('✅ 角色 "' + char.name + '" 已导入到本地！');
+        }
+
+        async function updatePublicCharacterUsage(charId) {
+            const char = publicCharacters.find(c => c.id === charId);
+            if (!char) return;
+            char.usageCount = (char.usageCount || 0) + 1;
+            try {
+                const issueBody = 'HZYAI公开角色\n```json\n' + JSON.stringify(char, null, 2) + '\n```';
+                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + char.issueNumber, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ body: issueBody })
+                });
+            } catch (error) { console.error('更新使用次数失败:', error); }
+        }
+
+        async function deletePublicCharacter(charId) {
+            if (!confirm('确定要删除这个公开角色吗？')) return;
+            const char = publicCharacters.find(c => c.id === charId);
+            if (!char) return;
+            try {
+                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + char.issueNumber, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ state: 'closed' })
+                });
+                alert('✅ 已删除公开角色');
+                loadPublicCharactersFromGitHub();
+            } catch (error) {
+                console.error('删除失败:', error);
+                alert('❌ 删除失败: ' + error.message);
+            }
+        }
+
+        // 暴露到全局
+        window.publishCharacterToGitHub = publishCharacterToGitHub;
+        window.loadPublicCharactersFromGitHub = loadPublicCharactersFromGitHub;
+        window.importPublicCharacter = importPublicCharacter;
+        window.deletePublicCharacter = deletePublicCharacter;
+        window.loadMyCharactersForPublish = loadMyCharactersForPublish;
     </script>
 </body>
 </html>

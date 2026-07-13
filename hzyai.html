@@ -1827,6 +1827,127 @@
                 grid-template-columns: 1fr;
             }
         }
+        /* ===== 统计面板样式 ===== */
+        .stats-panel {
+            display: none;
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2a2a3e;
+            margin: 6px 24px 0 24px;
+        }
+        .stats-panel.active {
+            display: block;
+        }
+        .stats-panel .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .stats-panel .stats-header h3 {
+            color: #ffd700;
+            font-size: 16px;
+        }
+        .stats-panel .stats-header .reset-btn {
+            background: #2a2a3e;
+            color: #888;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        .stats-panel .stats-header .reset-btn:hover {
+            background: #dc3545;
+            color: white;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .stats-grid .stat-item {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stats-grid .stat-item .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .stats-grid .stat-item .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .stats-grid .stat-item .stat-number.blue { color: #3498db; }
+        .stats-grid .stat-item .stat-number.green { color: #2ecc71; }
+        .stats-grid .stat-item .stat-number.purple { color: #9b59b6; }
+        .stats-grid .stat-item .stat-number.red { color: #dc3545; }
+        .model-usage-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .model-usage-list .model-tag {
+            background: #1a1a2e;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            color: #aaa;
+            border: 1px solid #2a2a3e;
+        }
+        .model-usage-list .model-tag .count {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .stats-detail {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #2a2a3e;
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .stats-detail .today-calls {
+            color: #2ecc71;
+        }
+        .stats-toggle-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+        .stats-toggle-btn:hover {
+            color: #ffd700;
+            background: rgba(255,215,0,0.1);
+        }
+        @media (max-width: 768px) {
+            .stats-panel {
+                margin: 4px 12px 0 12px;
+                padding: 12px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .stats-grid .stat-item .stat-number {
+                font-size: 18px;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -1879,6 +2000,7 @@
                 <button class="mode-tab" data-mode="task" onclick="switchMode('task')">⏰ 定时任务</button>
                 <button class="mode-tab" data-mode="character" onclick="switchMode('character')">🎭 角色</button>
                 <button class="mode-tab" data-mode="film" onclick="switchMode('film')">🎬 AI 短片</button>
+                <button class="mode-tab" data-mode="stats" onclick="switchMode('stats')">📊 统计</button>
             </div>
 
             <!-- ====== 每日一言 ====== -->
@@ -1887,6 +2009,22 @@
                 <div class="quote-content" id="quoteContent">
                     <span class="quote-loading">📖 加载每日一言...</span>
                 </div>
+            </div>
+
+            <!-- ====== 统计面板 ====== -->
+            <div class="stats-panel" id="statsPanel">
+                <div class="stats-header">
+                    <h3>📊 使用统计</h3>
+                    <div>
+                        <button class="stats-toggle-btn" onclick="toggleStatsDetail()">📋 详情</button>
+                        <button class="reset-btn" onclick="resetStats()">🗑️ 重置</button>
+                    </div>
+                </div>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- 由 JS 动态渲染 -->
+                </div>
+                <div class="model-usage-list" id="modelUsageList"></div>
+                <div class="stats-detail" id="statsDetail" style="display:none;"></div>
             </div>
 
             <!-- ====== 聊天模式 ====== -->
@@ -2965,6 +3103,7 @@
                 
                 if (data && data.choices && data.choices[0] && data.choices[0].message) {
                     let text = data.choices[0].message.content;
+                    recordCall('agnes-2.0-flash', 50);
                     // 确保格式为 blockquote
                     let renderedHtml = renderMarkdown(text);
                     if (!renderedHtml.includes('<blockquote>')) {
@@ -3181,6 +3320,7 @@
 
             if (reply) {
                 addMessage('assistant', reply);
+                recordCall(model, reply ? reply.length : 0);
             } else {
                 addMessage('assistant', '抱歉，我遇到了一些问题，请稍后再试。');
             }
@@ -3582,6 +3722,8 @@
                 downloadBtn.style.display = 'inline-block';
                 loading.classList.remove('active');
 
+                recordCall(model || 'agnes-image', 100);
+
                 addToHistory('image', imageUrl, prompt);
                 addMessage('assistant', `🎨 生成的图片：${prompt}`, imageUrl, 'image');
                 removeReferenceImage();
@@ -3780,6 +3922,8 @@
                 downloadBtn.style.display = 'inline-block';
                 loading.classList.remove('active');
 
+                recordCall(model || 'agnes-video', 200);
+
                 addToHistory('video', videoUrl, prompt);
                 addMessage('assistant', `🎬 生成的视频：${prompt}`, videoUrl, 'video');
                 removeVideoReferenceImage();
@@ -3897,6 +4041,7 @@
                     output.textContent = result;
                     output.style.display = 'block';
                     addMessage('assistant', `👁️ 视觉分析结果：${result}`);
+                    recordCall(model || 'vision', 150);
                 } else {
                     throw new Error(data.error?.message || '分析失败');
                 }
@@ -4812,7 +4957,7 @@
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'film'];
+            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'film', 'stats'];
             const elements = {
                 chat: document.getElementById('chatMode'),
                 vision: document.getElementById('visionMode'),
@@ -4820,7 +4965,8 @@
                 video: document.getElementById('videoMode'),
                 task: document.getElementById('taskMode'),
                 character: document.getElementById('characterMode'),
-                film: document.getElementById('filmMode')
+                film: document.getElementById('filmMode'),
+                stats: document.getElementById('statsPanel')
             };
             const tabs = document.querySelectorAll('.mode-tab');
 
@@ -4831,6 +4977,9 @@
             modes.forEach(m => {
                 if (m === 'chat') {
                     elements[m].style.display = (mode === 'chat') ? 'flex' : 'none';
+                } else if (m === 'stats') {
+                    elements[m].classList.toggle('active', mode === m);
+                    if (mode === 'stats') renderStats();
                 } else {
                     elements[m].classList.toggle('active', mode === m);
                 }
@@ -5522,6 +5671,119 @@ v1.0.0 (2026年3月)
         window.pullTasksFromGitHub = pullTasksFromGitHub;
 
         document.addEventListener('DOMContentLoaded', init);
+
+        // ============================================================
+        //  📊 Token 消耗与模型调用统计（本地存储）
+        // ============================================================
+        const STATS_KEY = 'hzyai_stats';
+
+        function getStats() {
+            const saved = localStorage.getItem(STATS_KEY);
+            if (saved) {
+                try { return JSON.parse(saved); } catch(e) {}
+            }
+            return {
+                totalCalls: 0,
+                modelUsage: {},
+                tokenUsage: { total: 0, history: [] },
+                dailyCalls: {},
+                lastReset: new Date().toISOString()
+            };
+        }
+
+        function saveStats(stats) {
+            localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+        }
+
+        function recordCall(model, tokens) {
+            tokens = tokens || 0;
+            const stats = getStats();
+            stats.totalCalls++;
+            stats.modelUsage[model] = (stats.modelUsage[model] || 0) + 1;
+            stats.tokenUsage.total += tokens;
+            stats.tokenUsage.history.push({
+                model: model,
+                tokens: tokens,
+                timestamp: new Date().toISOString()
+            });
+            if (stats.tokenUsage.history.length > 500) {
+                stats.tokenUsage.history = stats.tokenUsage.history.slice(-500);
+            }
+            const today = new Date().toISOString().split('T')[0];
+            stats.dailyCalls[today] = (stats.dailyCalls[today] || 0) + 1;
+            saveStats(stats);
+            renderStats();
+        }
+
+        function renderStats() {
+            const stats = getStats();
+            const container = document.getElementById('statsPanel');
+            if (!container) return;
+
+            const today = new Date().toISOString().split('T')[0];
+            const todayCalls = stats.dailyCalls[today] || 0;
+            const totalTokens = stats.tokenUsage.total;
+
+            const grid = document.getElementById('statsGrid');
+            if (grid) {
+                grid.innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-number">${stats.totalCalls}</div>
+                        <div class="stat-label">总调用次数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number green">${todayCalls}</div>
+                        <div class="stat-label">今日调用</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number blue">${totalTokens}</div>
+                        <div class="stat-label">总 Token</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number purple">${Object.keys(stats.modelUsage).length}</div>
+                        <div class="stat-label">使用模型数</div>
+                    </div>
+                `;
+            }
+            const modelList = document.getElementById('modelUsageList');
+            if (modelList) {
+                modelList.innerHTML = Object.entries(stats.modelUsage).map(([model, count]) => `
+                    <span class="model-tag">${escapeHtml(model)}: <span class="count">${count}</span>次</span>
+                `).join('');
+            }
+            const detail = document.getElementById('statsDetail');
+            if (detail) {
+                detail.innerHTML = '<span>&#x1f4c5; 最后更新: ' + new Date().toISOString().replace('T',' ').slice(0,19) + '</span><span class="today-calls">&#x1f4c8; 今日: ' + todayCalls + ' 次</span><span>&#x1f4ca; 总计: ' + stats.totalCalls + ' 次</span>';
+            }
+        }
+
+        function toggleStatsDetail() {
+            const detail = document.getElementById('statsDetail');
+            if (detail) {
+                detail.style.display = detail.style.display === 'none' ? 'flex' : 'none';
+            }
+        }
+
+        function resetStats() {
+            if (!confirm('确定要重置所有统计数据吗？此操作不可恢复！')) return;
+            const stats = getStats();
+            const today = new Date().toISOString().split('T')[0];
+            const todayCalls = stats.dailyCalls[today] || 0;
+            localStorage.setItem(STATS_KEY, JSON.stringify({
+                totalCalls: 0,
+                modelUsage: {},
+                tokenUsage: { total: 0, history: [] },
+                dailyCalls: { [today]: todayCalls },
+                lastReset: new Date().toISOString()
+            }));
+            renderStats();
+            showToast('✅ 统计数据已重置', 'success');
+        }
+
+        // 暴露到全局
+        window.toggleStatsDetail = toggleStatsDetail;
+        window.resetStats = resetStats;
+        window.renderStats = renderStats;
     </script>
 </body>
 </html>

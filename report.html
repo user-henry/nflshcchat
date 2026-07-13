@@ -196,371 +196,307 @@
         </div>
     </div>
 
+    <style>
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #2a2a3e;
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .pagination button {
+            padding: 4px 12px;
+            border: 1px solid #2a2a3e;
+            border-radius: 4px;
+            background: #1a1a2e;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .pagination button.active {
+            background: #ffd700;
+            color: #1a1a2e;
+            border-color: #ffd700;
+        }
+        .pagination button:hover:not(.active) {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .report-item .admin-note-input {
+            flex: 1;
+            min-width: 120px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: white;
+            font-size: 12px;
+        }
+        .report-item .admin-note-input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+    </style>
     <script src="config.js"></script>
     <script>
         // ============================================================
-        //  状态
+        //  举报中心 - GitHub Issues 存储版本
         // ============================================================
         let currentUser = null;
         let isAdmin = false;
         let allReports = [];
-        
-        const REPORTS_KEY = 'nflshc_reports';
-        
-        // ============================================================
-        //  检查登录
-        // ============================================================
+        let currentPage = 1;
+        const PAGE_SIZE = 10;
+        const REPORT_LABEL = 'nflshc_report';
+
         function checkAuth() {
             let userStr = sessionStorage.getItem('currentUser');
-            if (!userStr) {
-                userStr = localStorage.getItem('nflshc_currentUser');
-            }
+            if (!userStr) { userStr = localStorage.getItem('nflshc_currentUser'); }
             if (userStr) {
                 currentUser = JSON.parse(userStr);
-                if (currentUser.isAdmin || currentUser.username === 'huangzhiyuan') {
-                    isAdmin = true;
-                }
+                if (currentUser.isAdmin || currentUser.username === 'huangzhiyuan') { isAdmin = true; }
                 return true;
             }
             return false;
         }
-        
-        if (!checkAuth()) {
-            alert('请先登录');
-            window.location.href = 'index.html';
-        }
-        
-        // 显示管理员 Tab
-        if (isAdmin) {
-            document.getElementById('adminTabBtn').style.display = 'inline-block';
-        }
-        
+        if (!checkAuth()) { alert('请先登录'); window.location.href = 'index.html'; }
+        if (isAdmin) { document.getElementById('adminTabBtn').style.display = 'inline-block'; }
+
         // ============================================================
-        //  加载举报数据
+        //  从 GitHub Issues 加载举报
         // ============================================================
-        function loadReports() {
-            const saved = localStorage.getItem(REPORTS_KEY);
-            if (saved) {
-                try {
-                    allReports = JSON.parse(saved);
-                } catch(e) { allReports = []; }
-            } else {
+        async function loadReports() {
+            try {
+                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=' + REPORT_LABEL + '&state=open';
+                const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await res.json();
                 allReports = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) { try { allReports.push({ ...JSON.parse(match[1]), issueNumber: issue.number }); } catch (e) {} }
+                }
+                allReports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                renderHistory();
+                if (isAdmin) renderAdminList();
+                updateStats();
+            } catch (error) {
+                console.error('加载举报失败:', error);
+                document.getElementById('reportHistory').innerHTML = '<div style="color:#dc3545;text-align:center;padding:20px;">❌ 加载失败: ' + error.message + '</div>';
+                if (isAdmin) document.getElementById('adminReportList').innerHTML = '<div style="color:#dc3545;text-align:center;padding:20px;">❌ 加载失败: ' + error.message + '</div>';
             }
-            renderHistory();
-            if (isAdmin) renderAdminList();
         }
-        
-        function saveReports() {
-            localStorage.setItem(REPORTS_KEY, JSON.stringify(allReports));
-            renderHistory();
-            if (isAdmin) renderAdminList();
-        }
-        
+
         // ============================================================
-        //  提交举报
+        //  提交举报到 GitHub Issues
         // ============================================================
         async function submitReport() {
             const targetUser = document.getElementById('targetUser').value.trim();
             const reason = document.getElementById('reportReason').value;
             const description = document.getElementById('reportDescription').value.trim();
             const evidence = document.getElementById('reportEvidence').value.trim();
-            
-            if (!targetUser) {
-                showStatus('请填写被举报用户', 'error');
-                return;
-            }
-            if (!description) {
-                showStatus('请填写情况说明', 'error');
-                return;
-            }
-            if (targetUser === currentUser.username) {
-                showStatus('不能举报自己', 'error');
-                return;
-            }
-            
-            // 检查用户是否存在
+            if (!targetUser) { showStatus('请填写被举报用户', 'error'); return; }
+            if (!description) { showStatus('请填写情况说明', 'error'); return; }
+            if (targetUser === currentUser.username) { showStatus('不能举报自己', 'error'); return; }
             const userExists = await checkUserExists(targetUser);
-            if (!userExists) {
-                showStatus(`用户 "${targetUser}" 不存在`, 'error');
-                return;
-            }
-            
+            if (!userExists) { showStatus('用户 "' + targetUser + '" 不存在', 'error'); return; }
             const report = {
-                id: `report_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-                reporter: currentUser.username,
-                targetUser: targetUser,
-                reason: reason,
-                description: description,
-                evidence: evidence || '',
-                status: 'pending', // pending, resolved, rejected
-                createdAt: new Date().toISOString(),
-                resolvedAt: null,
-                resolvedBy: null,
-                adminNote: ''
+                id: 'report_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+                reporter: currentUser.username, targetUser: targetUser, reason: reason,
+                description: description, evidence: evidence || '',
+                status: 'pending', createdAt: new Date().toISOString(),
+                resolvedAt: null, resolvedBy: null, adminNote: ''
             };
-            
-            allReports.push(report);
-            saveReports();
-            
-            document.getElementById('targetUser').value = '';
-            document.getElementById('reportDescription').value = '';
-            document.getElementById('reportEvidence').value = '';
-            
-            showStatus('✅ 举报已提交，管理员将尽快审核', 'success');
-            
-            // 通知管理员
-            if (isAdmin) {
-                // 如果是管理员自己，直接刷新列表
-                renderAdminList();
-            } else {
-                // 发送通知到 GitHub
-                await notifyAdmin(report);
-            }
+            try {
+                const issueBody = '举报信息\n```json\n' + JSON.stringify(report, null, 2) + '\n```';
+                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: '举报: ' + report.reporter + ' → ' + report.targetUser, body: issueBody, labels: [REPORT_LABEL] })
+                });
+                document.getElementById('targetUser').value = '';
+                document.getElementById('reportDescription').value = '';
+                document.getElementById('reportEvidence').value = '';
+                showStatus('✅ 举报已提交，管理员将尽快审核', 'success');
+                await loadReports();
+            } catch (error) { console.error('提交举报失败:', error); showStatus('❌ 提交失败: ' + error.message, 'error'); }
         }
-        
+
         async function checkUserExists(username) {
             if (username === 'huangzhiyuan') return true;
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
+                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=user&state=open';
+                const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        if (userData.username === username) return true;
-                    }
+                    if (match) { const userData = JSON.parse(match[1]); if (userData.username === username) return true; }
                 }
                 return false;
             } catch { return false; }
         }
-        
-        async function notifyAdmin(report) {
-            try {
-                const notifData = {
-                    id: `notif_${Date.now()}`,
-                    type: 'report',
-                    title: '🚨 新的举报',
-                    content: `用户 ${report.reporter} 举报了 ${report.targetUser}，原因：${report.reason}`,
-                    targetUser: 'huangzhiyuan',
-                    sender: report.reporter,
-                    reportId: report.id,
-                    sentAt: new Date().toISOString(),
-                    isRead: false
-                };
-                const issueBody = `系统通知\n\`\`\`json\n${JSON.stringify(notifData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: `系统通知: ${notifData.title}`, body: issueBody, labels: ['system_notification'] })
-                });
-            } catch (error) {
-                console.error('通知管理员失败:', error);
-            }
-        }
-        
+
         function showStatus(msg, type) {
             const el = document.getElementById('reportStatus');
-            el.textContent = msg;
-            el.className = 'status-msg ' + type;
-            setTimeout(() => {
-                el.className = 'status-msg';
-                el.textContent = '';
-            }, 4000);
+            el.textContent = msg; el.className = 'status-msg ' + type;
+            setTimeout(function() { el.className = 'status-msg'; el.textContent = ''; }, 4000);
         }
-        
+
         // ============================================================
         //  渲染举报历史
         // ============================================================
         function renderHistory() {
             const container = document.getElementById('reportHistory');
-            const userReports = allReports.filter(r => r.reporter === currentUser.username);
-            
-            if (userReports.length === 0) {
-                container.innerHTML = '<div style="color:#666;text-align:center;padding:40px;">暂无举报记录</div>';
-                return;
-            }
-            
-            container.innerHTML = userReports.slice().reverse().map(r => `
-                <div class="report-item">
-                    <div>
-                        <span class="reporter">👤 ${escapeHtml(r.reporter)}</span>
-                        → 
-                        <span class="target">${escapeHtml(r.targetUser)}</span>
-                    </div>
-                    <div class="reason">📌 ${escapeHtml(r.reason)}${r.evidence ? ` · <a href="${escapeHtml(r.evidence)}" target="_blank" style="color:#ffd700;">证据链接</a>` : ''}</div>
-                    <div class="reason" style="color:#888;font-size:13px;">${escapeHtml(r.description)}</div>
-                    <div>
-                        <span class="status ${r.status}">${r.status === 'pending' ? '⏳ 待审核' : r.status === 'resolved' ? '✅ 已处理' : '❌ 已驳回'}</span>
-                        ${r.resolvedAt ? `<span style="font-size:11px;color:#666;margin-left:8px;">处理时间: ${new Date(r.resolvedAt).toLocaleString()}</span>` : ''}
-                        ${r.adminNote ? `<div style="font-size:12px;color:#aaa;margin-top:4px;">📝 管理员备注: ${escapeHtml(r.adminNote)}</div>` : ''}
-                    </div>
-                    <div class="time">📅 ${new Date(r.createdAt).toLocaleString()}</div>
-                </div>
-            `).join('');
+            const userReports = allReports.filter(function(r) { return r.reporter === currentUser.username; });
+            if (userReports.length === 0) { container.innerHTML = '<div style="color:#666;text-align:center;padding:40px;">暂无举报记录</div>'; return; }
+            container.innerHTML = userReports.map(function(r) {
+                return '<div class="report-item"><div><span class="reporter">👤 ' + escapeHtml(r.reporter) + '</span> → <span class="target">' + escapeHtml(r.targetUser) + '</span></div><div class="reason">📌 ' + escapeHtml(r.reason) + (r.evidence ? ' · <a href="' + escapeHtml(r.evidence) + '" target="_blank" style="color:#ffd700;">证据链接</a>' : '') + '</div><div class="reason" style="color:#888;font-size:13px;">' + escapeHtml(r.description) + '</div><div><span class="status ' + r.status + '">' + getStatusText(r.status) + '</span>' + (r.resolvedAt ? '<span style="font-size:11px;color:#666;margin-left:8px;">处理时间: ' + new Date(r.resolvedAt).toLocaleString() + '</span>' : '') + (r.adminNote ? '<div style="font-size:12px;color:#aaa;margin-top:4px;">📝 管理员备注: ' + escapeHtml(r.adminNote) + '</div>' : '') + '</div><div class="time">📅 ' + new Date(r.createdAt).toLocaleString() + '</div></div>';
+            }).join('');
         }
-        
+
+        function getStatusText(status) {
+            if (status === 'pending') return '⏳ 待审核';
+            if (status === 'resolved') return '✅ 已处理';
+            return '❌ 已驳回';
+        }
+
         // ============================================================
         //  管理员审核
         // ============================================================
         function renderAdminList() {
             const container = document.getElementById('adminReportList');
-            const pendingReports = allReports.filter(r => r.status === 'pending');
-            const resolvedReports = allReports.filter(r => r.status !== 'pending');
-            
-            if (allReports.length === 0) {
-                container.innerHTML = '<div style="color:#666;text-align:center;padding:40px;">暂无举报</div>';
-                return;
-            }
-            
-            let html = '';
-            
+            if (allReports.length === 0) { container.innerHTML = '<div style="color:#666;text-align:center;padding:40px;">暂无举报</div>'; return; }
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const end = start + PAGE_SIZE;
+            const paginated = allReports.slice(start, end);
+            const pendingReports = allReports.filter(function(r) { return r.status === 'pending'; });
+            var html = '';
             if (pendingReports.length > 0) {
-                html += `<h3 style="color:#f39c12;margin-bottom:12px;">⏳ 待审核 (${pendingReports.length})</h3>`;
-                html += pendingReports.map(r => `
-                    <div class="report-item" style="border-left-color:#f39c12;">
-                        <div>
-                            <span class="reporter">👤 ${escapeHtml(r.reporter)}</span>
-                            → 
-                            <span class="target">${escapeHtml(r.targetUser)}</span>
-                        </div>
-                        <div class="reason">📌 ${escapeHtml(r.reason)}</div>
-                        <div class="reason" style="color:#888;font-size:13px;">${escapeHtml(r.description)}</div>
-                        ${r.evidence ? `<div class="reason"><a href="${escapeHtml(r.evidence)}" target="_blank" style="color:#ffd700;">🔗 证据链接</a></div>` : ''}
-                        <div class="time">📅 ${new Date(r.createdAt).toLocaleString()}</div>
-                        <div class="admin-actions">
-                            <button class="resolve-btn" onclick="resolveReport('${r.id}')">✅ 处理</button>
-                            <button class="reject-btn" onclick="rejectReport('${r.id}')">❌ 驳回</button>
-                            <button class="ban-btn" onclick="banUserFromReport('${r.id}')">🚫 封禁用户</button>
-                            <input type="text" id="adminNote_${r.id}" placeholder="备注（可选）" style="flex:1;min-width:120px;padding:4px 8px;border-radius:4px;background:#1a1a2e;border:1px solid #2a2a3e;color:white;font-size:12px;">
-                        </div>
-                    </div>
-                `).join('');
+                html += '<h3 style="color:#f39c12;margin-bottom:12px;">⏳ 待审核 (' + pendingReports.length + ')</h3>';
+                html += paginated.filter(function(r) { return r.status === 'pending'; }).map(function(r) {
+                    return '<div class="report-item" style="border-left-color:#f39c12;"><div><span class="reporter">👤 ' + escapeHtml(r.reporter) + '</span> → <span class="target">' + escapeHtml(r.targetUser) + '</span></div><div class="reason">📌 ' + escapeHtml(r.reason) + '</div><div class="reason" style="color:#888;font-size:13px;">' + escapeHtml(r.description) + '</div>' + (r.evidence ? '<div class="reason"><a href="' + escapeHtml(r.evidence) + '" target="_blank" style="color:#ffd700;">🔗 证据链接</a></div>' : '') + '<div class="time">📅 ' + new Date(r.createdAt).toLocaleString() + '</div><div class="admin-actions"><button class="resolve-btn" onclick="resolveReport(\'' + r.id + '\')">✅ 处理</button><button class="reject-btn" onclick="rejectReport(\'' + r.id + '\')">❌ 驳回</button><button class="ban-btn" onclick="banUserFromReport(\'' + r.id + '\')">🚫 封禁用户</button><input type="text" id="adminNote_' + r.id + '" class="admin-note-input" placeholder="备注（可选）"></div></div>';
+                }).join('');
             }
-            
+            var resolvedReports = allReports.filter(function(r) { return r.status !== 'pending'; });
             if (resolvedReports.length > 0) {
-                html += `<h3 style="color:#2ecc71;margin-top:20px;margin-bottom:12px;">✅ 已处理 (${resolvedReports.length})</h3>`;
-                html += resolvedReports.slice(0, 10).map(r => `
-                    <div class="report-item" style="border-left-color:${r.status === 'resolved' ? '#2ecc71' : '#dc3545'};">
-                        <div>
-                            <span class="reporter">👤 ${escapeHtml(r.reporter)}</span>
-                            → 
-                            <span class="target">${escapeHtml(r.targetUser)}</span>
-                        </div>
-                        <div class="reason">📌 ${escapeHtml(r.reason)}</div>
-                        <div>
-                            <span class="status ${r.status}">${r.status === 'resolved' ? '✅ 已处理' : '❌ 已驳回'}</span>
-                            ${r.resolvedBy ? `<span style="font-size:11px;color:#666;margin-left:8px;">处理人: ${escapeHtml(r.resolvedBy)}</span>` : ''}
-                        </div>
-                        ${r.adminNote ? `<div style="font-size:12px;color:#aaa;">📝 ${escapeHtml(r.adminNote)}</div>` : ''}
-                        <div class="time">📅 ${new Date(r.createdAt).toLocaleString()}</div>
-                    </div>
-                `).join('');
-                if (resolvedReports.length > 10) {
-                    html += `<div style="color:#666;text-align:center;padding:8px;">还有 ${resolvedReports.length - 10} 条已处理记录</div>`;
-                }
+                html += '<h3 style="color:#2ecc71;margin-top:20px;margin-bottom:12px;">✅ 已处理 (' + resolvedReports.length + ')</h3>';
+                html += paginated.filter(function(r) { return r.status !== 'pending'; }).map(function(r) {
+                    return '<div class="report-item" style="border-left-color:' + (r.status === 'resolved' ? '#2ecc71' : '#dc3545') + ';"><div><span class="reporter">👤 ' + escapeHtml(r.reporter) + '</span> → <span class="target">' + escapeHtml(r.targetUser) + '</span></div><div class="reason">📌 ' + escapeHtml(r.reason) + '</div><div><span class="status ' + r.status + '">' + getStatusText(r.status) + '</span>' + (r.resolvedBy ? '<span style="font-size:11px;color:#666;margin-left:8px;">处理人: ' + escapeHtml(r.resolvedBy) + '</span>' : '') + '</div>' + (r.adminNote ? '<div style="font-size:12px;color:#aaa;">📝 ' + escapeHtml(r.adminNote) + '</div>' : '') + '<div class="time">📅 ' + new Date(r.createdAt).toLocaleString() + '</div></div>';
+                }).join('');
             }
-            
-            container.innerHTML = html;
+            var totalPages = Math.ceil(allReports.length / PAGE_SIZE);
+            if (totalPages > 1) {
+                html += '<div class="pagination">';
+                html += '<button onclick="changePage(' + (currentPage - 1) + ')"' + (currentPage <= 1 ? ' disabled' : '') + '>←</button>';
+                for (var i = 1; i <= totalPages; i++) { html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="changePage(' + i + ')">' + i + '</button>'; }
+                html += '<button onclick="changePage(' + (currentPage + 1) + ')"' + (currentPage >= totalPages ? ' disabled' : '') + '>→</button>';
+                html += '</div>';
+            }
+            container.innerHTML = html || '<div style="color:#666;text-align:center;padding:40px;">暂无举报</div>';
         }
-        
-        function resolveReport(reportId) {
-            const report = allReports.find(r => r.id === reportId);
+
+        function changePage(page) {
+            var totalPages = Math.ceil(allReports.length / PAGE_SIZE);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page; renderAdminList();
+        }
+
+        async function updateReportOnGitHub(report) {
+            try {
+                var issueBody = '举报信息\n```json\n' + JSON.stringify(report, null, 2) + '\n```';
+                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + report.issueNumber, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ body: issueBody })
+                });
+            } catch (error) { console.error('更新举报失败:', error); alert('更新失败: ' + error.message); }
+        }
+
+        async function resolveReport(reportId) {
+            var report = allReports.find(function(r) { return r.id === reportId; });
             if (!report) return;
-            const note = document.getElementById(`adminNote_${reportId}`)?.value || '';
-            report.status = 'resolved';
-            report.resolvedAt = new Date().toISOString();
-            report.resolvedBy = currentUser.username;
-            report.adminNote = note;
-            saveReports();
-            renderAdminList();
+            var noteInput = document.getElementById('adminNote_' + reportId);
+            report.status = 'resolved'; report.resolvedAt = new Date().toISOString(); report.resolvedBy = currentUser.username; report.adminNote = noteInput ? noteInput.value : '';
+            await updateReportOnGitHub(report);
             alert('✅ 举报已标记为已处理');
+            await loadReports();
         }
-        
-        function rejectReport(reportId) {
-            const report = allReports.find(r => r.id === reportId);
+
+        async function rejectReport(reportId) {
+            var report = allReports.find(function(r) { return r.id === reportId; });
             if (!report) return;
-            const note = document.getElementById(`adminNote_${reportId}`)?.value || '';
-            report.status = 'rejected';
-            report.resolvedAt = new Date().toISOString();
-            report.resolvedBy = currentUser.username;
-            report.adminNote = note;
-            saveReports();
-            renderAdminList();
+            var noteInput = document.getElementById('adminNote_' + reportId);
+            report.status = 'rejected'; report.resolvedAt = new Date().toISOString(); report.resolvedBy = currentUser.username; report.adminNote = noteInput ? noteInput.value : '';
+            await updateReportOnGitHub(report);
             alert('❌ 举报已驳回');
+            await loadReports();
         }
-        
+
         async function banUserFromReport(reportId) {
-            const report = allReports.find(r => r.id === reportId);
+            var report = allReports.find(function(r) { return r.id === reportId; });
             if (!report) return;
-            if (!confirm(`确定要封禁用户 ${report.targetUser} 吗？`)) return;
-            
-            // 调用封禁逻辑
-            const success = await toggleUserBan(report.targetUser, true);
+            if (!confirm('确定要封禁用户 ' + report.targetUser + ' 吗？')) return;
+            var success = await toggleUserBan(report.targetUser, true);
             if (success) {
-                report.status = 'resolved';
-                report.resolvedAt = new Date().toISOString();
-                report.resolvedBy = currentUser.username;
-                const note = document.getElementById(`adminNote_${reportId}`)?.value || '用户已被封禁';
-                report.adminNote = note;
-                saveReports();
-                renderAdminList();
-                alert(`✅ 用户 ${report.targetUser} 已被封禁`);
+                report.status = 'resolved'; report.resolvedAt = new Date().toISOString(); report.resolvedBy = currentUser.username;
+                var noteInput = document.getElementById('adminNote_' + reportId);
+                report.adminNote = noteInput ? noteInput.value : '用户已被封禁';
+                await updateReportOnGitHub(report);
+                alert('✅ 用户 ' + report.targetUser + ' 已被封禁');
+                await loadReports();
             }
         }
-        
+
         async function toggleUserBan(username, shouldBan) {
             try {
-                // 从 GitHub 获取用户数据
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await res.json();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                var url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=user&state=open';
+                var res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                var issues = await res.json();
+                for (var i = 0; i < issues.length; i++) {
+                    var match = issues[i].body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
-                        const userData = JSON.parse(match[1]);
+                        var userData = JSON.parse(match[1]);
                         if (userData.username === username) {
                             userData.isBanned = shouldBan;
-                            const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(userData, null, 2)}\n\`\`\``;
-                            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issue.number}`, {
+                            await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + issues[i].number, {
                                 method: 'PATCH',
-                                headers: {
-                                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                                    'Accept': 'application/vnd.github.v3+json',
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ body: updatedBody })
+                                headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ body: '用户信息\n```json\n' + JSON.stringify(userData, null, 2) + '\n```' })
                             });
                             return true;
                         }
                     }
                 }
                 return false;
-            } catch (error) {
-                console.error('封禁失败:', error);
-                alert('封禁失败: ' + error.message);
-                return false;
-            }
+            } catch (error) { console.error('封禁失败:', error); alert('封禁失败: ' + error.message); return false; }
         }
-        
-        // ============================================================
-        //  Tab 切换
-        // ============================================================
+
+        function updateStats() {
+            var total = allReports.length;
+            var pending = allReports.filter(function(r) { return r.status === 'pending'; }).length;
+            document.getElementById('totalUsers').textContent = total;
+        }
+
         function switchTab(tab) {
-            document.querySelectorAll('.nav-bar a').forEach(a => a.classList.remove('active'));
+            document.querySelectorAll('.nav-bar a').forEach(function(a) { a.classList.remove('active'); });
             document.getElementById('reportTab').style.display = 'none';
             document.getElementById('historyTab').style.display = 'none';
             document.getElementById('adminTab').style.display = 'none';
-            
             if (tab === 'report') {
                 document.querySelector('.nav-bar a:first-child').classList.add('active');
                 document.getElementById('reportTab').style.display = 'block';
@@ -574,30 +510,25 @@
                 renderAdminList();
             }
         }
-        
-        // ============================================================
-        //  辅助
-        // ============================================================
+
         function escapeHtml(text) {
             if (!text) return '';
-            const div = document.createElement('div');
+            var div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-        
-        // ============================================================
-        //  初始化
-        // ============================================================
+
         loadReports();
-        
-        // 暴露全局函数
+        setInterval(loadReports, 30000);
+
         window.submitReport = submitReport;
         window.switchTab = switchTab;
         window.resolveReport = resolveReport;
         window.rejectReport = rejectReport;
         window.banUserFromReport = banUserFromReport;
-        
-        console.log('🚨 举报中心已加载，当前用户:', currentUser?.username);
+        window.changePage = changePage;
+
+        console.log('🚨 举报中心已加载（GitHub Issues 存储），当前用户:', currentUser ? currentUser.username : '');
     </script>
 </body>
 </html>
