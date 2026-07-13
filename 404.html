@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>页面未找到 · NFLSHC Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #eef4ff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .container .code {
+            font-size: 80px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .container h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #eef4ff;
+            margin-bottom: 12px;
+        }
+        .container p {
+            font-size: 16px;
+            color: #888;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .container .links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+        .container .links a {
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .container .links .btn-primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #1a1a2e;
+        }
+        .container .links .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+        }
+        .container .links .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #aaa;
+        }
+        .container .links .btn-outline:hover {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .container .footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: #444;
+        }
+        .container .footer a {
+            color: #f59e0b;
+            text-decoration: none;
+        }
+        .container .footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .container .code { font-size: 56px; }
+            .container h1 { font-size: 22px; }
+            .container p { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo"></div>
+        <div class="code">404</div>
+        <h1>🚀 页面走丢了</h1>
+        <p>
+            抱歉，您访问的页面不存在或已被移除。<br>
+            可能是链接有误，或者内容已被更新。
+        </p>
+        <div class="links">
+            <a href="https://help.nflshcchat.cc.cd/" class="btn-primary">
+                <i class="fas fa-home"></i> 返回帮助站
+            </a>
+            <a href="https://user-henry.github.io/nflshcchat/chat.html" class="btn-outline">
+                💬 去聊天
+            </a>
+            <a href="https://github.com/user-henry/nflshcchat" class="btn-outline">
+                <i class="fab fa-github"></i> GitHub
+            </a>
+        </div>
+        <div class="footer">
+            NFLSHC 202401 社区 · <a href="https://user-henry.github.io/nflshcchat/">主站</a>
+        </div>
+    </div>
+    <!-- Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</body>
+</html>
