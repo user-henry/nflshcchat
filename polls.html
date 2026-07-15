@@ -17,7 +17,6 @@
             min-height: 100vh;
         }
 
-        /* ===== 背景 ===== */
         .bg-gradient {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -40,7 +39,6 @@
             pointer-events: none; z-index: 0;
         }
 
-        /* ===== 容器 ===== */
         .container {
             position: relative; z-index: 1;
             max-width: 1000px; margin: 0 auto;
@@ -48,7 +46,6 @@
             min-height: 100vh;
         }
 
-        /* ===== 顶部导航 ===== */
         .header {
             display: flex; flex-wrap: wrap;
             justify-content: space-between; align-items: center;
@@ -82,9 +79,6 @@
         .header-right .nav-link:hover {
             color: #f59e0b; background: rgba(245, 158, 11, 0.08);
         }
-        .header-right .nav-link.active {
-            color: #f59e0b; background: rgba(245, 158, 11, 0.12);
-        }
         .user-badge {
             display: flex; align-items: center; gap: 8px;
             padding: 6px 14px 6px 10px;
@@ -104,7 +98,6 @@
             background: rgba(255,255,255,0.06); color: #888;
         }
 
-        /* ===== 统计卡片 ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -131,7 +124,6 @@
             font-size: 12px; color: #666; margin-top: 4px;
         }
 
-        /* ===== 工具栏 ===== */
         .toolbar {
             display: flex; flex-wrap: wrap;
             justify-content: space-between; align-items: center;
@@ -156,7 +148,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
         }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-outline {
             background: transparent;
             border: 1px solid rgba(255,255,255,0.08);
@@ -186,7 +177,6 @@
         .search-box input::placeholder { color: #555; }
         .search-box .icon { color: #555; font-size: 14px; }
 
-        /* ===== 投票列表 ===== */
         .polls-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -248,6 +238,10 @@
             border-color: #f59e0b;
             background: rgba(245, 158, 11, 0.06);
         }
+        .poll-card .poll-option.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
         .poll-card .poll-option .opt-label {
             font-size: 14px; color: #ddd; flex: 1;
         }
@@ -278,6 +272,16 @@
         .poll-card .poll-option.voted .opt-check {
             display: inline-block;
         }
+        .poll-card .poll-option .opt-status {
+            font-size: 11px;
+            color: #888;
+            margin-left: 8px;
+            display: none;
+        }
+        .poll-card .poll-option.voted .opt-status {
+            display: inline-block;
+        }
+
         .poll-card .poll-footer {
             display: flex; justify-content: space-between;
             align-items: center; flex-wrap: wrap;
@@ -309,7 +313,6 @@
             background: rgba(220, 53, 69, 0.08);
         }
 
-        /* ===== 空状态 ===== */
         .empty-state {
             text-align: center; padding: 80px 20px; color: #555;
         }
@@ -317,7 +320,6 @@
         .empty-state h3 { color: #888; font-size: 18px; margin-bottom: 8px; }
         .empty-state p { font-size: 14px; }
 
-        /* ===== 创建投票弹窗 ===== */
         .modal-overlay {
             display: none;
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -452,7 +454,6 @@
         .modal .modal-message.error { color: #dc3545; }
         .modal .modal-message.success { color: #2ecc71; }
 
-        /* ===== Toast ===== */
         .toast {
             position: fixed; bottom: 30px; left: 50%;
             transform: translateX(-50%);
@@ -468,7 +469,6 @@
         .toast.success { border-color: #2ecc71; color: #2ecc71; }
         .toast.error { border-color: #dc3545; color: #dc3545; }
 
-        /* ===== 响应式 ===== */
         @media (max-width: 768px) {
             .container { padding: 12px 16px; }
             .header-left .title { font-size: 18px; }
@@ -491,7 +491,6 @@
 
 <div class="container">
 
-    <!-- ===== 顶部导航 ===== -->
     <header class="header">
         <div class="header-left">
             <div class="logo"></div>
@@ -512,7 +511,6 @@
         </div>
     </header>
 
-    <!-- ===== 统计 ===== -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="number" id="totalPolls">0</div>
@@ -532,7 +530,6 @@
         </div>
     </div>
 
-    <!-- ===== 工具栏 ===== -->
     <div class="toolbar">
         <div class="toolbar-left">
             <button class="btn btn-primary" onclick="openCreateModal()">
@@ -553,7 +550,6 @@
         </div>
     </div>
 
-    <!-- ===== 投票列表 ===== -->
     <div class="polls-grid" id="pollsGrid">
         <div class="empty-state">
             <span class="icon">📭</span>
@@ -564,7 +560,6 @@
 
 </div>
 
-<!-- ===== 创建投票弹窗 ===== -->
 <div class="modal-overlay" id="createModal" onclick="if(event.target===this)closeCreateModal()">
     <div class="modal">
         <div class="modal-header">
@@ -599,6 +594,9 @@
                 <input type="checkbox" id="pollAllowView"> 允许查看结果
             </label>
             <label>
+                <input type="checkbox" id="pollAllowChange" checked> 允许更改投票
+            </label>
+            <label>
                 <input type="checkbox" id="pollDuration"> 限时投票
                 <input type="number" id="pollHours" placeholder="小时" style="width:60px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.04);color:#eef4ff;font-size:12px;display:none;" min="1" max="168" value="24">
             </label>
@@ -612,7 +610,6 @@
     </div>
 </div>
 
-<!-- ===== Toast ===== -->
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
@@ -720,6 +717,10 @@
             const isCreator = poll.creator === currentUser.username;
             const userVoted = poll.options?.some(o => o.votes?.includes(currentUser.username)) || false;
 
+            // 判断是否允许投票（禁止更改模式下已投票则不可再操作）
+            const allowChange = poll.allowChange !== false;
+            const canVote = isActive && (!userVoted || allowChange);
+
             return `
                 <div class="poll-card" data-id="${poll.id}">
                     <div class="poll-header">
@@ -731,6 +732,7 @@
                                 <span><i class="fas fa-users"></i> ${totalVotes} 人参与</span>
                                 ${poll.multiSelect ? '<span style="color:#f59e0b;">🔀 多选</span>' : ''}
                                 ${poll.anonymous ? '<span style="color:#888;">🔒 匿名</span>' : ''}
+                                ${poll.allowChange === false ? '<span style="color:#dc3545;">🔒 不可更改</span>' : ''}
                             </div>
                         </div>
                         <div>
@@ -745,13 +747,21 @@
                             const voteCount = opt.votes?.length || 0;
                             const percent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
                             const isVoted = opt.votes?.includes(currentUser.username) || false;
-                            const canVote = isActive && !userVoted;
+
+                            // 如果不可更改且已投票，禁用点击
+                            const disabled = !allowChange && userVoted;
+                            const clickable = isActive && (!userVoted || allowChange) && !disabled;
+
                             return `
-                                <div class="poll-option ${isVoted ? 'voted' : ''}" onclick="votePoll('${poll.id}', ${index})" style="${!canVote && !isVoted ? 'cursor:default;' : ''}">
+                                <div class="poll-option ${isVoted ? 'voted' : ''} ${disabled ? 'disabled' : ''}" 
+                                     onclick="${clickable ? `votePoll('${poll.id}', ${index})` : ''}"
+                                     style="${disabled ? 'cursor:not-allowed;opacity:0.6;' : ''}">
                                     <span class="opt-label">${escapeHtml(opt.text)}</span>
                                     <span class="opt-votes">${voteCount} 票</span>
                                     <div class="opt-bar"><div class="fill" style="width:${percent}%;"></div></div>
                                     <span class="opt-check">✓</span>
+                                    ${isVoted ? '<span class="opt-status">已投</span>' : ''}
+                                    ${disabled ? '<span class="opt-status" style="color:#dc3545;">已锁定</span>' : ''}
                                 </div>
                             `;
                         }).join('')}
@@ -761,6 +771,7 @@
                         <div>
                             ${poll.duration ? `⏱️ ${poll.duration} 小时限时` : '📌 不限时'}
                             ${poll.allowView !== false ? ' · 👁️ 结果可见' : ''}
+                            ${poll.allowChange === false ? ' · 🔒 不可更改' : ' · ✅ 可更改'}
                         </div>
                         <div class="actions">
                             <button onclick="copyPollLink('${poll.id}')" title="复制链接"><i class="fas fa-link"></i></button>
@@ -793,7 +804,7 @@
     }
 
     // ============================================================
-    //  投票
+    //  投票核心逻辑（修复覆盖问题）
     // ============================================================
     async function votePoll(pollId, optionIndex) {
         if (!currentUser) { showToast('请先登录', 'error'); return; }
@@ -802,22 +813,57 @@
         if (!poll) { showToast('投票不存在', 'error'); return; }
         if (poll.active === false) { showToast('此投票已结束', 'error'); return; }
 
+        // 检查是否允许更改
+        const allowChange = poll.allowChange !== false;
         const option = poll.options[optionIndex];
         if (!option) return;
 
-        // 检查是否已投票
-        if (option.votes?.includes(currentUser.username)) {
+        // 检查用户是否已投票
+        let userVotedOptionIndex = -1;
+        poll.options.forEach((o, idx) => {
+            if (o.votes && o.votes.includes(currentUser.username)) {
+                userVotedOptionIndex = idx;
+            }
+        });
+
+        // 如果已投票且不允许更改，拒绝操作
+        if (userVotedOptionIndex !== -1 && !allowChange) {
+            showToast('此投票不允许更改选项', 'error');
+            return;
+        }
+
+        // 如果已投票且点击的是同一个选项，取消投票（仅当允许更改时）
+        if (userVotedOptionIndex === optionIndex && allowChange) {
             // 取消投票
             option.votes = option.votes.filter(v => v !== currentUser.username);
+            showToast('已取消投票', 'success');
         } else {
-            // 单选：移除其他选项的投票
-            if (!poll.multiSelect) {
-                poll.options.forEach(o => {
-                    if (o.votes) o.votes = o.votes.filter(v => v !== currentUser.username);
-                });
+            // 如果已投票其他选项，先移除
+            if (userVotedOptionIndex !== -1 && allowChange) {
+                const oldOption = poll.options[userVotedOptionIndex];
+                if (oldOption && oldOption.votes) {
+                    oldOption.votes = oldOption.votes.filter(v => v !== currentUser.username);
+                }
             }
-            if (!option.votes) option.votes = [];
-            option.votes.push(currentUser.username);
+
+            // 如果允许多选，直接添加
+            if (poll.multiSelect) {
+                if (!option.votes) option.votes = [];
+                // 如果已投此选项，取消
+                if (option.votes.includes(currentUser.username)) {
+                    option.votes = option.votes.filter(v => v !== currentUser.username);
+                } else {
+                    option.votes.push(currentUser.username);
+                }
+            } else {
+                // 单选：直接设置
+                if (!option.votes) option.votes = [];
+                if (option.votes.includes(currentUser.username)) {
+                    option.votes = option.votes.filter(v => v !== currentUser.username);
+                } else {
+                    option.votes.push(currentUser.username);
+                }
+            }
         }
 
         // 更新总票数
@@ -859,12 +905,12 @@
         document.getElementById('pollMultiSelect').checked = false;
         document.getElementById('pollAnonymous').checked = true;
         document.getElementById('pollAllowView').checked = true;
+        document.getElementById('pollAllowChange').checked = true;
         document.getElementById('pollDuration').checked = false;
         document.getElementById('pollHours').style.display = 'none';
         document.getElementById('pollMessage').textContent = '';
         document.getElementById('pollMessage').className = 'modal-message';
 
-        // 重置选项
         const container = document.getElementById('optionsContainer');
         container.innerHTML = `
             <div class="option-row">
@@ -877,7 +923,6 @@
             </div>
         `;
 
-        // 限时投票联动
         document.getElementById('pollDuration').addEventListener('change', function() {
             document.getElementById('pollHours').style.display = this.checked ? 'inline-block' : 'none';
         });
@@ -919,6 +964,7 @@
         const multiSelect = document.getElementById('pollMultiSelect').checked;
         const anonymous = document.getElementById('pollAnonymous').checked;
         const allowView = document.getElementById('pollAllowView').checked;
+        const allowChange = document.getElementById('pollAllowChange').checked;
         const hasDuration = document.getElementById('pollDuration').checked;
         const hours = parseInt(document.getElementById('pollHours').value) || 24;
         const duration = hasDuration ? hours : 0;
@@ -943,6 +989,7 @@
             multiSelect: multiSelect,
             anonymous: anonymous,
             allowView: allowView,
+            allowChange: allowChange,
             duration: duration,
             creator: currentUser.username,
             createdAt: new Date().toISOString(),
@@ -1088,7 +1135,6 @@
                 const poll = allPolls.find(p => p.id === pollId);
                 if (poll) {
                     document.getElementById('pollsGrid').scrollIntoView({ behavior: 'smooth' });
-                    // 高亮对应的投票卡片
                     const cards = document.querySelectorAll('.poll-card');
                     cards.forEach(card => {
                         if (card.dataset.id === pollId) {
