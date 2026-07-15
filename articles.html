@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat · 文章</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        /* ... 样式与 posts.html 类似，但颜色风格略有不同（蓝色系） ... */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary, #1a1a2e);
+            color: var(--text-primary, #eef4ff);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary, #0f0f1a);
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #3498db;
+        }
+        .nav h2 { font-size: 20px; color: #3498db; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #3498db; }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+        }
+
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .card {
+            background: var(--bg-secondary, #16213e);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color, #2a2a3e);
+        }
+        .card h2 { color: #3498db; margin-bottom: 16px; }
+
+        .post-btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .post-btn:hover { transform: translateY(-2px); }
+
+        .article-list { display: flex; flex-direction: column; gap: 16px; }
+        .article-item {
+            background: var(--bg-secondary, #1a1a2e);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color, #2a2a3e);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .article-item:hover { border-color: #3498db; transform: translateX(4px); }
+        .article-item .article-title { font-size: 18px; font-weight: 600; color: #3498db; margin-bottom: 6px; }
+        .article-item .article-meta { font-size: 12px; color: #888; margin-bottom: 8px; }
+        .article-item .article-preview { font-size: 14px; color: #aaa; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .article-item .article-stats { font-size: 12px; color: #666; margin-top: 8px; display: flex; gap: 16px; }
+        .article-item .visibility-badge { font-size: 10px; padding: 2px 8px; border-radius: 12px; background: rgba(52,152,219,0.15); color: #3498db; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--bg-secondary, #16213e);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid #3498db;
+        }
+        .modal-content h3 { color: #3498db; margin-bottom: 16px; }
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            border: 1px solid var(--border-color, #2a2a3e);
+            border-radius: 8px;
+            background: var(--bg-primary, #1a1a2e);
+            color: var(--text-primary, #eef4ff);
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .modal-content textarea { resize: vertical; min-height: 150px; }
+        .modal-content .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .modal-content .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+        .modal-actions button { padding: 8px 20px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
+        .modal-actions .cancel { background: #2a2a3e; color: white; }
+        .modal-actions .submit { background: #3498db; color: white; }
+        .modal-actions .delete { background: #dc3545; color: white; }
+
+        .view-container { display: none; }
+        .view-container.active { display: block; }
+        .view-back { color: #3498db; cursor: pointer; margin-bottom: 16px; display: inline-block; }
+        .view-back:hover { text-decoration: underline; }
+
+        .reply-item {
+            background: var(--bg-primary, #1a1a2e);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            border-left: 3px solid #3498db;
+        }
+        .reply-item .reply-meta { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .reply-item .reply-content { font-size: 14px; color: #ddd; }
+
+        .reply-input-area { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .reply-input-area textarea {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary, #1a1a2e);
+            color: var(--text-primary, #eef4ff);
+            font-family: inherit;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .reply-input-area button { padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .markdown-body { color: #ddd; line-height: 1.7; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: #3498db; margin: 12px 0 8px; }
+        .markdown-body code { background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+        .markdown-body pre { background: #0f0f1a; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+        .markdown-body blockquote { border-left: 3px solid #3498db; padding-left: 12px; color: #888; margin: 8px 0; }
+        .markdown-body ul, .markdown-body ol { padding-left: 20px; margin: 8px 0; }
+        .markdown-body a { color: #3498db; }
+        .markdown-body img { max-width: 100%; border-radius: 8px; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state .icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; gap: 10px; text-align: center; }
+            .nav a { margin-left: 0; }
+            .modal-content { padding: 20px; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+
+<div class="nav">
+    <div class="nav-left"><div class="logo"></div><h2>📄 NFLSHC 文章</h2></div>
+    <div>
+        <span id="userDisplay">欢迎，<span id="username"></span></span>
+        <a href="chat.html">💬 聊天</a>
+        <a href="#" onclick="logout()">🚪 退出</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <h2 style="margin:0;">📖 所有文章</h2>
+        <button class="post-btn" onclick="showCreateArticleModal()">+ 发布文章</button>
+    </div>
+
+    <div id="listView" class="view-container active">
+        <div id="articleList" class="article-list">
+            <div class="empty-state"><span class="icon">📭</span>加载中...</div>
+        </div>
+    </div>
+
+    <div id="detailView" class="view-container">
+        <span class="view-back" onclick="goBackToList()">← 返回文章列表</span>
+        <div id="articleDetail"></div>
+        <div id="replySection"></div>
+    </div>
+
+</div>
+
+<!-- ===== 发布文章弹窗 ===== -->
+<div class="modal" id="articleModal">
+    <div class="modal-content">
+        <h3 id="articleModalTitle">📄 发布文章</h3>
+        <input type="text" id="articleTitle" placeholder="文章标题">
+        <textarea id="articleContent" placeholder="文章内容（支持 Markdown）"></textarea>
+        <div class="checkbox-group">
+            <input type="checkbox" id="articleVisible" checked>
+            <label for="articleVisible">所有人可见（取消勾选则仅自己可见）</label>
+        </div>
+        <div style="font-size:12px;color:#666;margin-bottom:12px;">💡 支持 Markdown 格式：**粗体**、*斜体*、[链接](url)、代码块等</div>
+        <div class="modal-actions">
+            <button class="cancel" onclick="closeModal('articleModal')">取消</button>
+            <button class="submit" id="articleSubmitBtn" onclick="submitArticle()">发布</button>
+        </div>
+        <div id="articleModalMessage" style="margin-top:12px;font-size:13px;"></div>
+    </div>
+</div>
+
+<!-- ===== 删除确认弹窗 ===== -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <h3 style="color:#dc3545;">⚠️ 删除确认</h3>
+        <p style="color:#aaa;margin-bottom:16px;">确定要删除这篇文章吗？所有回复也会被删除，此操作不可恢复。</p>
+        <div class="modal-actions">
+            <button class="cancel" onclick="closeModal('deleteModal')">取消</button>
+            <button class="delete" onclick="confirmDelete()">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  配置
+    // ============================================================
+    const ARTICLE_LABEL = 'article';
+    let currentUser = null;
+    let currentArticleId = null;
+    let deleteTargetId = null;
+    let allArticles = [];
+
+    // ============================================================
+    //  认证
+    // ============================================================
+    function checkAuth() {
+        let userStr = sessionStorage.getItem('currentUser') || localStorage.getItem('nflshc_currentUser');
+        if (!userStr) { window.location.href = 'index.html'; return false; }
+        currentUser = JSON.parse(userStr);
+        document.getElementById('username').textContent = currentUser.username;
+        return true;
+    }
+
+    function logout() {
+        localStorage.removeItem('nflshc_currentUser');
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('nflshc_user');
+        window.location.href = 'index.html';
+    }
+
+    function renderMarkdown(content) {
+        if (!content) return '';
+        if (typeof marked !== 'undefined') {
+            try { return marked.parse(content); } catch(e) { return escapeHtml(content); }
+        }
+        return escapeHtml(content).replace(/\n/g, '<br>');
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ============================================================
+    //  加载文章
+    // ============================================================
+    async function loadArticles() {
+        const container = document.getElementById('articleList');
+        container.innerHTML = '<div class="empty-state"><span class="icon">⏳</span>加载中...</div>';
+
+        try {
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${ARTICLE_LABEL}&state=open`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await res.json();
+            allArticles = [];
+
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try {
+                        const data = JSON.parse(match[1]);
+                        // 过滤不可见文章（仅作者可见）
+                        if (data.visible === false && data.author !== currentUser.username) continue;
+                        allArticles.push({
+                            ...data,
+                            issueNumber: issue.number,
+                            title: issue.title.replace(/^文章: /, '')
+                        });
+                    } catch(e) {}
+                }
+            }
+
+            allArticles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            renderArticleList();
+
+        } catch (error) {
+            container.innerHTML = `<div class="empty-state"><span class="icon">❌</span>加载失败: ${error.message}</div>`;
+        }
+    }
+
+    // ============================================================
+    //  渲染文章列表
+    // ============================================================
+    function renderArticleList() {
+        const container = document.getElementById('articleList');
+        if (allArticles.length === 0) {
+            container.innerHTML = '<div class="empty-state"><span class="icon">📭</span>暂无文章，发布第一篇吧！</div>';
+            return;
+        }
+
+        container.innerHTML = allArticles.map(article => `
+            <div class="article-item" onclick="viewArticle('${article.id}')">
+                <div class="article-title">${escapeHtml(article.title)}</div>
+                <div class="article-meta">
+                    👤 ${escapeHtml(article.author)} · ${new Date(article.createdAt).toLocaleString()}
+                    ${article.visible === false ? ' · <span class="visibility-badge">🔒 仅自己可见</span>' : ''}
+                </div>
+                <div class="article-preview">${escapeHtml(article.content.substring(0, 150))}${article.content.length > 150 ? '...' : ''}</div>
+                <div class="article-stats">
+                    <span>💬 ${article.replies ? article.replies.length : 0} 条回复</span>
+                    <span>👁️ ${article.views || 0} 次浏览</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ============================================================
+    //  查看文章详情
+    // ============================================================
+    function viewArticle(articleId) {
+        const article = allArticles.find(a => a.id === articleId);
+        if (!article) { alert('文章不存在'); return; }
+
+        currentArticleId = articleId;
+        document.getElementById('listView').classList.remove('active');
+        document.getElementById('detailView').classList.add('active');
+
+        article.views = (article.views || 0) + 1;
+        updateArticleOnGitHub(article);
+
+        const detail = document.getElementById('articleDetail');
+        const isOwner = article.author === currentUser.username;
+
+        detail.innerHTML = `
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                    <h2 style="color:#3498db;margin:0;">${escapeHtml(article.title)}</h2>
+                    <div style="display:flex;gap:8px;">
+                        <button class="post-btn" onclick="copyArticleLink('${article.id}')" style="font-size:12px;padding:4px 12px;">🔗 复制链接</button>
+                        ${isOwner ? `<button class="post-btn" onclick="deleteArticle('${article.id}')" style="font-size:12px;padding:4px 12px;background:#dc3545;color:white;">🗑️ 删除</button>` : ''}
+                    </div>
+                </div>
+                <div style="font-size:12px;color:#888;margin:8px 0;">
+                    👤 ${escapeHtml(article.author)} · ${new Date(article.createdAt).toLocaleString()}
+                    ${article.visible === false ? ' · 🔒 仅自己可见' : ''}
+                    · 💬 回复数: ${article.replies ? article.replies.length : 0}
+                </div>
+                <div class="markdown-body">${renderMarkdown(article.content)}</div>
+            </div>
+        `;
+
+        const replySection = document.getElementById('replySection');
+        let repliesHtml = '';
+
+        if (article.replies && article.replies.length > 0) {
+            repliesHtml = article.replies.map((reply, index) => `
+                <div class="reply-item">
+                    <div class="reply-meta">#${index + 1} · 👤 ${escapeHtml(reply.author)} · ${new Date(reply.createdAt).toLocaleString()}</div>
+                    <div class="reply-content">${renderMarkdown(reply.content)}</div>
+                    ${reply.author === currentUser.username ? `<button onclick="deleteReply('${article.id}', ${index})" style="background:transparent;border:none;color:#dc3545;cursor:pointer;font-size:11px;margin-top:4px;">删除</button>` : ''}
+                </div>
+            `).join('');
+        } else {
+            repliesHtml = '<div style="color:#666;padding:12px 0;">暂无回复</div>';
+        }
+
+        replySection.innerHTML = `
+            <div class="card">
+                <h3 style="color:#3498db;margin-bottom:12px;">💬 回复 (${article.replies ? article.replies.length : 0})</h3>
+                <div id="repliesContainer">${repliesHtml}</div>
+                <div class="reply-input-area">
+                    <textarea id="replyInput" placeholder="回复内容（支持 Markdown）" rows="2"></textarea>
+                    <button onclick="submitReply('${article.id}')">发送回复</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================================
+    //  发布文章
+    // ============================================================
+    function showCreateArticleModal() {
+        document.getElementById('articleModalTitle').textContent = '📄 发布文章';
+        document.getElementById('articleTitle').value = '';
+        document.getElementById('articleContent').value = '';
+        document.getElementById('articleVisible').checked = true;
+        document.getElementById('articleSubmitBtn').textContent = '发布';
+        document.getElementById('articleSubmitBtn').onclick = submitArticle;
+        document.getElementById('articleModalMessage').innerHTML = '';
+        document.getElementById('articleModal').classList.add('show');
+    }
+
+    async function submitArticle() {
+        const title = document.getElementById('articleTitle').value.trim();
+        const content = document.getElementById('articleContent').value.trim();
+        const visible = document.getElementById('articleVisible').checked;
+        const msg = document.getElementById('articleModalMessage');
+
+        if (!title) { msg.innerHTML = '<span style="color:#dc3545;">请输入文章标题</span>'; return; }
+        if (!content) { msg.innerHTML = '<span style="color:#dc3545;">请输入文章内容</span>'; return; }
+
+        const articleData = {
+            id: `article_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            title: title,
+            content: content,
+            author: currentUser.username,
+            visible: visible,
+            createdAt: new Date().toISOString(),
+            replies: [],
+            views: 0
+        };
+
+        try {
+            const issueBody = `文章数据\n\`\`\`json\n${JSON.stringify(articleData, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: `文章: ${title}`,
+                    body: issueBody,
+                    labels: [ARTICLE_LABEL]
+                })
+            });
+
+            msg.innerHTML = '<span style="color:#2ecc71;">✅ 文章发布成功！</span>';
+            setTimeout(() => {
+                closeModal('articleModal');
+                loadArticles();
+            }, 1000);
+
+        } catch (error) {
+            msg.innerHTML = `<span style="color:#dc3545;">❌ 发布失败: ${error.message}</span>`;
+        }
+    }
+
+    // ============================================================
+    //  提交回复
+    // ============================================================
+    async function submitReply(articleId) {
+        const input = document.getElementById('replyInput');
+        const content = input.value.trim();
+        if (!content) { alert('请输入回复内容'); return; }
+
+        const article = allArticles.find(a => a.id === articleId);
+        if (!article) { alert('文章不存在'); return; }
+
+        if (!article.replies) article.replies = [];
+        article.replies.push({
+            author: currentUser.username,
+            content: content,
+            createdAt: new Date().toISOString()
+        });
+
+        await updateArticleOnGitHub(article);
+        input.value = '';
+        viewArticle(articleId);
+    }
+
+    // ============================================================
+    //  删除回复
+    // ============================================================
+    async function deleteReply(articleId, index) {
+        if (!confirm('确定要删除这条回复吗？')) return;
+        const article = allArticles.find(a => a.id === articleId);
+        if (!article) return;
+        article.replies.splice(index, 1);
+        await updateArticleOnGitHub(article);
+        viewArticle(articleId);
+    }
+
+    // ============================================================
+    //  删除文章
+    // ============================================================
+    function deleteArticle(articleId) {
+        deleteTargetId = articleId;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    async function confirmDelete() {
+        const article = allArticles.find(a => a.id === deleteTargetId);
+        if (!article) { closeModal('deleteModal'); return; }
+
+        try {
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${article.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: 'closed' })
+            });
+
+            closeModal('deleteModal');
+            goBackToList();
+            loadArticles();
+            alert('✅ 文章已删除');
+
+        } catch (error) {
+            alert('❌ 删除失败: ' + error.message);
+        }
+    }
+
+    // ============================================================
+    //  更新文章到 GitHub
+    // ============================================================
+    async function updateArticleOnGitHub(article) {
+        try {
+            const issueBody = `文章数据\n\`\`\`json\n${JSON.stringify(article, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${article.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ body: issueBody })
+            });
+        } catch (error) {
+            console.error('更新失败:', error);
+        }
+    }
+
+    // ============================================================
+    //  复制文章链接
+    // ============================================================
+    function copyArticleLink(articleId) {
+        const url = `${window.location.origin}${window.location.pathname}?article=${articleId}`;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => alert('✅ 链接已复制'));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('✅ 链接已复制');
+        }
+    }
+
+    // ============================================================
+    //  工具函数
+    // ============================================================
+    function goBackToList() {
+        document.getElementById('listView').classList.add('active');
+        document.getElementById('detailView').classList.remove('active');
+        currentArticleId = null;
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    function checkUrlParam() {
+        const params = new URLSearchParams(window.location.search);
+        const articleId = params.get('article');
+        if (articleId) {
+            const checkAndView = setInterval(() => {
+                if (allArticles.length > 0) {
+                    clearInterval(checkAndView);
+                    const article = allArticles.find(a => a.id === articleId);
+                    if (article) viewArticle(articleId);
+                    else alert('文章不存在或已被删除');
+                }
+            }, 500);
+            setTimeout(() => clearInterval(checkAndView), 10000);
+        }
+    }
+
+    // ============================================================
+    //  初始化
+    // ============================================================
+    if (!checkAuth()) { /* 已重定向 */ }
+
+    loadArticles();
+    setTimeout(checkUrlParam, 1000);
+
+    console.log('📄 NFLSHC 文章已加载');
+</script>
+
+</body>
+</html>

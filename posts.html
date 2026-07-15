@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat · 帖子</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary, #1a1a2e);
+            color: var(--text-primary, #eef4ff);
+            min-height: 100vh;
+        }
+        .nav {
+            background: var(--bg-secondary, #0f0f1a);
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ffd700;
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo {
+            width: 40px; height: 40px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+        }
+        .nav h2 { font-size: 20px; color: #ffd700; }
+        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: #ffd700; }
+
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+
+        .card {
+            background: var(--bg-secondary, #16213e);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color, #2a2a3e);
+        }
+        .card h2 { color: #ffd700; margin-bottom: 16px; }
+
+        .post-btn {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: #1a1a2e;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .post-btn:hover { transform: translateY(-2px); }
+
+        .post-list { display: flex; flex-direction: column; gap: 16px; }
+        .post-item {
+            background: var(--bg-secondary, #1a1a2e);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color, #2a2a3e);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .post-item:hover { border-color: #ffd700; transform: translateX(4px); }
+        .post-item .post-title { font-size: 18px; font-weight: 600; color: #ffd700; margin-bottom: 6px; }
+        .post-item .post-meta { font-size: 12px; color: #888; margin-bottom: 8px; }
+        .post-item .post-preview { font-size: 14px; color: #aaa; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .post-item .post-stats { font-size: 12px; color: #666; margin-top: 8px; display: flex; gap: 16px; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--bg-secondary, #16213e);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border: 1px solid #ffd700;
+        }
+        .modal-content h3 { color: #ffd700; margin-bottom: 16px; }
+        .modal-content input, .modal-content textarea, .modal-content select {
+            width: 100%;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            border: 1px solid var(--border-color, #2a2a3e);
+            border-radius: 8px;
+            background: var(--bg-primary, #1a1a2e);
+            color: var(--text-primary, #eef4ff);
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .modal-content textarea { resize: vertical; min-height: 150px; }
+        .modal-content .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .modal-content .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+        .modal-actions button { padding: 8px 20px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
+        .modal-actions .cancel { background: #2a2a3e; color: white; }
+        .modal-actions .submit { background: #ffd700; color: #1a1a2e; }
+        .modal-actions .delete { background: #dc3545; color: white; }
+
+        .view-container { display: none; }
+        .view-container.active { display: block; }
+        .view-back { color: #ffd700; cursor: pointer; margin-bottom: 16px; display: inline-block; }
+        .view-back:hover { text-decoration: underline; }
+
+        .reply-item {
+            background: var(--bg-primary, #1a1a2e);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            border-left: 3px solid #ffd700;
+        }
+        .reply-item .reply-meta { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .reply-item .reply-content { font-size: 14px; color: #ddd; }
+
+        .reply-input-area { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .reply-input-area textarea {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary, #1a1a2e);
+            color: var(--text-primary, #eef4ff);
+            font-family: inherit;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .reply-input-area button { padding: 10px 24px; background: #ffd700; color: #1a1a2e; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .reply-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .markdown-body { color: #ddd; line-height: 1.7; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: #ffd700; margin: 12px 0 8px; }
+        .markdown-body code { background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+        .markdown-body pre { background: #0f0f1a; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
+        .markdown-body blockquote { border-left: 3px solid #ffd700; padding-left: 12px; color: #888; margin: 8px 0; }
+        .markdown-body ul, .markdown-body ol { padding-left: 20px; margin: 8px 0; }
+        .markdown-body a { color: #ffd700; }
+        .markdown-body img { max-width: 100%; border-radius: 8px; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state .icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+        @media (max-width: 768px) {
+            .nav { flex-direction: column; gap: 10px; text-align: center; }
+            .nav a { margin-left: 0; }
+            .modal-content { padding: 20px; }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+
+<div class="nav">
+    <div class="nav-left"><div class="logo"></div><h2>📝 NFLSHC 帖子</h2></div>
+    <div>
+        <span id="userDisplay">欢迎，<span id="username"></span></span>
+        <a href="chat.html">💬 聊天</a>
+        <a href="#" onclick="logout()">🚪 退出</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- ===== 工具栏 ===== -->
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <h2 style="margin:0;">📋 所有帖子</h2>
+        <button class="post-btn" onclick="showCreatePostModal()">+ 发布帖子</button>
+    </div>
+
+    <!-- ===== 帖子列表 ===== -->
+    <div id="listView" class="view-container active">
+        <div id="postList" class="post-list">
+            <div class="empty-state"><span class="icon">📭</span>加载中...</div>
+        </div>
+    </div>
+
+    <!-- ===== 帖子详情 ===== -->
+    <div id="detailView" class="view-container">
+        <span class="view-back" onclick="goBackToList()">← 返回帖子列表</span>
+        <div id="postDetail"></div>
+        <div id="replySection"></div>
+    </div>
+
+</div>
+
+<!-- ===== 发布帖子弹窗 ===== -->
+<div class="modal" id="postModal">
+    <div class="modal-content">
+        <h3 id="postModalTitle">📝 发布帖子</h3>
+        <input type="text" id="postTitle" placeholder="帖子标题">
+        <textarea id="postContent" placeholder="帖子内容（支持 Markdown）"></textarea>
+        <div class="checkbox-group">
+            <input type="checkbox" id="postAllowReply" checked>
+            <label for="postAllowReply">允许其他人回复</label>
+        </div>
+        <div style="font-size:12px;color:#666;margin-bottom:12px;">💡 支持 Markdown 格式：**粗体**、*斜体*、[链接](url)、代码块等</div>
+        <div class="modal-actions">
+            <button class="cancel" onclick="closeModal('postModal')">取消</button>
+            <button class="submit" id="postSubmitBtn" onclick="submitPost()">发布</button>
+        </div>
+        <div id="postModalMessage" style="margin-top:12px;font-size:13px;"></div>
+    </div>
+</div>
+
+<!-- ===== 删除确认弹窗 ===== -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <h3 style="color:#dc3545;">⚠️ 删除确认</h3>
+        <p style="color:#aaa;margin-bottom:16px;">确定要删除这篇帖子吗？所有回复也会被删除，此操作不可恢复。</p>
+        <div class="modal-actions">
+            <button class="cancel" onclick="closeModal('deleteModal')">取消</button>
+            <button class="delete" onclick="confirmDelete()">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  配置
+    // ============================================================
+    const POST_LABEL = 'post';
+    let currentUser = null;
+    let currentView = 'list';
+    let currentPostId = null;
+    let deleteTargetId = null;
+    let allPosts = [];
+
+    // ============================================================
+    //  认证
+    // ============================================================
+    function checkAuth() {
+        let userStr = sessionStorage.getItem('currentUser') || localStorage.getItem('nflshc_currentUser');
+        if (!userStr) { window.location.href = 'index.html'; return false; }
+        currentUser = JSON.parse(userStr);
+        document.getElementById('username').textContent = currentUser.username;
+        return true;
+    }
+
+    function logout() {
+        localStorage.removeItem('nflshc_currentUser');
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('nflshc_user');
+        window.location.href = 'index.html';
+    }
+
+    // ============================================================
+    //  Markdown 渲染
+    // ============================================================
+    function renderMarkdown(content) {
+        if (!content) return '';
+        if (typeof marked !== 'undefined') {
+            try { return marked.parse(content); } catch(e) { return escapeHtml(content); }
+        }
+        return escapeHtml(content).replace(/\n/g, '<br>');
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ============================================================
+    //  加载帖子
+    // ============================================================
+    async function loadPosts() {
+        const container = document.getElementById('postList');
+        container.innerHTML = '<div class="empty-state"><span class="icon">⏳</span>加载中...</div>';
+
+        try {
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${POST_LABEL}&state=open`;
+            const res = await fetch(url, {
+                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            const issues = await res.json();
+            allPosts = [];
+
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try {
+                        const data = JSON.parse(match[1]);
+                        allPosts.push({
+                            ...data,
+                            issueNumber: issue.number,
+                            title: issue.title.replace(/^帖子: /, '')
+                        });
+                    } catch(e) {}
+                }
+            }
+
+            allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            renderPostList();
+
+        } catch (error) {
+            container.innerHTML = `<div class="empty-state"><span class="icon">❌</span>加载失败: ${error.message}</div>`;
+        }
+    }
+
+    // ============================================================
+    //  渲染帖子列表
+    // ============================================================
+    function renderPostList() {
+        const container = document.getElementById('postList');
+        if (allPosts.length === 0) {
+            container.innerHTML = '<div class="empty-state"><span class="icon">📭</span>暂无帖子，发布第一篇吧！</div>';
+            return;
+        }
+
+        container.innerHTML = allPosts.map(post => `
+            <div class="post-item" onclick="viewPost('${post.id}')">
+                <div class="post-title">${escapeHtml(post.title)}</div>
+                <div class="post-meta">
+                    👤 ${escapeHtml(post.author)} · ${new Date(post.createdAt).toLocaleString()}
+                    ${post.allowReply === false ? ' · 🔒 禁止回复' : ''}
+                </div>
+                <div class="post-preview">${escapeHtml(post.content.substring(0, 150))}${post.content.length > 150 ? '...' : ''}</div>
+                <div class="post-stats">
+                    <span>💬 ${post.replies ? post.replies.length : 0} 条回复</span>
+                    <span>👁️ ${post.views || 0} 次浏览</span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // ============================================================
+    //  查看帖子详情
+    // ============================================================
+    function viewPost(postId) {
+        const post = allPosts.find(p => p.id === postId);
+        if (!post) { alert('帖子不存在'); return; }
+
+        currentPostId = postId;
+        document.getElementById('listView').classList.remove('active');
+        document.getElementById('detailView').classList.add('active');
+
+        // 增加浏览量
+        post.views = (post.views || 0) + 1;
+        updatePostOnGitHub(post);
+
+        const detail = document.getElementById('postDetail');
+        const isOwner = post.author === currentUser.username;
+        const canReply = post.allowReply !== false;
+
+        detail.innerHTML = `
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                    <h2 style="color:#ffd700;margin:0;">${escapeHtml(post.title)}</h2>
+                    <div style="display:flex;gap:8px;">
+                        <button class="post-btn" onclick="copyPostLink('${post.id}')" style="font-size:12px;padding:4px 12px;">🔗 复制链接</button>
+                        ${isOwner ? `<button class="post-btn" onclick="deletePost('${post.id}')" style="font-size:12px;padding:4px 12px;background:#dc3545;color:white;">🗑️ 删除</button>` : ''}
+                    </div>
+                </div>
+                <div style="font-size:12px;color:#888;margin:8px 0;">
+                    👤 ${escapeHtml(post.author)} · ${new Date(post.createdAt).toLocaleString()}
+                    ${post.allowReply === false ? ' · 🔒 禁止回复' : ''}
+                    ${post.allowReply !== false ? ' · 💬 回复数: ' + (post.replies ? post.replies.length : 0) : ''}
+                </div>
+                <div class="markdown-body">${renderMarkdown(post.content)}</div>
+            </div>
+        `;
+
+        // 回复区域
+        const replySection = document.getElementById('replySection');
+        let repliesHtml = '';
+
+        if (post.replies && post.replies.length > 0) {
+            repliesHtml = post.replies.map((reply, index) => `
+                <div class="reply-item">
+                    <div class="reply-meta">#${index + 1} · 👤 ${escapeHtml(reply.author)} · ${new Date(reply.createdAt).toLocaleString()}</div>
+                    <div class="reply-content">${renderMarkdown(reply.content)}</div>
+                    ${reply.author === currentUser.username ? `<button onclick="deleteReply('${post.id}', ${index})" style="background:transparent;border:none;color:#dc3545;cursor:pointer;font-size:11px;margin-top:4px;">删除</button>` : ''}
+                </div>
+            `).join('');
+        } else {
+            repliesHtml = '<div style="color:#666;padding:12px 0;">暂无回复</div>';
+        }
+
+        replySection.innerHTML = `
+            <div class="card">
+                <h3 style="color:#ffd700;margin-bottom:12px;">💬 回复 (${post.replies ? post.replies.length : 0})</h3>
+                <div id="repliesContainer">${repliesHtml}</div>
+                ${canReply ? `
+                    <div class="reply-input-area">
+                        <textarea id="replyInput" placeholder="回复内容（支持 Markdown）" rows="2"></textarea>
+                        <button onclick="submitReply('${post.id}')">发送回复</button>
+                    </div>
+                ` : `<div style="color:#888;padding:8px 0;">🔒 此帖子已禁止回复</div>`}
+            </div>
+        `;
+    }
+
+    // ============================================================
+    //  发布帖子
+    // ============================================================
+    function showCreatePostModal() {
+        document.getElementById('postModalTitle').textContent = '📝 发布帖子';
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postContent').value = '';
+        document.getElementById('postAllowReply').checked = true;
+        document.getElementById('postSubmitBtn').textContent = '发布';
+        document.getElementById('postSubmitBtn').onclick = submitPost;
+        document.getElementById('postModalMessage').innerHTML = '';
+        document.getElementById('postModal').classList.add('show');
+    }
+
+    async function submitPost() {
+        const title = document.getElementById('postTitle').value.trim();
+        const content = document.getElementById('postContent').value.trim();
+        const allowReply = document.getElementById('postAllowReply').checked;
+        const msg = document.getElementById('postModalMessage');
+
+        if (!title) { msg.innerHTML = '<span style="color:#dc3545;">请输入帖子标题</span>'; return; }
+        if (!content) { msg.innerHTML = '<span style="color:#dc3545;">请输入帖子内容</span>'; return; }
+
+        const postData = {
+            id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            title: title,
+            content: content,
+            author: currentUser.username,
+            allowReply: allowReply,
+            createdAt: new Date().toISOString(),
+            replies: [],
+            views: 0
+        };
+
+        try {
+            const issueBody = `帖子数据\n\`\`\`json\n${JSON.stringify(postData, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: `帖子: ${title}`,
+                    body: issueBody,
+                    labels: [POST_LABEL]
+                })
+            });
+
+            msg.innerHTML = '<span style="color:#2ecc71;">✅ 帖子发布成功！</span>';
+            setTimeout(() => {
+                closeModal('postModal');
+                loadPosts();
+            }, 1000);
+
+        } catch (error) {
+            msg.innerHTML = `<span style="color:#dc3545;">❌ 发布失败: ${error.message}</span>`;
+        }
+    }
+
+    // ============================================================
+    //  提交回复
+    // ============================================================
+    async function submitReply(postId) {
+        const input = document.getElementById('replyInput');
+        const content = input.value.trim();
+        if (!content) { alert('请输入回复内容'); return; }
+
+        const post = allPosts.find(p => p.id === postId);
+        if (!post) { alert('帖子不存在'); return; }
+        if (post.allowReply === false) { alert('此帖子已禁止回复'); return; }
+
+        if (!post.replies) post.replies = [];
+        post.replies.push({
+            author: currentUser.username,
+            content: content,
+            createdAt: new Date().toISOString()
+        });
+
+        await updatePostOnGitHub(post);
+        input.value = '';
+        viewPost(postId);
+    }
+
+    // ============================================================
+    //  删除回复
+    // ============================================================
+    async function deleteReply(postId, index) {
+        if (!confirm('确定要删除这条回复吗？')) return;
+        const post = allPosts.find(p => p.id === postId);
+        if (!post) return;
+        post.replies.splice(index, 1);
+        await updatePostOnGitHub(post);
+        viewPost(postId);
+    }
+
+    // ============================================================
+    //  删除帖子
+    // ============================================================
+    function deletePost(postId) {
+        deleteTargetId = postId;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    async function confirmDelete() {
+        const post = allPosts.find(p => p.id === deleteTargetId);
+        if (!post) { closeModal('deleteModal'); return; }
+
+        try {
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${post.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: 'closed' })
+            });
+
+            closeModal('deleteModal');
+            goBackToList();
+            loadPosts();
+            alert('✅ 帖子已删除');
+
+        } catch (error) {
+            alert('❌ 删除失败: ' + error.message);
+        }
+    }
+
+    // ============================================================
+    //  更新帖子到 GitHub
+    // ============================================================
+    async function updatePostOnGitHub(post) {
+        try {
+            const issueBody = `帖子数据\n\`\`\`json\n${JSON.stringify(post, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${post.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ body: issueBody })
+            });
+        } catch (error) {
+            console.error('更新失败:', error);
+        }
+    }
+
+    // ============================================================
+    //  复制帖子链接
+    // ============================================================
+    function copyPostLink(postId) {
+        const url = `${window.location.origin}${window.location.pathname}?post=${postId}`;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => alert('✅ 链接已复制'));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('✅ 链接已复制');
+        }
+    }
+
+    // ============================================================
+    //  工具函数
+    // ============================================================
+    function goBackToList() {
+        document.getElementById('listView').classList.add('active');
+        document.getElementById('detailView').classList.remove('active');
+        currentPostId = null;
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    // ============================================================
+    //  检查 URL 参数（直接跳转到帖子）
+    // ============================================================
+    function checkUrlParam() {
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('post');
+        if (postId) {
+            // 先加载列表，然后跳转
+            const checkAndView = setInterval(() => {
+                if (allPosts.length > 0) {
+                    clearInterval(checkAndView);
+                    const post = allPosts.find(p => p.id === postId);
+                    if (post) viewPost(postId);
+                    else alert('帖子不存在或已被删除');
+                }
+            }, 500);
+            setTimeout(() => clearInterval(checkAndView), 10000);
+        }
+    }
+
+    // ============================================================
+    //  初始化
+    // ============================================================
+    if (!checkAuth()) { /* 已重定向 */ }
+
+    loadPosts();
+    setTimeout(checkUrlParam, 1000);
+
+    console.log('📝 NFLSHC 帖子已加载');
+</script>
+
+</body>
+</html>
