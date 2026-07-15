@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat · 投票中心</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a1a;
+            color: #eef4ff;
+            min-height: 100vh;
+        }
+
+        /* ===== 背景 ===== */
+        .bg-gradient {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(1200px 600px at 15% -10%, rgba(14, 165, 233, 0.08), transparent),
+                radial-gradient(900px 500px at 110% 10%, rgba(245, 158, 11, 0.06), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-blur-1 {
+            position: fixed; top: 100px; left: -60px;
+            width: 280px; height: 280px; border-radius: 50%;
+            background: rgba(14, 165, 233, 0.04); filter: blur(80px);
+            pointer-events: none; z-index: 0;
+        }
+        .bg-blur-2 {
+            position: fixed; bottom: 0; right: -80px;
+            width: 320px; height: 320px; border-radius: 50%;
+            background: rgba(245, 158, 11, 0.04); filter: blur(80px);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ===== 容器 ===== */
+        .container {
+            position: relative; z-index: 1;
+            max-width: 1000px; margin: 0 auto;
+            padding: 20px 24px 40px;
+            min-height: 100vh;
+        }
+
+        /* ===== 顶部导航 ===== */
+        .header {
+            display: flex; flex-wrap: wrap;
+            justify-content: space-between; align-items: center;
+            gap: 16px;
+            padding: 16px 0 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-left .logo {
+            width: 44px; height: 44px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            border-radius: 10px;
+        }
+        .header-left .title {
+            font-size: 22px; font-weight: 700;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-left .subtitle { font-size: 12px; color: #555; margin-top: 2px; }
+        .header-right {
+            display: flex; align-items: center;
+            gap: 12px; flex-wrap: wrap;
+        }
+        .header-right .nav-link {
+            color: #888; text-decoration: none;
+            font-size: 13px; padding: 6px 14px;
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .header-right .nav-link:hover {
+            color: #f59e0b; background: rgba(245, 158, 11, 0.08);
+        }
+        .header-right .nav-link.active {
+            color: #f59e0b; background: rgba(245, 158, 11, 0.12);
+        }
+        .user-badge {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px 6px 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            font-size: 13px;
+        }
+        .user-badge .avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #1a1a2e;
+        }
+        .user-badge .plan {
+            font-size: 10px; padding: 2px 10px; border-radius: 20px;
+            background: rgba(255,255,255,0.06); color: #888;
+        }
+
+        /* ===== 统计卡片 ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 14px;
+            margin: 24px 0 20px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 16px 18px;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .stat-card:hover {
+            border-color: rgba(245, 158, 11, 0.2);
+            background: rgba(255,255,255,0.05);
+        }
+        .stat-card .number {
+            font-size: 26px; font-weight: 700;
+            color: #f59e0b;
+        }
+        .stat-card .label {
+            font-size: 12px; color: #666; margin-top: 4px;
+        }
+
+        /* ===== 工具栏 ===== */
+        .toolbar {
+            display: flex; flex-wrap: wrap;
+            justify-content: space-between; align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .toolbar-left { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .toolbar-right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+        .btn {
+            padding: 8px 20px; border: none; border-radius: 10px;
+            font-size: 13px; font-weight: 500; cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #1a1a2e;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #aaa;
+        }
+        .btn-outline:hover { border-color: #f59e0b; color: #f59e0b; }
+        .btn-ghost { background: transparent; color: #888; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: #eef4ff; }
+
+        .search-box {
+            display: flex; align-items: center;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px; padding: 0 14px;
+            transition: all 0.3s;
+        }
+        .search-box:focus-within {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(255,255,255,0.06);
+        }
+        .search-box input {
+            background: none; border: none;
+            padding: 8px 10px; color: #eef4ff;
+            font-size: 13px; outline: none; width: 160px;
+            font-family: inherit;
+        }
+        .search-box input::placeholder { color: #555; }
+        .search-box .icon { color: #555; font-size: 14px; }
+
+        /* ===== 投票列表 ===== */
+        .polls-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        .poll-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 20px 24px;
+            transition: all 0.3s;
+        }
+        .poll-card:hover {
+            border-color: rgba(245, 158, 11, 0.15);
+            background: rgba(255,255,255,0.04);
+        }
+        .poll-card .poll-header {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .poll-card .poll-question {
+            font-size: 18px; font-weight: 600;
+            color: #f59e0b;
+        }
+        .poll-card .poll-meta {
+            font-size: 12px; color: #666;
+            display: flex; gap: 16px; flex-wrap: wrap;
+        }
+        .poll-card .poll-meta span { display: flex; align-items: center; gap: 4px; }
+        .poll-card .poll-status {
+            font-size: 11px; padding: 2px 12px; border-radius: 20px;
+        }
+        .poll-card .poll-status.active {
+            background: rgba(46, 204, 113, 0.12);
+            color: #2ecc71;
+        }
+        .poll-card .poll-status.closed {
+            background: rgba(220, 53, 69, 0.12);
+            color: #dc3545;
+        }
+        .poll-card .poll-body { margin: 12px 0 14px; }
+        .poll-card .poll-option {
+            display: flex; align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .poll-card .poll-option:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(245, 158, 11, 0.15);
+        }
+        .poll-card .poll-option.voted {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.06);
+        }
+        .poll-card .poll-option .opt-label {
+            font-size: 14px; color: #ddd; flex: 1;
+        }
+        .poll-card .poll-option .opt-votes {
+            font-size: 12px; color: #666; margin: 0 12px;
+            min-width: 40px; text-align: right;
+        }
+        .poll-card .poll-option .opt-bar {
+            width: 100px; height: 6px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .poll-card .poll-option .opt-bar .fill {
+            height: 100%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+        .poll-card .poll-option .opt-check {
+            margin-left: 8px;
+            font-size: 16px;
+            color: #2ecc71;
+            display: none;
+        }
+        .poll-card .poll-option.voted .opt-check {
+            display: inline-block;
+        }
+        .poll-card .poll-footer {
+            display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            font-size: 12px;
+            color: #666;
+        }
+        .poll-card .poll-footer .actions {
+            display: flex; gap: 8px;
+        }
+        .poll-card .poll-footer .actions button {
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .poll-card .poll-footer .actions button:hover {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.08);
+        }
+        .poll-card .poll-footer .actions button.danger:hover {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.08);
+        }
+
+        /* ===== 空状态 ===== */
+        .empty-state {
+            text-align: center; padding: 80px 20px; color: #555;
+        }
+        .empty-state .icon { font-size: 56px; display: block; margin-bottom: 16px; opacity: 0.5; }
+        .empty-state h3 { color: #888; font-size: 18px; margin-bottom: 8px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ===== 创建投票弹窗 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            justify-content: center; align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #16213e;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+            max-width: 560px; width: 100%;
+            padding: 32px;
+            animation: modalIn 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal .modal-header h3 {
+            font-size: 22px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .modal .modal-header .close {
+            background: none; border: none; color: #666;
+            font-size: 24px; cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal .modal-header .close:hover { color: #dc3545; }
+        .modal label {
+            display: block; font-size: 13px; color: #888;
+            margin-bottom: 4px; margin-top: 12px;
+        }
+        .modal input[type="text"],
+        .modal input[type="number"] {
+            width: 100%; padding: 10px 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            color: #eef4ff;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .modal input:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        .modal .options-container { margin: 8px 0 12px; }
+        .modal .option-row {
+            display: flex; gap: 8px; align-items: center;
+            margin-bottom: 6px;
+        }
+        .modal .option-row input { flex: 1; }
+        .modal .option-row .remove-opt {
+            background: none; border: none;
+            color: #666; cursor: pointer;
+            font-size: 16px; padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .modal .option-row .remove-opt:hover {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.08);
+        }
+        .modal .add-opt-btn {
+            background: transparent;
+            border: 1px dashed rgba(255,255,255,0.08);
+            color: #888;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .modal .add-opt-btn:hover {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .modal .settings-row {
+            display: flex; gap: 20px; flex-wrap: wrap;
+            margin: 12px 0 16px;
+        }
+        .modal .settings-row label {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 13px; color: #888; cursor: pointer;
+            margin: 0;
+        }
+        .modal .settings-row input[type="checkbox"] {
+            accent-color: #f59e0b; width: 16px; height: 16px;
+        }
+        .modal .modal-actions {
+            display: flex; gap: 10px; justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .modal .modal-actions button {
+            padding: 10px 24px; border-radius: 10px;
+            cursor: pointer; border: none;
+            font-weight: 600; font-size: 14px;
+            transition: all 0.2s;
+        }
+        .modal .modal-actions .cancel {
+            background: rgba(255,255,255,0.04);
+            color: #888;
+        }
+        .modal .modal-actions .cancel:hover {
+            background: rgba(255,255,255,0.08);
+        }
+        .modal .modal-actions .submit {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #1a1a2e;
+        }
+        .modal .modal-actions .submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+        }
+        .modal .modal-actions .submit:disabled {
+            opacity: 0.5; cursor: not-allowed; transform: none;
+        }
+        .modal .modal-message {
+            margin-top: 12px; font-size: 13px; text-align: center;
+        }
+        .modal .modal-message.error { color: #dc3545; }
+        .modal .modal-message.success { color: #2ecc71; }
+
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 13px; z-index: 99999;
+            background: #16213e; border: 1px solid rgba(255,255,255,0.06);
+            color: #eef4ff; opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { border-color: #2ecc71; color: #2ecc71; }
+        .toast.error { border-color: #dc3545; color: #dc3545; }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 768px) {
+            .container { padding: 12px 16px; }
+            .header-left .title { font-size: 18px; }
+            .header-left .subtitle { display: none; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .poll-card { padding: 16px; }
+            .poll-card .poll-option .opt-bar { width: 60px; }
+            .modal { padding: 20px; }
+            .settings-row { flex-direction: column; gap: 8px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .search-box input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-gradient"></div>
+<div class="bg-blur-1"></div>
+<div class="bg-blur-2"></div>
+
+<div class="container">
+
+    <!-- ===== 顶部导航 ===== -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo"></div>
+            <div>
+                <div class="title">🗳️ NFLSHC 投票</div>
+                <div class="subtitle">发起投票 · 收集意见 · 社区决策</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <a href="chat.html" class="nav-link">💬 聊天</a>
+            <a href="posts.html" class="nav-link">📝 帖子</a>
+            <a href="articles.html" class="nav-link">📄 文章</a>
+            <div class="user-badge">
+                <div class="avatar" id="userAvatar">U</div>
+                <span id="userName">用户</span>
+                <span class="plan" id="userPlan">免费</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== 统计 ===== -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="number" id="totalPolls">0</div>
+            <div class="label">📊 总投票</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="activePolls">0</div>
+            <div class="label">🟢 进行中</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="totalVotes">0</div>
+            <div class="label">🗳️ 总票数</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="myPolls">0</div>
+            <div class="label">👤 我发起的</div>
+        </div>
+    </div>
+
+    <!-- ===== 工具栏 ===== -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <button class="btn btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> 发起投票
+            </button>
+            <button class="btn btn-outline" onclick="loadPolls()">
+                <i class="fas fa-sync"></i> 刷新
+            </button>
+            <button class="btn btn-ghost" onclick="clearFilter()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="toolbar-right">
+            <div class="search-box">
+                <span class="icon"><i class="fas fa-search"></i></span>
+                <input type="text" id="searchInput" placeholder="搜索投票..." oninput="filterPolls()">
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 投票列表 ===== -->
+    <div class="polls-grid" id="pollsGrid">
+        <div class="empty-state">
+            <span class="icon">📭</span>
+            <h3>暂无投票</h3>
+            <p>点击「发起投票」创建你的第一个投票</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== 创建投票弹窗 ===== -->
+<div class="modal-overlay" id="createModal" onclick="if(event.target===this)closeCreateModal()">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>🗳️ 发起投票</h3>
+            <button class="close" onclick="closeCreateModal()">✕</button>
+        </div>
+
+        <label>投票问题</label>
+        <input type="text" id="pollQuestion" placeholder="输入投票问题..." maxlength="200">
+
+        <label style="margin-top:14px;">选项（至少2个）</label>
+        <div class="options-container" id="optionsContainer">
+            <div class="option-row">
+                <input type="text" class="poll-option-input" placeholder="选项 1" value="">
+                <button class="remove-opt" onclick="removeOption(this)" style="display:none;">✕</button>
+            </div>
+            <div class="option-row">
+                <input type="text" class="poll-option-input" placeholder="选项 2" value="">
+                <button class="remove-opt" onclick="removeOption(this)" style="display:none;">✕</button>
+            </div>
+        </div>
+        <button class="add-opt-btn" onclick="addOption()">+ 添加选项</button>
+
+        <div class="settings-row">
+            <label>
+                <input type="checkbox" id="pollMultiSelect"> 允许多选
+            </label>
+            <label>
+                <input type="checkbox" id="pollAnonymous" checked> 匿名投票
+            </label>
+            <label>
+                <input type="checkbox" id="pollAllowView"> 允许查看结果
+            </label>
+            <label>
+                <input type="checkbox" id="pollDuration"> 限时投票
+                <input type="number" id="pollHours" placeholder="小时" style="width:60px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.04);color:#eef4ff;font-size:12px;display:none;" min="1" max="168" value="24">
+            </label>
+        </div>
+
+        <div class="modal-actions">
+            <button class="cancel" onclick="closeCreateModal()">取消</button>
+            <button class="submit" id="submitPollBtn" onclick="submitPoll()">发布投票</button>
+        </div>
+        <div class="modal-message" id="pollMessage"></div>
+    </div>
+</div>
+
+<!-- ===== Toast ===== -->
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+    // ============================================================
+    //  配置
+    // ============================================================
+    const POLL_LABEL = 'poll';
+    let currentUser = null;
+    let allPolls = [];
+    let filteredPolls = [];
+
+    // ============================================================
+    //  认证
+    // ============================================================
+    function checkAuth() {
+        let userStr = sessionStorage.getItem('currentUser') || localStorage.getItem('nflshc_currentUser');
+        if (!userStr) {
+            window.location.href = 'index.html';
+            return false;
+        }
+        currentUser = JSON.parse(userStr);
+        document.getElementById('userName').textContent = currentUser.username;
+        document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+        if (currentUser.isAdmin || currentUser.username === 'huangzhiyuan') {
+            document.getElementById('userPlan').textContent = '管理员';
+            document.getElementById('userPlan').style.color = '#f59e0b';
+        }
+        return true;
+    }
+
+    // ============================================================
+    //  加载投票
+    // ============================================================
+    async function loadPolls() {
+        const grid = document.getElementById('pollsGrid');
+        grid.innerHTML = '<div class="empty-state"><span class="icon">⏳</span>加载中...</div>';
+
+        try {
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${POLL_LABEL}&state=open`;
+            const res = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            const issues = await res.json();
+            allPolls = [];
+
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try {
+                        const data = JSON.parse(match[1]);
+                        allPolls.push({
+                            ...data,
+                            issueNumber: issue.number,
+                            title: issue.title.replace(/^投票: /, '')
+                        });
+                    } catch(e) {}
+                }
+            }
+
+            allPolls.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            // 检查过期的投票
+            const now = Date.now();
+            allPolls.forEach(p => {
+                if (p.duration && p.duration > 0 && p.active !== false) {
+                    const createdAt = new Date(p.createdAt).getTime();
+                    if (now - createdAt > p.duration * 3600000) {
+                        p.active = false;
+                    }
+                }
+            });
+
+            filteredPolls = [...allPolls];
+            renderPolls();
+            updateStats();
+
+        } catch (error) {
+            grid.innerHTML = `<div class="empty-state"><span class="icon">❌</span>加载失败: ${error.message}</div>`;
+        }
+    }
+
+    // ============================================================
+    //  渲染投票
+    // ============================================================
+    function renderPolls() {
+        const grid = document.getElementById('pollsGrid');
+        const items = filteredPolls;
+
+        if (items.length === 0) {
+            grid.innerHTML = `<div class="empty-state">
+                <span class="icon">📭</span>
+                <h3>${allPolls.length === 0 ? '暂无投票' : '没有匹配的投票'}</h3>
+                <p>${allPolls.length === 0 ? '点击「发起投票」创建第一个投票' : '试试其他搜索关键词'}</p>
+            </div>`;
+            return;
+        }
+
+        grid.innerHTML = items.map(poll => {
+            const isActive = poll.active !== false;
+            const totalVotes = poll.options?.reduce((sum, o) => sum + (o.votes?.length || 0), 0) || 0;
+            const isCreator = poll.creator === currentUser.username;
+            const userVoted = poll.options?.some(o => o.votes?.includes(currentUser.username)) || false;
+
+            return `
+                <div class="poll-card" data-id="${poll.id}">
+                    <div class="poll-header">
+                        <div>
+                            <div class="poll-question">${escapeHtml(poll.question)}</div>
+                            <div class="poll-meta">
+                                <span><i class="fas fa-user"></i> ${escapeHtml(poll.creator)}</span>
+                                <span><i class="fas fa-clock"></i> ${new Date(poll.createdAt).toLocaleString()}</span>
+                                <span><i class="fas fa-users"></i> ${totalVotes} 人参与</span>
+                                ${poll.multiSelect ? '<span style="color:#f59e0b;">🔀 多选</span>' : ''}
+                                ${poll.anonymous ? '<span style="color:#888;">🔒 匿名</span>' : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="poll-status ${isActive ? 'active' : 'closed'}">
+                                ${isActive ? '🟢 进行中' : '🔴 已结束'}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="poll-body">
+                        ${poll.options.map((opt, index) => {
+                            const voteCount = opt.votes?.length || 0;
+                            const percent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+                            const isVoted = opt.votes?.includes(currentUser.username) || false;
+                            const canVote = isActive && !userVoted;
+                            return `
+                                <div class="poll-option ${isVoted ? 'voted' : ''}" onclick="votePoll('${poll.id}', ${index})" style="${!canVote && !isVoted ? 'cursor:default;' : ''}">
+                                    <span class="opt-label">${escapeHtml(opt.text)}</span>
+                                    <span class="opt-votes">${voteCount} 票</span>
+                                    <div class="opt-bar"><div class="fill" style="width:${percent}%;"></div></div>
+                                    <span class="opt-check">✓</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <div class="poll-footer">
+                        <div>
+                            ${poll.duration ? `⏱️ ${poll.duration} 小时限时` : '📌 不限时'}
+                            ${poll.allowView !== false ? ' · 👁️ 结果可见' : ''}
+                        </div>
+                        <div class="actions">
+                            <button onclick="copyPollLink('${poll.id}')" title="复制链接"><i class="fas fa-link"></i></button>
+                            ${isCreator ? `<button class="danger" onclick="deletePoll('${poll.id}')" title="删除投票"><i class="fas fa-trash"></i></button>` : ''}
+                            ${isCreator && isActive ? `<button onclick="closePoll('${poll.id}')" title="结束投票"><i class="fas fa-stop-circle"></i></button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('totalPolls').textContent = allPolls.length;
+    }
+
+    // ============================================================
+    //  更新统计
+    // ============================================================
+    function updateStats() {
+        const total = allPolls.length;
+        const active = allPolls.filter(p => p.active !== false).length;
+        const totalVotes = allPolls.reduce((sum, p) => {
+            return sum + (p.options?.reduce((s, o) => s + (o.votes?.length || 0), 0) || 0);
+        }, 0);
+        const myPolls = allPolls.filter(p => p.creator === currentUser.username).length;
+
+        document.getElementById('totalPolls').textContent = total;
+        document.getElementById('activePolls').textContent = active;
+        document.getElementById('totalVotes').textContent = totalVotes;
+        document.getElementById('myPolls').textContent = myPolls;
+    }
+
+    // ============================================================
+    //  投票
+    // ============================================================
+    async function votePoll(pollId, optionIndex) {
+        if (!currentUser) { showToast('请先登录', 'error'); return; }
+
+        const poll = allPolls.find(p => p.id === pollId);
+        if (!poll) { showToast('投票不存在', 'error'); return; }
+        if (poll.active === false) { showToast('此投票已结束', 'error'); return; }
+
+        const option = poll.options[optionIndex];
+        if (!option) return;
+
+        // 检查是否已投票
+        if (option.votes?.includes(currentUser.username)) {
+            // 取消投票
+            option.votes = option.votes.filter(v => v !== currentUser.username);
+        } else {
+            // 单选：移除其他选项的投票
+            if (!poll.multiSelect) {
+                poll.options.forEach(o => {
+                    if (o.votes) o.votes = o.votes.filter(v => v !== currentUser.username);
+                });
+            }
+            if (!option.votes) option.votes = [];
+            option.votes.push(currentUser.username);
+        }
+
+        // 更新总票数
+        const totalVotes = poll.options.reduce((sum, o) => sum + (o.votes?.length || 0), 0);
+
+        try {
+            const issueBody = `投票数据\n\`\`\`json\n${JSON.stringify(poll, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${poll.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ body: issueBody })
+            });
+
+            // 更新本地数据
+            const localPoll = allPolls.find(p => p.id === pollId);
+            if (localPoll) {
+                localPoll.options = poll.options;
+            }
+
+            renderPolls();
+            updateStats();
+            showToast('✅ 投票已更新', 'success');
+
+        } catch (error) {
+            showToast('❌ 投票失败: ' + error.message, 'error');
+        }
+    }
+
+    // ============================================================
+    //  创建投票
+    // ============================================================
+    function openCreateModal() {
+        document.getElementById('createModal').classList.add('open');
+        document.getElementById('pollQuestion').value = '';
+        document.getElementById('pollMultiSelect').checked = false;
+        document.getElementById('pollAnonymous').checked = true;
+        document.getElementById('pollAllowView').checked = true;
+        document.getElementById('pollDuration').checked = false;
+        document.getElementById('pollHours').style.display = 'none';
+        document.getElementById('pollMessage').textContent = '';
+        document.getElementById('pollMessage').className = 'modal-message';
+
+        // 重置选项
+        const container = document.getElementById('optionsContainer');
+        container.innerHTML = `
+            <div class="option-row">
+                <input type="text" class="poll-option-input" placeholder="选项 1" value="">
+                <button class="remove-opt" onclick="removeOption(this)" style="display:none;">✕</button>
+            </div>
+            <div class="option-row">
+                <input type="text" class="poll-option-input" placeholder="选项 2" value="">
+                <button class="remove-opt" onclick="removeOption(this)" style="display:none;">✕</button>
+            </div>
+        `;
+
+        // 限时投票联动
+        document.getElementById('pollDuration').addEventListener('change', function() {
+            document.getElementById('pollHours').style.display = this.checked ? 'inline-block' : 'none';
+        });
+    }
+
+    function closeCreateModal() {
+        document.getElementById('createModal').classList.remove('open');
+    }
+
+    function addOption() {
+        const container = document.getElementById('optionsContainer');
+        const count = container.querySelectorAll('.option-row').length + 1;
+        const row = document.createElement('div');
+        row.className = 'option-row';
+        row.innerHTML = `
+            <input type="text" class="poll-option-input" placeholder="选项 ${count}" value="">
+            <button class="remove-opt" onclick="removeOption(this)">✕</button>
+        `;
+        container.appendChild(row);
+    }
+
+    function removeOption(btn) {
+        const container = document.getElementById('optionsContainer');
+        if (container.querySelectorAll('.option-row').length <= 2) {
+            showToast('至少需要2个选项', 'error');
+            return;
+        }
+        btn.closest('.option-row').remove();
+    }
+
+    async function submitPoll() {
+        const question = document.getElementById('pollQuestion').value.trim();
+        const optionInputs = document.querySelectorAll('.poll-option-input');
+        const options = [];
+        optionInputs.forEach(inp => {
+            const val = inp.value.trim();
+            if (val) options.push(val);
+        });
+        const multiSelect = document.getElementById('pollMultiSelect').checked;
+        const anonymous = document.getElementById('pollAnonymous').checked;
+        const allowView = document.getElementById('pollAllowView').checked;
+        const hasDuration = document.getElementById('pollDuration').checked;
+        const hours = parseInt(document.getElementById('pollHours').value) || 24;
+        const duration = hasDuration ? hours : 0;
+
+        const msg = document.getElementById('pollMessage');
+
+        if (!question) {
+            msg.textContent = '请输入投票问题';
+            msg.className = 'modal-message error';
+            return;
+        }
+        if (options.length < 2) {
+            msg.textContent = '请至少输入2个选项';
+            msg.className = 'modal-message error';
+            return;
+        }
+
+        const pollData = {
+            id: `poll_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            question: question,
+            options: options.map(text => ({ text, votes: [] })),
+            multiSelect: multiSelect,
+            anonymous: anonymous,
+            allowView: allowView,
+            duration: duration,
+            creator: currentUser.username,
+            createdAt: new Date().toISOString(),
+            active: true
+        };
+
+        const btn = document.getElementById('submitPollBtn');
+        btn.disabled = true;
+        btn.textContent = '发布中...';
+        msg.textContent = '';
+        msg.className = 'modal-message';
+
+        try {
+            const issueBody = `投票数据\n\`\`\`json\n${JSON.stringify(pollData, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: `投票: ${question}`,
+                    body: issueBody,
+                    labels: [POLL_LABEL]
+                })
+            });
+
+            msg.textContent = '✅ 投票发布成功！';
+            msg.className = 'modal-message success';
+
+            setTimeout(() => {
+                closeCreateModal();
+                loadPolls();
+            }, 1200);
+
+        } catch (error) {
+            msg.textContent = '❌ 发布失败: ' + error.message;
+            msg.className = 'modal-message error';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '发布投票';
+        }
+    }
+
+    // ============================================================
+    //  删除投票
+    // ============================================================
+    async function deletePoll(pollId) {
+        if (!confirm('确定要删除此投票吗？此操作不可恢复。')) return;
+        const poll = allPolls.find(p => p.id === pollId);
+        if (!poll) return;
+
+        try {
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${poll.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: 'closed' })
+            });
+            showToast('✅ 投票已删除', 'success');
+            loadPolls();
+        } catch (error) {
+            showToast('❌ 删除失败: ' + error.message, 'error');
+        }
+    }
+
+    // ============================================================
+    //  结束投票
+    // ============================================================
+    async function closePoll(pollId) {
+        if (!confirm('确定要结束此投票吗？')) return;
+        const poll = allPolls.find(p => p.id === pollId);
+        if (!poll) return;
+        poll.active = false;
+
+        try {
+            const issueBody = `投票数据\n\`\`\`json\n${JSON.stringify(poll, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${poll.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ body: issueBody })
+            });
+            showToast('✅ 投票已结束', 'success');
+            loadPolls();
+        } catch (error) {
+            showToast('❌ 操作失败: ' + error.message, 'error');
+        }
+    }
+
+    // ============================================================
+    //  复制链接
+    // ============================================================
+    function copyPollLink(pollId) {
+        const url = `${window.location.origin}${window.location.pathname}?poll=${pollId}`;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => showToast('✅ 链接已复制', 'success'));
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('✅ 链接已复制', 'success');
+        }
+    }
+
+    // ============================================================
+    //  搜索过滤
+    // ============================================================
+    function filterPolls() {
+        const q = document.getElementById('searchInput').value.toLowerCase().trim();
+        if (!q) { filteredPolls = [...allPolls]; renderPolls(); return; }
+        filteredPolls = allPolls.filter(p =>
+            p.question.toLowerCase().includes(q) ||
+            p.creator.toLowerCase().includes(q)
+        );
+        renderPolls();
+    }
+
+    function clearFilter() {
+        document.getElementById('searchInput').value = '';
+        filteredPolls = [...allPolls];
+        renderPolls();
+    }
+
+    // ============================================================
+    //  URL 参数检测
+    // ============================================================
+    function checkUrlParam() {
+        const params = new URLSearchParams(window.location.search);
+        const pollId = params.get('poll');
+        if (pollId) {
+            setTimeout(() => {
+                const poll = allPolls.find(p => p.id === pollId);
+                if (poll) {
+                    document.getElementById('pollsGrid').scrollIntoView({ behavior: 'smooth' });
+                    // 高亮对应的投票卡片
+                    const cards = document.querySelectorAll('.poll-card');
+                    cards.forEach(card => {
+                        if (card.dataset.id === pollId) {
+                            card.style.borderColor = '#f59e0b';
+                            card.style.boxShadow = '0 0 30px rgba(245,158,11,0.15)';
+                            setTimeout(() => {
+                                card.style.borderColor = '';
+                                card.style.boxShadow = '';
+                            }, 3000);
+                        }
+                    });
+                }
+            }, 500);
+        }
+    }
+
+    // ============================================================
+    //  Toast
+    // ============================================================
+    function showToast(msg, type = '') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast ' + type;
+        requestAnimationFrame(() => toast.classList.add('show'));
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // ============================================================
+    //  初始化
+    // ============================================================
+    if (!checkAuth()) { /* 已重定向 */ }
+
+    loadPolls();
+    setTimeout(checkUrlParam, 1000);
+
+    console.log('🗳️ NFLSHC 投票中心已加载');
+    console.log('👤 当前用户:', currentUser?.username);
+</script>
+
+</body>
+</html>
