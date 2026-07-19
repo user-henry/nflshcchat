@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat · 日历</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- FullCalendar 核心库 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/locales/zh-cn.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a1a;
+            color: #eef4ff;
+            min-height: 100vh;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(1200px 600px at 15% -10%, rgba(14, 165, 233, 0.08), transparent),
+                radial-gradient(900px 500px at 110% 10%, rgba(245, 158, 11, 0.06), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto;
+            padding: 20px 24px 40px;
+            min-height: 100vh;
+        }
+
+        .header {
+            display: flex; flex-wrap: wrap;
+            justify-content: space-between; align-items: center;
+            gap: 16px;
+            padding: 16px 0 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-left .logo {
+            width: 44px; height: 44px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            border-radius: 10px;
+        }
+        .header-left .title {
+            font-size: 22px; font-weight: 700;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-left .subtitle { font-size: 12px; color: #555; margin-top: 2px; }
+        .header-right {
+            display: flex; align-items: center;
+            gap: 12px; flex-wrap: wrap;
+        }
+        .header-right .nav-link {
+            color: #888; text-decoration: none;
+            font-size: 13px; padding: 6px 14px;
+            border-radius: 8px; transition: all 0.2s;
+        }
+        .header-right .nav-link:hover {
+            color: #f59e0b; background: rgba(245, 158, 11, 0.08);
+        }
+        .user-badge {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px 6px 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            font-size: 13px;
+        }
+        .user-badge .avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #1a1a2e;
+        }
+
+        .calendar-wrapper {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #calendar {
+            width: 100%;
+            min-height: 650px;
+            height: auto;
+            color: #eef4ff;
+        }
+
+        /* ===== FullCalendar 暗色主题覆盖 ===== */
+        .fc {
+            color: #eef4ff;
+        }
+        .fc .fc-toolbar-title {
+            color: #f59e0b;
+        }
+        .fc .fc-button-primary {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.08);
+            color: #aaa;
+        }
+        .fc .fc-button-primary:hover {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .fc .fc-button-primary:focus {
+            box-shadow: none;
+        }
+        .fc .fc-button-primary:not(:disabled).fc-button-active {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        .fc .fc-daygrid-day {
+            background: rgba(255,255,255,0.02);
+            border-color: rgba(255,255,255,0.04);
+        }
+        .fc .fc-daygrid-day.fc-day-today {
+            background: rgba(245, 158, 11, 0.05);
+        }
+        .fc .fc-daygrid-day-number {
+            color: #eef4ff;
+        }
+        .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+            color: #555;
+        }
+        .fc .fc-col-header-cell {
+            background: rgba(255,255,255,0.03);
+            border-color: rgba(255,255,255,0.04);
+        }
+        .fc .fc-col-header-cell-cushion {
+            color: #888;
+            font-weight: 500;
+        }
+        .fc .fc-daygrid-event {
+            background: #f59e0b;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .fc .fc-daygrid-event:hover {
+            background: #d97706;
+        }
+        .fc .fc-daygrid-event .fc-event-title {
+            color: #1a1a2e;
+            font-weight: 500;
+        }
+        .fc .fc-timegrid-slot {
+            border-color: rgba(255,255,255,0.04);
+        }
+        .fc .fc-timegrid-axis {
+            color: #666;
+        }
+        .fc .fc-timegrid-event {
+            background: #f59e0b;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+        }
+        .fc .fc-timegrid-event .fc-event-title {
+            color: #1a1a2e;
+            font-weight: 500;
+        }
+        .fc .fc-timegrid-event:hover {
+            background: #d97706;
+        }
+        .fc .fc-list-day-text {
+            color: #f59e0b;
+        }
+        .fc .fc-list-day-side-text {
+            color: #888;
+        }
+        .fc .fc-list-event {
+            background: rgba(255,255,255,0.02);
+            border-color: rgba(255,255,255,0.04);
+            color: #eef4ff;
+        }
+        .fc .fc-list-event:hover {
+            background: rgba(255,255,255,0.04);
+        }
+        .fc .fc-list-event td {
+            border-color: rgba(255,255,255,0.04);
+        }
+        .fc .fc-popover {
+            background: #16213e;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .fc .fc-popover-header {
+            background: rgba(255,255,255,0.04);
+            color: #eef4ff;
+        }
+        .fc .fc-popover-close {
+            color: #666;
+        }
+        .fc .fc-more-popover .fc-popover-body {
+            background: #16213e;
+        }
+        .fc .fc-daygrid-more-link {
+            color: #f59e0b;
+        }
+
+        .fc .fc-scrollgrid {
+            border-color: rgba(255,255,255,0.04);
+        }
+        .fc .fc-scrollgrid-section > td {
+            border-color: rgba(255,255,255,0.04);
+        }
+        .fc .fc-daygrid-day-frame {
+            border-color: rgba(255,255,255,0.04);
+        }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 13px; z-index: 99999;
+            background: #16213e; border: 1px solid rgba(255,255,255,0.06);
+            color: #eef4ff; opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+        .toast.show { opacity: 1; }
+        .toast.success { border-color: #2ecc71; color: #2ecc71; }
+        .toast.error { border-color: #dc3545; color: #dc3545; }
+
+        @media (max-width: 768px) {
+            .container { padding: 12px 16px; }
+            .header-left .title { font-size: 18px; }
+            .header-left .subtitle { display: none; }
+            .calendar-wrapper { padding: 12px; }
+            #calendar { min-height: 500px; }
+            .fc .fc-toolbar {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .fc .fc-toolbar-chunk {
+                display: flex;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-gradient"></div>
+
+<div class="container">
+
+    <header class="header">
+        <div class="header-left">
+            <div class="logo"></div>
+            <div>
+                <div class="title">📅 NFLSHC 日历</div>
+                <div class="subtitle">规划日程 · 事件提醒 · 同步至 GitHub</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <a href="chat.html" class="nav-link">💬 聊天</a>
+            <a href="posts.html" class="nav-link">📝 帖子</a>
+            <a href="articles.html" class="nav-link">📄 文章</a>
+            <a href="polls.html" class="nav-link">🗳️ 投票</a>
+            <div class="user-badge">
+                <div class="avatar" id="userAvatar">U</div>
+                <span id="userName">用户</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="calendar-wrapper">
+        <div id="calendar"></div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+    // ============================================================
+    //  配置
+    // ============================================================
+    const CALENDAR_LABEL = 'calendar_event';
+    let currentUser = null;
+    let calendar = null;
+    let allEvents = [];
+    let eventIdCounter = 0;
+    let calendarReady = false;
+
+    // ============================================================
+    //  认证
+    // ============================================================
+    function checkAuth() {
+        let userStr = sessionStorage.getItem('currentUser') || localStorage.getItem('nflshc_currentUser');
+        if (!userStr) {
+            window.location.href = 'index.html';
+            return false;
+        }
+        currentUser = JSON.parse(userStr);
+        document.getElementById('userName').textContent = currentUser.username;
+        document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+        return true;
+    }
+
+    // ============================================================
+    //  工具函数
+    // ============================================================
+    function generateId() {
+        eventIdCounter++;
+        return `evt_${Date.now()}_${eventIdCounter}`;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showToast(msg, type = '') {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast ' + type;
+        requestAnimationFrame(() => toast.classList.add('show'));
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ============================================================
+    //  弹窗管理 - 统一关闭函数
+    // ============================================================
+    function closeModal(modalElement) {
+        if (modalElement && modalElement.parentNode) {
+            modalElement.parentNode.removeChild(modalElement);
+        }
+        // 也尝试查找并移除任何残留的弹窗
+        document.querySelectorAll('.custom-modal-overlay').forEach(el => {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        });
+    }
+
+    function closeModalById(modalId) {
+        const el = document.getElementById(modalId);
+        if (el && el.parentNode) {
+            el.parentNode.removeChild(el);
+        }
+    }
+
+    // ============================================================
+    //  本地缓存
+    // ============================================================
+    function getLocalCacheKey() {
+        return `nflshc_calendar_${currentUser.username}`;
+    }
+
+    function saveToLocalCache(events) {
+        try {
+            localStorage.setItem(getLocalCacheKey(), JSON.stringify(events));
+        } catch (e) {
+            console.warn('本地缓存保存失败:', e);
+        }
+    }
+
+    function loadFromLocalCache() {
+        try {
+            const data = localStorage.getItem(getLocalCacheKey());
+            if (data) return JSON.parse(data);
+        } catch (e) {
+            console.warn('本地缓存读取失败:', e);
+        }
+        return null;
+    }
+
+    // ============================================================
+    //  GitHub Issues 同步
+    // ============================================================
+    function getCalendarLabel() {
+        return `calendar_${currentUser.username}`;
+    }
+
+    async function loadEventsFromGitHub() {
+        try {
+            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getCalendarLabel()}&state=open`;
+            const res = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            const issues = await res.json();
+            const events = [];
+
+            for (const issue of issues) {
+                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                if (match) {
+                    try {
+                        const data = JSON.parse(match[1]);
+                        events.push({
+                            ...data,
+                            issueNumber: issue.number
+                        });
+                    } catch(e) {}
+                }
+            }
+
+            return events;
+        } catch (error) {
+            console.error('从 GitHub 加载失败:', error);
+            return null;
+        }
+    }
+
+    async function saveEventToGitHub(eventData) {
+        try {
+            const issueBody = `日历事件\n\`\`\`json\n${JSON.stringify(eventData, null, 2)}\n\`\`\``;
+            const res = await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: `日历事件: ${eventData.title}`,
+                    body: issueBody,
+                    labels: [getCalendarLabel()]
+                })
+            });
+            const data = await res.json();
+            return data.number;
+        } catch (error) {
+            console.error('保存到 GitHub 失败:', error);
+            return null;
+        }
+    }
+
+    async function updateEventOnGitHub(eventData) {
+        try {
+            const issueBody = `日历事件\n\`\`\`json\n${JSON.stringify(eventData, null, 2)}\n\`\`\``;
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${eventData.issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ body: issueBody })
+            });
+            return true;
+        } catch (error) {
+            console.error('更新 GitHub 失败:', error);
+            return false;
+        }
+    }
+
+    async function deleteEventFromGitHub(issueNumber) {
+        try {
+            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ state: 'closed' })
+            });
+            return true;
+        } catch (error) {
+            console.error('从 GitHub 删除失败:', error);
+            return false;
+        }
+    }
+
+    // ============================================================
+    //  事件 CRUD 操作
+    // ============================================================
+    async function loadEvents() {
+        let events = await loadEventsFromGitHub();
+
+        if (!events || events.length === 0) {
+            const cached = loadFromLocalCache();
+            if (cached && cached.length > 0) {
+                events = cached;
+                for (const evt of events) {
+                    if (!evt.issueNumber) {
+                        const issueNum = await saveEventToGitHub(evt);
+                        if (issueNum) evt.issueNumber = issueNum;
+                    }
+                }
+                if (events.some(e => e.issueNumber)) {
+                    saveToLocalCache(events);
+                }
+            } else {
+                events = [];
+            }
+        } else {
+            saveToLocalCache(events);
+        }
+
+        allEvents = events;
+        return events;
+    }
+
+    async function addEvent(eventData) {
+        const newEvent = {
+            id: generateId(),
+            title: eventData.title || '未命名事件',
+            start: eventData.start,
+            end: eventData.end || eventData.start,
+            description: eventData.description || '',
+            remindMinutes: eventData.remindMinutes || 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        const issueNum = await saveEventToGitHub(newEvent);
+        if (issueNum) {
+            newEvent.issueNumber = issueNum;
+        }
+
+        allEvents.push(newEvent);
+        saveToLocalCache(allEvents);
+        return newEvent;
+    }
+
+    async function updateEvent(eventId, updates) {
+        const index = allEvents.findIndex(e => e.id === eventId);
+        if (index === -1) return null;
+
+        const updated = { ...allEvents[index], ...updates, updatedAt: new Date().toISOString() };
+        allEvents[index] = updated;
+
+        if (updated.issueNumber) {
+            await updateEventOnGitHub(updated);
+        } else {
+            const issueNum = await saveEventToGitHub(updated);
+            if (issueNum) updated.issueNumber = issueNum;
+        }
+
+        saveToLocalCache(allEvents);
+        return updated;
+    }
+
+    async function deleteEvent(eventId) {
+        const index = allEvents.findIndex(e => e.id === eventId);
+        if (index === -1) return false;
+
+        const event = allEvents[index];
+        if (event.issueNumber) {
+            await deleteEventFromGitHub(event.issueNumber);
+        }
+
+        allEvents.splice(index, 1);
+        saveToLocalCache(allEvents);
+        return true;
+    }
+
+    // ============================================================
+    //  浏览器通知
+    // ============================================================
+    function requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+
+    function sendBrowserNotification(title, body, options = {}) {
+        if (!('Notification' in window)) {
+            console.warn('浏览器不支持 Notification API');
+            return;
+        }
+        if (Notification.permission === 'granted') {
+            try {
+                new Notification(title, {
+                    body: body,
+                    icon: options.icon || 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png',
+                    tag: options.tag || 'calendar_reminder',
+                    requireInteraction: true,
+                    ...options
+                });
+            } catch (e) {
+                console.warn('发送通知失败:', e);
+            }
+        } else if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }
+
+    // ============================================================
+    //  检查即将到来的事件并提醒
+    // ============================================================
+    function checkUpcomingEvents() {
+        const now = new Date();
+        const checkedIds = new Set();
+
+        try {
+            const reminded = JSON.parse(localStorage.getItem('nflshc_calendar_reminded') || '[]');
+            reminded.forEach(id => checkedIds.add(id));
+        } catch(e) {}
+
+        let updatedReminded = [...checkedIds];
+
+        for (const evt of allEvents) {
+            if (!evt.start) continue;
+            if (checkedIds.has(evt.id)) continue;
+
+            const eventTime = new Date(evt.start);
+            const remindMinutes = evt.remindMinutes || 0;
+            const remindTime = new Date(eventTime.getTime() - remindMinutes * 60000);
+            const diff = remindTime.getTime() - now.getTime();
+
+            if (diff < 10000 && diff > -60000) {
+                const title = `⏰ 即将开始: ${evt.title}`;
+                const body = `事件将在 ${eventTime.toLocaleString()} 开始`;
+                sendBrowserNotification(title, body, {
+                    tag: `reminder_${evt.id}`,
+                    requireInteraction: true
+                });
+                checkedIds.add(evt.id);
+                updatedReminded.push(evt.id);
+                showToast(`🔔 提醒: ${evt.title}`, 'success');
+            }
+        }
+
+        try {
+            localStorage.setItem('nflshc_calendar_reminded', JSON.stringify(updatedReminded));
+        } catch(e) {}
+    }
+
+    function resetRemindedDaily() {
+        const lastReset = localStorage.getItem('nflshc_calendar_reminded_reset');
+        const today = new Date().toDateString();
+        if (lastReset !== today) {
+            localStorage.setItem('nflshc_calendar_reminded', JSON.stringify([]));
+            localStorage.setItem('nflshc_calendar_reminded_reset', today);
+        }
+    }
+
+    // ============================================================
+    //  等待 FullCalendar 加载完成
+    // ============================================================
+    function waitForFullCalendar() {
+        return new Promise((resolve) => {
+            if (typeof FullCalendar !== 'undefined') {
+                resolve();
+                return;
+            }
+            let attempts = 0;
+            const maxAttempts = 50;
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (typeof FullCalendar !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+        });
+    }
+
+    // ============================================================
+    //  初始化 FullCalendar
+    // ============================================================
+    async function initCalendar() {
+        const container = document.getElementById('calendar');
+
+        await waitForFullCalendar();
+
+        if (typeof FullCalendar === 'undefined') {
+            container.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;height:400px;color:#666;flex-direction:column;gap:12px;">
+                    <div style="font-size:48px;">⚠️</div>
+                    <p>日历库加载失败</p>
+                    <p style="font-size:12px;color:#444;">请检查网络连接后刷新页面</p>
+                    <button onclick="location.reload()" style="padding:8px 20px;border-radius:8px;border:none;background:#f59e0b;color:#1a1a2e;cursor:pointer;font-weight:bold;margin-top:8px;">重新加载</button>
+                </div>
+            `;
+            return;
+        }
+
+        try {
+            if (calendar) {
+                calendar.destroy();
+                calendar = null;
+            }
+
+            const calendarEl = document.getElementById('calendar');
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'zh-cn',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                },
+                buttonText: {
+                    today: '今天',
+                    month: '月',
+                    week: '周',
+                    day: '日',
+                    list: '列表'
+                },
+                events: getCalendarEvents(),
+                eventClick: function(info) {
+                    showEventModal(info.event);
+                },
+                dateClick: function(info) {
+                    showCreateEventModal(info.dateStr);
+                },
+                eventDrop: async function(info) {
+                    try {
+                        const eventId = info.event.id;
+                        const start = info.event.start.toISOString();
+                        const end = info.event.end ? info.event.end.toISOString() : start;
+                        await updateEvent(eventId, { start, end });
+                        showToast('✅ 事件已移动', 'success');
+                    } catch (e) {
+                        console.error('移动事件失败:', e);
+                        showToast('❌ 移动失败: ' + e.message, 'error');
+                        if (calendar) calendar.refetchEvents();
+                    }
+                },
+                eventResize: async function(info) {
+                    try {
+                        const eventId = info.event.id;
+                        const start = info.event.start.toISOString();
+                        const end = info.event.end ? info.event.end.toISOString() : start;
+                        await updateEvent(eventId, { start, end });
+                        showToast('✅ 事件已调整', 'success');
+                    } catch (e) {
+                        console.error('调整事件失败:', e);
+                        showToast('❌ 调整失败: ' + e.message, 'error');
+                        if (calendar) calendar.refetchEvents();
+                    }
+                },
+                loading: function(isLoading) {},
+                height: 'auto',
+                contentHeight: 'auto',
+                aspectRatio: 1.35,
+                displayEventTime: true,
+                displayEventEnd: true,
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: false
+                },
+                slotLabelFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: false
+                },
+                dayMaxEvents: 3,
+                moreLinkText: '+{count} 个',
+                views: {
+                    timeGrid: {
+                        slotMinTime: '06:00:00',
+                        slotMaxTime: '23:00:00'
+                    }
+                },
+                editable: true,
+                droppable: true,
+                eventStartEditable: true,
+                eventDurationEditable: true
+            });
+
+            calendar.render();
+            calendarReady = true;
+            console.log('✅ FullCalendar 已成功初始化');
+
+        } catch (error) {
+            console.error('初始化日历失败:', error);
+            container.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:center;height:400px;color:#666;flex-direction:column;gap:12px;">
+                    <div style="font-size:48px;">⚠️</div>
+                    <p>日历加载失败</p>
+                    <p style="font-size:12px;color:#444;">${error.message}</p>
+                    <button onclick="location.reload()" style="padding:8px 20px;border-radius:8px;border:none;background:#f59e0b;color:#1a1a2e;cursor:pointer;font-weight:bold;margin-top:8px;">重新加载</button>
+                </div>
+            `;
+        }
+    }
+
+    // ============================================================
+    //  获取日历事件
+    // ============================================================
+    function getCalendarEvents() {
+        return allEvents.map(evt => ({
+            id: evt.id,
+            title: evt.title,
+            start: evt.start,
+            end: evt.end || undefined,
+            description: evt.description || '',
+            extendedProps: {
+                remindMinutes: evt.remindMinutes || 0,
+                _raw: evt
+            }
+        }));
+    }
+
+    // ============================================================
+    //  ===== 统一的弹窗关闭函数 =====
+    // ============================================================
+    function closeModalElement(modalElement) {
+        if (modalElement && modalElement.parentNode) {
+            modalElement.parentNode.removeChild(modalElement);
+        }
+    }
+
+    // ============================================================
+    //  事件弹窗（查看/编辑）
+    // ============================================================
+    function showEventModal(event) {
+        const modal = document.createElement('div');
+        modal.className = 'custom-modal-overlay';
+        modal.style.cssText = `
+            position:fixed;top:0;left:0;right:0;bottom:0;
+            background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);
+            display:flex;justify-content:center;align-items:center;
+            z-index:9999;padding:20px;
+        `;
+
+        const evt = event.extendedProps?._raw || event;
+
+        modal.innerHTML = `
+            <div style="background:#16213e;border-radius:20px;padding:32px;max-width:500px;width:100%;border:1px solid rgba(255,255,255,0.06);max-height:90vh;overflow-y:auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h3 style="color:#f59e0b;font-size:20px;">📅 ${escapeHtml(evt.title)}</h3>
+                    <button onclick="closeModalElement(this.closest('.custom-modal-overlay'))" style="background:none;border:none;color:#666;font-size:24px;cursor:pointer;transition:color 0.2s;">✕</button>
+                </div>
+                <div style="color:#888;font-size:14px;margin-bottom:12px;">
+                    <div>🕐 ${new Date(evt.start).toLocaleString()}</div>
+                    ${evt.end && evt.end !== evt.start ? `<div>➜ ${new Date(evt.end).toLocaleString()}</div>` : ''}
+                </div>
+                ${evt.description ? `<div style="color:#aaa;font-size:14px;margin-bottom:16px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;">${escapeHtml(evt.description)}</div>` : ''}
+                <div style="color:#666;font-size:12px;margin-bottom:16px;">
+                    ⏰ 提醒: ${evt.remindMinutes ? `${evt.remindMinutes} 分钟前` : '无'}
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button onclick="editEvent('${evt.id}')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#f59e0b;color:#1a1a2e;cursor:pointer;font-weight:bold;">✏️ 编辑</button>
+                    <button onclick="deleteEventFromUI('${evt.id}')" style="flex:1;padding:10px;border:none;border-radius:10px;background:#dc3545;color:white;cursor:pointer;font-weight:bold;">🗑️ 删除</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModalElement(this);
+            }
+        });
+    }
+
+    // ============================================================
+    //  创建事件弹窗
+    // ============================================================
+    function showCreateEventModal(dateStr) {
+        const modal = document.createElement('div');
+        modal.className = 'custom-modal-overlay';
+        modal.style.cssText = `
+            position:fixed;top:0;left:0;right:0;bottom:0;
+            background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);
+            display:flex;justify-content:center;align-items:center;
+            z-index:9999;padding:20px;
+        `;
+
+        const date = dateStr || new Date().toISOString().split('T')[0];
+
+        modal.innerHTML = `
+            <div style="background:#16213e;border-radius:20px;padding:32px;max-width:500px;width:100%;border:1px solid rgba(255,255,255,0.06);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h3 style="color:#f59e0b;font-size:20px;">📝 创建事件</h3>
+                    <button onclick="closeModalElement(this.closest('.custom-modal-overlay'))" style="background:none;border:none;color:#666;font-size:24px;cursor:pointer;transition:color 0.2s;">✕</button>
+                </div>
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">标题 *</label>
+                <input type="text" id="newEventTitle" placeholder="事件标题" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;">
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">开始时间</label>
+                <input type="datetime-local" id="newEventStart" value="${date}T09:00" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;">
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">结束时间</label>
+                <input type="datetime-local" id="newEventEnd" value="${date}T10:00" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;">
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">描述（可选）</label>
+                <textarea id="newEventDesc" rows="2" placeholder="事件描述" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;resize:vertical;"></textarea>
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">提前提醒（分钟）</label>
+                <input type="number" id="newEventRemind" value="10" min="0" max="1440" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:16px;font-family:inherit;">
+                <div style="display:flex;gap:10px;">
+                    <button onclick="closeModalElement(this.closest('.custom-modal-overlay'))" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(255,255,255,0.04);color:#888;cursor:pointer;font-weight:bold;">取消</button>
+                    <button onclick="submitNewEvent(this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:#f59e0b;color:#1a1a2e;cursor:pointer;font-weight:bold;">创建</button>
+                </div>
+                <div id="newEventMsg" style="margin-top:12px;font-size:13px;text-align:center;"></div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModalElement(this);
+            }
+        });
+    }
+
+    async function submitNewEvent(btn) {
+        const title = document.getElementById('newEventTitle').value.trim();
+        const start = document.getElementById('newEventStart').value;
+        const end = document.getElementById('newEventEnd').value;
+        const description = document.getElementById('newEventDesc').value.trim();
+        const remindMinutes = parseInt(document.getElementById('newEventRemind').value) || 0;
+        const msg = document.getElementById('newEventMsg');
+        const modal = btn.closest('.custom-modal-overlay');
+
+        if (!title) {
+            msg.innerHTML = '<span style="color:#dc3545;">请输入事件标题</span>';
+            return;
+        }
+        if (!start) {
+            msg.innerHTML = '<span style="color:#dc3545;">请选择开始时间</span>';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '创建中...';
+
+        try {
+            const eventData = {
+                title: title,
+                start: start,
+                end: end || start,
+                description: description,
+                remindMinutes: remindMinutes
+            };
+
+            const newEvent = await addEvent(eventData);
+
+            if (calendar) {
+                calendar.refetchEvents();
+            }
+
+            msg.innerHTML = '<span style="color:#2ecc71;">✅ 事件已创建</span>';
+            showToast('✅ 事件已创建', 'success');
+
+            requestNotificationPermission();
+
+            setTimeout(() => {
+                if (modal) closeModalElement(modal);
+            }, 1000);
+
+        } catch (error) {
+            msg.innerHTML = `<span style="color:#dc3545;">❌ 创建失败: ${error.message}</span>`;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '创建';
+        }
+    }
+
+    // ============================================================
+    //  编辑事件
+    // ============================================================
+    function editEvent(eventId) {
+        const event = allEvents.find(e => e.id === eventId);
+        if (!event) { showToast('事件不存在', 'error'); return; }
+
+        // 关闭所有现有弹窗
+        document.querySelectorAll('.custom-modal-overlay').forEach(el => {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        });
+
+        const modal = document.createElement('div');
+        modal.className = 'custom-modal-overlay';
+        modal.style.cssText = `
+            position:fixed;top:0;left:0;right:0;bottom:0;
+            background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);
+            display:flex;justify-content:center;align-items:center;
+            z-index:9999;padding:20px;
+        `;
+
+        modal.innerHTML = `
+            <div style="background:#16213e;border-radius:20px;padding:32px;max-width:500px;width:100%;border:1px solid rgba(255,255,255,0.06);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h3 style="color:#f59e0b;font-size:20px;">✏️ 编辑事件</h3>
+                    <button onclick="closeModalElement(this.closest('.custom-modal-overlay'))" style="background:none;border:none;color:#666;font-size:24px;cursor:pointer;transition:color 0.2s;">✕</button>
+                </div>
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">标题 *</label>
+                <input type="text" id="editEventTitle" value="${escapeHtml(event.title)}" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;">
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">开始时间</label>
+                <input type="datetime-local" id="editEventStart" value="${event.start}" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;">
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">结束时间</label>
+                <input type="datetime-local" id="editEventEnd" value="${event.end || event.start}" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;">
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">描述</label>
+                <textarea id="editEventDesc" rows="2" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:12px;font-family:inherit;resize:vertical;">${escapeHtml(event.description || '')}</textarea>
+                <label style="display:block;font-size:13px;color:#888;margin-bottom:4px;">提前提醒（分钟）</label>
+                <input type="number" id="editEventRemind" value="${event.remindMinutes || 0}" min="0" max="1440" style="width:100%;padding:10px 14px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;background:rgba(255,255,255,0.04);color:#eef4ff;font-size:14px;margin-bottom:16px;font-family:inherit;">
+                <div style="display:flex;gap:10px;">
+                    <button onclick="closeModalElement(this.closest('.custom-modal-overlay'))" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(255,255,255,0.04);color:#888;cursor:pointer;font-weight:bold;">取消</button>
+                    <button onclick="submitEditEvent('${eventId}', this)" style="flex:1;padding:10px;border:none;border-radius:10px;background:#f59e0b;color:#1a1a2e;cursor:pointer;font-weight:bold;">保存</button>
+                </div>
+                <div id="editEventMsg" style="margin-top:12px;font-size:13px;text-align:center;"></div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModalElement(this);
+            }
+        });
+    }
+
+    async function submitEditEvent(eventId, btn) {
+        const title = document.getElementById('editEventTitle').value.trim();
+        const start = document.getElementById('editEventStart').value;
+        const end = document.getElementById('editEventEnd').value;
+        const description = document.getElementById('editEventDesc').value.trim();
+        const remindMinutes = parseInt(document.getElementById('editEventRemind').value) || 0;
+        const msg = document.getElementById('editEventMsg');
+        const modal = btn.closest('.custom-modal-overlay');
+
+        if (!title) {
+            msg.innerHTML = '<span style="color:#dc3545;">请输入事件标题</span>';
+            return;
+        }
+        if (!start) {
+            msg.innerHTML = '<span style="color:#dc3545;">请选择开始时间</span>';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = '保存中...';
+
+        try {
+            const updated = await updateEvent(eventId, {
+                title: title,
+                start: start,
+                end: end || start,
+                description: description,
+                remindMinutes: remindMinutes
+            });
+
+            if (updated) {
+                if (calendar) {
+                    calendar.refetchEvents();
+                }
+
+                msg.innerHTML = '<span style="color:#2ecc71;">✅ 事件已更新</span>';
+                showToast('✅ 事件已更新', 'success');
+
+                setTimeout(() => {
+                    if (modal) closeModalElement(modal);
+                }, 1000);
+            }
+
+        } catch (error) {
+            msg.innerHTML = `<span style="color:#dc3545;">❌ 更新失败: ${error.message}</span>`;
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '保存';
+        }
+    }
+
+    // ============================================================
+    //  删除事件（UI）
+    // ============================================================
+    async function deleteEventFromUI(eventId) {
+        if (!confirm('确定要删除此事件吗？')) return;
+
+        const success = await deleteEvent(eventId);
+        if (success) {
+            if (calendar) {
+                calendar.refetchEvents();
+            }
+            showToast('✅ 事件已删除', 'success');
+            document.querySelectorAll('.custom-modal-overlay').forEach(el => {
+                if (el.parentNode) el.parentNode.removeChild(el);
+            });
+        } else {
+            showToast('❌ 删除失败', 'error');
+        }
+    }
+
+    // ============================================================
+    //  初始化
+    // ============================================================
+    async function init() {
+        if (!checkAuth()) return;
+
+        requestNotificationPermission();
+        resetRemindedDaily();
+
+        await loadEvents();
+
+        setTimeout(async () => {
+            await initCalendar();
+        }, 300);
+
+        checkUpcomingEvents();
+        setInterval(() => {
+            resetRemindedDaily();
+            checkUpcomingEvents();
+        }, 30000);
+
+        setInterval(async () => {
+            const freshEvents = await loadEventsFromGitHub();
+            if (freshEvents && freshEvents.length > 0) {
+                const localMap = {};
+                allEvents.forEach(e => { if (e.issueNumber) localMap[e.issueNumber] = e; });
+
+                let updated = false;
+                for (const fresh of freshEvents) {
+                    const local = localMap[fresh.issueNumber];
+                    if (local) {
+                        if (local.updatedAt !== fresh.updatedAt) {
+                            Object.assign(local, fresh);
+                            updated = true;
+                        }
+                    } else {
+                        allEvents.push(fresh);
+                        updated = true;
+                    }
+                }
+
+                if (updated) {
+                    saveToLocalCache(allEvents);
+                    if (calendar) {
+                        calendar.refetchEvents();
+                    }
+                    showToast('🔄 日历已同步', 'success');
+                }
+            }
+        }, 300000);
+
+        console.log('📅 NFLSHC 日历已加载');
+        console.log('👤 当前用户:', currentUser?.username);
+        console.log('📊 事件数:', allEvents.length);
+    }
+
+    // 暴露全局函数
+    window.init = init;
+    window.initCalendar = initCalendar;
+    window.showEventModal = showEventModal;
+    window.showCreateEventModal = showCreateEventModal;
+    window.submitNewEvent = submitNewEvent;
+    window.editEvent = editEvent;
+    window.submitEditEvent = submitEditEvent;
+    window.deleteEventFromUI = deleteEventFromUI;
+    window.loadEvents = loadEvents;
+    window.addEvent = addEvent;
+    window.updateEvent = updateEvent;
+    window.deleteEvent = deleteEvent;
+    window.closeModalElement = closeModalElement;
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
