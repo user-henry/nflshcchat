@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>声音画布 - 随时随地创作音乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+        }
+
+        #mainCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #visualizer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        #hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            transition: opacity 2.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                        transform 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        #hint .main-text {
+            color: rgba(255, 255, 255, 0.92);
+            font-size: clamp(28px, 6vw, 56px);
+            font-weight: 200;
+            letter-spacing: 16px;
+            text-shadow: 0 0 80px rgba(255, 255, 255, 0.12);
+            animation: breathe 4s ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        #hint .sub-text {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: clamp(13px, 2.2vw, 18px);
+            font-weight: 300;
+            letter-spacing: 8px;
+            margin-top: 24px;
+        }
+
+        @keyframes breathe {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        #hint.fade-out {
+            opacity: 0;
+            transform: translate(-50%, -55%);
+        }
+
+        #bottomInfo {
+            position: fixed;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.22);
+            font-size: 13px;
+            letter-spacing: 6px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 2s ease 1s;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        #bottomInfo.show {
+            opacity: 1;
+        }
+
+        #scaleIndicator {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 12px;
+            letter-spacing: 2px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1.5s ease;
+            text-align: right;
+            line-height: 2;
+            z-index: 10;
+        }
+
+        #scaleIndicator.show {
+            opacity: 1;
+        }
+
+        #scaleIndicator .highlight {
+            color: rgba(255, 200, 100, 0.8);
+            font-size: 13px;
+        }
+
+        #chordHint {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            color: rgba(255, 200, 100, 0.75);
+            font-size: 14px;
+            letter-spacing: 3px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            z-index: 10;
+            font-weight: 300;
+        }
+
+        #chordHint.show {
+            opacity: 1;
+        }
+
+        .touch-indicator {
+            position: fixed;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .touch-indicator .glow-ring {
+            position: absolute;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.1s, height 0.1s;
+        }
+
+        .touch-indicator .note-label {
+            position: absolute;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .touch-indicator .freq-label {
+            position: absolute;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            white-space: nowrap;
+            text-shadow: 0 0 8px rgba(0,0,0,0.9);
+        }
+
+        .touch-indicator .volume-bar {
+            position: absolute;
+            transform: translateX(-50%);
+            width: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="mainCanvas"></canvas>
+    <canvas id="visualizer"></canvas>
+
+    <div id="hint">
+        <div class="main-text">点击屏幕，制作声音</div>
+        <div class="sub-text">Y轴控制音量 · X轴控制音高</div>
+    </div>
+
+    <div id="bottomInfo">C为中心 · 左右各2个八度</div>
+
+    <div id="scaleIndicator">
+        <div class="highlight">固定调式: C大调五声音阶</div>
+        <div>任意位置都是和谐音</div>
+    </div>
+
+    <div id="chordHint"></div>
+
+    <script>
+        // ==================== 画布初始化 ====================
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const vizCanvas = document.getElementById('visualizer');
+        const vizCtx = vizCanvas.getContext('2d');
+
+        function resize() {
+            const dpr = Math.min(window.devicePixelRatio, 2);
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+
+            vizCanvas.width = window.innerWidth * dpr;
+            vizCanvas.height = 120 * dpr;
+            vizCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            vizCanvas.style.width = window.innerWidth + 'px';
+            vizCanvas.style.height = '120px';
+        }
+        resize();
+        window.addEventListener('resize', () => {
+            resize();
+            initGridLines();
+        });
+
+        // ==================== 音频引擎 ====================
+        let audioCtx = null;
+        let masterGain = null;
+        let analyser = null;
+        let reverbNode = null;
+        let delayNode = null;
+
+        // C大调五声音阶: C D E G A (半音数: 0, 2, 4, 7, 9)
+        const PENTATONIC_SCALE = [0, 2, 4, 7, 9];
+        const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        let activeVoices = new Map(); // id -> {voice, x, y, freq, noteName}
+        let touchIndicators = new Map(); // id -> DOM element
+
+        function initAudio() {
+            if (audioCtx) return;
+            
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 主音量
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.35;
+
+            // 分析器
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.8;
+
+            // 混响
+            reverbNode = createReverb();
+
+            // 延迟
+            delayNode = audioCtx.createDelay();
+            delayNode.delayTime.value = 0.4;
+            const delayGain = audioCtx.createGain();
+            delayGain.gain.value = 0.3;
+            const delayFeedback = audioCtx.createGain();
+            delayFeedback.gain.value = 0.35;
+
+            // 连接图
+            // master -> delay -> delayGain -> reverb -> analyser -> destination
+            //        -> reverb --^
+            //        -> analyser --^
+            
+            masterGain.connect(delayNode);
+            delayNode.connect(delayGain);
+            delayGain.connect(delayFeedback);
+            delayFeedback.connect(delayNode); // feedback loop
+            delayGain.connect(reverbNode);
+            
+            masterGain.connect(reverbNode);
+            
+            reverbNode.connect(analyser);
+            masterGain.connect(analyser);
+            analyser.connect(audioCtx.destination);
+        }
+
+        function createReverb() {
+            const convolver = audioCtx.createConvolver();
+            const rate = audioCtx.sampleRate;
+            const length = rate * 3.0;
+            const impulse = audioCtx.createBuffer(2, length, rate);
+            
+            for (let channel = 0; channel < 2; channel++) {
+                const data = impulse.getChannelData(channel);
+                for (let i = 0; i < length; i++) {
+                    const decay = Math.pow(1 - i / length, 3);
+                    const noise = (Math.random() * 2 - 1);
+                    // 早期反射
+                    if (i < rate * 0.05) {
+                        data[i] = noise * decay * 0.8;
+                    } else {
+                        data[i] = noise * decay * 0.4;
+                    }
+                }
+            }
+            
+            convolver.buffer = impulse;
+            return convolver;
+        }
+
+        // ==================== 音高量化系统 ====================
+        function quantizeToPentatonic(semitone) {
+            const octave = Math.floor(semitone / 12);
+            const noteInOctave = ((semitone % 12) + 12) % 12;
+            
+            let closestNote = PENTATONIC_SCALE[0];
+            let minDistance = 12;
+            
+            for (let scaleNote of PENTATONIC_SCALE) {
+                let distance = Math.abs(noteInOctave - scaleNote);
+                // 考虑环形距离（如 B 到 C 是 1 而不是 11）
+                if (distance > 6) distance = 12 - distance;
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestNote = scaleNote;
+                }
+            }
+            
+            return octave * 12 + closestNote;
+        }
+
+        function xToFreq(x) {
+            const width = window.innerWidth;
+            const ratio = Math.max(0, Math.min(1, x / width));
+            
+            // C2(36) 到 C6(84)，共4个八度
+            const minNote = 36; // C2
+            const maxNote = 84; // C6
+            let note = minNote + ratio * (maxNote - minNote);
+            
+            // 强制量化到五声音阶
+            note = quantizeToPentatonic(Math.round(note));
+            
+            return 440 * Math.pow(2, (note - 69) / 12);
+        }
+
+        function yToVolume(y) {
+            const height = window.innerHeight;
+            const ratio = 1 - (y / height);
+            // 使用更自然的曲线
+            return Math.max(0.015, Math.min(1, Math.pow(ratio, 0.65)));
+        }
+
+        function getNoteInfo(freq) {
+            const noteNum = Math.round(69 + 12 * Math.log2(freq / 440));
+            const nameIndex = ((noteNum % 12) + 12) % 12;
+            const octave = Math.floor(noteNum / 12) - 1;
+            const noteName = NOTE_NAMES[nameIndex] + octave;
+            return { noteName, noteNum, freq: Math.round(freq) };
+        }
+
+        function freqToHue(freq) {
+            // 基于频率映射到色相，低频偏红/橙，高频偏蓝/紫
+            const minFreq = 65;  // C2
+            const maxFreq = 1047; // C6
+            const ratio = (freq - minFreq) / (maxFreq - minFreq);
+            // 从橙色(30)到紫色(280)
+            return 30 + ratio * 250;
+        }
+
+        // ==================== 合成器音色 ====================
+        class Voice {
+            constructor() {
+                this.oscillators = [];
+                this.gainNode = null;
+                this.filter = null;
+                this.panNode = null;
+                this.active = false;
+            }
+
+            start(freq, volume, pan) {
+                this.active = true;
+                
+                // 多层合成器配置
+                const layers = [
+                    { type: 'sawtooth', detune: 0, gain: 0.25, octave: 1.0, cutoffMult: 6 },
+                    { type: 'square', detune: -5, gain: 0.12, octave: 0.5, cutoffMult: 4 },
+                    { type: 'triangle', detune: 7, gain: 0.30, octave: 1.0, cutoffMult: 8 },
+                    { type: 'sine', detune: 0, gain: 0.20, octave: 2.0, cutoffMult: 3 }
+                ];
+
+                this.gainNode = audioCtx.createGain();
+                this.filter = audioCtx.createBiquadFilter();
+                this.panNode = audioCtx.createStereoPanner();
+
+                // 滤波器设置
+                this.filter.type = 'lowpass';
+                this.filter.Q.value = 1.5;
+                const baseFreq = freq * 4;
+                this.filter.frequency.value = baseFreq;
+
+                this.panNode.pan.value = pan;
+
+                layers.forEach(layer => {
+                    const osc = audioCtx.createOscillator();
+                    osc.type = layer.type;
+                    osc.frequency.value = freq * layer.octave;
+                    osc.detune.value = layer.detune;
+
+                    const oscGain = audioCtx.createGain();
+                    oscGain.gain.value = layer.gain;
+
+                    osc.connect(oscGain);
+                    oscGain.connect(this.filter);
+                    osc.start();
+
+                    this.oscillators.push({ osc, gain: oscGain });
+                });
+
+                // 包络
+                const now = audioCtx.currentTime;
+                this.gainNode.gain.setValueAtTime(0, now);
+                this.gainNode.gain.linearRampToValueAtTime(volume, now + 0.04);
+                
+                // 轻微的衰减维持
+                this.sustainLevel = volume * 0.85;
+                this.gainNode.gain.setTargetAtTime(this.sustainLevel, now + 0.1, 0.3);
+
+                this.filter.connect(this.gainNode);
+                this.gainNode.connect(this.panNode);
+                this.panNode.connect(masterGain);
+
+                // 滤波器包络
+                this.filter.frequency.setValueAtTime(baseFreq * 0.5, now);
+                this.filter.frequency.exponentialRampToValueAtTime(baseFreq * 2, now + 0.1);
+                this.filter.frequency.exponentialRampToValueAtTime(baseFreq, now + 0.4);
+            }
+
+            update(freq, volume, pan) {
+                if (!this.active) return;
+                
+                const now = audioCtx.currentTime;
+                
+                // 平滑更新振荡器频率
+                this.oscillators.forEach(({ osc }, i) => {
+                    const octave = [1.0, 0.5, 1.0, 2.0][i];
+                    osc.frequency.setTargetAtTime(freq * octave, now, 0.02);
+                });
+
+                // 更新音量
+                this.gainNode.gain.setTargetAtTime(volume * 0.85, now, 0.05);
+                
+                // 更新滤波器
+                this.filter.frequency.setTargetAtTime(freq * 5 + 300, now, 0.1);
+                
+                // 更新声像
+                this.panNode.pan.setTargetAtTime(pan, now, 0.05);
+            }
+
+            release() {
+                if (!this.active) return;
+                this.active = false;
+                
+                const now = audioCtx.currentTime;
+                const currentGain = this.gainNode.gain.value;
+                
+                this.gainNode.gain.cancelScheduledValues(now);
+                this.gainNode.gain.setValueAtTime(currentGain, now);
+                this.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+                this.oscillators.forEach(({ osc }) => {
+                    osc.stop(now + 0.6);
+                });
+
+                // 清理
+                setTimeout(() => {
+                    this.oscillators = [];
+                }, 700);
+            }
+        }
+
+        // ==================== 视觉系统 ====================
+        class ParticleSystem {
+            constructor() {
+                this.particles = [];
+            }
+
+            explode(x, y, hue, intensity = 1) {
+                const count = Math.floor(25 * intensity);
+                for (let i = 0; i < count; i++) {
+                    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+                    const speed = (1.5 + Math.random() * 7) * intensity;
+                    const life = 0.6 + Math.random() * 0.8;
+                    
+                    this.particles.push({
+                        x, y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        life: life,
+                        maxLife: life,
+                        decay: 0.008 + Math.random() * 0.015,
+                        hue: hue + (Math.random() - 0.5) * 40,
+                        sat: 70 + Math.random() * 30,
+                        light: 50 + Math.random() * 40,
+                        size: (1.5 + Math.random() * 5) * intensity,
+                        type: Math.random() > 0.6 ? 'star' : 'circle'
+                    });
+                }
+            }
+
+            updateAndDraw(ctx) {
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.06; // 重力
+                    p.vx *= 0.985; // 阻力
+                    p.life -= p.decay;
+
+                    if (p.life <= 0) {
+                        this.particles.splice(i, 1);
+                        continue;
+                    }
+
+                    const progress = 1 - p.life / p.maxLife;
+                    const alpha = p.life / p.maxLife;
+                    
+                    ctx.globalAlpha = alpha * 0.9;
+                    
+                    if (p.type === 'star') {
+                        ctx.fillStyle = `hsl(${p.hue}, ${p.sat}%, ${p.light}%)`;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(progress * Math.PI * 3);
+                        const s = p.size * (0.5 + alpha * 0.5);
+                        drawStar(ctx, 0, 0, 4, s, s * 0.4);
+                        ctx.restore();
+                    } else {
+                        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 2);
+                        gradient.addColorStop(0, `hsla(${p.hue}, ${p.sat}%, ${Math.min(90, p.light + 20)}%, ${alpha})`);
+                        gradient.addColorStop(0.4, `hsla(${p.hue}, ${p.sat}%, ${p.light}%, ${alpha * 0.6})`);
+                        gradient.addColorStop(1, `hsla(${p.hue}, ${p.sat}%, ${p.light}%, 0)`);
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            const step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        class RippleSystem {
+            constructor() {
+                this.ripples = [];
+            }
+
+            add(x, y, freq) {
+                const hue = freqToHue(freq);
+                this.ripples.push({
+                    x, y,
+                    radius: 0,
+                    maxRadius: 50 + freq / 20,
+                    hue,
+                    life: 1,
+                    speed: 2 + freq / 500
+                });
+            }
+
+            updateAndDraw(ctx) {
+                for (let i = this.ripples.length - 1; i >= 0; i--) {
+                    const r = this.ripples[i];
+                    r.radius += r.speed;
+                    r.life = 1 - (r.radius / r.maxRadius);
+
+                    if (r.life <= 0) {
+                        this.ripples.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.globalAlpha = r.life * 0.35;
+                    ctx.strokeStyle = `hsl(${r.hue}, 75%, 60%)`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // 内环
+                    if (r.radius > 10) {
+                        ctx.globalAlpha = r.life * 0.2;
+                        ctx.beginPath();
+                        ctx.arc(r.x, r.y, r.radius * 0.6, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        const particles = new ParticleSystem();
+        const ripples = new RippleSystem();
+
+        // ==================== 网格线系统 ====================
+        let gridLines = [];
+
+        function initGridLines() {
+            gridLines = [];
+            const w = window.innerWidth;
+            
+            for (let note = 36; note <= 84; note++) {
+                const noteInOctave = ((note % 12) + 12) % 12;
+                const isInPentatonic = PENTATONIC_SCALE.includes(noteInOctave);
+                
+                if (!isInPentatonic) continue;
+
+                const ratio = (note - 36) / (84 - 36);
+                const x = ratio * w;
+
+                if (x < 0 || x > w) continue;
+
+                const isC = noteInOctave === 0;
+                const octave = Math.floor(note / 12) - 1;
+                const noteName = NOTE_NAMES[noteInOctave];
+
+                gridLines.push({
+                    x, note, isC, octave, noteName,
+                    displayName: isC ? 'C' + octave : noteName + octave
+                });
+            }
+        }
+        initGridLines();
+
+        function drawGrid() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            for (const line of gridLines) {
+                if (line.isC) {
+                    // C音: 橙黄色高亮
+                    ctx.strokeStyle = 'rgba(255, 180, 50, 0.35)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(line.x, 0);
+                    ctx.lineTo(line.x, h * 0.85);
+                    ctx.stroke();
+
+                    // 标签
+                    ctx.fillStyle = 'rgba(255, 180, 50, 0.8)';
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(line.displayName, line.x, h - 20);
+                } else {
+                    // 其他五声音阶音
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(line.x, 0);
+                    ctx.lineTo(line.x, h * 0.75);
+                    ctx.stroke();
+
+                    // 淡标签
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.font = '11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(line.displayName, line.x, h - 20);
+                }
+            }
+
+            // 八度区域交替背景
+            for (let oct = 2; oct <= 5; oct++) {
+                const note = oct * 12;
+                const ratio = (note - 36) / 48;
+                const x = ratio * w;
+                const nextRatio = (note + 12 - 36) / 48;
+                const nextX = Math.min(nextRatio * w, w);
+                
+                if (oct % 2 === 0) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.012)';
+                    ctx.fillRect(x, 0, nextX - x, h);
+                }
+            }
+        }
+
+        // ==================== 触摸指示器 ====================
+        function createTouchIndicator(id, x, y, freq) {
+            const el = document.createElement('div');
+            el.className = 'touch-indicator';
+            el.id = 'touch-' + id;
+            
+            const hue = freqToHue(freq);
+            const info = getNoteInfo(freq);
+            const h = window.innerHeight;
+            const volumeRatio = 1 - (y / h);
+            
+            el.innerHTML = `
+                <div class="glow-ring" style="
+                    width: 70px; height: 70px;
+                    border: 2.5px solid hsla(${hue}, 80%, 55%, 0.7);
+                    box-shadow: 0 0 25px hsla(${hue}, 80%, 50%, 0.35),
+                                0 0 60px hsla(${hue}, 80%, 50%, 0.15),
+                                inset 0 0 25px hsla(${hue}, 80%, 50%, 0.15);
+                    left: ${x}px; top: ${y}px;
+                "></div>
+                <div class="note-label" style="left: ${x}px; top: ${y - 55}px;">${info.noteName}</div>
+                <div class="freq-label" style="left: ${x}px; top: ${y - 38}px;">${info.freq}Hz</div>
+                <div class="volume-bar" style="
+                    left: ${x + 45}px; top: ${y - 35}px;
+                    height: ${volumeRatio * 70}px;
+                    background: hsla(${hue}, 70%, 60%, 0.5);
+                "></div>
+            `;
+            
+            document.body.appendChild(el);
+            return el;
+        }
+
+        function updateTouchIndicator(el, x, y, freq) {
+            const hue = freqToHue(freq);
+            const info = getNoteInfo(freq);
+            const h = window.innerHeight;
+            const volumeRatio = Math.max(0, Math.min(1, 1 - (y / h)));
+            
+            const ring = el.querySelector('.glow-ring');
+            const noteLabel = el.querySelector('.note-label');
+            const freqLabel = el.querySelector('.freq-label');
+            const volBar = el.querySelector('.volume-bar');
+            
+            ring.style.left = x + 'px';
+            ring.style.top = y + 'px';
+            ring.style.borderColor = `hsla(${hue}, 80%, 55%, 0.7)`;
+            ring.style.boxShadow = `
+                0 0 25px hsla(${hue}, 80%, 50%, 0.35),
+                0 0 60px hsla(${hue}, 80%, 50%, 0.15),
+                inset 0 0 25px hsla(${hue}, 80%, 50%, 0.15)
+            `;
+            
+            noteLabel.style.left = x + 'px';
+            noteLabel.style.top = (y - 55) + 'px';
+            noteLabel.textContent = info.noteName;
+            
+            freqLabel.style.left = x + 'px';
+            freqLabel.style.top = (y - 38) + 'px';
+            freqLabel.textContent = info.freq + 'Hz';
+
+            volBar.style.left = (x + 45) + 'px';
+            volBar.style.top = (y - 35) + 'px';
+            volBar.style.height = (volumeRatio * 70) + 'px';
+            volBar.style.background = `hsla(${hue}, 70%, 60%, 0.5)`;
+        }
+
+        // ==================== 频谱可视化 ====================
+        function drawVisualizer() {
+            if (!analyser) return;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+            
+            const w = window.innerWidth;
+            const h = 120;
+            
+            // 半透明清除
+            vizCtx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            vizCtx.fillRect(0, 0, w, h);
+            
+            const barCount = 80;
+            const barWidth = w / barCount;
+            
+            for (let i = 0; i < barCount; i++) {
+                // 对数频率分布，更好地显示音乐频率
+                const t = i / barCount;
+                const logT = Math.pow(t, 1.5);
+                const dataIndex = Math.floor(logT * (bufferLength * 0.6));
+                const value = dataArray[Math.min(dataIndex, bufferLength - 1)];
+                
+                const barHeight = (value / 255) * h * 0.92;
+                
+                const hue = 30 + (i / barCount) * 280;
+                const x = i * barWidth;
+                const y = h - barHeight;
+                
+                // 柱状渐变
+                const gradient = vizCtx.createLinearGradient(0, h, 0, y);
+                gradient.addColorStop(0, `hsla(${hue}, 75%, 25%, 0.9)`);
+                gradient.addColorStop(0.3, `hsla(${hue}, 80%, 45%, 0.95)`);
+                gradient.addColorStop(1, `hsla(${hue}, 90%, 70%, 1)`);
+                
+                vizCtx.fillStyle = gradient;
+                
+                // 圆角柱
+                const radius = Math.min(barWidth * 0.3, 3);
+                vizCtx.beginPath();
+                vizCtx.roundRect(x + 1, y, barWidth - 2, barHeight, [radius, radius, 0, 0]);
+                vizCtx.fill();
+                
+                // 顶部高光
+                if (barHeight > 5) {
+                    vizCtx.fillStyle = `hsla(${hue}, 100%, 85%, 0.6)`;
+                    vizCtx.fillRect(x + 1, y, barWidth - 2, 2);
+                }
+            }
+            
+            // 底部基线
+            vizCtx.fillStyle = 'rgba(100, 200, 255, 0.15)';
+            vizCtx.fillRect(0, h - 1, w, 1);
+        }
+
+        // ==================== 和弦检测 ====================
+        function updateChordHint() {
+            const voices = Array.from(activeVoices.values());
+            if (voices.length < 2) {
+                chordHint.classList.remove('show');
+                return;
+            }
+            
+            const notes = voices.map(v => {
+                const info = getNoteInfo(v.freq);
+                return info.noteName.replace(/\d+/, ''); // 去掉八度数字
+            });
+            
+            const unique = [...new Set(notes)];
+            if (unique.length >= 2) {
+                let text = '♪ ' + unique.join(' · ');
+                if (unique.length >= 3) {
+                    text += ' (五声和弦)';
+                }
+                chordHint.textContent = text;
+                chordHint.classList.add('show');
+            } else {
+                chordHint.classList.remove('show');
+            }
+        }
+
+        // ==================== 主动画循环 ====================
+        let frameCount = 0;
+
+        function animate() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            // 拖尾效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, w, h);
+            
+            drawGrid();
+            particles.updateAndDraw(ctx);
+            ripples.updateAndDraw(ctx);
+            
+            // 多音连线
+            const voiceArray = Array.from(activeVoices.values());
+            if (voiceArray.length > 1) {
+                ctx.strokeStyle = 'rgba(255, 200, 100, 0.12)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 12]);
+                
+                for (let i = 0; i < voiceArray.length; i++) {
+                    for (let j = i + 1; j < voiceArray.length; j++) {
+                        ctx.beginPath();
+                        ctx.moveTo(voiceArray[i].x, voiceArray[i].y);
+                        ctx.lineTo(voiceArray[j].x, voiceArray[j].y);
+                        ctx.stroke();
+                    }
+                }
+                ctx.setLineDash([]);
+            }
+            
+            drawVisualizer();
+            
+            frameCount++;
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // ==================== 交互处理 ====================
+        const hint = document.getElementById('hint');
+        const bottomInfo = document.getElementById('bottomInfo');
+        const scaleIndicator = document.getElementById('scaleIndicator');
+        const chordHint = document.getElementById('chordHint');
+        let appStarted = false;
+
+        function startApp() {
+            if (appStarted) return;
+            appStarted = true;
+            
+            initAudio();
+            
+            hint.classList.add('fade-out');
+            setTimeout(() => {
+                hint.style.display = 'none';
+                bottomInfo.classList.add('show');
+                scaleIndicator.classList.add('show');
+            }, 2500);
+        }
+
+        function startVoice(id, x, y) {
+            startApp();
+            
+            const freq = xToFreq(x);
+            const volume = yToVolume(y);
+            const pan = Math.max(-1, Math.min(1, (x / window.innerWidth) * 2 - 1));
+            
+            const voice = new Voice();
+            voice.start(freq, volume, pan);
+            
+            const info = getNoteInfo(freq);
+            activeVoices.set(id, {
+                voice, x, y, freq, volume, pan,
+                noteName: info.noteName
+            });
+            
+            // 视觉反馈
+            const hue = freqToHue(freq);
+            particles.explode(x, y, hue, volume);
+            ripples.add(x, y, freq);
+            
+            const el = createTouchIndicator(id, x, y, freq);
+            touchIndicators.set(id, el);
+            
+            updateChordHint();
+        }
+
+        function updateVoice(id, x, y) {
+            const data = activeVoices.get(id);
+            if (!data) return;
+            
+            const freq = xToFreq(x);
+            const volume = yToVolume(y);
+            const pan = Math.max(-1, Math.min(1, (x / window.innerWidth) * 2 - 1));
+            
+            data.x = x;
+            data.y = y;
+            data.freq = freq;
+            data.volume = volume;
+            data.pan = pan;
+            
+            data.voice.update(freq, volume, pan);
+            
+            const el = touchIndicators.get(id);
+            if (el) updateTouchIndicator(el, x, y, freq);
+            
+            // 持续粒子
+            if (frameCount % 4 === 0) {
+                const hue = freqToHue(freq);
+                particles.particles.push({
+                    x: x + (Math.random() - 0.5) * 15,
+                    y: y + (Math.random() - 0.5) * 15,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 1.5 - 0.5,
+                    life: 0.5,
+                    maxLife: 0.5,
+                    decay: 0.02,
+                    hue: hue + (Math.random() - 0.5) * 30,
+                    sat: 75,
+                    light: 60,
+                    size: 1 + Math.random() * 2,
+                    type: 'circle'
+                });
+            }
+        }
+
+        function stopVoice(id) {
+            const data = activeVoices.get(id);
+            if (!data) return;
+            
+            data.voice.release();
+            activeVoices.delete(id);
+            
+            const el = touchIndicators.get(id);
+            if (el) {
+                el.style.transition = 'opacity 0.4s ease';
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    if (el.parentNode) el.remove();
+                }, 400);
+                touchIndicators.delete(id);
+            }
+            
+            updateChordHint();
+        }
+
+        // ==================== 鼠标事件 ====================
+        let mouseActive = false;
+        let mouseId = null;
+
+        canvas.addEventListener('mousedown', (e) => {
+            mouseActive = true;
+            mouseId = 'mouse-' + Date.now();
+            startVoice(mouseId, e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (mouseActive && mouseId && activeVoices.has(mouseId)) {
+                updateVoice(mouseId, e.clientX, e.clientY);
+            }
+        });
+
+        const endMouse = () => {
+            if (mouseActive && mouseId) {
+                stopVoice(mouseId);
+                mouseActive = false;
+                mouseId = null;
+            }
+        };
+
+        canvas.addEventListener('mouseup', endMouse);
+        canvas.addEventListener('mouseleave', endMouse);
+
+        // ==================== 触摸事件 ====================
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            for (let touch of e.changedTouches) {
+                startVoice(touch.identifier, touch.clientX, touch.clientY);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            for (let touch of e.changedTouches) {
+                updateVoice(touch.identifier, touch.clientX, touch.clientY);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            for (let touch of e.changedTouches) {
+                stopVoice(touch.identifier);
+            }
+        });
+
+        canvas.addEventListener('touchcancel', (e) => {
+            for (let touch of e.changedTouches) {
+                stopVoice(touch.identifier);
+            }
+        });
+
+        // 防止默认触摸行为
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        document.addEventListener('gesturechange', (e) => e.preventDefault());
+        document.addEventListener('gestureend', (e) => e.preventDefault());
+
+        // 防止页面滚动和缩放
+        document.body.addEventListener('touchstart', (e) => {
+            if (e.target === canvas) e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
