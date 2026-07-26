@@ -2144,7 +2144,7 @@
             <div class="draw-mode" id="drawMode">
                 <div class="draw-header">
                     <h2>🎨 绘图模式</h2>
-                    <p>输入文字描述，AI 将为你生成图像 · 基于 Agnes Image 2.1 Flash / 智谱 Cogview-3-Flash</p>
+                    <p>输入文字描述，AI 将为你生成图像 · 支持 Pollinations AI / Agnes Image / 智谱 Cogview</p>
                 </div>
                 <div class="draw-input-area">
                     <div class="draw-input-row">
@@ -2157,6 +2157,9 @@
                             <option value="agnes-image-2.1-flash">Agnes Image 2.1 Flash</option>
                             <option value="agnes-image-2.0-flash">Agnes Image 2.0 Flash</option>
                             <option value="cogview-3-flash">智谱 Cogview-3-Flash</option>
+                            <option value="pollinations-flux">Pollinations AI (flux)</option>
+                            <option value="pollinations-turbo">Pollinations AI (极速版)</option>
+                            <option value="pollinations-flux-pro">Pollinations AI (专业版)</option>
                         </select>
                         <button class="draw-generate-btn" id="drawGenerateBtn" onclick="generateImage()">🎨 生成</button>
                     </div>
@@ -2165,14 +2168,16 @@
                         <span class="remove-hint">✕ 移除</span>
                     </div>
                     <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
-                        <span>💡 支持文生图 · 图生图（多图输入） · 基于 Agnes Image 2.1 Flash / 智谱 Cogview-3-Flash · 输出 URL</span>
+                        <span>💡 支持文生图 · 图生图（多图输入） · Pollinations AI / Agnes Image / 智谱 Cogview · 输出 URL</span>
+                        <span style="color:#888;">|</span>
+                        <span>🔄 极速版: 512x512 (turbo) · 专业版: 1440x1440 (flux+增强)</span>
                     </div>
                 </div>
                 <div class="draw-result-area" id="drawResult">
                     <div class="placeholder" id="drawPlaceholder">
                         <span class="icon">🖼️</span>
                         输入描述后点击「生成」<br>
-                        <span style="font-size:12px; color:#555;">支持文生图 · 图生图（多图输入）</span>
+                        <span style="font-size:12px; color:#555;">支持 Pollinations AI · Agnes Image · 智谱 Cogview</span>
                     </div>
                     <div class="loading-spinner" id="drawLoading">
                         <div class="spinner"></div>
@@ -3666,7 +3671,63 @@
             try {
                 let imageUrl = '';
 
-                if (model === 'cogview-3-flash') {
+                // ===== Pollinations AI 分支 =====
+                if (model === 'pollinations-flux' || model === 'pollinations-turbo' || model === 'pollinations-flux-pro') {
+                    let basePrompt = prompt;
+                    const params = new URLSearchParams();
+
+                    if (model === 'pollinations-turbo') {
+                        params.set('width', '512');
+                        params.set('height', '512');
+                        params.set('model', 'turbo');
+                        params.set('nologo', 'true');
+                    } else if (model === 'pollinations-flux-pro') {
+                        const [w, h] = size.split('x').map(Number);
+                        params.set('width', String(w || 1440));
+                        params.set('height', String(h || 1440));
+                        params.set('model', 'flux');
+                        params.set('nologo', 'true');
+                        params.set('enhance', 'true');
+                        const enhancedPrompt = prompt + ', photorealistic, 8k resolution, highly detailed, cinematic lighting, ray tracing, subsurface scattering, sharp focus, masterpiece, best quality, ultra detailed, professional photography, award winning composition';
+                        basePrompt = enhancedPrompt;
+                        params.set('negative', 'deformed, blurry, low quality, bad anatomy, distorted, ugly, pixelated, lowres, bad proportions');
+                    } else {
+                        const [w, h] = size.split('x').map(Number);
+                        params.set('width', String(w || 1024));
+                        params.set('height', String(h || 1024));
+                        params.set('model', 'flux');
+                        params.set('nologo', 'true');
+                        params.set('enhance', 'true');
+                    }
+
+                    if (drawReferenceImages.length > 0) {
+                        let hash = 0;
+                        const str = drawReferenceImages[0];
+                        for (let i = 0; i < Math.min(str.length, 200); i++) {
+                            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                            hash = hash & hash;
+                        }
+                        params.set('seed', String(Math.abs(hash) % 2147483647));
+                    } else {
+                        params.set('seed', String(Math.floor(Math.random() * 2147483647)));
+                    }
+
+                    const encodedPrompt = encodeURIComponent(basePrompt);
+                    imageUrl = 'https://image.pollinations.ai/prompt/' + encodedPrompt + '?' + params.toString();
+
+                    const imgCheck = new Image();
+                    const loadPromise = new Promise((resolve, reject) => {
+                        imgCheck.onload = () => resolve(true);
+                        const timeout = setTimeout(() => reject(new Error('图片加载超时')), 15000);
+                        imgCheck.onload = () => { clearTimeout(timeout); resolve(true); };
+                        imgCheck.onerror = () => { clearTimeout(timeout); reject(new Error('图片加载失败')); };
+                    });
+                    imgCheck.src = imageUrl;
+                    await loadPromise;
+
+                    recordCall('pollinations-' + (model === 'pollinations-turbo' ? 'turbo' : model === 'pollinations-flux-pro' ? 'pro' : 'flux'), 50);
+
+                } else if (model === 'cogview-3-flash') {
                     const url = `${BIGMODEL_CONFIG.baseUrl}/images/generations`;
                     const response = await fetch(url, {
                         method: 'POST',
@@ -3686,6 +3747,8 @@
                     } else {
                         throw new Error(data.error?.message || '生成失败');
                     }
+                    recordCall('cogview-3-flash', 100);
+
                 } else {
                     const payload = {
                         model: model,
@@ -3713,6 +3776,7 @@
                     } else {
                         throw new Error(data.error?.message || '生成失败');
                     }
+                    recordCall(model || 'agnes-image', 100);
                 }
 
                 currentMediaUrl = imageUrl;
@@ -3721,8 +3785,6 @@
                 output.style.display = 'block';
                 downloadBtn.style.display = 'inline-block';
                 loading.classList.remove('active');
-
-                recordCall(model || 'agnes-image', 100);
 
                 addToHistory('image', imageUrl, prompt);
                 addMessage('assistant', `🎨 生成的图片：${prompt}`, imageUrl, 'image');
@@ -3733,7 +3795,7 @@
                 loading.classList.remove('active');
                 placeholder.style.display = 'block';
                 placeholder.innerHTML =
-                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查网络或稍后重试</span>`;
             } finally {
                 generateBtn.disabled = false;
                 generateBtn.textContent = '🎨 生成';
@@ -4390,6 +4452,30 @@
 
         function downloadCurrentMedia(type) {
             if (!currentMediaUrl) return;
+
+            // Pollinations AI 特殊处理：跨域图片需要先获取数据
+            if (currentMediaUrl.includes('image.pollinations.ai')) {
+                fetch(currentMediaUrl)
+                    .then(response => {
+                        if (!response.ok) throw new Error('下载失败');
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `pollinations_${type}_${Date.now()}.jpg`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    })
+                    .catch(() => {
+                        window.open(currentMediaUrl, '_blank');
+                    });
+                return;
+            }
+
             const ext = type === 'video' ? 'mp4' : 'jpg';
             const link = document.createElement('a');
             link.href = currentMediaUrl;
