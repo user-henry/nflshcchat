@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+<title>NFLSHC Chat - 词语游戏</title>
+<link rel="manifest" href="/nflshcchat/manifest.json">
+<meta name="theme-color" content="#7c3aed">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#1a0a2e 0%,#2d1b4e 30%,#1e1040 60%,#0d0625 100%);min-height:100vh;color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px}
+.nav{background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 100%);padding:10px 20px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ffd700;width:100%;max-width:1000px;border-radius:12px 12px 0 0;margin-bottom:20px;position:relative;z-index:50}
+.nav-left{display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;background-image:url(https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png);background-size:contain;background-repeat:no-repeat;background-position:center}
+.nav h2{font-size:18px;color:#ffd700}
+.nav a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:16px;transition:color .3s;font-size:14px}
+.nav a:hover,.nav a.active{color:#ffd700}
+.container{width:100%;max-width:1000px}
+.header{text-align:center;margin-bottom:24px}
+.header h1{font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:6px;background:linear-gradient(90deg,#a78bfa,#c084fc,#f0abfc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header p{color:rgba(255,255,255,.45);font-size:13px;letter-spacing:1px}
+.tab-nav{display:flex;gap:0;margin-bottom:20px;background:rgba(255,255,255,.05);border-radius:14px;padding:4px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08)}
+.tab-btn{flex:1;padding:12px 20px;border:none;border-radius:11px;background:transparent;color:rgba(255,255,255,.5);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit;letter-spacing:1px}
+.tab-btn.active{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;box-shadow:0 4px 15px rgba(124,58,237,.3)}
+.tab-btn:hover:not(.active){color:rgba(255,255,255,.8)}
+.game-panel{display:none}
+.game-panel.active{display:block;animation:fadeInUp .4s ease}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+.card{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,.2)}
+label{display:block;font-size:12px;color:rgba(255,255,255,.45);margin-bottom:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+textarea,input[type=text]{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;color:#fff;font-size:1rem;font-family:inherit;outline:none;transition:border-color .3s;line-height:1.8}
+textarea:focus,input[type=text]:focus{border-color:rgba(167,139,250,.4);box-shadow:0 0 20px rgba(124,58,237,.1)}
+textarea{min-height:100px;resize:vertical}
+textarea::placeholder,input::placeholder{color:rgba(255,255,255,.25)}
+.btn{padding:11px 26px;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(124,58,237,.3)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-secondary{background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6)}
+.btn-secondary:hover{border-color:rgba(255,255,255,.4);color:rgba(255,255,255,.9)}
+.controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.status-bar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;padding:10px 18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;font-size:.82rem;color:rgba(255,255,255,.45)}
+.status-bar.ready{border-color:rgba(167,139,250,.4);color:#a78bfa}
+.status-bar.error{border-color:#ef4444;color:#ef4444}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.1);border-top-color:#a78bfa;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dot-g{width:8px;height:8px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa;flex-shrink:0}
+.dot-g.error{background:#ef4444;box-shadow:0 0 8px #ef4444}
+.slider-group{display:flex;align-items:center;gap:10px;margin-left:auto;color:rgba(255,255,255,.5);font-size:.85rem}
+.slider-group input[type=range]{width:100px;accent-color:#a78bfa}
+.result-box{min-height:80px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px;font-size:1.15rem;line-height:2;white-space:pre-wrap;word-break:break-all;overflow-wrap:break-word}
+.result-box .token{display:inline;padding:2px 0;border-radius:4px}
+.result-box .token.anti{background:rgba(167,139,250,.15);color:#c4b5fd;font-weight:600}
+.result-box .token.pronoun{background:rgba(96,165,250,.15);color:#93c5fd;font-weight:600}
+.result-box .token.random{background:rgba(250,204,21,.1);color:#fde047}
+.result-box .token.keep{color:rgba(255,255,255,.45)}
+.result-box .placeholder{color:rgba(255,255,255,.2);font-style:italic}
+.stats{display:flex;gap:16px;margin-top:12px;font-size:.8rem;color:rgba(255,255,255,.45);flex-wrap:wrap}
+.stat-item span{font-weight:700}
+.s-anti{color:#c4b5fd}.s-pro{color:#93c5fd}.s-rand{color:#fde047}.s-keep{color:rgba(255,255,255,.4)}
+.detail-section{margin-top:16px;border-top:1px solid rgba(255,255,255,.06);padding-top:16px}
+.detail-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:rgba(255,255,255,.45);font-size:.85rem;user-select:none;margin-bottom:10px}
+.detail-toggle:hover{color:rgba(255,255,255,.7)}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;max-height:0;overflow:hidden;transition:max-height .4s}
+.detail-grid.open{max-height:3000px}
+.detail-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:.85rem;border:1px solid transparent}
+.detail-item:hover{border-color:rgba(255,255,255,.08)}
+.detail-item .orig{color:rgba(255,255,255,.4);text-decoration:line-through;text-decoration-color:#ef4444}
+.detail-item .arrow{color:rgba(255,255,255,.2);font-size:.75rem}
+.detail-item .repl{font-weight:600}
+.detail-item .tag{margin-left:auto;font-size:.65rem;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.tag.anti{color:#c4b5fd;background:rgba(167,139,250,.1)}
+.tag.pro{color:#93c5fd;background:rgba(96,165,250,.1)}
+.tag.rand{color:#fde047;background:rgba(250,204,21,.08)}
+.tag.keep{color:rgba(255,255,255,.4);background:rgba(255,255,255,.05)}
+.legend{display:flex;gap:14px;margin-top:10px;font-size:.78rem;color:rgba(255,255,255,.4);flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-box{width:12px;height:12px;border-radius:3px}
+/* 百语轮回 */
+.r2-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
+.r2-row{display:flex;gap:12px;align-items:center}
+.r2-row input[type=text]{flex:1}
+.btn-warn{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a0a2e}
+.btn-warn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(251,191,36,.3)}
+.btn-warn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.char-count{text-align:right;font-size:12px;color:rgba(255,255,255,.35);margin-top:4px}
+.mode-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:14px}
+.mode-switch .mode-label{font-size:13px;font-weight:600;color:#c4b5fd}
+.mode-switch .mode-desc{font-size:11px;color:rgba(255,255,255,.4)}
+.toggle-track{position:relative;width:48px;height:26px;cursor:pointer;flex-shrink:0}
+.toggle-track input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.15);border-radius:26px;transition:.3s}
+.toggle-slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+input:checked+.toggle-slider{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+input:checked+.toggle-slider:before{transform:translateX(22px)}
+.progress-wrap{margin-top:16px;display:none}
+.progress-wrap.show{display:block}
+.progress-top{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:rgba(255,255,255,.5)}
+.progress-bar-bg{width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa,#fbbf24);border-radius:3px;width:0%;transition:width .3s}
+.progress-info{display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:rgba(255,255,255,.35)}
+.result-card{padding:14px 16px;border-radius:12px;margin-bottom:10px}
+.result-card.src{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(167,139,250,.06));border:1px solid rgba(167,139,250,.18)}
+.result-card.dst{background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(245,158,11,.04));border:2px solid rgba(251,191,36,.25);position:relative;overflow:hidden}
+.result-card.dst::after{content:"";position:absolute;top:-30px;right:-30px;width:80px;height:80px;background:rgba(251,191,36,.08);border-radius:50%}
+.result-card .rc-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.result-card .rc-tag{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
+.rc-tag.lang{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}
+.rc-tag.final{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a0a2e}
+.result-card .rc-text{font-size:1.1rem;font-weight:600;color:#fff;word-break:break-word}
+.result-card .rc-sub{font-size:12px;color:rgba(255,255,255,.4);margin-top:4px}
+.step-scroll{max-height:350px;overflow-y:auto;padding-right:4px;margin-bottom:14px}
+.step-scroll::-webkit-scrollbar{width:3px}
+.step-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.step-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;transition:all .2s;border-left:3px solid transparent;animation:stepIn .3s ease}
+.step-item:hover{background:rgba(255,255,255,.04);border-left-color:#7c3aed}
+@keyframes stepIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.step-num.last{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a0a2e}
+.step-info{flex:1;min-width:0}
+.step-info .si-lang{font-size:11px;color:#a78bfa;font-weight:600}
+.step-info .si-text{font-size:13px;color:rgba(255,255,255,.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jdots{display:flex;align-items:center;justify-content:center;gap:1px;margin-bottom:12px;flex-wrap:wrap}
+.jdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .3s}
+.jdot.done{background:#a78bfa}
+.jdot.current{background:#fbbf24;transform:scale(1.6);box-shadow:0 0 6px rgba(251,191,36,.4)}
+.bottom-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+.bs-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 10px;text-align:center}
+.bs-card .bs-val{font-size:1.5rem;font-weight:800}
+.bs-card .bs-label{font-size:11px;color:rgba(255,255,255,.35);margin-top:4px}
+.bs-val.v1{color:#c4b5fd}.bs-val.v2{color:#93c5fd}.bs-val.v3{color:#fda4af}.bs-val.v4{color:#fbbf24}
+.confetti{position:fixed;width:10px;height:10px;border-radius:2px;animation:confetti-fall 3.5s ease-out forwards;z-index:9999;pointer-events:none}
+@keyframes confetti-fall{0%{transform:translateY(-120px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@media(max-width:768px){
+    .nav{flex-direction:column;gap:8px;text-align:center;padding:12px 16px}
+    .nav div:last-child{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+    .nav a{margin-left:0;font-size:13px}
+    body{padding:12px 8px 30px}
+    .r2-grid{grid-template-columns:1fr}
+    .card{padding:18px 14px}
+    .header h1{font-size:22px}
+    .bottom-stats{grid-template-columns:repeat(2,1fr)}
+    .detail-grid{grid-template-columns:1fr}
+    .controls{flex-direction:column;align-items:flex-start}
+    .slider-group{margin-left:0;margin-top:8px;width:100%}
+    .step-scroll{max-height:250px}
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="nav">
+    <div class="nav-left">
+        <div class="logo"></div>
+        <h2>🎯 NFLSHC 词语游戏</h2>
+    </div>
+    <div>
+        <a href="chat.html">💬 聊天</a>
+        <a href="music.html">🎵 音乐</a>
+        <a href="index.html">🏠 主页</a>
+        <a href="#" onclick="logout()">🚪 退出</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header">
+        <h1>词语游戏</h1>
+        <p>逻辑反转翻译 · 百语轮回 — 探索语言的奇妙世界</p>
+    </div>
+
+    <div class="tab-nav">
+        <button class="tab-btn active" id="tab1Btn" onclick="switchTab(1)">🔄 反转变换</button>
+        <button class="tab-btn" id="tab2Btn" onclick="switchTab(2)">🌍 百语轮回</button>
+    </div>
+
+    <!-- ===== 游戏1: 逻辑反转翻译器 ===== -->
+    <div class="game-panel active" id="panel1">
+        <div class="status-bar" id="statusBar">
+            <div class="spinner" id="statusSpinner"></div>
+            <span id="statusText">正在加载外部语义库...</span>
+        </div>
+        <div class="card">
+            <label>输入原文</label>
+            <textarea id="inputText1" placeholder="在此输入一段话，系统会智能选择需要反转的词汇，保留句子通顺性...">今天天气很好，我想去公园散步，心情非常愉快。</textarea>
+            <div class="controls">
+                <button class="btn btn-primary" id="translateBtn" disabled>🔄 智能反转</button>
+                <button class="btn btn-secondary" id="clearBtn1">清空</button>
+                <div class="slider-group">
+                    <span>替换强度</span>
+                    <input type="range" id="intensity" min="30" max="100" value="75">
+                    <span id="intensityVal">75%</span>
+                </div>
+            </div>
+        </div>
+        <div class="card" id="outputSection" style="display:none">
+            <label>反转结果</label>
+            <div class="result-box" id="resultBox"><span class="placeholder">等待处理...</span></div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,.15);border:1px solid #a78bfa"></div>反义替换</div>
+                <div class="legend-item"><div class="legend-box" style="background:rgba(96,165,250,.15);border:1px solid #60a5fa"></div>人称反转</div>
+                <div class="legend-item"><div class="legend-box" style="background:rgba(250,204,21,.1);border:1px solid #facc15"></div>随机替换</div>
+                <div class="legend-item"><div class="legend-box" style="background:transparent;border:1px solid rgba(255,255,255,.15)"></div>保留原词</div>
+            </div>
+            <div class="stats" id="statsBox"></div>
+            <div class="detail-section">
+                <div class="detail-toggle" id="detailToggle">
+                    <span>📋 查看替换对照表</span>
+                    <span id="toggleIcon">▼</span>
+                </div>
+                <div class="detail-grid" id="detailGrid"></div>
+            </div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:rgba(255,255,255,.2);padding:8px">词库来源：ChineseAntiword / ChineseSemanticKB · 通过 jsDelivr CDN 实时加载</div>
+    </div>
+
+    <!-- ===== 游戏2: 百语轮回 ===== -->
+    <div class="game-panel" id="panel2">
+        <div class="r2-grid">
+            <div>
+                <div class="card">
+                    <label>输入中文词语</label>
+                    <div class="r2-row">
+                        <input type="text" id="inputText2" placeholder="例如：我爱你、世界和平、火锅..." maxlength="30">
+                    </div>
+                    <div class="char-count"><span id="charCount">0</span> / 30 字</div>
+                    <div class="mode-switch">
+                        <div style="flex:1;min-width:0">
+                            <div class="mode-label" id="modeLabel">🌐 真实 API 模式</div>
+                            <div class="mode-desc" id="modeDesc">调用在线翻译接口，支持 30+ 种语言真实互译</div>
+                        </div>
+                        <label class="toggle-track">
+                            <input type="checkbox" id="modeToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <label>翻译轮数</label>
+                    <div class="r2-row">
+                        <input type="range" id="roundCount" min="10" max="100" value="50" style="flex:1;accent-color:#a78bfa">
+                        <span id="roundDisplay" style="font-size:1.5rem;font-weight:800;color:#c4b5fd;width:40px;text-align:center">50</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.3);margin-top:4px"><span>10轮</span><span>100轮</span></div>
+                    <div style="margin-top:12px;padding:10px 14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);border-radius:10px;font-size:12px;color:rgba(251,191,36,.7)">
+                        💡 建议输入简短词语（2-4字），如遇网络问题将自动切换为模拟模式
+                    </div>
+                    <button class="btn btn-warn" id="startBtn2" style="width:100%;margin-top:14px;padding:14px;font-size:1.05rem" onclick="startTranslationR2()">🚀 开始百语轮回</button>
+                    <div class="progress-wrap" id="progressWrap">
+                        <div class="progress-top"><span>翻译进度</span><span id="progressPct">0%</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+                        <div class="progress-info"><span id="currentLang">准备中...</span><span id="stepCounter">0 / 50</span></div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="card" style="min-height:500px;display:flex;flex-direction:column">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                        <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,.7)">翻译轨迹</span>
+                        <div style="display:flex;gap:8px">
+                            <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px" onclick="clearResultsR2()">清空</button>
+                            <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px" onclick="copyResultR2()">📋 复制</button>
+                        </div>
+                    </div>
+                    <div id="emptyStateR2" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.2)">
+                        <div style="font-size:3rem;margin-bottom:10px">🌍</div>
+                        <div style="font-size:14px">输入词语，点击开始</div>
+                    </div>
+                    <div id="resultsR2" style="display:none;flex-direction:column;flex:1">
+                        <div class="result-card src">
+                            <div class="rc-head"><span class="rc-tag lang">🇨🇳 中文</span><span style="font-size:11px;color:rgba(255,255,255,.4)">原始输入</span></div>
+                            <div class="rc-text" id="originalR2"></div>
+                        </div>
+                        <div class="jdots" id="journeyDots"></div>
+                        <div class="step-scroll" id="stepsListR2"></div>
+                        <div class="result-card dst">
+                            <div class="rc-head"><span class="rc-tag final">🇨🇳 回归中文</span><span style="font-size:11px;color:rgba(255,255,255,.5)">历经 <b id="finalRounds">50</b> 轮</span></div>
+                            <div class="rc-text" id="finalResultR2" style="font-size:1.5rem;background:linear-gradient(90deg,#fbbf24,#f59e0b,#fb923c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"></div>
+                            <div class="rc-sub" id="diffAnalysis"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bottom-stats">
+                    <div class="bs-card"><div class="bs-val v1">30+</div><div class="bs-label">支持语言</div></div>
+                    <div class="bs-card"><div class="bs-val v2" id="statRounds">0</div><div class="bs-label">已翻译轮次</div></div>
+                    <div class="bs-card"><div class="bs-val v3" id="statChanges">0%</div><div class="bs-label">语义变化率</div></div>
+                    <div class="bs-card"><div class="bs-val v4">∞</div><div class="bs-label">可能性</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+// ==================== Tab 切换 ====================
+function switchTab(n) {
+    document.querySelectorAll('.game-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel'+n).classList.add('active');
+    document.getElementById('tab'+n+'Btn').classList.add('active');
+}
+
+// ==================== 用户认证 ====================
+function checkAuth() {
+    var u = sessionStorage.getItem('currentUser') || localStorage.getItem('nflshc_currentUser');
+    if (u) {
+        sessionStorage.setItem('currentUser', u);
+        return JSON.parse(u);
+    }
+    window.location.href = 'index.html';
+    return null;
+}
+function logout() {
+    localStorage.removeItem('nflshc_currentUser');
+    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('nflshc_user');
+    if (window.clearLoginState) window.clearLoginState();
+    window.location.href = 'index.html';
+}
+
+// ==================== 游戏1: 逻辑反转翻译器 ====================
+(function() {
+var DATA_SOURCES = [
+    { name: 'ChineseAntiword', url: 'https://cdn.jsdelivr.net/gh/liuhuanyong/ChineseAntiword@master/antisem.txt', parser: 'colon-semicolon' },
+    { name: 'ChineseSemanticKB-反义', url: 'https://cdn.jsdelivr.net/gh/liuhuanyong/ChineseSemanticKB@master/dict/%E5%8F%8D%E4%B9%89%E5%85%B3%E7%B3%BB%E5%BA%93.txt', parser: 'at-sign' },
+    { name: '程度副词', url: 'https://cdn.jsdelivr.net/gh/liuhuanyong/ChineseSemanticKB@master/dict/%E7%A8%8B%E5%BA%A6%E5%89%AF%E8%AF%8D.txt', parser: 'line' },
+    { name: '否定词', url: 'https://cdn.jsdelivr.net/gh/liuhuanyong/ChineseSemanticKB@master/dict/%E5%90%A6%E5%AE%9A%E8%AF%8D.txt', parser: 'line' },
+    { name: '情态词', url: 'https://cdn.jsdelivr.net/gh/liuhuanyong/ChineseSemanticKB@master/dict/%E6%83%85%E6%80%81%E8%AF%8D.txt', parser: 'line' },
+    { name: '修饰副词', url: 'https://cdn.jsdelivr.net/gh/liuhuanyong/ChineseSemanticKB@master/dict/%E4%BF%AE%E9%A5%B0%E5%89%AF%E8%AF%8D.txt', parser: 'line' }
+];
+
+class SmartTranslator {
+    constructor() {
+        this.antiDict = new Map();
+        this.dictWords = new Set();
+        this.wordPool = new Map();
+        this.loaded = false;
+        this.keepWords = new Set([
+            '的','地','得','了','着','过','被','把','将',
+            '在','从','到','向','往','于','对','对于','关于','跟','和','与','同','给','为','为了','除了','由',
+            '而','而且','并且','或者','还是','但','但是','然而','虽然','尽管','如果','假如','即使','因为','所以','因此','因而','于是','就','却','不过','要么','既',
+            '个','只','条','张','本','支','件','块','片','根','颗','粒','双','副','套','群','些','点','把','卷','座','处',
+            '啊','呢','吧','吗','嘛','哦','哈','哟','喽','哇','哪','呗','罢了',
+            '是','有','会','能','要','都','也','还','又','再','才','刚','正','真','太','很','非常','比较','稍微','有点','十分','极其','特别','相当','最','更','越','挺','蛮','怪','老',
+            '不','没','未','别','勿','毋','无','非','莫','甭','把','让','叫','使','令'
+        ]);
+        this.pronounMap = { '我':'你','你':'我','咱':'您','俺':'你','他':'她','她':'他','我们':'你们','你们':'我们','咱们':'您们','他们':'她们','她们':'他们','这':'那','那':'这','这里':'那里','那里':'这里','这儿':'那儿','那儿':'这儿','这边':'那边','那边':'这边','这个':'那个','那个':'这个','这些人':'那些人','那些人':'这些人' };
+        this.timeShift = { '今天':['昨天','明日','往昔'],'明天':['昨天','今天','昨日'],'昨天':['明天','今日','来日'],'现在':['过去','将来','曾经'],'将来':['过去','往昔','曾经'],'过去':['将来','未来','以后'],'早上':['夜晚','傍晚','深夜'],'晚上':['早晨','清晨','黎明'],'白天':['黑夜','夜里','夜晚'],'夜里':['白天','白昼','日间'] };
+        this.dirMap = { '上':'下','下':'上','来':'去','去':'来','回':'赴','赴':'回','进':'出','出':'进','前':'后','后':'前','左':'右','右':'左','东':'西','西':'东','南':'北','北':'南','里':'外','外':'里','开':'关','关':'开' };
+    }
+    async load(onProgress) {
+        var completed = 0;
+        for (var i = 0; i < DATA_SOURCES.length; i++) {
+            var src = DATA_SOURCES[i];
+            try { await this.fetchSource(src); completed++; onProgress(src.name, completed, DATA_SOURCES.length, null); }
+            catch(e) { completed++; onProgress(src.name, completed, DATA_SOURCES.length, e.message); }
+        }
+        this.dictWords.forEach(function(w) {
+            var len = w.length;
+            if (!this.wordPool.has(len)) this.wordPool.set(len, []);
+            this.wordPool.get(len).push(w);
+        }.bind(this));
+        this.loaded = this.antiDict.size > 0 || this.dictWords.size > 0;
+    }
+    async fetchSource(source) {
+        var ctrl = new AbortController();
+        var timer = setTimeout(function() { ctrl.abort(); }, 15000);
+        try { var res = await fetch(source.url, { signal: ctrl.signal }); clearTimeout(timer); if (!res.ok) throw new Error('HTTP ' + res.status); this.parse(await res.text(), source); }
+        catch(e) { clearTimeout(timer); throw e; }
+    }
+    parse(text, source) {
+        var lines = text.split(/\r?\n/);
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line || line.startsWith('#') || line.startsWith('//')) continue;
+            if (source.parser === 'colon-semicolon') {
+                var idx = line.indexOf(':');
+                if (idx === -1) continue;
+                var word = line.substring(0, idx).trim();
+                var rest = line.substring(idx + 1);
+                if (!word || !rest) continue;
+                var antis = rest.split(';').map(function(a) { return a.trim(); }).filter(function(a) { return a && a !== word; });
+                if (antis.length) { this.addAnti(word, antis); this.dictWords.add(word); antis.forEach(function(a) { this.dictWords.add(a); }.bind(this)); }
+            } else if (source.parser === 'at-sign') {
+                var parts = line.split(/[@\s]+/).map(function(p) { return p.trim(); }).filter(Boolean);
+                if (parts.length >= 2) { this.addAnti(parts[0], [parts[1]]); this.addAnti(parts[1], [parts[0]]); parts.forEach(function(p) { this.dictWords.add(p); }.bind(this)); }
+                else if (parts.length === 1) { this.dictWords.add(parts[0]); }
+            } else if (source.parser === 'line') { var w = line.trim(); if (w) this.dictWords.add(w); }
+        }
+    }
+    addAnti(word, antis) { if (!this.antiDict.has(word)) this.antiDict.set(word, []); var arr = this.antiDict.get(word); antis.forEach(function(a) { if (arr.indexOf(a) === -1) arr.push(a); }); }
+    segment(text) {
+        var tokens = [], i = 0, maxLen = this.dictWords.size > 0 ? Math.max.apply(null, Array.from(this.dictWords).map(function(w) { return w.length; })) : 6;
+        while (i < text.length) {
+            var ch = text[i];
+            if (/[\s\p{P}\dA-Za-z]/u.test(ch)) { tokens.push({ word: ch, type: 'keep', reason: '符号/数字' }); i++; continue; }
+            var matched = false;
+            for (var l = Math.min(maxLen, text.length - i); l > 0; l--) {
+                var substr = text.substring(i, i + l);
+                if (this.dictWords.has(substr) || this.keepWords.has(substr) || this.pronounMap[substr] || this.timeShift[substr] || this.dirMap[substr]) { tokens.push({ word: substr, type: 'word', reason: null }); i += l; matched = true; break; }
+            }
+            if (!matched) { tokens.push({ word: ch, type: 'word', reason: null }); i++; }
+        }
+        return tokens;
+    }
+    translate(text, intensity) {
+        if (!this.loaded) return { text: '词库加载中，请稍候...', details: [], stats: {} };
+        intensity = intensity || 0.75;
+        var tokens = this.segment(text), details = [], outputTokens = [], antiCount = 0, proCount = 0, randCount = 0, keepCount = 0;
+        for (var idx = 0; idx < tokens.length; idx++) {
+            var tok = tokens[idx], word = tok.word;
+            if (tok.type === 'keep') { outputTokens.push({ text: word, cls: 'keep', orig: word, reason: '保留' }); details.push({ original: word, replaced: word, reason: '保留符号' }); keepCount++; continue; }
+            if (this.keepWords.has(word)) { outputTokens.push({ text: word, cls: 'keep', orig: word, reason: '保留' }); details.push({ original: word, replaced: word, reason: '保留功能词' }); keepCount++; continue; }
+            var replaced = word, reason = '保留', cls = 'keep';
+            if (this.pronounMap[word]) { replaced = this.pronounMap[word]; reason = '人称反转'; cls = 'pronoun'; proCount++; }
+            else if (this.timeShift[word] && Math.random() < intensity) { var pool = this.timeShift[word]; replaced = pool[Math.floor(Math.random() * pool.length)]; reason = '时间偏移'; cls = 'anti'; antiCount++; }
+            else if (this.dirMap[word] && Math.random() < intensity) { replaced = this.dirMap[word]; reason = '方向反转'; cls = 'anti'; antiCount++; }
+            else {
+                var antis = this.antiDict.get(word);
+                if (antis && antis.length > 0 && Math.random() < intensity) { replaced = antis[Math.floor(Math.random() * antis.length)]; reason = '反义替换'; cls = 'anti'; antiCount++; }
+                else if (Math.random() < intensity * 0.35) {
+                    var len = word.length, pool2 = this.wordPool.get(len) || this.wordPool.get(len > 2 ? 2 : len) || Array.from(this.dictWords);
+                    if (pool2 && pool2.length > 1) {
+                        var candidates = pool2.filter(function(w) { return w !== word && !this.keepWords.has(w); }.bind(this));
+                        if (candidates.length > 0) { replaced = candidates[Math.floor(Math.random() * candidates.length)]; reason = '语义漂移'; cls = 'random'; randCount++; }
+                    }
+                }
+            }
+            outputTokens.push({ text: replaced, cls: cls, orig: word, reason: reason });
+            details.push({ original: word, replaced: replaced, reason: reason });
+            if (reason === '保留' || reason === '保留功能词') keepCount++;
+        }
+        var resultText = outputTokens.map(function(t) { return t.text; }).join('');
+        return { text: resultText, tokens: outputTokens, details: details, stats: { anti: antiCount, pronoun: proCount, rand: randCount, keep: keepCount, total: tokens.length } };
+    }
+}
+
+var translator = new SmartTranslator();
+var statusBar = document.getElementById('statusBar'), statusSpinner = document.getElementById('statusSpinner'), statusText = document.getElementById('statusText');
+var translateBtn = document.getElementById('translateBtn'), clearBtn1 = document.getElementById('clearBtn1'), inputText1 = document.getElementById('inputText1');
+var outputSection = document.getElementById('outputSection'), resultBox = document.getElementById('resultBox'), statsBox = document.getElementById('statsBox');
+var detailGrid = document.getElementById('detailGrid'), detailToggle = document.getElementById('detailToggle'), toggleIcon = document.getElementById('toggleIcon');
+var intensitySlider = document.getElementById('intensity'), intensityVal = document.getElementById('intensityVal');
+
+intensitySlider.addEventListener('input', function() { intensityVal.textContent = this.value + '%'; });
+
+async function initGame1() {
+    await translator.load(function(name, done, total, err) {
+        if (err) statusText.textContent = '加载中 (' + done + '/' + total + ') · ' + name + ' 失败，继续尝试...';
+        else statusText.textContent = '加载外部词库 (' + done + '/' + total + ') · ' + name + ' 已就绪';
+    });
+    if (translator.loaded) {
+        statusBar.classList.add('ready'); statusSpinner.style.display = 'none';
+        var dot = document.createElement('div'); dot.className = 'dot-g'; statusBar.insertBefore(dot, statusText);
+        statusText.textContent = '就绪 · 反义词 ' + translator.antiDict.size + ' 条 · 词汇总量 ' + translator.dictWords.size + ' 个';
+        translateBtn.disabled = false;
+    } else {
+        statusBar.classList.add('error'); statusSpinner.style.display = 'none';
+        var dot2 = document.createElement('div'); dot2.className = 'dot-g error'; statusBar.insertBefore(dot2, statusText);
+        statusText.textContent = '词库加载失败，请检查网络后刷新重试';
+    }
+}
+
+translateBtn.addEventListener('click', function() {
+    var text = inputText1.value;
+    if (!text.trim()) { resultBox.innerHTML = '<span class="placeholder">请输入内容...</span>'; outputSection.style.display = 'block'; return; }
+    var intensity = parseInt(intensitySlider.value) / 100;
+    var result = translator.translate(text, intensity);
+    resultBox.innerHTML = '';
+    result.tokens.forEach(function(tok) {
+        var span = document.createElement('span'); span.className = 'token ' + tok.cls;
+        span.textContent = tok.text; span.title = tok.orig + ' → ' + tok.text + ' (' + tok.reason + ')';
+        resultBox.appendChild(span);
+    });
+    outputSection.style.display = 'block';
+    statsBox.innerHTML = '<div class="stat-item">反义: <span class="s-anti">' + result.stats.anti + '</span></div>' +
+        '<div class="stat-item">人称: <span class="s-pro">' + result.stats.pronoun + '</span></div>' +
+        '<div class="stat-item">漂移: <span class="s-rand">' + result.stats.rand + '</span></div>' +
+        '<div class="stat-item">保留: <span class="s-keep">' + result.stats.keep + '</span></div>' +
+        '<div class="stat-item">总计: <span>' + result.stats.total + '</span></div>';
+    detailGrid.innerHTML = '';
+    result.details.forEach(function(d) {
+        if (d.original === d.replaced && d.reason.startsWith('保留')) return;
+        var item = document.createElement('div'); item.className = 'detail-item';
+        var tagClass = 'keep', tagText = d.reason;
+        if (d.reason === '反义替换' || d.reason === '时间偏移' || d.reason === '方向反转') { tagClass = 'anti'; tagText = '反义'; }
+        else if (d.reason === '人称反转') { tagClass = 'pro'; tagText = '人称'; }
+        else if (d.reason === '语义漂移') { tagClass = 'rand'; tagText = '漂移'; }
+        else { tagClass = 'keep'; tagText = '保留'; }
+        var colorVar = tagClass === 'anti' ? '#c4b5fd' : tagClass === 'pro' ? '#93c5fd' : tagClass === 'rand' ? '#fde047' : 'rgba(255,255,255,.4)';
+        item.innerHTML = '<span class="orig">' + d.original + '</span><span class="arrow">→</span><span class="repl" style="color:' + colorVar + '">' + d.replaced + '</span><span class="tag ' + tagClass + '">' + tagText + '</span>';
+        detailGrid.appendChild(item);
+    });
+});
+
+clearBtn1.addEventListener('click', function() { inputText1.value = ''; inputText1.focus(); });
+
+var detailOpen = false;
+detailToggle.addEventListener('click', function() { detailOpen = !detailOpen; detailGrid.classList.toggle('open', detailOpen); toggleIcon.textContent = detailOpen ? '▲' : '▼'; });
+
+inputText1.addEventListener('keydown', function(e) { if (e.ctrlKey && e.key === 'Enter') translateBtn.click(); });
+
+initGame1();
+})();
+
+// ==================== 游戏2: 百语轮回 ====================
+var languages = [
+    { name: '英语', code: 'en', flag: '🇺🇸', samples: ['Love','Peace','Dream','Hope','Heart','Light','Soul','Star','Life','World'] },
+    { name: '日语', code: 'ja', flag: '🇯🇵', samples: ['愛','平和','夢','希望','心','光','星','人生','世界','花'] },
+    { name: '韩语', code: 'ko', flag: '🇰🇷', samples: ['사랑','평화','꿈','희망','마음','빛','별','인생','세계','꽃'] },
+    { name: '法语', code: 'fr', flag: '🇫🇷', samples: ['Amour','Paix','Rêve','Espoir','Cœur','Lumière','Étoile','Vie','Monde','Fleur'] },
+    { name: '德语', code: 'de', flag: '🇩🇪', samples: ['Liebe','Frieden','Traum','Hoffnung','Herz','Licht','Stern','Leben','Welt','Blume'] },
+    { name: '西班牙语', code: 'es', flag: '🇪🇸', samples: ['Amor','Paz','Sueño','Esperanza','Corazón','Luz','Estrella','Vida','Mundo','Flor'] },
+    { name: '俄语', code: 'ru', flag: '🇷🇺', samples: ['Любовь','Мир','Мечта','Надежда','Сердце','Свет','Звезда','Жизнь','Мир','Цветок'] },
+    { name: '意大利语', code: 'it', flag: '🇮🇹', samples: ['Amore','Pace','Sogno','Speranza','Cuore','Luce','Stella','Vita','Mondo','Fiore'] },
+    { name: '葡萄牙语', code: 'pt', flag: '🇵🇹', samples: ['Amor','Paz','Sonho','Esperança','Coração','Luz','Estrela','Vida','Mundo','Flor'] },
+    { name: '荷兰语', code: 'nl', flag: '🇳🇱', samples: ['Liefde','Vrede','Droom','Hoop','Hart','Licht','Ster','Leven','Wereld','Bloem'] },
+    { name: '波兰语', code: 'pl', flag: '🇵🇱', samples: ['Miłość','Pokój','Marzenie','Nadzieja','Serce','Światło','Gwiazda','Życie','Świat','Kwiat'] },
+    { name: '土耳其语', code: 'tr', flag: '🇹🇷', samples: ['Aşk','Barış','Rüya','Umut','Kalp','Işık','Yıldız','Hayat','Dünya','Çiçek'] },
+    { name: '越南语', code: 'vi', flag: '🇻🇳', samples: ['Tình yêu','Hòa bình','Giấc mơ','Hy vọng','Trái tim','Ánh sáng','Ngôi sao','Cuộc sống','Thế giới','Bông hoa'] },
+    { name: '印尼语', code: 'id', flag: '🇮🇩', samples: ['Cinta','Kedamaian','Mimpi','Harapan','Hati','Cahaya','Bintang','Hidup','Dunia','Bunga'] },
+    { name: '阿拉伯语', code: 'ar', flag: '🇸🇦', samples: ['حب','سلام','حلم','أمل','قلب','نور','نجم','حياة','عالم','زهرة'], rtl: true },
+    { name: '泰语', code: 'th', flag: '🇹🇭', samples: ['ความรัก','สันติภาพ','ความฝัน','ความหวัง','หัวใจ','แสงสว่าง','ดาว','ชีวิต','โลก','ดอกไม้'] },
+    { name: '捷克语', code: 'cs', flag: '🇨🇿', samples: ['Láska','Mír','Sen','Naděje','Srdce','Světlo','Hvězda','Život','Svět','Květina'] },
+    { name: '希腊语', code: 'el', flag: '🇬🇷', samples: ['Αγάπη','Ειρήνη','Όνειρο','Ελπίδα','Καρδιά','Φως','Αστέρι','Ζωή','Κόσμος','Λουλούδι'] },
+    { name: '瑞典语', code: 'sv', flag: '🇸🇪', samples: ['Kärlek','Fred','Dröm','Hopp','Hjärta','Ljus','Stjärna','Liv','Värld','Blomma'] },
+    { name: '匈牙利语', code: 'hu', flag: '🇭🇺', samples: ['Szerelem','Béke','Álom','Remény','Szív','Fény','Csillag','Élet','Világ','Virág'] },
+    { name: '罗马尼亚语', code: 'ro', flag: '🇷🇴', samples: ['Dragoste','Pace','Vis','Speranță','Inimă','Lumină','Stea','Viață','Lume','Floare'] },
+    { name: '丹麦语', code: 'da', flag: '🇩🇰', samples: ['Kærlighed','Fred','Drøm','Håb','Hjerte','Lys','Stjerne','Liv','Verden','Blomst'] },
+    { name: '芬兰语', code: 'fi', flag: '🇫🇮', samples: ['Rakkaus','Rauha','Unelma','Toivo','Sydän','Valo','Tähti','Elämä','Maailma','Kukka'] },
+    { name: '挪威语', code: 'no', flag: '🇳🇴', samples: ['Kjærlighet','Fred','Drøm','Håp','Hjerte','Lys','Stjerne','Liv','Verden','Blomst'] },
+    { name: '乌克兰语', code: 'uk', flag: '🇺🇦', samples: ['Любов','Мир','Мрія','Надія','Серце','Світло','Зірка','Життя','Світ','Квітка'] },
+    { name: '希伯来语', code: 'he', flag: '🇮🇱', samples: ['אהבה','שלום','חלום','תקווה','לב','אור','כוכב','חיים','עולם','פרח'], rtl: true },
+    { name: '印地语', code: 'hi', flag: '🇮🇳', samples: ['प्यार','शांति','सपना','आशा','दिल','रोशनी','तारा','जीवन','दुनिया','फूल'] },
+    { name: '孟加拉语', code: 'bn', flag: '🇧🇩', samples: ['ভালোবাসা','শান্তি','স্বপ্ন','আশা','হৃদয়','আলো','তারা','জীবন','বিশ্ব','ফুল'] },
+    { name: '波斯语', code: 'fa', flag: '🇮🇷', samples: ['عشق','صلح','رویا','امید','قلب','نور','ستاره','زندگی','جهان','گل'], rtl: true },
+    { name: '马来语', code: 'ms', flag: '🇲🇾', samples: ['Cinta','Keamanan','Impian','Harapan','Hati','Cahaya','Bintang','Kehidupan','Dunia','Bunga'] },
+    { name: '克罗地亚语', code: 'hr', flag: '🇭🇷', samples: ['Ljubav','Mir','San','Nada','Srce','Svjetlo','Zvijezda','Život','Svijet','Cvijet'] },
+    { name: '斯洛伐克语', code: 'sk', flag: '🇸🇰', samples: ['Láska','Mier','Sen','Nádej','Srdce','Svetlo','Hviezda','Život','Svet','Kvet'] }
+];
+
+var chineseWords = [
+    '爱','和平','幸福','快乐','梦想','希望','自由','勇气','智慧','美丽',
+    '真理','生命','时间','世界','天空','大地','海洋','山川','河流','森林',
+    '花朵','阳光','月光','星辰','风雨','火焰','清泉','绿叶','家人','朋友',
+    '恋人','孩子','父母','家园','故乡','城市','学校','书本','笔墨','琴棋',
+    '心灵','情感','思念','记忆','幻想','现实','温暖','明亮','安静','甜蜜',
+    '奔跑','漫步','飞翔','歌唱','舞蹈','微笑','沉思','凝望','春天','夏日',
+    '秋风','冬雪','晨曦','黄昏','午夜','黎明','四季','岁月','青春','年华',
+    '红色','蓝色','绿色','白色','黑色','黄色','金色','银色','紫色','橙色',
+    '火锅','面条','米饭','茶叶','饺子','包子','馒头','豆浆','油条','糖葫芦'
+];
+
+var apiEndpoints = [
+    'https://libretranslate.de/translate',
+    'https://translate.argosopentech.com/translate',
+    'https://libretranslate.pussthecat.org/translate'
+];
+
+var isRunningR2 = false, useRealAPI = true, apiCallCount = 0;
+
+document.getElementById('inputText2').addEventListener('input', function() { document.getElementById('charCount').textContent = this.value.length; });
+document.getElementById('roundCount').addEventListener('input', function() { document.getElementById('roundDisplay').textContent = this.value; });
+document.getElementById('modeToggle').addEventListener('change', function() {
+    useRealAPI = this.checked;
+    var label = document.getElementById('modeLabel'), desc = document.getElementById('modeDesc');
+    if (useRealAPI) { label.textContent = '🌐 真实 API 模式'; label.style.color = '#c4b5fd'; desc.textContent = '调用在线翻译接口，支持 30+ 种语言真实互译'; }
+    else { label.textContent = '📋 模拟模式'; label.style.color = 'rgba(255,255,255,.5)'; desc.textContent = '本地模拟翻译链，无需网络，即时完成'; }
+});
+
+function getRandomLanguage(excludeCode) { var pool = languages.filter(function(l) { return l.code !== excludeCode; }); return pool[Math.floor(Math.random() * pool.length)]; }
+function getRandomChineseWord() { return chineseWords[Math.floor(Math.random() * chineseWords.length)]; }
+function containsChinese(text) { return /[\u4e00-\u9fa5]/.test(text); }
+function cleanText(text) { if (!text) return ''; return String(text).trim(); }
+
+function simulateForeignText(text, langCode) {
+    var lang = languages.find(function(l) { return l.code === langCode; });
+    if (!lang) return langCode.toUpperCase();
+    var seed = 0;
+    for (var i = 0; i < text.length; i++) seed += text.charCodeAt(i);
+    seed += (langCode.charCodeAt(0) || 0) + (langCode.charCodeAt(1) || 0);
+    return lang.samples[seed % lang.samples.length];
+}
+
+function simulateTranslateToChinese(text, sourceLangCode) {
+    var map = { 'love':'爱','peace':'和平','dream':'梦想','hope':'希望','heart':'心','light':'光','star':'星','life':'生命','world':'世界','flower':'花','amour':'爱情','paix':'安宁','liebe':'热爱','frieden':'太平','amore':'爱恋','pace':'和睦','amor':'爱慕','liefde':'钟爱','milosc':'深情','ask':'钟情','tinh yeu':'恋情','cinta':'情意','hub':'恩爱','rakkaus':'挚爱','ahava':'慈爱','pyar':'喜爱','eshq':'痴情','agapi':'挚爱' };
+    var key = text.toLowerCase().replace(/[^a-z]/g, '');
+    return map[key] || getRandomChineseWord();
+}
+
+async function translateWithAPI(text, source, target, stepIndex) {
+    var endpoint = apiEndpoints[apiCallCount % apiEndpoints.length]; apiCallCount++;
+    try {
+        var controller = new AbortController();
+        var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
+        var cacheBuster = Date.now() + Math.random().toString(36).slice(2);
+        var response = await fetch(endpoint + '?_=' + cacheBuster, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ q: text, source: source, target: target, format: 'text' }), signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        var data = await response.json();
+        if (data.translatedText && data.translatedText.trim().length > 0) return cleanText(data.translatedText);
+        throw new Error('Empty');
+    } catch(e) {
+        var nextEndpoint = apiEndpoints[apiCallCount % apiEndpoints.length];
+        try {
+            var ctrl2 = new AbortController(), tid2 = setTimeout(function() { ctrl2.abort(); }, 5000);
+            var res2 = await fetch(nextEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: text, source: source, target: target, format: 'text' }), signal: ctrl2.signal });
+            clearTimeout(tid2);
+            if (!res2.ok) throw new Error('Retry failed');
+            var data2 = await res2.json();
+            if (data2.translatedText && data2.translatedText.trim().length > 0) return cleanText(data2.translatedText);
+        } catch(e2) {}
+    }
+    if (target === 'zh') return simulateTranslateToChinese(text, source);
+    return simulateForeignText(text, target);
+}
+
+function calculateSimilarity(s1, s2) {
+    if (s1 === s2) return 100;
+    var longer = s1.length > s2.length ? s1 : s2, shorter = s1.length > s2.length ? s2 : s1;
+    if (longer.length === 0) return 100;
+    var costs = [];
+    for (var i = 0; i <= shorter.length; i++) {
+        var lastValue = i;
+        for (var j = 0; j <= longer.length; j++) {
+            if (i === 0) costs[j] = j;
+            else if (j > 0) {
+                var newValue = costs[j - 1];
+                if (shorter[i - 1] !== longer[j - 1]) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                costs[j - 1] = lastValue; lastValue = newValue;
+            }
+        }
+        if (i > 0) costs[longer.length] = lastValue;
+    }
+    return Math.max(0, Math.round((1 - costs[longer.length] / longer.length) * 100));
+}
+
+function analyzeDifference(original, result) {
+    if (original === result) return '<span style="color:#4ade80;font-weight:700">✓ 完全保持原意，百转千回终不变</span>';
+    var sim = calculateSimilarity(original, result);
+    if (sim > 80) return '<span style="color:#4ade80;font-weight:700">基本保持原意（语义相似度 ' + sim + '%）</span>';
+    if (sim > 50) return '<span style="color:#facc15;font-weight:700">部分语义漂移（语义相似度 ' + sim + '%）</span>';
+    if (sim > 20) return '<span style="color:#fb923c;font-weight:700">语义发生较大变化（语义相似度 ' + sim + '%）</span>';
+    return '<span style="color:#ef4444;font-weight:700">完全变成了另一个意思（语义相似度 ' + sim + '%）</span>';
+}
+
+function createConfetti() {
+    var colors = ['#7c3aed','#db2777','#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6','#ec4899'];
+    for (var i = 0; i < 60; i++) {
+        var el = document.createElement('div'); el.className = 'confetti';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        el.style.width = (Math.random() * 8 + 6) + 'px';
+        el.style.height = (Math.random() * 8 + 6) + 'px';
+        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        el.style.animationDuration = (Math.random() * 2 + 2.5) + 's';
+        el.style.animationDelay = (Math.random() * 0.5) + 's';
+        document.body.appendChild(el);
+        setTimeout(function() { el.remove(); }, 4500);
+    }
+}
+
+async function startTranslationR2() {
+    if (isRunningR2) return;
+    var inputText = document.getElementById('inputText2').value.trim();
+    if (!inputText) { alert('请输入一个中文词语！'); return; }
+    if (!containsChinese(inputText)) { alert('请输入中文内容！'); return; }
+    var rounds = parseInt(document.getElementById('roundCount').value);
+    isRunningR2 = true; apiCallCount = 0;
+    var startBtn = document.getElementById('startBtn2');
+    startBtn.disabled = true; startBtn.textContent = '⏳ 翻译进行中...';
+    document.getElementById('emptyStateR2').style.display = 'none';
+    document.getElementById('resultsR2').style.display = 'flex';
+    document.getElementById('progressWrap').classList.add('show');
+    document.getElementById('originalR2').textContent = inputText;
+    document.getElementById('finalRounds').textContent = rounds;
+    var stepsList = document.getElementById('stepsListR2'); stepsList.innerHTML = '';
+    var journeyDots = document.getElementById('journeyDots'); journeyDots.innerHTML = '';
+    var dotCount = Math.min(rounds, 30);
+    for (var i = 0; i < dotCount; i++) {
+        var dot = document.createElement('div'); dot.className = 'jdot'; dot.id = 'jdot-' + i; journeyDots.appendChild(dot);
+        if (i < dotCount - 1) { var arrow = document.createElement('span'); arrow.textContent = '·'; arrow.style.color = 'rgba(255,255,255,.15)'; arrow.style.fontSize = '8px'; arrow.style.margin = '0 1px'; journeyDots.appendChild(arrow); }
+    }
+    var currentText = inputText, currentLangCode = 'zh';
+    for (var i = 0; i < rounds; i++) {
+        var isLast = i === rounds - 1;
+        var targetLang = isLast ? { name: '中文', code: 'zh', flag: '🇨🇳' } : getRandomLanguage(currentLangCode);
+        var progress = ((i + 1) / rounds) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressPct').textContent = Math.round(progress) + '%';
+        document.getElementById('stepCounter').textContent = (i + 1) + ' / ' + rounds;
+        document.getElementById('currentLang').textContent = isLast ? '最后回译到中文...' : targetLang.flag + ' ' + targetLang.name;
+        var dotIdx = Math.floor((i / rounds) * dotCount);
+        for (var d = 0; d <= dotIdx && d < dotCount; d++) {
+            var jd = document.getElementById('jdot-' + d);
+            if (jd) { if (d === dotIdx) { jd.className = 'jdot current'; } else { jd.className = 'jdot done'; } }
+        }
+        var translatedText;
+        if (useRealAPI) {
+            try {
+                if (isLast) translatedText = await translateWithAPI(currentText, currentLangCode, 'zh', i);
+                else if (currentLangCode === 'zh') translatedText = await translateWithAPI(currentText, 'zh', targetLang.code, i);
+                else translatedText = await translateWithAPI(currentText, currentLangCode, targetLang.code, i);
+                if (i < rounds - 1) await new Promise(function(r) { setTimeout(r, 500); });
+            } catch(e) {
+                translatedText = isLast || targetLang.code === 'zh' ? simulateTranslateToChinese(currentText, currentLangCode) : simulateForeignText(currentText, targetLang.code);
+                if (i < rounds - 1) await new Promise(function(r) { setTimeout(r, 150); });
+            }
+        } else {
+            translatedText = isLast || targetLang.code === 'zh' ? simulateTranslateToChinese(currentText, currentLangCode) : simulateForeignText(currentText, targetLang.code);
+            await new Promise(function(r) { setTimeout(r, 80); });
+        }
+        if (isLast && !containsChinese(translatedText)) translatedText = getRandomChineseWord();
+        translatedText = cleanText(translatedText);
+        if (!translatedText) translatedText = isLast ? getRandomChineseWord() : targetLang.samples[0];
+        currentText = translatedText; currentLangCode = targetLang.code;
+        if (i >= rounds - 12) {
+            var stepDiv = document.createElement('div'); stepDiv.className = 'step-item';
+            stepDiv.innerHTML = '<div class="step-num' + (isLast ? ' last' : '') + '">' + (i + 1) + '</div>' +
+                '<div class="step-info"><div class="si-lang">' + targetLang.flag + ' ' + targetLang.name + (isLast ? ' ⭐最终回译' : '') + '</div>' +
+                '<div class="si-text" title="' + currentText.replace(/"/g,'&quot;') + '">' + currentText + '</div></div>';
+            stepsList.appendChild(stepDiv); stepsList.scrollTop = stepsList.scrollHeight;
+        }
+    }
+    var finalText = currentText;
+    if (!containsChinese(finalText)) finalText = getRandomChineseWord();
+    finalText = finalText.replace(/[^\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef\s]/g, '').trim();
+    if (!finalText) finalText = getRandomChineseWord();
+    document.getElementById('finalResultR2').textContent = finalText;
+    document.getElementById('diffAnalysis').innerHTML = analyzeDifference(inputText, finalText);
+    var sim = calculateSimilarity(inputText, finalText);
+    document.getElementById('statRounds').textContent = rounds;
+    document.getElementById('statChanges').textContent = (100 - sim) + '%';
+    createConfetti();
+    isRunningR2 = false; startBtn.disabled = false; startBtn.textContent = '🚀 再来一次';
+    document.getElementById('progressWrap').classList.remove('show');
+    document.getElementById('currentLang').textContent = '完成！';
+}
+
+function clearResultsR2() {
+    document.getElementById('resultsR2').style.display = 'none';
+    document.getElementById('emptyStateR2').style.display = 'flex';
+    document.getElementById('inputText2').value = '';
+    document.getElementById('charCount').textContent = '0';
+    document.getElementById('statRounds').textContent = '0';
+    document.getElementById('statChanges').textContent = '0%';
+    document.getElementById('progressWrap').classList.remove('show');
+    document.getElementById('progressFill').style.width = '0%';
+}
+
+function copyResultR2() {
+    var result = document.getElementById('finalResultR2').textContent;
+    var original = document.getElementById('originalR2').textContent;
+    var text = '【百语轮回结果】\n原文：' + original + '\n结果：' + result + '\n历经 ' + document.getElementById('finalRounds').textContent + ' 轮翻译';
+    if (navigator.clipboard) { navigator.clipboard.writeText(text).then(function() { alert('结果已复制！'); }); }
+    else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); alert('结果已复制！'); }
+}
+
+// 初始化
+checkAuth();
+</script>
+</body>
+</html>
