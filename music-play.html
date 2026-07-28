@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎵 音乐创作室 · 多人实时合奏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        :root {
+            --bg: #0b0b10;
+            --surface: #15151e;
+            --surface-2: #1e1e2a;
+            --surface-3: #252536;
+            --text: #ececf3;
+            --text-secondary: #7a7a8f;
+            --border: #2a2a3d;
+            --accent: #6366f1;
+            --accent-dim: #6366f122;
+            --accent-hover: #818cf8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --shadow: 0 8px 32px rgba(0,0,0,0.45);
+            --radius: 16px;
+            --radius-sm: 12px;
+            --max-width: 480px;
+            --white-key: #f5f0eb;
+            --black-key: #1a1a1a;
+            --white-key-pressed: #d4cbc4;
+            --black-key-pressed: #444;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.35;} }
+        @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+        .screen { display:none; height:100vh; flex-direction:column; animation:fadeIn 0.35s ease; }
+        .screen.active { display:flex; }
+        .btn {
+            padding:13px 22px; border:none; border-radius:var(--radius-sm); font-size:15px; font-weight:600;
+            font-family:inherit; cursor:pointer; transition:all 0.18s; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+        }
+        .btn-primary { background:var(--accent); color:#fff; }
+        .btn-primary:hover { background:var(--accent-hover); transform:translateY(-1px); box-shadow:0 4px 20px var(--accent-dim); }
+        .btn-secondary { background:var(--surface-2); color:var(--text); border:1.5px solid var(--border); }
+        .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+        .btn-danger { background:var(--danger); color:#fff; }
+        .btn-danger:hover { opacity:0.85; }
+        .btn-small { padding:6px 14px; font-size:12px; border-radius:8px; font-weight:600; }
+        .input-group { margin-bottom:18px; }
+        .input-group label { display:block; font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em; }
+        .input-group input, .input-group select {
+            width:100%; border:1.5px solid var(--border); background:var(--surface); padding:13px 16px; border-radius:var(--radius-sm);
+            font-size:15px; font-family:inherit; color:var(--text); outline:none; transition:all 0.2s;
+        }
+        .input-group input:focus, .input-group select:focus { border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-dim); }
+        .header {
+            background:rgba(11,11,16,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+            padding:12px 16px; flex-shrink:0; z-index:10;
+        }
+        .header-inner { max-width:var(--max-width); margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .header h2 { font-size:16px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+        .icon-btn {
+            width:36px; height:36px; border-radius:50%; border:1.5px solid var(--border); background:var(--surface);
+            color:var(--text-secondary); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+            transition:all 0.2s; flex-shrink:0;
+        }
+        .icon-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-dim); }
+        .content { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+        .status-bar { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-secondary); }
+        .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .status-dot.online { background:var(--success); box-shadow:0 0 8px var(--success); }
+        .status-dot.connecting { background:#f59e0b; animation:pulse 1.5s infinite; }
+        .status-dot.offline { background:var(--danger); }
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(10px); z-index:200; align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.active { display:flex; }
+        .modal-content { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; width:100%; max-width:400px; box-shadow:var(--shadow); animation:slideUp 0.3s ease; }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .modal-title { font-size:17px; font-weight:700; }
+        .modal-close { width:32px; height:32px; border-radius:50%; border:none; background:var(--surface-2); color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .modal-close:hover { background:var(--danger); color:#fff; }
+        .toast {
+            position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px);
+            background:var(--surface); color:var(--text); padding:10px 20px; border-radius:100px;
+            border:1px solid var(--border); box-shadow:var(--shadow); z-index:400; font-size:13px; font-weight:600;
+            transition:transform 0.3s ease; pointer-events:none; white-space:nowrap;
+        }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+        .mode-tabs {
+            display:flex; gap:4px; padding:8px 12px; background:var(--surface); border-bottom:1px solid var(--border);
+            flex-shrink:0; overflow-x:auto; -webkit-overflow-scrolling:touch;
+        }
+        .mode-tab {
+            padding:6px 14px; border:none; border-radius:8px; background:transparent; color:var(--text-secondary);
+            cursor:pointer; font-size:12px; font-weight:600; transition:all 0.2s; white-space:nowrap; font-family:inherit;
+        }
+        .mode-tab:hover { color:var(--text); background:var(--surface-2); }
+        .mode-tab.active { background:var(--accent); color:#fff; }
+        
+        /* 画布容器 + 琴键 */
+        #canvas-container {
+            flex:1; position:relative; overflow:hidden; background:#000;
+            touch-action:none; cursor:pointer;
+        }
+        #mainCanvas {
+            position:absolute; top:0; left:0; width:100%; height:100%;
+            z-index:1;
+        }
+        #visualizer {
+            position:absolute; bottom:0; left:0; width:100%; height:70px; pointer-events:none; z-index:2;
+        }
+        
+        /* 琴键覆盖层 - 钢琴模式显示 */
+        #piano-overlay {
+            position:absolute; bottom:0; left:0; right:0; height:180px;
+            z-index:3; display:none; pointer-events:none;
+        }
+        #piano-overlay.active { display:block; }
+        .piano-key {
+            position:absolute; bottom:0; border-radius:0 0 6px 6px;
+            cursor:pointer; transition:all 0.08s; pointer-events:auto;
+        }
+        .piano-key.white {
+            background:var(--white-key);
+            border:1px solid #ccc;
+            border-bottom:3px solid #bbb;
+            height:100%;
+        }
+        .piano-key.white.pressed {
+            background:var(--white-key-pressed);
+            border-bottom:1px solid #bbb;
+            transform:translateY(3px);
+        }
+        .piano-key.black {
+            background:var(--black-key);
+            border:1px solid #333;
+            border-bottom:3px solid #000;
+            height:62%;
+            z-index:4;
+        }
+        .piano-key.black.pressed {
+            background:var(--black-key-pressed);
+            border-bottom:1px solid #000;
+            transform:translateY(3px);
+        }
+        .piano-key .label {
+            position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+            font-size:9px; color:rgba(0,0,0,0.4); font-weight:600; pointer-events:none;
+            white-space:nowrap;
+        }
+        .piano-key.black .label {
+            color:rgba(255,255,255,0.4);
+        }
+        .piano-key .key-hint {
+            position:absolute; top:6px; left:50%; transform:translateX(-50%);
+            font-size:8px; color:rgba(0,0,0,0.2); pointer-events:none;
+            font-weight:700;
+        }
+        .piano-key.black .key-hint {
+            color:rgba(255,255,255,0.2);
+        }
+        
+        /* 键盘快捷键提示 */
+        #keyboard-hint {
+            position:absolute; bottom:186px; left:50%; transform:translateX(-50%);
+            color:rgba(255,255,255,0.08); font-size:12px; pointer-events:none; z-index:5;
+            letter-spacing:2px; white-space:nowrap;
+            transition:opacity 0.5s;
+        }
+        #keyboard-hint.show { opacity:1; }
+        
+        .room-info-bar {
+            padding:6px 16px; background:var(--surface-2); border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:8px; flex-wrap:wrap;
+        }
+        .room-info-bar .room-name { font-size:13px; font-weight:600; color:var(--accent); }
+        .room-info-bar .player-count { font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:4px; }
+        .room-info-bar .player-count .dot { width:6px; height:6px; border-radius:50%; background:var(--success); display:inline-block; }
+        .note-history {
+            position:absolute; top:8px; right:8px; z-index:5;
+            font-size:10px; color:rgba(255,255,255,0.15); text-align:right; pointer-events:none;
+            line-height:1.8; max-width:120px; overflow:hidden;
+        }
+        .note-history .recent { color:rgba(255,255,255,0.35); }
+        
+        .piano-key-label {
+            position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
+            font-size:8px; color:rgba(0,0,0,0.25); font-weight:600; pointer-events:none;
+            white-space:nowrap;
+        }
+        .piano-key.black .piano-key-label {
+            color:rgba(255,255,255,0.3);
+        }
+        
+        @media (max-width:480px) {
+            .header h2 { font-size:14px; }
+            .mode-tab { font-size:11px; padding:5px 10px; }
+            .modal-content { padding:18px; }
+            #piano-overlay { height:140px; }
+            #keyboard-hint { bottom:146px; font-size:10px; }
+            .piano-key .label { font-size:7px; bottom:3px; }
+            .piano-key .key-hint { font-size:7px; top:4px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 登录/加入界面 -->
+<div id="login-screen" class="screen active">
+    <div style="max-width:400px;width:92%;margin:auto;padding:40px 0;">
+        <div style="text-align:center;margin-bottom:32px;">
+            <div style="width:72px;height:72px;background:var(--accent);border-radius:22px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;box-shadow:0 12px 40px var(--accent-dim);">🎵</div>
+            <h1 style="font-size:26px;font-weight:800;letter-spacing:-0.03em">音乐创作室</h1>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:6px;line-height:1.6">多人实时合奏 · 触摸创作 · 键盘演奏</p>
+        </div>
+        <div class="input-group">
+            <label>你的名字</label>
+            <input id="login-name" placeholder="输入你的名字" autocomplete="off" maxlength="16" value="音乐家">
+        </div>
+        <div class="input-group">
+            <label>房间</label>
+            <div style="display:flex;gap:10px;">
+                <input id="login-room" placeholder="房间ID（如：studio）" autocomplete="off" maxlength="32" value="studio">
+                <select id="login-mode" style="flex:0 0 100px;padding:13px 10px;border:1.5px solid var(--border);background:var(--surface);border-radius:var(--radius-sm);color:var(--text);font-size:14px;">
+                    <option value="public">公开</option>
+                    <option value="private">加密</option>
+                </select>
+            </div>
+        </div>
+        <div id="pwd-group" style="display:none;" class="input-group">
+            <label>房间密码</label>
+            <input id="login-pwd" type="password" placeholder="设置或输入房间密码" autocomplete="off" maxlength="32">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="doLogin()">🎵 进入音乐创作室</button>
+        <p style="margin-top:16px;font-size:11px;color:var(--text-secondary);text-align:center;line-height:1.6;">
+            💡 所有人进入同一房间即可实时合奏<br>
+            🎹 钢琴模式支持键盘演奏（A S D F G H J K L ; 键对应白键）
+        </p>
+    </div>
+</div>
+
+<!-- 主界面 -->
+<div id="studio-screen" class="screen">
+    <div class="header">
+        <div class="header-inner">
+            <button class="icon-btn" onclick="doLogout()" title="退出">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+            <h2 id="studio-title">🎵 音乐创作室</h2>
+            <div class="status-bar">
+                <span id="studio-dot" class="status-dot connecting"></span>
+                <span id="studio-status">连接中...</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="room-info-bar">
+        <div class="room-name" id="room-display">🏠 studio</div>
+        <div class="player-count">
+            <span class="dot"></span>
+            <span id="player-count">0</span> 人在线
+            <span style="margin-left:8px;font-size:10px;color:var(--text-secondary);" id="note-counter">🎵 0 音符</span>
+        </div>
+        <button class="btn btn-secondary btn-small" onclick="clearLocalNotes()" style="font-size:10px;">清空</button>
+    </div>
+
+    <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="touch" onclick="switchMode('touch')">🎹 触摸演奏</button>
+        <button class="mode-tab" data-mode="piano" onclick="switchMode('piano')">🎼 钢琴模式</button>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="mainCanvas"></canvas>
+        <canvas id="visualizer"></canvas>
+        
+        <!-- 琴键覆盖层 -->
+        <div id="piano-overlay"></div>
+        
+        <!-- 键盘快捷键提示 -->
+        <div id="keyboard-hint">⌨️ 键盘演奏：白键 A S D F G H J K L ; · 黑键 W E R T Y U I O P</div>
+        
+        <div class="note-history" id="noteHistory"></div>
+        <div id="playback-indicator" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.04);font-size:48px;pointer-events:none;z-index:0;">♪</div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+    // ==================== 配置 ====================
+    const API_BASE = 'https://ntfy.sh';
+    const HEARTBEAT_INTERVAL = 15000;
+    const LS_USER = 'music_studio_user';
+    const LS_ROOMS = 'music_studio_rooms';
+    const LS_HISTORY = 'music_studio_history';
+    
+    let currentUser = null;
+    let currentRoom = null;
+    let currentMode = 'touch'; // 'touch' | 'piano'
+    let evtSource = null;
+    let heartbeatTimer = null;
+    let activeVoices = new Map();
+    let touchIndicators = new Map();
+    let noteHistory = [];
+    let isPlayingBack = false;
+    let onlinePlayers = new Set();
+    let frameCount = 0;
+    let pianoKeys = [];
+    let activePianoKeys = new Set(); // 当前按下的琴键索引
+    
+    // ==================== 琴键映射 ====================
+    // 钢琴键配置: C4 - B5 (2个八度)
+    const PIANO_KEYS = [
+        // 白键: C4 D4 E4 F4 G4 A4 B4 C5 D5 E5 F5 G5 A5 B5 C6
+        { note: 'C4', freq: 261.63, type: 'white', key: 'A' },
+        { note: 'D4', freq: 293.66, type: 'white', key: 'S' },
+        { note: 'E4', freq: 329.63, type: 'white', key: 'D' },
+        { note: 'F4', freq: 349.23, type: 'white', key: 'F' },
+        { note: 'G4', freq: 392.00, type: 'white', key: 'G' },
+        { note: 'A4', freq: 440.00, type: 'white', key: 'H' },
+        { note: 'B4', freq: 493.88, type: 'white', key: 'J' },
+        { note: 'C5', freq: 523.25, type: 'white', key: 'K' },
+        { note: 'D5', freq: 587.33, type: 'white', key: 'L' },
+        { note: 'E5', freq: 659.25, type: 'white', key: ';' },
+        { note: 'F5', freq: 698.46, type: 'white', key: "'" },
+        { note: 'G5', freq: 783.99, type: 'white', key: 'Z' },
+        { note: 'A5', freq: 880.00, type: 'white', key: 'X' },
+        { note: 'B5', freq: 987.77, type: 'white', key: 'C' },
+        { note: 'C6', freq: 1046.50, type: 'white', key: 'V' },
+        // 黑键: C#4 D#4 F#4 G#4 A#4 C#5 D#5 F#5 G#5 A#5
+        { note: 'C#4', freq: 277.18, type: 'black', key: 'W' },
+        { note: 'D#4', freq: 311.13, type: 'black', key: 'E' },
+        { note: 'F#4', freq: 369.99, type: 'black', key: 'R' },
+        { note: 'G#4', freq: 415.30, type: 'black', key: 'T' },
+        { note: 'A#4', freq: 466.16, type: 'black', key: 'Y' },
+        { note: 'C#5', freq: 554.37, type: 'black', key: 'U' },
+        { note: 'D#5', freq: 622.25, type: 'black', key: 'I' },
+        { note: 'F#5', freq: 739.99, type: 'black', key: 'O' },
+        { note: 'G#5', freq: 830.61, type: 'black', key: 'P' },
+        { note: 'A#5', freq: 932.33, type: 'black', key: '[' }
+    ];
+    
+    // 键盘映射: 按键 -> 琴键索引
+    const KEY_MAP = {};
+    PIANO_KEYS.forEach((k, i) => {
+        if (k.key) KEY_MAP[k.key] = i;
+    });
+    
+    // ==================== DOM 引用 ====================
+    const $ = id => document.getElementById(id);
+    const canvas = $('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const vizCanvas = $('visualizer');
+    const vizCtx = vizCanvas.getContext('2d');
+    const container = $('canvas-container');
+    const pianoOverlay = $('piano-overlay');
+    
+    // ==================== 音频引擎 ====================
+    let audioCtx = null;
+    let masterGain = null;
+    let analyser = null;
+    let reverbNode = null;
+    let delayNode = null;
+    
+    const PENTATONIC_SCALE = [0, 2, 4, 7, 9];
+    const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.30;
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.8;
+        reverbNode = createReverb();
+        delayNode = audioCtx.createDelay();
+        delayNode.delayTime.value = 0.35;
+        const delayGain = audioCtx.createGain();
+        delayGain.gain.value = 0.25;
+        const delayFeedback = audioCtx.createGain();
+        delayFeedback.gain.value = 0.30;
+        masterGain.connect(delayNode);
+        delayNode.connect(delayGain);
+        delayGain.connect(delayFeedback);
+        delayFeedback.connect(delayNode);
+        delayGain.connect(reverbNode);
+        masterGain.connect(reverbNode);
+        reverbNode.connect(analyser);
+        masterGain.connect(analyser);
+        analyser.connect(audioCtx.destination);
+    }
+    
+    function createReverb() {
+        const convolver = audioCtx.createConvolver();
+        const rate = audioCtx.sampleRate;
+        const length = rate * 2.5;
+        const impulse = audioCtx.createBuffer(2, length, rate);
+        for (let ch=0; ch<2; ch++) {
+            const data = impulse.getChannelData(ch);
+            for (let i=0; i<length; i++) {
+                const decay = Math.pow(1 - i/length, 2.5);
+                data[i] = (Math.random()*2-1) * decay * 0.5;
+            }
+        }
+        convolver.buffer = impulse;
+        return convolver;
+    }
+    
+    function quantizeToPentatonic(semitone) {
+        const octave = Math.floor(semitone / 12);
+        const noteInOctave = ((semitone % 12) + 12) % 12;
+        let closest = PENTATONIC_SCALE[0], minDist = 12;
+        for (let s of PENTATONIC_SCALE) {
+            let d = Math.abs(noteInOctave - s);
+            if (d > 6) d = 12 - d;
+            if (d < minDist) { minDist = d; closest = s; }
+        }
+        return octave * 12 + closest;
+    }
+    
+    function xToFreq(x) {
+        const w = container.clientWidth;
+        const ratio = Math.max(0, Math.min(1, x / w));
+        if (currentMode === 'piano') {
+            const idx = Math.floor(ratio * (PIANO_KEYS.length - 1));
+            return PIANO_KEYS[Math.min(idx, PIANO_KEYS.length-1)].freq;
+        }
+        let note = 36 + ratio * 48;
+        note = quantizeToPentatonic(Math.round(note));
+        return 440 * Math.pow(2, (note - 69) / 12);
+    }
+    
+    function yToVolume(y) {
+        const h = container.clientHeight;
+        return Math.max(0.015, Math.min(1, Math.pow(1 - y/h, 0.6)));
+    }
+    
+    function getNoteInfo(freq) {
+        const noteNum = Math.round(69 + 12 * Math.log2(freq / 440));
+        const nameIndex = ((noteNum % 12) + 12) % 12;
+        const octave = Math.floor(noteNum / 12) - 1;
+        return { noteName: NOTE_NAMES[nameIndex] + octave, freq: Math.round(freq) };
+    }
+    
+    function freqToHue(freq) {
+        const minF = 65, maxF = 1047;
+        const ratio = (freq - minF) / (maxF - minF);
+        return 30 + ratio * 250;
+    }
+    
+    // ==================== 合成器 Voice ====================
+    class Voice {
+        constructor() {
+            this.oscillators = [];
+            this.gainNode = null;
+            this.filter = null;
+            this.panNode = null;
+            this.active = false;
+        }
+        start(freq, volume, pan) {
+            this.active = true;
+            const layers = [
+                { type:'sawtooth', detune:0, gain:0.20, octave:1.0 },
+                { type:'square', detune:-5, gain:0.10, octave:0.5 },
+                { type:'triangle', detune:7, gain:0.25, octave:1.0 },
+                { type:'sine', detune:0, gain:0.15, octave:2.0 }
+            ];
+            this.gainNode = audioCtx.createGain();
+            this.filter = audioCtx.createBiquadFilter();
+            this.filter.type = 'lowpass';
+            this.filter.Q.value = 1.5;
+            this.filter.frequency.value = freq * 5;
+            this.panNode = audioCtx.createStereoPanner();
+            this.panNode.pan.value = pan;
+            layers.forEach(l => {
+                const osc = audioCtx.createOscillator();
+                osc.type = l.type;
+                osc.frequency.value = freq * l.octave;
+                osc.detune.value = l.detune;
+                const g = audioCtx.createGain();
+                g.gain.value = l.gain;
+                osc.connect(g);
+                g.connect(this.filter);
+                osc.start();
+                this.oscillators.push({ osc, gain:g });
+            });
+            const now = audioCtx.currentTime;
+            this.gainNode.gain.setValueAtTime(0, now);
+            this.gainNode.gain.linearRampToValueAtTime(volume, now + 0.03);
+            this.sustainLevel = volume * 0.8;
+            this.gainNode.gain.setTargetAtTime(this.sustainLevel, now + 0.1, 0.3);
+            this.filter.connect(this.gainNode);
+            this.gainNode.connect(this.panNode);
+            this.panNode.connect(masterGain);
+            this.filter.frequency.setValueAtTime(freq * 0.5, now);
+            this.filter.frequency.exponentialRampToValueAtTime(freq * 3, now + 0.1);
+        }
+        update(freq, volume, pan) {
+            if (!this.active) return;
+            const now = audioCtx.currentTime;
+            this.oscillators.forEach(({osc}, i) => {
+                const oct = [1.0,0.5,1.0,2.0][i];
+                osc.frequency.setTargetAtTime(freq * oct, now, 0.02);
+            });
+            this.gainNode.gain.setTargetAtTime(volume * 0.8, now, 0.05);
+            this.filter.frequency.setTargetAtTime(freq * 4 + 200, now, 0.1);
+            this.panNode.pan.setTargetAtTime(pan, now, 0.05);
+        }
+        release() {
+            if (!this.active) return;
+            this.active = false;
+            const now = audioCtx.currentTime;
+            const cur = this.gainNode.gain.value;
+            this.gainNode.gain.cancelScheduledValues(now);
+            this.gainNode.gain.setValueAtTime(cur, now);
+            this.gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            this.oscillators.forEach(({osc}) => osc.stop(now + 0.5));
+            setTimeout(() => { this.oscillators = []; }, 600);
+        }
+    }
+    
+    // ==================== 粒子 & 涟漪 ====================
+    let particles = [];
+    let ripples = [];
+    
+    function addParticles(x, y, hue, intensity=1) {
+        const count = Math.floor(20 * intensity);
+        for (let i=0; i<count; i++) {
+            const angle = Math.PI*2*i/count + (Math.random()-0.5)*0.8;
+            const speed = (1 + Math.random()*6) * intensity;
+            particles.push({
+                x,y,
+                vx: Math.cos(angle)*speed,
+                vy: Math.sin(angle)*speed - 0.5,
+                life: 0.4 + Math.random()*0.6,
+                maxLife: 0.4 + Math.random()*0.6,
+                decay: 0.015 + Math.random()*0.02,
+                hue: hue + (Math.random()-0.5)*30,
+                sat: 70 + Math.random()*30,
+                light: 50 + Math.random()*40,
+                size: (1.5 + Math.random()*4) * intensity,
+                type: Math.random()>0.6 ? 'star' : 'circle'
+            });
+        }
+    }
+    
+    function addRipple(x, y, freq) {
+        const hue = freqToHue(freq);
+        ripples.push({
+            x,y, radius:0,
+            maxRadius: 40 + freq/30,
+            hue, life:1,
+            speed: 2 + freq/400
+        });
+    }
+    
+    function drawParticles(ctx2, w, h) {
+        for (let i=particles.length-1; i>=0; i--) {
+            const p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.vy += 0.04; p.vx *= 0.985;
+            p.life -= p.decay;
+            if (p.life <= 0) { particles.splice(i,1); continue; }
+            const alpha = p.life / p.maxLife;
+            ctx2.globalAlpha = alpha * 0.85;
+            ctx2.fillStyle = `hsl(${p.hue}, ${p.sat}%, ${p.light}%)`;
+            ctx2.beginPath();
+            ctx2.arc(p.x, p.y, p.size * (0.3 + alpha*0.7), 0, Math.PI*2);
+            ctx2.fill();
+        }
+        ctx2.globalAlpha = 1;
+    }
+    
+    function drawRipples(ctx2) {
+        for (let i=ripples.length-1; i>=0; i--) {
+            const r = ripples[i];
+            r.radius += r.speed;
+            r.life = 1 - r.radius/r.maxRadius;
+            if (r.life <= 0) { ripples.splice(i,1); continue; }
+            ctx2.globalAlpha = r.life * 0.3;
+            ctx2.strokeStyle = `hsl(${r.hue}, 75%, 60%)`;
+            ctx2.lineWidth = 1.5;
+            ctx2.beginPath();
+            ctx2.arc(r.x, r.y, r.radius, 0, Math.PI*2);
+            ctx2.stroke();
+            if (r.radius > 8) {
+                ctx2.globalAlpha = r.life * 0.15;
+                ctx2.beginPath();
+                ctx2.arc(r.x, r.y, r.radius * 0.6, 0, Math.PI*2);
+                ctx2.stroke();
+            }
+        }
+        ctx2.globalAlpha = 1;
+    }
+    
+    // ==================== 琴键渲染 ====================
+    function renderPianoKeys() {
+        const w = container.clientWidth;
+        const keyHeight = 180;
+        const totalWhiteKeys = PIANO_KEYS.filter(k => k.type === 'white').length;
+        const whiteKeyWidth = w / totalWhiteKeys;
+        const blackKeyWidth = whiteKeyWidth * 0.6;
+        
+        pianoOverlay.innerHTML = '';
+        pianoOverlay.style.height = keyHeight + 'px';
+        
+        // 先画白键
+        let whiteIndex = 0;
+        PIANO_KEYS.forEach((key, idx) => {
+            if (key.type === 'white') {
+                const div = document.createElement('div');
+                div.className = 'piano-key white';
+                div.dataset.index = idx;
+                const x = whiteIndex * whiteKeyWidth;
+                div.style.left = x + 'px';
+                div.style.width = whiteKeyWidth + 'px';
+                div.innerHTML = `<span class="label">${key.note}</span><span class="key-hint">${key.key || ''}</span>`;
+                div.addEventListener('mousedown', (e) => { e.stopPropagation(); startPianoKey(idx); });
+                div.addEventListener('mouseup', (e) => { e.stopPropagation(); releasePianoKey(idx); });
+                div.addEventListener('mouseleave', () => { releasePianoKey(idx); });
+                div.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); startPianoKey(idx); }, { passive: false });
+                div.addEventListener('touchend', (e) => { e.preventDefault(); releasePianoKey(idx); }, { passive: false });
+                div.addEventListener('touchcancel', () => { releasePianoKey(idx); });
+                pianoOverlay.appendChild(div);
+                whiteIndex++;
+            }
+        });
+        
+        // 再画黑键（覆盖在白键上方）
+        PIANO_KEYS.forEach((key, idx) => {
+            if (key.type === 'black') {
+                const div = document.createElement('div');
+                div.className = 'piano-key black';
+                div.dataset.index = idx;
+                // 计算黑键位置：在白键之间
+                const whiteBefore = PIANO_KEYS.slice(0, idx).filter(k => k.type === 'white').length;
+                const x = (whiteBefore - 1) * whiteKeyWidth + whiteKeyWidth * 0.7;
+                div.style.left = x + 'px';
+                div.style.width = blackKeyWidth + 'px';
+                div.innerHTML = `<span class="label">${key.note}</span><span class="key-hint">${key.key || ''}</span>`;
+                div.addEventListener('mousedown', (e) => { e.stopPropagation(); startPianoKey(idx); });
+                div.addEventListener('mouseup', (e) => { e.stopPropagation(); releasePianoKey(idx); });
+                div.addEventListener('mouseleave', () => { releasePianoKey(idx); });
+                div.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); startPianoKey(idx); }, { passive: false });
+                div.addEventListener('touchend', (e) => { e.preventDefault(); releasePianoKey(idx); }, { passive: false });
+                div.addEventListener('touchcancel', () => { releasePianoKey(idx); });
+                pianoOverlay.appendChild(div);
+            }
+        });
+        
+        // 存储琴键引用
+        pianoKeys = PIANO_KEYS.map((key, idx) => {
+            const el = pianoOverlay.querySelector(`[data-index="${idx}"]`);
+            return { ...key, index: idx, element: el };
+        });
+    }
+    
+    function startPianoKey(idx) {
+        if (currentMode !== 'piano') return;
+        if (activePianoKeys.has(idx)) return;
+        const key = pianoKeys[idx];
+        if (!key) return;
+        activePianoKeys.add(idx);
+        if (key.element) key.element.classList.add('pressed');
+        
+        const w = container.clientWidth;
+        const x = (idx / PIANO_KEYS.length) * w;
+        const y = container.clientHeight * 0.3;
+        const freq = key.freq;
+        const vol = 0.8;
+        const pan = Math.max(-1, Math.min(1, (x / container.clientWidth) * 2 - 1));
+        
+        initAudio();
+        const voice = new Voice();
+        voice.start(freq, vol, pan);
+        const hue = freqToHue(freq);
+        const id = 'piano-' + idx + '-' + Date.now();
+        activeVoices.set(id, { voice, x, y, freq, volume:vol, pan, noteName: key.note });
+        addParticles(x, y, hue, 0.8);
+        addRipple(x, y, freq);
+        updateNoteHistory(key.note + ' ♪');
+        broadcastNote(freq, vol, x, y, key.note, 'start');
+        updatePlayerCount();
+    }
+    
+    function releasePianoKey(idx) {
+        if (!activePianoKeys.has(idx)) return;
+        activePianoKeys.delete(idx);
+        const key = pianoKeys[idx];
+        if (key && key.element) key.element.classList.remove('pressed');
+        // 找到并释放对应的 voice
+        let toRemove = null;
+        for (let [id, data] of activeVoices) {
+            if (id.startsWith('piano-' + idx + '-')) {
+                data.voice.release();
+                toRemove = id;
+                break;
+            }
+        }
+        if (toRemove) activeVoices.delete(toRemove);
+        updatePlayerCount();
+    }
+    
+    // ==================== 绘图 ====================
+    function resizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio, 2);
+        const w = container.clientWidth, h = container.clientHeight;
+        canvas.width = w * dpr; canvas.height = h * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+        vizCanvas.width = w * dpr; vizCanvas.height = 70 * dpr;
+        vizCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        vizCanvas.style.width = w + 'px'; vizCanvas.style.height = '70px';
+        renderPianoKeys();
+    }
+    
+    function drawGrid() {
+        const w = container.clientWidth, h = container.clientHeight;
+        if (currentMode === 'piano') {
+            // 钢琴模式：显示简单网格
+            ctx.fillStyle = 'rgba(255,255,255,0.02)';
+            for (let i=0; i<PIANO_KEYS.length; i+=2) {
+                const x = (i / PIANO_KEYS.length) * w;
+                ctx.fillRect(x, 0, w/PIANO_KEYS.length, h);
+            }
+            return;
+        }
+        // 触摸模式：显示音高网格
+        const notes = [];
+        for (let n=36; n<=84; n++) {
+            const ni = ((n%12)+12)%12;
+            if (PENTATONIC_SCALE.includes(ni)) notes.push(n);
+        }
+        for (let i=0; i<notes.length; i++) {
+            const freq = 440 * Math.pow(2, (notes[i]-69)/12);
+            const minF = 65, maxF = 1047;
+            const x = ((freq - minF) / (maxF - minF)) * w;
+            if (x < 0 || x > w) continue;
+            const isC = ((Math.round(69+12*Math.log2(freq/440))%12)+12)%12 === 0;
+            ctx.strokeStyle = isC ? 'rgba(255,200,80,0.25)' : 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = isC ? 2 : 1;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h * 0.75);
+            ctx.stroke();
+            ctx.fillStyle = isC ? 'rgba(255,200,80,0.6)' : 'rgba(255,255,255,0.15)';
+            ctx.font = isC ? 'bold 11px sans-serif' : '9px sans-serif';
+            ctx.textAlign = 'center';
+            const nn = Math.round(69+12*Math.log2(freq/440));
+            const label = NOTE_NAMES[((nn%12)+12)%12] + (Math.floor(nn/12)-1);
+            ctx.fillText(label, x, h - 12);
+        }
+        const grad = ctx.createLinearGradient(0,0,0,h);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.8, 'rgba(0,0,0,0.3)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+    }
+    
+    function drawVisualizer() {
+        if (!analyser) return;
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        const w = container.clientWidth, h = 70;
+        vizCtx.fillStyle = 'rgba(0,0,0,0.2)';
+        vizCtx.fillRect(0, 0, w, h);
+        const bars = 50;
+        const bw = w / bars;
+        for (let i=0; i<bars; i++) {
+            const t = i / bars;
+            const logT = Math.pow(t, 1.5);
+            const idx = Math.floor(logT * (data.length * 0.5));
+            const val = data[Math.min(idx, data.length-1)] || 0;
+            const bh = (val / 255) * h * 0.9;
+            const hue = 30 + (i/bars) * 280;
+            const grad = vizCtx.createLinearGradient(0, h, 0, h-bh);
+            grad.addColorStop(0, `hsla(${hue}, 70%, 20%, 0.9)`);
+            grad.addColorStop(1, `hsla(${hue}, 80%, 65%, 1)`);
+            vizCtx.fillStyle = grad;
+            vizCtx.fillRect(i*bw + 1, h - bh, bw - 2, bh);
+        }
+    }
+    
+    // ==================== 主渲染循环 ====================
+    function render() {
+        const w = container.clientWidth, h = container.clientHeight;
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fillRect(0, 0, w, h);
+        drawGrid();
+        drawParticles(ctx, w, h);
+        drawRipples(ctx);
+        drawVisualizer();
+        // 连线
+        const voices = Array.from(activeVoices.values());
+        if (voices.length > 1) {
+            ctx.strokeStyle = 'rgba(255,200,100,0.08)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 8]);
+            for (let i=0; i<voices.length; i++) {
+                for (let j=i+1; j<voices.length; j++) {
+                    ctx.beginPath();
+                    ctx.moveTo(voices[i].x, voices[i].y);
+                    ctx.lineTo(voices[j].x, voices[j].y);
+                    ctx.stroke();
+                }
+            }
+            ctx.setLineDash([]);
+        }
+        frameCount++;
+        requestAnimationFrame(render);
+    }
+    
+    // ==================== 触摸交互 (触摸模式) ====================
+    function startVoice(id, x, y) {
+        if (currentMode === 'piano') return; // 钢琴模式由琴键处理
+        initAudio();
+        const freq = xToFreq(x);
+        const vol = yToVolume(y);
+        const pan = Math.max(-1, Math.min(1, (x / container.clientWidth) * 2 - 1));
+        const voice = new Voice();
+        voice.start(freq, vol, pan);
+        const info = getNoteInfo(freq);
+        const hue = freqToHue(freq);
+        activeVoices.set(id, { voice, x, y, freq, volume:vol, pan, noteName: info.noteName });
+        addParticles(x, y, hue, vol);
+        addRipple(x, y, freq);
+        // 创建指示器
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute;pointer-events:none;z-index:3;';
+        el.innerHTML = `
+            <div style="position:absolute;left:${x}px;top:${y}px;width:60px;height:60px;border-radius:50%;border:2px solid hsla(${hue},80%,55%,0.6);transform:translate(-50%,-50%);box-shadow:0 0 30px hsla(${hue},80%,50%,0.3);transition:all 0.1s;"></div>
+            <div style="position:absolute;left:${x}px;top:${y-45}px;transform:translateX(-50%);color:rgba(255,255,255,0.9);font-size:12px;font-weight:600;text-shadow:0 0 10px rgba(0,0,0,0.9);">${info.noteName}</div>
+            <div style="position:absolute;left:${x+40}px;top:${y-30}px;width:3px;height:${(1-y/container.clientHeight)*50}px;background:hsla(${hue},70%,60%,0.5);border-radius:2px;transform:translateX(-50%);"></div>
+        `;
+        container.appendChild(el);
+        touchIndicators.set(id, el);
+        broadcastNote(freq, vol, x, y, info.noteName, 'start');
+        updateNoteHistory(info.noteName + ' ♪');
+        updatePlayerCount();
+    }
+    
+    function updateVoice(id, x, y) {
+        if (currentMode === 'piano') return;
+        const data = activeVoices.get(id);
+        if (!data) return;
+        const freq = xToFreq(x);
+        const vol = yToVolume(y);
+        const pan = Math.max(-1, Math.min(1, (x / container.clientWidth) * 2 - 1));
+        data.x = x; data.y = y; data.freq = freq; data.volume = vol; data.pan = pan;
+        data.voice.update(freq, vol, pan);
+        const el = touchIndicators.get(id);
+        if (el) {
+            const hue = freqToHue(freq);
+            const ring = el.querySelector('div:first-child');
+            const label = el.querySelector('div:nth-child(2)');
+            const bar = el.querySelector('div:nth-child(3)');
+            if (ring) { ring.style.left = x+'px'; ring.style.top = y+'px'; ring.style.borderColor = `hsla(${hue},80%,55%,0.6)`; ring.style.boxShadow = `0 0 30px hsla(${hue},80%,50%,0.3)`; }
+            if (label) { label.style.left = x+'px'; label.style.top = (y-45)+'px'; }
+            if (bar) { bar.style.left = (x+40)+'px'; bar.style.top = (y-30)+'px'; bar.style.height = (1-y/container.clientHeight)*50+'px'; bar.style.background = `hsla(${hue},70%,60%,0.5)`; }
+        }
+        if (frameCount % 3 === 0) {
+            broadcastNote(freq, vol, x, y, data.noteName, 'update');
+        }
+    }
+    
+    function stopVoice(id) {
+        const data = activeVoices.get(id);
+        if (data) { data.voice.release(); activeVoices.delete(id); }
+        const el = touchIndicators.get(id);
+        if (el) { el.style.transition = 'opacity 0.3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 350); touchIndicators.delete(id); }
+        updatePlayerCount();
+    }
+    
+    function updatePlayerCount() {
+        const count = activeVoices.size;
+        $('player-count').textContent = count;
+    }
+    
+    function updateNoteHistory(text) {
+        noteHistory.unshift(text);
+        if (noteHistory.length > 8) noteHistory.pop();
+        $('noteHistory').innerHTML = noteHistory.map(n => `<div class="recent">${n}</div>`).join('');
+        const counter = $('note-counter');
+        if (counter) {
+            const total = parseInt(counter.textContent.match(/\d+/)?.[0] || 0) + 1;
+            counter.textContent = `🎵 ${total} 音符`;
+        }
+    }
+    
+    // ==================== 模式切换 ====================
+    function switchMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+        pianoOverlay.classList.toggle('active', mode === 'piano');
+        $('keyboard-hint').classList.toggle('show', mode === 'piano');
+        // 释放所有钢琴键
+        activePianoKeys.forEach(idx => releasePianoKey(idx));
+        activePianoKeys.clear();
+        showToast(mode === 'touch' ? '🎹 自由演奏模式' : '🎼 钢琴模式 (琴键+键盘演奏)');
+    }
+    
+    // ==================== 事件绑定 ====================
+    let mouseId = null, mouseActive = false;
+    
+    container.addEventListener('mousedown', (e) => {
+        if (currentMode === 'piano') return;
+        const rect = container.getBoundingClientRect();
+        mouseId = 'mouse-' + Date.now();
+        mouseActive = true;
+        startVoice(mouseId, e.clientX - rect.left, e.clientY - rect.top);
+    });
+    container.addEventListener('mousemove', (e) => {
+        if (!mouseActive || !mouseId || currentMode === 'piano') return;
+        const rect = container.getBoundingClientRect();
+        updateVoice(mouseId, e.clientX - rect.left, e.clientY - rect.top);
+    });
+    const endMouse = () => {
+        if (mouseActive && mouseId) { stopVoice(mouseId); mouseActive = false; mouseId = null; }
+    };
+    container.addEventListener('mouseup', endMouse);
+    container.addEventListener('mouseleave', endMouse);
+    
+    container.addEventListener('touchstart', (e) => {
+        if (currentMode === 'piano') return;
+        e.preventDefault();
+        const rect = container.getBoundingClientRect();
+        for (let t of e.changedTouches) {
+            startVoice(t.identifier, t.clientX - rect.left, t.clientY - rect.top);
+        }
+    }, { passive: false });
+    container.addEventListener('touchmove', (e) => {
+        if (currentMode === 'piano') return;
+        e.preventDefault();
+        const rect = container.getBoundingClientRect();
+        for (let t of e.changedTouches) {
+            updateVoice(t.identifier, t.clientX - rect.left, t.clientY - rect.top);
+        }
+    }, { passive: false });
+    container.addEventListener('touchend', (e) => {
+        if (currentMode === 'piano') return;
+        e.preventDefault();
+        for (let t of e.changedTouches) stopVoice(t.identifier);
+    }, { passive: false });
+    container.addEventListener('touchcancel', (e) => {
+        if (currentMode === 'piano') return;
+        for (let t of e.changedTouches) stopVoice(t.identifier);
+    });
+    
+    // ==================== 键盘事件 (钢琴模式) ====================
+    document.addEventListener('keydown', (e) => {
+        if (currentMode !== 'piano') return;
+        const key = e.key;
+        // 防止输入框触发
+        if (e.target.tagName === 'INPUT') return;
+        if (KEY_MAP[key] !== undefined) {
+            e.preventDefault();
+            startPianoKey(KEY_MAP[key]);
+        }
+    });
+    document.addEventListener('keyup', (e) => {
+        if (currentMode !== 'piano') return;
+        const key = e.key;
+        if (e.target.tagName === 'INPUT') return;
+        if (KEY_MAP[key] !== undefined) {
+            e.preventDefault();
+            releasePianoKey(KEY_MAP[key]);
+        }
+    });
+    
+    // ==================== ntfy.sh 同步 ====================
+    function getTopic() {
+        return currentRoom ? `music-studio-${currentRoom.id}` : 'music-studio-default';
+    }
+    
+    function broadcastNote(freq, vol, x, y, note, action) {
+        if (!currentRoom) return;
+        const msg = {
+            type: 'note',
+            action: action,
+            roomId: currentRoom.id,
+            sender: currentUser || '匿名',
+            freq: freq,
+            volume: vol,
+            x: x / container.clientWidth,
+            y: y / container.clientHeight,
+            note: note,
+            timestamp: Date.now()
+        };
+        fetch(`${API_BASE}/${getTopic()}`, {
+            method: 'POST',
+            body: JSON.stringify(msg),
+            headers: { 'Title': `🎵 ${note}`, 'Priority': 'default' }
+        }).catch(() => {});
+    }
+    
+    function connectRoom() {
+        if (evtSource) { evtSource.close(); evtSource = null; }
+        const topic = getTopic();
+        evtSource = new EventSource(`${API_BASE}/${topic}/sse`);
+        evtSource.onmessage = (e) => {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.event === 'message' && data.message) {
+                    const msg = JSON.parse(data.message);
+                    if (msg.type === 'note') {
+                        handleRemoteNote(msg);
+                    } else if (msg.type === 'heartbeat') {
+                        onlinePlayers.add(msg.sender);
+                        updateOnlineCount();
+                    }
+                }
+            } catch(err) {}
+        };
+        evtSource.onerror = () => {
+            $('studio-dot').className = 'status-dot offline';
+            $('studio-status').textContent = '离线';
+        };
+        $('studio-dot').className = 'status-dot online';
+        $('studio-status').textContent = '在线';
+    }
+    
+    function handleRemoteNote(msg) {
+        if (msg.sender === currentUser) return;
+        const w = container.clientWidth, h = container.clientHeight;
+        const x = msg.x * w, y = msg.y * h;
+        const freq = msg.freq || xToFreq(x);
+        const vol = msg.volume || yToVolume(y);
+        const hue = freqToHue(freq);
+        addParticles(x, y, hue, vol * 0.6);
+        addRipple(x, y, freq);
+        updateNoteHistory('👤 ' + msg.sender + ' ' + (msg.note || '♪'));
+        // 播放远程音符
+        if (audioCtx) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol * 0.15, audioCtx.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } catch(e) {}
+        }
+        // 远程指示器
+        const el = document.createElement('div');
+        el.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:36px;height:36px;border-radius:50%;border:2px solid hsla(${hue},80%,60%,0.4);transform:translate(-50%,-50%);pointer-events:none;z-index:2;transition:all 0.3s;`;
+        container.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 400);
+        updateOnlineCount();
+    }
+    
+    function updateOnlineCount() {
+        const count = onlinePlayers.size + 1;
+        $('player-count').textContent = count;
+    }
+    
+    function sendHeartbeat() {
+        if (!currentRoom) return;
+        const msg = {
+            type: 'heartbeat',
+            roomId: currentRoom.id,
+            sender: currentUser,
+            timestamp: Date.now()
+        };
+        fetch(`${API_BASE}/${getTopic()}`, {
+            method: 'POST',
+            body: JSON.stringify(msg),
+            headers: { 'Title': '💓', 'Priority': 'low' }
+        }).catch(() => {});
+    }
+    
+    // ==================== 登录/退出 ====================
+    function doLogin() {
+        const name = $('login-name').value.trim() || '音乐家';
+        const roomId = $('login-room').value.trim() || 'studio';
+        const mode = $('login-mode').value;
+        const pwd = $('login-pwd').value;
+        if (!roomId) { showToast('请输入房间ID'); return; }
+        currentUser = name;
+        currentRoom = { id: roomId, mode: mode, password: pwd };
+        localStorage.setItem(LS_USER, JSON.stringify({ name, room: roomId, mode, pwd }));
+        $('studio-title').textContent = '🎵 ' + roomId;
+        $('room-display').textContent = '🏠 ' + roomId;
+        showScreen('studio-screen');
+        setTimeout(() => {
+            resizeCanvas();
+            initAudio();
+            connectRoom();
+            sendHeartbeat();
+            if (heartbeatTimer) clearInterval(heartbeatTimer);
+            heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+            loadHistory();
+            // 默认进入触摸模式
+            switchMode('touch');
+        }, 100);
+        showToast('🎵 已进入 ' + roomId);
+    }
+    
+    function doLogout() {
+        if (evtSource) evtSource.close();
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        activeVoices.forEach((_, id) => stopVoice(id));
+        activePianoKeys.forEach(idx => releasePianoKey(idx));
+        localStorage.removeItem(LS_USER);
+        showScreen('login-screen');
+        showToast('已退出');
+    }
+    
+    function clearLocalNotes() {
+        if (confirm('清空本地音符记录？')) {
+            noteHistory = [];
+            $('noteHistory').innerHTML = '';
+            $('note-counter').textContent = '🎵 0 音符';
+            showToast('已清空');
+        }
+    }
+    
+    function loadHistory() {
+        try {
+            const data = JSON.parse(localStorage.getItem(LS_HISTORY) || '{}');
+            if (data[currentRoom?.id]) {
+                const notes = data[currentRoom.id];
+                $('note-counter').textContent = `🎵 ${notes.length} 音符`;
+                noteHistory = notes.slice(-8);
+                $('noteHistory').innerHTML = noteHistory.map(n => `<div class="recent">${n}</div>`).join('');
+            }
+        } catch(e) {}
+    }
+    
+    function saveHistory(note) {
+        try {
+            const data = JSON.parse(localStorage.getItem(LS_HISTORY) || '{}');
+            if (!data[currentRoom.id]) data[currentRoom.id] = [];
+            data[currentRoom.id].push(note);
+            if (data[currentRoom.id].length > 1000) data[currentRoom.id] = data[currentRoom.id].slice(-500);
+            localStorage.setItem(LS_HISTORY, JSON.stringify(data));
+        } catch(e) {}
+    }
+    
+    // ==================== Toast ====================
+    function showToast(msg) {
+        const t = $('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+    
+    // ==================== 屏幕切换 ====================
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        $(id).classList.add('active');
+    }
+    
+    // ==================== 密码输入切换 ====================
+    $('login-mode').addEventListener('change', function() {
+        $('pwd-group').style.display = this.value === 'private' ? 'block' : 'none';
+    });
+    
+    // ==================== 启动 ====================
+    // 检查保存的用户
+    try {
+        const saved = JSON.parse(localStorage.getItem(LS_USER));
+        if (saved && saved.name && saved.room) {
+            $('login-name').value = saved.name;
+            $('login-room').value = saved.room;
+            if (saved.mode) $('login-mode').value = saved.mode;
+            if (saved.pwd) $('login-pwd').value = saved.pwd;
+            if (saved.mode === 'private') $('pwd-group').style.display = 'block';
+            // 自动登录
+            setTimeout(doLogin, 300);
+        }
+    } catch(e) {}
+    
+    $('login-name').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    $('login-room').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    $('login-pwd').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    
+    // 初始化渲染
+    setTimeout(() => {
+        resizeCanvas();
+        render();
+    }, 50);
+    
+    window.addEventListener('resize', () => {
+        clearTimeout(window._resizeTimer);
+        window._resizeTimer = setTimeout(resizeCanvas, 150);
+    });
+    
+    console.log('🎵 音乐创作室已加载');
+    console.log('🎹 钢琴模式键盘映射:');
+    console.log('  白键: A S D F G H J K L ;');
+    console.log('  黑键: W E R T Y U I O P');
+</script>
+</body>
+</html>
