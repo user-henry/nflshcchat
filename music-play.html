@@ -184,12 +184,19 @@
         .room-info-bar .room-name { font-size:13px; font-weight:600; color:var(--accent); }
         .room-info-bar .player-count { font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:4px; }
         .room-info-bar .player-count .dot { width:6px; height:6px; border-radius:50%; background:var(--success); display:inline-block; }
+        .room-info-bar .player-count .online-num { color:var(--success); font-weight:700; font-size:13px; }
         .note-history {
             position:absolute; top:8px; right:8px; z-index:5;
             font-size:10px; color:rgba(255,255,255,0.15); text-align:right; pointer-events:none;
             line-height:1.8; max-width:120px; overflow:hidden;
         }
         .note-history .recent { color:rgba(255,255,255,0.35); }
+        .debug-log {
+            position:absolute; bottom:74px; left:8px; z-index:10;
+            font-size:9px; color:rgba(255,255,255,0.15); pointer-events:none;
+            max-width:200px; line-height:1.4; text-align:left;
+            font-family:monospace;
+        }
         
         @media (max-width:480px) {
             .header h2 { font-size:14px; }
@@ -199,6 +206,7 @@
             #keyboard-hint { bottom:146px; font-size:10px; }
             .piano-key .label { font-size:7px; bottom:3px; }
             .piano-key .key-hint { font-size:7px; top:4px; }
+            .debug-log { bottom:78px; font-size:8px; max-width:140px; }
         }
     </style>
 </head>
@@ -275,7 +283,7 @@
         <div class="room-name" id="room-display">🏠 studio</div>
         <div class="player-count">
             <span class="dot"></span>
-            <span id="player-count">0</span> 人在线
+            <span>在线: <span class="online-num" id="player-count">0</span> 人</span>
             <span style="margin-left:8px;font-size:10px;color:var(--text-secondary);" id="note-counter">🎵 0 音符</span>
         </div>
         <button class="btn btn-secondary btn-small" onclick="clearLocalNotes()" style="font-size:10px;">清空</button>
@@ -292,6 +300,7 @@
         <div id="piano-overlay"></div>
         <div id="keyboard-hint">⌨️ 键盘演奏：白键 A S D F G H J K L ; · 黑键 W E R T Y U I O P</div>
         <div class="note-history" id="noteHistory"></div>
+        <div class="debug-log" id="debugLog"></div>
         <div id="playback-indicator" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.04);font-size:48px;pointer-events:none;z-index:0;">♪</div>
     </div>
 </div>
@@ -302,7 +311,8 @@
 <script>
     // ==================== 配置 ====================
     const API_BASE = 'https://ntfy.sh';
-    const HEARTBEAT_INTERVAL = 15000;
+    const HEARTBEAT_INTERVAL = 10000; // 10秒一次心跳
+    const USER_TIMEOUT = 30000; // 30秒无心跳视为离线
     const LS_USER = 'music_studio_user';
     const LS_HISTORY = 'music_studio_history';
     const LS_ROOMS = 'music_studio_rooms';
@@ -315,12 +325,19 @@
     let activeVoices = new Map();
     let touchIndicators = new Map();
     let noteHistory = [];
-    let onlinePlayers = new Set();
     let frameCount = 0;
     let pianoKeys = [];
     let activePianoKeys = new Set();
-    let pendingRoomId = null; // 用于密码验证
-    let roomPassword = null; // 当前房间密码
+    let pendingRoomId = null;
+    let roomPassword = null;
+    
+    // ===== 在线用户管理 =====
+    let onlinePlayers = new Set();
+    let userLastSeen = new Map();
+    let cleanupTimer = null;
+    
+    // ===== 调试日志 =====
+    let debugMessages = [];
     
     // ==================== 琴键映射 ====================
     const PIANO_KEYS = [
@@ -362,6 +379,20 @@
     const vizCtx = vizCanvas.getContext('2d');
     const container = $('canvas-container');
     const pianoOverlay = $('piano-overlay');
+    const debugLog = $('debugLog');
+    
+    // ==================== 调试日志 ====================
+    function addDebugLog(msg, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        debugMessages.unshift(`[${timestamp}] ${msg}`);
+        if (debugMessages.length > 20) debugMessages.pop();
+        if (debugLog) {
+            const colors = { info: 'rgba(255,255,255,0.3)', success: 'rgba(34,197,94,0.6)', error: 'rgba(239,68,68,0.6)', warn: 'rgba(245,158,11,0.6)' };
+            debugLog.innerHTML = debugMessages.map((m, i) => 
+                `<div style="color:${colors[type] || colors.info}">${m}</div>`
+            ).join('');
+        }
+    }
     
     // ==================== 音频引擎 ====================
     let audioCtx = null;
@@ -375,28 +406,33 @@
     
     function initAudio() {
         if (audioCtx) return;
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        masterGain = audioCtx.createGain();
-        masterGain.gain.value = 0.30;
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 2048;
-        analyser.smoothingTimeConstant = 0.8;
-        reverbNode = createReverb();
-        delayNode = audioCtx.createDelay();
-        delayNode.delayTime.value = 0.35;
-        const delayGain = audioCtx.createGain();
-        delayGain.gain.value = 0.25;
-        const delayFeedback = audioCtx.createGain();
-        delayFeedback.gain.value = 0.30;
-        masterGain.connect(delayNode);
-        delayNode.connect(delayGain);
-        delayGain.connect(delayFeedback);
-        delayFeedback.connect(delayNode);
-        delayGain.connect(reverbNode);
-        masterGain.connect(reverbNode);
-        reverbNode.connect(analyser);
-        masterGain.connect(analyser);
-        analyser.connect(audioCtx.destination);
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.30;
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.8;
+            reverbNode = createReverb();
+            delayNode = audioCtx.createDelay();
+            delayNode.delayTime.value = 0.35;
+            const delayGain = audioCtx.createGain();
+            delayGain.gain.value = 0.25;
+            const delayFeedback = audioCtx.createGain();
+            delayFeedback.gain.value = 0.30;
+            masterGain.connect(delayNode);
+            delayNode.connect(delayGain);
+            delayGain.connect(delayFeedback);
+            delayFeedback.connect(delayNode);
+            delayGain.connect(reverbNode);
+            masterGain.connect(reverbNode);
+            reverbNode.connect(analyser);
+            masterGain.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            addDebugLog('🎵 音频引擎初始化成功', 'success');
+        } catch(e) {
+            addDebugLog('❌ 音频引擎初始化失败: ' + e.message, 'error');
+        }
     }
     
     function createReverb() {
@@ -526,27 +562,6 @@
             this.oscillators.forEach(({osc}) => osc.stop(now + 0.5));
             setTimeout(() => { this.oscillators = []; }, 600);
         }
-    }
-    
-    // 远程音符使用轻量级 Voice（更短衰减，更柔和）
-    function playRemoteNote(freq, volume, pan, x, y) {
-        if (!audioCtx) return;
-        try {
-            const voice = new Voice();
-            voice.start(freq, volume * 0.5, pan);
-            // 远程音符自动衰减更快
-            setTimeout(() => {
-                if (voice.active) voice.release();
-            }, 300);
-            // 记录以便后续清理
-            const id = 'remote-' + Date.now() + '-' + Math.random().toString(36).slice(2,5);
-            activeVoices.set(id, { voice, x, y, freq, volume, pan, noteName: 'remote', isRemote: true });
-            setTimeout(() => {
-                if (activeVoices.has(id)) {
-                    activeVoices.delete(id);
-                }
-            }, 800);
-        } catch(e) {}
     }
     
     // ==================== 粒子 & 涟漪 ====================
@@ -860,6 +875,7 @@
         broadcastNote(freq, vol, x, y, info.noteName, 'start');
         updateNoteHistory(info.noteName + ' ♪');
         updatePlayerCount();
+        addDebugLog(`🎵 本地演奏: ${info.noteName} (${Math.round(freq)}Hz)`, 'info');
     }
     
     function updateVoice(id, x, y) {
@@ -894,20 +910,36 @@
         updatePlayerCount();
     }
     
+    // ==================== 在线人数管理 ====================
     function updatePlayerCount() {
-        const count = activeVoices.size;
+        // 显示真实在线人数 = 其他在线用户 + 自己
+        const count = onlinePlayers.size + 1;
         $('player-count').textContent = count;
     }
     
-    function updateNoteHistory(text) {
-        noteHistory.unshift(text);
-        if (noteHistory.length > 8) noteHistory.pop();
-        $('noteHistory').innerHTML = noteHistory.map(n => `<div class="recent">${n}</div>`).join('');
-        const counter = $('note-counter');
-        if (counter) {
-            const total = parseInt(counter.textContent.match(/\d+/)?.[0] || 0) + 1;
-            counter.textContent = `🎵 ${total} 音符`;
-        }
+    function updateOnlineCountDisplay() {
+        const count = onlinePlayers.size + 1;
+        $('player-count').textContent = count;
+        addDebugLog(`👥 在线用户: ${count}人 (${Array.from(onlinePlayers).join(', ') || '仅自己'})`, 'info');
+    }
+    
+    function startUserCleanup() {
+        if (cleanupTimer) clearInterval(cleanupTimer);
+        cleanupTimer = setInterval(() => {
+            const now = Date.now();
+            let hasChanged = false;
+            for (let [user, lastSeen] of userLastSeen) {
+                if (now - lastSeen > USER_TIMEOUT) {
+                    onlinePlayers.delete(user);
+                    userLastSeen.delete(user);
+                    hasChanged = true;
+                    addDebugLog(`👋 用户 ${user} 已离线 (超时)`, 'warn');
+                }
+            }
+            if (hasChanged) {
+                updateOnlineCountDisplay();
+            }
+        }, 5000);
     }
     
     // ==================== 模式切换 ====================
@@ -1006,50 +1038,97 @@
             note: note,
             timestamp: Date.now()
         };
+        // 发送到 ntfy.sh
         fetch(`${API_BASE}/${getTopic()}`, {
             method: 'POST',
             body: JSON.stringify(msg),
             headers: { 'Title': `🎵 ${note}`, 'Priority': 'default' }
-        }).catch(() => {});
+        }).then(() => {
+            addDebugLog(`📤 音符已广播: ${note}`, 'success');
+        }).catch((err) => {
+            addDebugLog(`❌ 广播失败: ${err.message}`, 'error');
+        });
     }
     
     function connectRoom() {
-        if (evtSource) { evtSource.close(); evtSource = null; }
+        if (evtSource) { 
+            evtSource.close(); 
+            evtSource = null; 
+        }
         const topic = getTopic();
-        evtSource = new EventSource(`${API_BASE}/${topic}/sse`);
-        evtSource.onmessage = (e) => {
-            try {
-                const data = JSON.parse(e.data);
-                if (data.event === 'message' && data.message) {
-                    const msg = JSON.parse(data.message);
-                    if (msg.type === 'note') {
-                        handleRemoteNote(msg);
-                    } else if (msg.type === 'heartbeat') {
-                        onlinePlayers.add(msg.sender);
-                        updateOnlineCount();
-                    } else if (msg.type === 'room_password') {
-                        // 接收房间密码（用于验证）
-                        if (msg.roomId === currentRoom?.id) {
-                            roomPassword = msg.password;
-                        }
+        addDebugLog(`🔗 正在连接到 ntfy.sh/${topic}...`, 'info');
+        
+        try {
+            evtSource = new EventSource(`${API_BASE}/${topic}/sse`);
+            
+            evtSource.onopen = () => {
+                $('studio-dot').className = 'status-dot online';
+                $('studio-status').textContent = '在线';
+                addDebugLog('✅ SSE 连接已建立', 'success');
+            };
+            
+            evtSource.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.event === 'message' && data.message) {
+                        const msg = JSON.parse(data.message);
+                        handleIncomingMessage(msg);
                     }
+                } catch(err) {
+                    addDebugLog('⚠️ 消息解析失败: ' + err.message, 'warn');
                 }
-            } catch(err) {}
-        };
-        evtSource.onerror = () => {
-            $('studio-dot').className = 'status-dot offline';
-            $('studio-status').textContent = '离线';
-        };
-        $('studio-dot').className = 'status-dot online';
-        $('studio-status').textContent = '在线';
+            };
+            
+            evtSource.onerror = (e) => {
+                $('studio-dot').className = 'status-dot offline';
+                $('studio-status').textContent = '连接断开，重连中...';
+                addDebugLog('⚠️ SSE 连接断开，自动重连中...', 'warn');
+            };
+        } catch(e) {
+            addDebugLog('❌ 创建 SSE 连接失败: ' + e.message, 'error');
+        }
+    }
+    
+    function handleIncomingMessage(msg) {
+        // 处理心跳消息
+        if (msg.type === 'heartbeat') {
+            if (msg.sender !== currentUser) {
+                onlinePlayers.add(msg.sender);
+                userLastSeen.set(msg.sender, Date.now());
+                updateOnlineCountDisplay();
+            }
+            return;
+        }
+        
+        // 处理音符消息
+        if (msg.type === 'note') {
+            // 忽略自己发出的消息
+            if (msg.sender === currentUser) {
+                return;
+            }
+            addDebugLog(`📩 收到远程音符: ${msg.note} 来自 ${msg.sender}`, 'info');
+            handleRemoteNote(msg);
+            return;
+        }
+        
+        // 处理房间密码
+        if (msg.type === 'room_password') {
+            if (msg.roomId === currentRoom?.id && !roomPassword) {
+                roomPassword = msg.password;
+                // 保存到本地
+                const rooms = JSON.parse(localStorage.getItem(LS_ROOMS) || '{}');
+                rooms[currentRoom.id] = msg.password;
+                localStorage.setItem(LS_ROOMS, JSON.stringify(rooms));
+                addDebugLog('🔐 已接收房间密码', 'success');
+            }
+        }
     }
     
     function handleRemoteNote(msg) {
-        if (msg.sender === currentUser) return;
         const w = container.clientWidth, h = container.clientHeight;
         const x = msg.x * w, y = msg.y * h;
-        const freq = msg.freq || xToFreq(x);
-        const vol = Math.min(msg.volume || 0.5, 0.6);
+        const freq = msg.freq || 440;
+        const vol = Math.min(msg.volume || 0.5, 0.5);
         const pan = Math.max(-1, Math.min(1, (x / w) * 2 - 1));
         const hue = freqToHue(freq);
         
@@ -1058,20 +1137,40 @@
         addRipple(x, y, freq);
         updateNoteHistory('👤 ' + msg.sender + ' ' + (msg.note || '♪'));
         
-        // 播放远程音符 - 使用完整的 Voice 合成器
-        playRemoteNote(freq, vol, pan, x, y);
+        // 播放远程音符
+        if (audioCtx) {
+            try {
+                // 如果音频上下文被挂起，恢复
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                
+                // 使用简单振荡器播放，更可靠
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(vol * 0.3, audioCtx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(masterGain);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+                addDebugLog(`✅ 远程音符播放成功: ${msg.note}`, 'success');
+            } catch(err) {
+                addDebugLog(`❌ 播放远程音符失败: ${err.message}`, 'error');
+            }
+        } else {
+            addDebugLog('⚠️ 音频引擎未初始化，尝试初始化...', 'warn');
+            initAudio();
+        }
         
         // 显示远程指示器
         const el = document.createElement('div');
         el.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:36px;height:36px;border-radius:50%;border:2px solid hsla(${hue},80%,60%,0.4);transform:translate(-50%,-50%);pointer-events:none;z-index:2;transition:all 0.3s;`;
         container.appendChild(el);
         setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 400);
-        updateOnlineCount();
-    }
-    
-    function updateOnlineCount() {
-        const count = onlinePlayers.size + 1;
-        $('player-count').textContent = count;
     }
     
     function sendHeartbeat() {
@@ -1088,7 +1187,7 @@
             headers: { 'Title': '💓', 'Priority': 'low' }
         }).catch(() => {});
         
-        // 如果是加密房间，广播密码（用于其他用户验证）
+        // 如果是加密房间，广播密码
         if (currentRoom.mode === 'private' && roomPassword) {
             const pwdMsg = {
                 type: 'room_password',
@@ -1124,13 +1223,10 @@
         const inputPwd = $('pwd-input').value;
         if (!inputPwd) { showToast('请输入密码'); return; }
         
-        // 验证密码：从本地存储或从房间广播获取
-        // 如果是首次进入，密码即创建
         const rooms = JSON.parse(localStorage.getItem(LS_ROOMS) || '{}');
         const storedPwd = rooms[pendingRoomId];
         
         if (storedPwd === undefined) {
-            // 首次进入，创建房间并设置密码
             rooms[pendingRoomId] = inputPwd;
             localStorage.setItem(LS_ROOMS, JSON.stringify(rooms));
             roomPassword = inputPwd;
@@ -1147,6 +1243,7 @@
             showToast('❌ 密码错误');
             $('pwd-input').value = '';
             $('pwd-input').focus();
+            addDebugLog('❌ 密码验证失败', 'error');
         }
     }
     
@@ -1160,33 +1257,33 @@
         if (!roomId) { showToast('请输入房间ID'); return; }
         
         currentUser = name;
+        addDebugLog(`🔑 用户 ${name} 尝试进入房间 ${roomId} (${mode})`, 'info');
         
-        // 检查是否为加密房间
         const rooms = JSON.parse(localStorage.getItem(LS_ROOMS) || '{}');
         const storedPwd = rooms[roomId];
         
         if (mode === 'private') {
             if (storedPwd === undefined) {
-                // 首次进入，直接创建（密码已填写）
                 if (!pwd) { showToast('请设置房间密码'); return; }
                 rooms[roomId] = pwd;
                 localStorage.setItem(LS_ROOMS, JSON.stringify(rooms));
                 roomPassword = pwd;
+                addDebugLog(`🔐 创建加密房间 ${roomId}`, 'success');
                 completeLogin(roomId, true);
             } else {
-                // 已有房间，需要验证密码
                 if (pwd && pwd === storedPwd) {
                     roomPassword = pwd;
+                    addDebugLog(`🔓 密码验证通过`, 'success');
                     completeLogin(roomId, false);
                 } else {
-                    // 弹出密码验证框
+                    addDebugLog(`🔐 需要密码验证`, 'info');
                     pendingRoomId = roomId;
                     showPasswordModal(roomId);
                 }
             }
         } else {
-            // 公开房间，直接进入
             roomPassword = null;
+            addDebugLog(`🌐 进入公开房间 ${roomId}`, 'info');
             completeLogin(roomId, true);
         }
     }
@@ -1210,6 +1307,10 @@
         $('room-display').textContent = '🏠 ' + roomId + (currentRoom.mode === 'private' ? ' 🔒' : '');
         showScreen('studio-screen');
         
+        // 清空之前的在线用户数据
+        onlinePlayers.clear();
+        userLastSeen.clear();
+        
         setTimeout(() => {
             resizeCanvas();
             initAudio();
@@ -1217,8 +1318,10 @@
             sendHeartbeat();
             if (heartbeatTimer) clearInterval(heartbeatTimer);
             heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+            startUserCleanup();
             loadHistory();
             switchMode('touch');
+            addDebugLog(`🎵 已进入房间 ${roomId}，开始创作！`, 'success');
         }, 100);
         
         showToast('🎵 已进入 ' + roomId + (currentRoom.mode === 'private' ? ' (加密)' : ''));
@@ -1227,11 +1330,13 @@
     function doLogout() {
         if (evtSource) evtSource.close();
         if (heartbeatTimer) clearInterval(heartbeatTimer);
+        if (cleanupTimer) clearInterval(cleanupTimer);
         activeVoices.forEach((_, id) => stopVoice(id));
         activePianoKeys.forEach(idx => releasePianoKey(idx));
         localStorage.removeItem(LS_USER);
         showScreen('login-screen');
         showToast('已退出');
+        addDebugLog('👋 已退出', 'info');
     }
     
     function clearLocalNotes() {
@@ -1240,6 +1345,7 @@
             $('noteHistory').innerHTML = '';
             $('note-counter').textContent = '🎵 0 音符';
             showToast('已清空');
+            addDebugLog('🗑️ 已清空音符记录', 'info');
         }
     }
     
@@ -1253,6 +1359,17 @@
                 $('noteHistory').innerHTML = noteHistory.map(n => `<div class="recent">${n}</div>`).join('');
             }
         } catch(e) {}
+    }
+    
+    function updateNoteHistory(text) {
+        noteHistory.unshift(text);
+        if (noteHistory.length > 8) noteHistory.pop();
+        $('noteHistory').innerHTML = noteHistory.map(n => `<div class="recent">${n}</div>`).join('');
+        const counter = $('note-counter');
+        if (counter) {
+            const total = parseInt(counter.textContent.match(/\d+/)?.[0] || 0) + 1;
+            counter.textContent = `🎵 ${total} 音符`;
+        }
     }
     
     // ==================== Toast ====================
@@ -1285,7 +1402,6 @@
             if (saved.pwd) $('login-pwd').value = saved.pwd;
             if (saved.mode === 'private') $('pwd-group').style.display = 'block';
             
-            // 自动登录（跳过密码验证，因为已保存）
             const rooms = JSON.parse(localStorage.getItem(LS_ROOMS) || '{}');
             const storedPwd = rooms[saved.room];
             if (saved.mode === 'private' && storedPwd && storedPwd === saved.pwd) {
@@ -1318,7 +1434,8 @@
         window._resizeTimer = setTimeout(resizeCanvas, 150);
     });
     
-    console.log('🎵 音乐创作室已加载');
+    console.log('🎵 音乐创作室已加载 (含调试日志)');
+    console.log('📋 调试日志显示在屏幕左下角');
     console.log('🎹 钢琴模式键盘映射:');
     console.log('  白键: A S D F G H J K L ;');
     console.log('  黑键: W E R T Y U I O P');
