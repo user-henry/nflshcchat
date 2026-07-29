@@ -362,6 +362,15 @@
         // ========== 统一的存储 Key ==========
         const STORAGE_KEY = 'nflshc_currentUser';
 
+        // SHA-256 密码哈希函数
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         // ========== 检查登录状态并自动跳转 ==========
         function checkAndAutoRedirect() {
             let userStr = localStorage.getItem(STORAGE_KEY);
@@ -519,11 +528,15 @@
                 });
                 const issues = await response.json();
                 let foundUser = null;
+                const hashedInput = await hashPassword(password);
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
                         const userData = JSON.parse(match[1]);
-                        if (userData.username === username && userData.password === password) {
+                        const pwdMatch = userData.passwordHashed
+                            ? userData.password === hashedInput
+                            : userData.password === password;
+                        if (userData.username === username && pwdMatch) {
                             foundUser = userData;
                             break;
                         }
