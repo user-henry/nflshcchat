@@ -287,6 +287,15 @@
         // 网站 Logo URL
         const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
 
+        // SHA-256 密码哈希函数
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         async function register() {
             // 检查滑块是否已验证
             const slider = document.getElementById('slider');
@@ -331,8 +340,10 @@
                     }
                 }
 
+                const hashedPassword = await hashPassword(password);
                 const userData = {
-                    username, email, password, bio,
+                    username, email, password: hashedPassword, bio,
+                    passwordHashed: true,
                     createdAt: new Date().toISOString(),
                     isBanned: false,
                     avatar: SITE_LOGO
