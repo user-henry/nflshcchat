@@ -191,12 +191,6 @@
             line-height:1.8; max-width:120px; overflow:hidden;
         }
         .note-history .recent { color:rgba(255,255,255,0.35); }
-        .debug-log {
-            position:absolute; bottom:74px; left:8px; z-index:10;
-            font-size:9px; color:rgba(255,255,255,0.15); pointer-events:none;
-            max-width:200px; line-height:1.4; text-align:left;
-            font-family:monospace;
-        }
         
         @media (max-width:480px) {
             .header h2 { font-size:14px; }
@@ -206,7 +200,6 @@
             #keyboard-hint { bottom:146px; font-size:10px; }
             .piano-key .label { font-size:7px; bottom:3px; }
             .piano-key .key-hint { font-size:7px; top:4px; }
-            .debug-log { bottom:78px; font-size:8px; max-width:140px; }
         }
     </style>
 </head>
@@ -300,7 +293,6 @@
         <div id="piano-overlay"></div>
         <div id="keyboard-hint">⌨️ 键盘演奏：白键 A S D F G H J K L ; · 黑键 W E R T Y U I O P</div>
         <div class="note-history" id="noteHistory"></div>
-        <div class="debug-log" id="debugLog"></div>
         <div id="playback-indicator" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.04);font-size:48px;pointer-events:none;z-index:0;">♪</div>
     </div>
 </div>
@@ -311,8 +303,8 @@
 <script>
     // ==================== 配置 ====================
     const API_BASE = 'https://ntfy.sh';
-    const HEARTBEAT_INTERVAL = 10000; // 10秒一次心跳
-    const USER_TIMEOUT = 30000; // 30秒无心跳视为离线
+    const HEARTBEAT_INTERVAL = 10000;
+    const USER_TIMEOUT = 30000;
     const LS_USER = 'music_studio_user';
     const LS_HISTORY = 'music_studio_history';
     const LS_ROOMS = 'music_studio_rooms';
@@ -331,13 +323,9 @@
     let pendingRoomId = null;
     let roomPassword = null;
     
-    // ===== 在线用户管理 =====
     let onlinePlayers = new Set();
     let userLastSeen = new Map();
     let cleanupTimer = null;
-    
-    // ===== 调试日志 =====
-    let debugMessages = [];
     
     // ==================== 琴键映射 ====================
     const PIANO_KEYS = [
@@ -379,19 +367,26 @@
     const vizCtx = vizCanvas.getContext('2d');
     const container = $('canvas-container');
     const pianoOverlay = $('piano-overlay');
-    const debugLog = $('debugLog');
     
-    // ==================== 调试日志 ====================
-    function addDebugLog(msg, type = 'info') {
-        const timestamp = new Date().toLocaleTimeString();
-        debugMessages.unshift(`[${timestamp}] ${msg}`);
-        if (debugMessages.length > 20) debugMessages.pop();
-        if (debugLog) {
-            const colors = { info: 'rgba(255,255,255,0.3)', success: 'rgba(34,197,94,0.6)', error: 'rgba(239,68,68,0.6)', warn: 'rgba(245,158,11,0.6)' };
-            debugLog.innerHTML = debugMessages.map((m, i) => 
-                `<div style="color:${colors[type] || colors.info}">${m}</div>`
-            ).join('');
-        }
+    // ==================== 调试日志（仅控制台） ====================
+    function logInfo(msg) {
+        console.log(`[INFO] ${msg}`);
+    }
+    
+    function logSuccess(msg) {
+        console.log(`[SUCCESS] ✅ ${msg}`);
+    }
+    
+    function logError(msg) {
+        console.error(`[ERROR] ❌ ${msg}`);
+    }
+    
+    function logWarn(msg) {
+        console.warn(`[WARN] ⚠️ ${msg}`);
+    }
+    
+    function logNote(msg) {
+        console.log(`[NOTE] 🎵 ${msg}`);
     }
     
     // ==================== 音频引擎 ====================
@@ -429,9 +424,9 @@
             reverbNode.connect(analyser);
             masterGain.connect(analyser);
             analyser.connect(audioCtx.destination);
-            addDebugLog('🎵 音频引擎初始化成功', 'success');
+            logSuccess('音频引擎初始化成功');
         } catch(e) {
-            addDebugLog('❌ 音频引擎初始化失败: ' + e.message, 'error');
+            logError('音频引擎初始化失败: ' + e.message);
         }
     }
     
@@ -875,7 +870,7 @@
         broadcastNote(freq, vol, x, y, info.noteName, 'start');
         updateNoteHistory(info.noteName + ' ♪');
         updatePlayerCount();
-        addDebugLog(`🎵 本地演奏: ${info.noteName} (${Math.round(freq)}Hz)`, 'info');
+        logNote(`本地演奏: ${info.noteName} (${Math.round(freq)}Hz)`);
     }
     
     function updateVoice(id, x, y) {
@@ -912,7 +907,6 @@
     
     // ==================== 在线人数管理 ====================
     function updatePlayerCount() {
-        // 显示真实在线人数 = 其他在线用户 + 自己
         const count = onlinePlayers.size + 1;
         $('player-count').textContent = count;
     }
@@ -920,7 +914,8 @@
     function updateOnlineCountDisplay() {
         const count = onlinePlayers.size + 1;
         $('player-count').textContent = count;
-        addDebugLog(`👥 在线用户: ${count}人 (${Array.from(onlinePlayers).join(', ') || '仅自己'})`, 'info');
+        const names = Array.from(onlinePlayers);
+        logInfo(`在线用户: ${count}人${names.length ? ' (' + names.join(', ') + ')' : ' (仅自己)'}`);
     }
     
     function startUserCleanup() {
@@ -933,7 +928,7 @@
                     onlinePlayers.delete(user);
                     userLastSeen.delete(user);
                     hasChanged = true;
-                    addDebugLog(`👋 用户 ${user} 已离线 (超时)`, 'warn');
+                    logWarn(`用户 ${user} 已离线 (超时)`);
                 }
             }
             if (hasChanged) {
@@ -1038,15 +1033,17 @@
             note: note,
             timestamp: Date.now()
         };
-        // 发送到 ntfy.sh
         fetch(`${API_BASE}/${getTopic()}`, {
             method: 'POST',
             body: JSON.stringify(msg),
-            headers: { 'Title': `Note: ${note}`, 'Priority': 'default' }
+            headers: { 
+                'Title': `Note: ${note}`,
+                'Priority': 'default' 
+            }
         }).then(() => {
-            addDebugLog(`📤 音符已广播: ${note}`, 'success');
+            logSuccess(`音符已广播: ${note}`);
         }).catch((err) => {
-            addDebugLog(`❌ 广播失败: ${err.message}`, 'error');
+            logError(`广播失败: ${err.message}`);
         });
     }
     
@@ -1056,7 +1053,7 @@
             evtSource = null; 
         }
         const topic = getTopic();
-        addDebugLog(`🔗 正在连接到 ntfy.sh/${topic}...`, 'info');
+        logInfo(`正在连接到 ntfy.sh/${topic}...`);
         
         try {
             evtSource = new EventSource(`${API_BASE}/${topic}/sse`);
@@ -1064,7 +1061,7 @@
             evtSource.onopen = () => {
                 $('studio-dot').className = 'status-dot online';
                 $('studio-status').textContent = '在线';
-                addDebugLog('✅ SSE 连接已建立', 'success');
+                logSuccess('SSE 连接已建立');
             };
             
             evtSource.onmessage = (e) => {
@@ -1075,22 +1072,21 @@
                         handleIncomingMessage(msg);
                     }
                 } catch(err) {
-                    addDebugLog('⚠️ 消息解析失败: ' + err.message, 'warn');
+                    logWarn('消息解析失败: ' + err.message);
                 }
             };
             
             evtSource.onerror = (e) => {
                 $('studio-dot').className = 'status-dot offline';
                 $('studio-status').textContent = '连接断开，重连中...';
-                addDebugLog('⚠️ SSE 连接断开，自动重连中...', 'warn');
+                logWarn('SSE 连接断开，自动重连中...');
             };
         } catch(e) {
-            addDebugLog('❌ 创建 SSE 连接失败: ' + e.message, 'error');
+            logError('创建 SSE 连接失败: ' + e.message);
         }
     }
     
     function handleIncomingMessage(msg) {
-        // 处理心跳消息
         if (msg.type === 'heartbeat') {
             if (msg.sender !== currentUser) {
                 onlinePlayers.add(msg.sender);
@@ -1100,26 +1096,22 @@
             return;
         }
         
-        // 处理音符消息
         if (msg.type === 'note') {
-            // 忽略自己发出的消息
             if (msg.sender === currentUser) {
                 return;
             }
-            addDebugLog(`📩 收到远程音符: ${msg.note} 来自 ${msg.sender}`, 'info');
+            logNote(`收到远程音符: ${msg.note} 来自 ${msg.sender}`);
             handleRemoteNote(msg);
             return;
         }
         
-        // 处理房间密码
         if (msg.type === 'room_password') {
             if (msg.roomId === currentRoom?.id && !roomPassword) {
                 roomPassword = msg.password;
-                // 保存到本地
                 const rooms = JSON.parse(localStorage.getItem(LS_ROOMS) || '{}');
                 rooms[currentRoom.id] = msg.password;
                 localStorage.setItem(LS_ROOMS, JSON.stringify(rooms));
-                addDebugLog('🔐 已接收房间密码', 'success');
+                logSuccess('已接收房间密码');
             }
         }
     }
@@ -1132,20 +1124,16 @@
         const pan = Math.max(-1, Math.min(1, (x / w) * 2 - 1));
         const hue = freqToHue(freq);
         
-        // 显示粒子效果
         addParticles(x, y, hue, vol * 0.6);
         addRipple(x, y, freq);
         updateNoteHistory('👤 ' + msg.sender + ' ' + (msg.note || '♪'));
         
-        // 播放远程音符
         if (audioCtx) {
             try {
-                // 如果音频上下文被挂起，恢复
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume();
                 }
                 
-                // 使用简单振荡器播放，更可靠
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
@@ -1157,16 +1145,15 @@
                 gain.connect(masterGain);
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.3);
-                addDebugLog(`✅ 远程音符播放成功: ${msg.note}`, 'success');
+                logSuccess(`远程音符播放成功: ${msg.note}`);
             } catch(err) {
-                addDebugLog(`❌ 播放远程音符失败: ${err.message}`, 'error');
+                logError(`播放远程音符失败: ${err.message}`);
             }
         } else {
-            addDebugLog('⚠️ 音频引擎未初始化，尝试初始化...', 'warn');
+            logWarn('音频引擎未初始化，尝试初始化...');
             initAudio();
         }
         
-        // 显示远程指示器
         const el = document.createElement('div');
         el.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:36px;height:36px;border-radius:50%;border:2px solid hsla(${hue},80%,60%,0.4);transform:translate(-50%,-50%);pointer-events:none;z-index:2;transition:all 0.3s;`;
         container.appendChild(el);
@@ -1184,10 +1171,12 @@
         fetch(`${API_BASE}/${getTopic()}`, {
             method: 'POST',
             body: JSON.stringify(msg),
-            headers: { 'Title': 'Heartbeat', 'Priority': 'low' }
+            headers: { 
+                'Title': 'Heartbeat',
+                'Priority': 'low' 
+            }
         }).catch(() => {});
         
-        // 如果是加密房间，广播密码
         if (currentRoom.mode === 'private' && roomPassword) {
             const pwdMsg = {
                 type: 'room_password',
@@ -1198,7 +1187,10 @@
             fetch(`${API_BASE}/${getTopic()}`, {
                 method: 'POST',
                 body: JSON.stringify(pwdMsg),
-                headers: { 'Title': 'Password', 'Priority': 'low' }
+                headers: { 
+                    'Title': 'Password',
+                    'Priority': 'low' 
+                }
             }).catch(() => {});
         }
     }
@@ -1243,7 +1235,7 @@
             showToast('❌ 密码错误');
             $('pwd-input').value = '';
             $('pwd-input').focus();
-            addDebugLog('❌ 密码验证失败', 'error');
+            logError('密码验证失败');
         }
     }
     
@@ -1257,7 +1249,7 @@
         if (!roomId) { showToast('请输入房间ID'); return; }
         
         currentUser = name;
-        addDebugLog(`🔑 用户 ${name} 尝试进入房间 ${roomId} (${mode})`, 'info');
+        logInfo(`用户 ${name} 尝试进入房间 ${roomId} (${mode})`);
         
         const rooms = JSON.parse(localStorage.getItem(LS_ROOMS) || '{}');
         const storedPwd = rooms[roomId];
@@ -1268,22 +1260,22 @@
                 rooms[roomId] = pwd;
                 localStorage.setItem(LS_ROOMS, JSON.stringify(rooms));
                 roomPassword = pwd;
-                addDebugLog(`🔐 创建加密房间 ${roomId}`, 'success');
+                logSuccess(`创建加密房间 ${roomId}`);
                 completeLogin(roomId, true);
             } else {
                 if (pwd && pwd === storedPwd) {
                     roomPassword = pwd;
-                    addDebugLog(`🔓 密码验证通过`, 'success');
+                    logSuccess('密码验证通过');
                     completeLogin(roomId, false);
                 } else {
-                    addDebugLog(`🔐 需要密码验证`, 'info');
+                    logInfo('需要密码验证');
                     pendingRoomId = roomId;
                     showPasswordModal(roomId);
                 }
             }
         } else {
             roomPassword = null;
-            addDebugLog(`🌐 进入公开房间 ${roomId}`, 'info');
+            logInfo(`进入公开房间 ${roomId}`);
             completeLogin(roomId, true);
         }
     }
@@ -1307,7 +1299,6 @@
         $('room-display').textContent = '🏠 ' + roomId + (currentRoom.mode === 'private' ? ' 🔒' : '');
         showScreen('studio-screen');
         
-        // 清空之前的在线用户数据
         onlinePlayers.clear();
         userLastSeen.clear();
         
@@ -1321,7 +1312,7 @@
             startUserCleanup();
             loadHistory();
             switchMode('touch');
-            addDebugLog(`🎵 已进入房间 ${roomId}，开始创作！`, 'success');
+            logSuccess(`已进入房间 ${roomId}，开始创作！`);
         }, 100);
         
         showToast('🎵 已进入 ' + roomId + (currentRoom.mode === 'private' ? ' (加密)' : ''));
@@ -1336,7 +1327,7 @@
         localStorage.removeItem(LS_USER);
         showScreen('login-screen');
         showToast('已退出');
-        addDebugLog('👋 已退出', 'info');
+        logInfo('已退出');
     }
     
     function clearLocalNotes() {
@@ -1345,7 +1336,7 @@
             $('noteHistory').innerHTML = '';
             $('note-counter').textContent = '🎵 0 音符';
             showToast('已清空');
-            addDebugLog('🗑️ 已清空音符记录', 'info');
+            logInfo('已清空音符记录');
         }
     }
     
@@ -1392,7 +1383,6 @@
         $('pwd-group').style.display = this.value === 'private' ? 'block' : 'none';
     });
     
-    // 检查保存的用户，自动登录
     try {
         const saved = JSON.parse(localStorage.getItem(LS_USER));
         if (saved && saved.name && saved.room) {
@@ -1434,8 +1424,8 @@
         window._resizeTimer = setTimeout(resizeCanvas, 150);
     });
     
-    console.log('🎵 音乐创作室已加载 (含调试日志)');
-    console.log('📋 调试日志显示在屏幕左下角');
+    console.log('🎵 音乐创作室已加载');
+    console.log('📋 调试信息将输出到控制台');
     console.log('🎹 钢琴模式键盘映射:');
     console.log('  白键: A S D F G H J K L ;');
     console.log('  黑键: W E R T Y U I O P');
