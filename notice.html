@@ -205,6 +205,49 @@
             background: #ffd700;
             color: #1a1a2e;
         }
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin: 24px 0 10px;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid #2a2a3e;
+            background: #1a1a2e;
+            color: #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .page-btn:hover:not(.active):not(:disabled) {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        .page-btn.active {
+            background: #ffd700;
+            color: #1a1a2e;
+            border-color: #ffd700;
+        }
+        .page-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .page-info {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 20px;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -245,6 +288,8 @@
     <script>
         let currentUser = null;
         let allNotices = [];
+        const NOTICES_PER_PAGE = 5;
+        let noticeCurrentPage = 1;
 
         // 配置 marked
         if (typeof marked !== 'undefined') {
@@ -308,20 +353,29 @@
 
         async function loadNotices() {
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=notice&state=open`;
-                const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await response.json();
                 allNotices = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const noticeData = JSON.parse(match[1]);
-                        allNotices.push({ ...noticeData, issueNumber: issue.number });
+                let page = 1;
+                let hasMore = true;
+                // 循环获取所有页的公告
+                while (hasMore && page <= 20) {
+                    const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=notice&state=open&per_page=100&page=${page}`;
+                    const response = await fetch(url, {
+                        headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    });
+                    const linkHeader = response.headers.get('Link');
+                    hasMore = linkHeader && linkHeader.includes('rel="next"');
+                    const issues = await response.json();
+                    for (const issue of issues) {
+                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                        if (match) {
+                            const noticeData = JSON.parse(match[1]);
+                            allNotices.push({ ...noticeData, issueNumber: issue.number });
+                        }
                     }
+                    page++;
                 }
                 allNotices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                noticeCurrentPage = 1;
                 renderNotices();
             } catch (error) { console.error('加载公告失败:', error); }
         }
@@ -332,7 +386,11 @@
                 container.innerHTML = '<div class="empty-state">📭 暂无公告</div>';
                 return;
             }
-            container.innerHTML = allNotices.map(notice => `
+            const totalPages = Math.ceil(allNotices.length / NOTICES_PER_PAGE);
+            if (noticeCurrentPage > totalPages) noticeCurrentPage = totalPages;
+            const start = (noticeCurrentPage - 1) * NOTICES_PER_PAGE;
+            const pageNotices = allNotices.slice(start, start + NOTICES_PER_PAGE);
+            let html = pageNotices.map(notice => `
                 <div class="notice-item">
                     <div class="notice-title">📢 ${escapeHtml(notice.title)}</div>
                     <div class="notice-meta">
@@ -342,6 +400,29 @@
                     <div class="notice-content">${renderMarkdown(notice.content)}</div>
                 </div>
             `).join('');
+            // 添加分页控件
+            html += '<div class="page-info">共 ' + allNotices.length + ' 条公告 · ' + noticeCurrentPage + ' / ' + totalPages + ' 页</div>';
+            html += '<div class="pagination">';
+            html += '<button class="page-btn" onclick="goNoticePage(1)" ' + (noticeCurrentPage <= 1 ? 'disabled' : '') + '>«</button>';
+            html += '<button class="page-btn" onclick="goNoticePage(' + (noticeCurrentPage - 1) + ')" ' + (noticeCurrentPage <= 1 ? 'disabled' : '') + '>‹</button>';
+            // 页码按钮
+            const maxButtons = 7;
+            let startPage = Math.max(1, noticeCurrentPage - Math.floor(maxButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+            if (endPage - startPage < maxButtons - 1) startPage = Math.max(1, endPage - maxButtons + 1);
+            for (let p = startPage; p <= endPage; p++) {
+                html += '<button class="page-btn' + (p === noticeCurrentPage ? ' active' : '') + '" onclick="goNoticePage(' + p + ')">' + p + '</button>';
+            }
+            html += '<button class="page-btn" onclick="goNoticePage(' + (noticeCurrentPage + 1) + ')" ' + (noticeCurrentPage >= totalPages ? 'disabled' : '') + '>›</button>';
+            html += '<button class="page-btn" onclick="goNoticePage(' + totalPages + ')" ' + (noticeCurrentPage >= totalPages ? 'disabled' : '') + '>»</button>';
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function goNoticePage(page) {
+            noticeCurrentPage = page;
+            renderNotices();
+            document.getElementById('noticeList').scrollIntoView({ behavior: 'smooth' });
         }
 
         async function publishNotice() {
