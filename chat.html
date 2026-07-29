@@ -1101,13 +1101,27 @@
                 allMessages = [];
                 newestMessageTimestamp = null;
             }
-            const result = await loadHistoryMessages(currentPage);
-            if (result.messages.length > 0) {
+            // 当当前页无消息但存在后续页时，自动向后翻页查找
+            var page = currentPage;
+            var foundMessages = false;
+            var result = null;
+            var safetyLimit = 20;
+            while (page <= safetyLimit) {
+                result = await loadHistoryMessages(page);
+                if (result.messages.length > 0) {
+                    foundMessages = true;
+                    break;
+                }
+                if (!result.hasNext) break;
+                page++;
+            }
+            if (foundMessages && result) {
                 result.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
                 if (append) {
                     allMessages = [...result.messages, ...allMessages];
                 } else {
                     allMessages = result.messages;
+                    currentPage = page;
                 }
                 if (allMessages.length > 0) {
                     const latestMsg = allMessages[allMessages.length - 1];
@@ -1121,7 +1135,7 @@
                 const loadMoreContainer = document.getElementById('loadMoreContainer');
                 if (hasMoreMessages && result.hasNext) {
                     loadMoreContainer.style.display = 'flex';
-                    currentPage++;
+                    currentPage = page + 1;
                 } else {
                     loadMoreContainer.style.display = 'none';
                     hasMoreMessages = false;
