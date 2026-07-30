@@ -3453,35 +3453,16 @@
             refreshBtn.disabled = true;
 
             try {
-                // 使用 Agnes 2.0 Flash 获取每日一言
-                const response = await fetch(`${AGNES_CONFIG.baseUrl}/chat/completions`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: AGNES_CONFIG.chatModel,  // agnes-2.0-flash
-                        messages: [
-                            { 
-                                role: 'system', 
-                                content: '你是一位充满智慧的诗人与哲学家。请给出一句今日的每日一言，要求语言优美、富有哲理，适合作为座右铭。同时请说明作者和出处。请用中文回复。'
-                            },
-                            { 
-                                role: 'user', 
-                                content: '请给我一句今天的每日一言，要包含作者和出处。' 
-                            }
-                        ],
-                        temperature: 0.9,
-                        max_tokens: 200
-                    })
-                });
-
+                // 使用思知 AI 获取每日一言
+                const prompt = '请给出一句今日的每日一言，要求语言优美、富有哲理，适合作为座右铭。同时请说明作者和出处。请用中文回复。';
+                const url = `${AI_CONFIG.sizhiApiUrl}?appid=${AI_CONFIG.sizhiAppid}&userid=daily_quote&spoken=${encodeURIComponent(prompt)}&memory=false`;
+                
+                const response = await fetch(url);
                 const data = await response.json();
                 
-                if (data && data.choices && data.choices[0] && data.choices[0].message) {
-                    let text = data.choices[0].message.content;
-                    recordCall('agnes-2.0-flash', 50);
+                if (data && data.status === 0 && data.data && data.data.info && data.data.info.text) {
+                    let text = data.data.info.text;
+                    recordCall('sizhi-daily-quote', 50);
                     // 确保格式为 blockquote
                     let renderedHtml = renderMarkdown(text);
                     if (!renderedHtml.includes('<blockquote>')) {
