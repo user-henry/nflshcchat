@@ -1948,6 +1948,255 @@
                 font-size: 18px;
             }
         }
+
+        /* ===== 长视频模式样式 ===== */
+        .longvideo-mode {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            padding: 20px;
+            background: #0f172a;
+            overflow-y: auto;
+        }
+        .longvideo-mode.active { display: flex; }
+        .longvideo-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .longvideo-header h2 {
+            font-size: 26px;
+            color: #ffd700;
+        }
+        .longvideo-header p {
+            color: #888;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .longvideo-workflow {
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .longvideo-settings {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #2a2a3e;
+        }
+        .longvideo-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .longvideo-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        .longvideo-group label {
+            display: block;
+            font-size: 12px;
+            color: #aaa;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .longvideo-group select,
+        .longvideo-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            color: white;
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .longvideo-group textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+        .longvideo-group select:focus,
+        .longvideo-group textarea:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        .lv-hint {
+            font-size: 10px;
+            color: #666;
+            display: block;
+            margin-top: 3px;
+        }
+        .lv-frame-btns,
+        .lv-mode-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .lv-frame-btn,
+        .lv-mode-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #2a2a3e;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .lv-frame-btn:hover,
+        .lv-mode-btn:hover {
+            border-color: #ffd700;
+            color: #ffd700;
+        }
+        .lv-frame-btn.active,
+        .lv-mode-btn.active {
+            background: #ffd700;
+            color: #1a1a2e;
+            border-color: #ffd700;
+        }
+        .lv-duration-display {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            border: 1px solid #2a2a3e;
+        }
+        .lv-duration-display span {
+            color: #888;
+            font-size: 13px;
+        }
+        .lv-duration-display strong {
+            color: #ffd700;
+            font-size: 20px;
+        }
+        .lv-generate-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .lv-generate-btn:hover {
+            transform: scale(1.02);
+        }
+        .lv-generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .lv-progress-area {
+            margin-top: 16px;
+            padding: 16px;
+            background: #16213e;
+            border-radius: 8px;
+            border: 1px solid #2a2a3e;
+        }
+        .lv-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #1a1a2e;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .lv-progress-bar #lvProgressFill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffb347);
+            transition: width 0.3s;
+            width: 0%;
+        }
+        .lv-progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        .lv-progress-detail {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+        .lv-player {
+            margin-top: 16px;
+            background: #16213e;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #2a2a3e;
+        }
+        .lv-player-header {
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .lv-player canvas {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            background: #000;
+        }
+        .lv-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .lv-controls button {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            font-family: inherit;
+            background: #2a2a3e;
+            color: white;
+            transition: background 0.2s;
+        }
+        .lv-controls button:hover {
+            background: #3a3a4e;
+        }
+        #lvTimeDisplay {
+            color: #888;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            margin-left: auto;
+        }
+        .lv-thumbnails {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+            overflow-x: auto;
+            padding: 4px 0;
+        }
+        .lv-thumbnails img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .lv-thumbnails img.active {
+            border-color: #ffd700;
+        }
+
+        @media (max-width: 768px) {
+            .longvideo-row { flex-direction: column; }
+            .longvideo-group { min-width: unset; }
+            .lv-controls { gap: 6px; }
+            .lv-controls button { padding: 4px 10px; font-size: 11px; }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -2000,6 +2249,7 @@
                 <button class="mode-tab" data-mode="task" onclick="switchMode('task')">⏰ 定时任务</button>
                 <button class="mode-tab" data-mode="character" onclick="switchMode('character')">🎭 角色</button>
                 <button class="mode-tab" data-mode="film" onclick="switchMode('film')">🎬 AI 短片</button>
+                <button class="mode-tab" data-mode="longvideo" onclick="switchMode('longvideo')">🎬 长视频</button>
                 <button class="mode-tab" data-mode="stats" onclick="switchMode('stats')">📊 统计</button>
             </div>
 
@@ -2365,6 +2615,129 @@
                             <!-- 片段列表 -->
                             <div id="sceneClipList" style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== 长视频生成模式 ====== -->
+            <div class="longvideo-mode" id="longvideoMode">
+                <div class="longvideo-header">
+                    <h2>🎬 长时长视频生成</h2>
+                    <p>60 帧 AI 图片 + 往返播放 + 帧插值 = 最长 60 秒视频</p>
+                </div>
+
+                <div class="longvideo-workflow">
+                    <!-- 设置面板 -->
+                    <div class="longvideo-settings">
+                        <div class="longvideo-row">
+                            <div class="longvideo-group">
+                                <label>AI 图片引擎</label>
+                                <select id="lvEngine">
+                                    <option value="flux">FLUX.1 (高质量)</option>
+                                    <option value="turbo">Turbo (快速)</option>
+                                    <option value="sdxl">SDXL (风格多样)</option>
+                                </select>
+                            </div>
+                            <div class="longvideo-group">
+                                <label>分辨率</label>
+                                <select id="lvResolution">
+                                    <option value="512">512px</option>
+                                    <option value="768" selected>768px (推荐)</option>
+                                    <option value="1024">1024px (超清)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="longvideo-row">
+                            <div class="longvideo-group">
+                                <label>帧数</label>
+                                <div class="lv-frame-btns">
+                                    <button onclick="setLVFrameCount(16)" id="lv-frame-16" class="lv-frame-btn">16帧</button>
+                                    <button onclick="setLVFrameCount(32)" id="lv-frame-32" class="lv-frame-btn active">32帧</button>
+                                    <button onclick="setLVFrameCount(60)" id="lv-frame-60" class="lv-frame-btn">60帧</button>
+                                </div>
+                                <span class="lv-hint">帧数越多，视频越长</span>
+                            </div>
+                            <div class="longvideo-group">
+                                <label>播放模式</label>
+                                <div class="lv-mode-btns">
+                                    <button onclick="setLVPlayMode('loop')" id="lv-mode-loop" class="lv-mode-btn active">循环</button>
+                                    <button onclick="setLVPlayMode('pingpong')" id="lv-mode-pingpong" class="lv-mode-btn">往返</button>
+                                </div>
+                                <span class="lv-hint">往返播放时长翻倍</span>
+                            </div>
+                        </div>
+
+                        <div class="longvideo-row">
+                            <div class="longvideo-group">
+                                <label>帧率 (FPS)</label>
+                                <select id="lvFps" onchange="updateLVDuration()">
+                                    <option value="1">1 FPS (慢速)</option>
+                                    <option value="2">2 FPS</option>
+                                    <option value="4" selected>4 FPS (标准)</option>
+                                    <option value="8">8 FPS (流畅)</option>
+                                </select>
+                            </div>
+                            <div class="longvideo-group">
+                                <label>帧插值</label>
+                                <select id="lvInterpolation" onchange="updateLVDuration()">
+                                    <option value="0">无</option>
+                                    <option value="1" selected>2x (推荐)</option>
+                                    <option value="2">3x</option>
+                                    <option value="3">4x</option>
+                                </select>
+                                <span class="lv-hint">插值使画面更流畅</span>
+                            </div>
+                        </div>
+
+                        <div class="longvideo-row">
+                            <div class="longvideo-group" style="flex:2;">
+                                <label>视频场景描述</label>
+                                <textarea id="lvPrompt" rows="3" placeholder="描述您想要的视频场景，建议包含时间变化，如：日出到日落、花开过程..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="longvideo-row">
+                            <div class="longvideo-group">
+                                <div class="lv-duration-display">
+                                    <span>预估视频时长</span>
+                                    <strong id="lvDurationEstimate">8 秒</strong>
+                                </div>
+                            </div>
+                            <div class="longvideo-group" style="flex:1;">
+                                <button class="lv-generate-btn" id="lvGenerateBtn" onclick="generateLongVideo()">
+                                    🎬 生成长视频
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 进度 -->
+                    <div id="lvProgressArea" style="display:none;" class="lv-progress-area">
+                        <div class="lv-progress-bar">
+                            <div id="lvProgressFill" style="width:0%;"></div>
+                        </div>
+                        <div class="lv-progress-text">
+                            <span id="lvProgressStatus">准备中...</span>
+                            <span id="lvProgressPercent">0%</span>
+                        </div>
+                        <div class="lv-progress-detail" id="lvProgressDetail"></div>
+                    </div>
+
+                    <!-- 视频播放器 -->
+                    <div class="lv-player" id="lvPlayer" style="display:none;">
+                        <div class="lv-player-header">
+                            <span>🎬 视频预览</span>
+                            <span id="lvFrameInfo">0 / 0 帧</span>
+                        </div>
+                        <canvas id="lvCanvas"></canvas>
+                        <div class="lv-controls">
+                            <button onclick="lvTogglePlay()" id="lvPlayBtn">▶ 播放</button>
+                            <button onclick="lvStop()">⏹ 停止</button>
+                            <span id="lvTimeDisplay">00:00 / 00:00</span>
+                            <button onclick="lvExport()" id="lvExportBtn" style="background:#2ecc71;color:#1a1a2e;">📥 导出</button>
+                        </div>
+                        <div class="lv-thumbnails" id="lvThumbnails"></div>
                     </div>
                 </div>
             </div>
@@ -5043,7 +5416,7 @@
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'film', 'stats'];
+            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'film', 'stats', 'longvideo'];
             const elements = {
                 chat: document.getElementById('chatMode'),
                 vision: document.getElementById('visionMode'),
@@ -5052,7 +5425,8 @@
                 task: document.getElementById('taskMode'),
                 character: document.getElementById('characterMode'),
                 film: document.getElementById('filmMode'),
-                stats: document.getElementById('statsPanel')
+                stats: document.getElementById('statsPanel'),
+                longvideo: document.getElementById('longvideoMode')
             };
             const tabs = document.querySelectorAll('.mode-tab');
 
@@ -5066,6 +5440,8 @@
                 } else if (m === 'stats') {
                     elements[m].classList.toggle('active', mode === m);
                     if (mode === 'stats') renderStats();
+                } else if (m === 'longvideo') {
+                    elements[m].classList.toggle('active', mode === m);
                 } else {
                     elements[m].classList.toggle('active', mode === m);
                 }
@@ -5077,6 +5453,7 @@
             else if (mode === 'video') document.getElementById('videoPrompt')?.focus();
             else if (mode === 'task') document.getElementById('taskPrompt')?.focus();
             else if (mode === 'character') renderCharactersGrid();
+            else if (mode === 'longvideo') document.getElementById('lvPrompt')?.focus();
         }
 
         // ============================================================
@@ -5708,6 +6085,12 @@ v1.0.0 (2026年3月)
             });
 
             switchMode('chat');
+
+            // 长视频初始化
+            initLongVideo();
+            setLVFrameCount(32);
+            setLVPlayMode('loop');
+            updateLVDuration();
         }
 
         // 暴露全局函数
@@ -5864,6 +6247,363 @@ v1.0.0 (2026年3月)
             }));
             renderStats();
             showToast('✅ 统计数据已重置', 'success');
+        }
+
+        // ============================================================
+        //  🎬 长视频生成模块
+        // ============================================================
+        let lvFrameCount = 32;
+        let lvPlayMode = 'loop';
+        let lvFrames = [];
+        let lvDisplayFrames = [];
+        let lvCanvas = null;
+        let lvCtx = null;
+        let lvIsPlaying = false;
+        let lvCurrentIndex = 0;
+        let lvAnimationId = null;
+
+        function setLVFrameCount(count) {
+            lvFrameCount = count;
+            document.querySelectorAll('.lv-frame-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('lv-frame-' + count).classList.add('active');
+            updateLVDuration();
+        }
+
+        function setLVPlayMode(mode) {
+            lvPlayMode = mode;
+            document.querySelectorAll('.lv-mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('lv-mode-' + mode).classList.add('active');
+            updateLVDuration();
+        }
+
+        function updateLVDuration() {
+            const fps = parseInt(document.getElementById('lvFps').value);
+            const interp = parseInt(document.getElementById('lvInterpolation').value);
+
+            let total = lvFrameCount * (interp + 1);
+            if (lvPlayMode === 'pingpong') {
+                total = (lvFrameCount * 2 - 2) * (interp + 1);
+            }
+            const seconds = total / fps;
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            document.getElementById('lvDurationEstimate').textContent =
+                mins > 0 ? `${mins}分${secs}秒` : `${secs}秒`;
+        }
+
+        async function generateLongVideo() {
+            const prompt = document.getElementById('lvPrompt').value.trim();
+            if (!prompt) { alert('请输入视频场景描述'); return; }
+
+            const btn = document.getElementById('lvGenerateBtn');
+            const progressArea = document.getElementById('lvProgressArea');
+            const fill = document.getElementById('lvProgressFill');
+            const status = document.getElementById('lvProgressStatus');
+            const percent = document.getElementById('lvProgressPercent');
+            const detail = document.getElementById('lvProgressDetail');
+
+            btn.disabled = true;
+            btn.textContent = '⏳ 生成中...';
+            progressArea.style.display = 'block';
+
+            lvFrames = [];
+            const resolution = parseInt(document.getElementById('lvResolution').value);
+            const engine = document.getElementById('lvEngine').value;
+
+            const timeDescs = [
+                'beginning, establishing shot',
+                'early stage, slight movement starting',
+                'progressing, action building up',
+                'developing, mid-transition',
+                'continuing, smooth motion',
+                'advancing, momentum increasing',
+                'evolving, details emerging',
+                'unfolding, story progressing',
+                'maturing, climax approaching',
+                'peaking, maximum intensity',
+                'resolving, action settling',
+                'concluding, peaceful ending'
+            ];
+
+            for (let i = 0; i < lvFrameCount; i++) {
+                const pct = Math.round(((i + 1) / lvFrameCount) * 100);
+                fill.style.width = pct + '%';
+                percent.textContent = pct + '%';
+                status.textContent = `生成第 ${i + 1}/${lvFrameCount} 帧...`;
+                detail.textContent = `分辨率: ${resolution}px | 引擎: ${engine}`;
+
+                const desc = timeDescs[Math.floor((i / lvFrameCount) * timeDescs.length)];
+                const fullPrompt = `${prompt}, ${desc}, frame ${i + 1} of ${lvFrameCount}`;
+                const seed = 1000 + i;
+                const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${resolution}&height=${resolution}&seed=${seed}&nologo=true&model=${engine}&enhance=true`;
+
+                try {
+                    const img = await loadImageLV(url);
+                    lvFrames.push(img);
+                } catch (err) {
+                    console.error('帧生成失败:', err);
+                    const placeholder = createPlaceholderLV(resolution, i + 1);
+                    lvFrames.push(placeholder);
+                }
+
+                await new Promise(r => setTimeout(r, 300));
+            }
+
+            buildLVDisplayFrames();
+
+            fill.style.width = '100%';
+            percent.textContent = '100%';
+            status.textContent = '✅ 生成完成！';
+
+            setTimeout(() => {
+                progressArea.style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = '🔄 重新生成';
+                setupLVPlayer();
+            }, 500);
+        }
+
+        function loadImageLV(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        function createPlaceholderLV(size, num) {
+            const c = document.createElement('canvas');
+            c.width = size;
+            c.height = size;
+            const x = c.getContext('2d');
+            x.fillStyle = `hsl(${num * 15}, 50%, 15%)`;
+            x.fillRect(0, 0, size, size);
+            x.fillStyle = 'white';
+            x.font = `bold ${size / 8}px sans-serif`;
+            x.textAlign = 'center';
+            x.fillText(num, size / 2, size / 2 + size / 20);
+            const img = new Image();
+            img.src = c.toDataURL();
+            return img;
+        }
+
+        function buildLVDisplayFrames() {
+            lvDisplayFrames = [];
+            const interp = parseInt(document.getElementById('lvInterpolation').value);
+            const steps = interp + 1;
+
+            let baseSequence = [];
+            if (lvPlayMode === 'pingpong') {
+                baseSequence = [...lvFrames];
+                for (let i = lvFrames.length - 2; i > 0; i--) {
+                    baseSequence.push(lvFrames[i]);
+                }
+            } else {
+                baseSequence = [...lvFrames];
+            }
+
+            for (let i = 0; i < baseSequence.length; i++) {
+                lvDisplayFrames.push(baseSequence[i]);
+                if (i < baseSequence.length - 1 && steps > 1) {
+                    for (let s = 1; s < steps; s++) {
+                        lvDisplayFrames.push({
+                            isInterp: true,
+                            from: baseSequence[i],
+                            to: baseSequence[i + 1],
+                            ratio: s / steps
+                        });
+                    }
+                }
+            }
+
+            document.getElementById('lvFrameInfo').textContent =
+                `0 / ${lvDisplayFrames.length} 帧`;
+
+            const fps = parseInt(document.getElementById('lvFps').value);
+            const totalSec = lvDisplayFrames.length / fps;
+            document.getElementById('lvTimeDisplay').textContent =
+                `00:00 / ${formatTimeLV(totalSec)}`;
+        }
+
+        function setupLVPlayer() {
+            if (lvDisplayFrames.length === 0) return;
+
+            lvCanvas = document.getElementById('lvCanvas');
+            lvCtx = lvCanvas.getContext('2d');
+
+            const first = lvDisplayFrames[0];
+            const w = first.isInterp ? first.from.width : first.width;
+            const h = first.isInterp ? first.from.height : first.height;
+            lvCanvas.width = w;
+            lvCanvas.height = h;
+
+            document.getElementById('lvPlayer').style.display = 'block';
+            lvDrawFrame(0);
+            lvRenderThumbnails();
+            document.getElementById('lvExportBtn').disabled = false;
+        }
+
+        function lvDrawFrame(index) {
+            const frame = lvDisplayFrames[index];
+            if (frame.isInterp) {
+                lvCtx.globalAlpha = 1 - frame.ratio;
+                lvCtx.drawImage(frame.from, 0, 0);
+                lvCtx.globalAlpha = frame.ratio;
+                lvCtx.drawImage(frame.to, 0, 0);
+                lvCtx.globalAlpha = 1;
+            } else {
+                lvCtx.drawImage(frame, 0, 0);
+            }
+
+            lvCurrentIndex = index;
+            document.getElementById('lvFrameInfo').textContent =
+                `${index + 1} / ${lvDisplayFrames.length} 帧`;
+
+            const fps = parseInt(document.getElementById('lvFps').value);
+            const currentTime = index / fps;
+            const totalTime = lvDisplayFrames.length / fps;
+            document.getElementById('lvTimeDisplay').textContent =
+                `${formatTimeLV(currentTime)} / ${formatTimeLV(totalTime)}`;
+        }
+
+        function lvRenderThumbnails() {
+            const container = document.getElementById('lvThumbnails');
+            container.innerHTML = '';
+            const rawFrames = lvDisplayFrames.filter(f => !f.isInterp);
+            rawFrames.forEach((frame, i) => {
+                const img = document.createElement('img');
+                img.src = frame.src || frame.toDataURL();
+                img.title = `帧 ${i + 1}`;
+                img.onclick = () => {
+                    let count = 0;
+                    for (let j = 0; j < lvDisplayFrames.length; j++) {
+                        if (!lvDisplayFrames[j].isInterp) {
+                            if (count === i) {
+                                lvStop();
+                                lvDrawFrame(j);
+                                break;
+                            }
+                            count++;
+                        }
+                    }
+                };
+                container.appendChild(img);
+            });
+        }
+
+        function lvTogglePlay() {
+            if (lvIsPlaying) {
+                lvPause();
+            } else {
+                lvPlay();
+            }
+        }
+
+        function lvPlay() {
+            if (lvDisplayFrames.length === 0) return;
+            lvIsPlaying = true;
+            document.getElementById('lvPlayBtn').textContent = '⏸ 暂停';
+
+            const fps = parseInt(document.getElementById('lvFps').value);
+            const frameDuration = 1000 / fps;
+            let lastTime = performance.now();
+
+            function animate(timestamp) {
+                if (!lvIsPlaying) return;
+                if (timestamp - lastTime >= frameDuration) {
+                    lvDrawFrame(lvCurrentIndex);
+                    lvCurrentIndex++;
+                    if (lvCurrentIndex >= lvDisplayFrames.length) {
+                        lvCurrentIndex = 0;
+                    }
+                    lastTime = timestamp;
+                }
+                lvAnimationId = requestAnimationFrame(animate);
+            }
+            lvAnimationId = requestAnimationFrame(animate);
+        }
+
+        function lvPause() {
+            lvIsPlaying = false;
+            if (lvAnimationId) cancelAnimationFrame(lvAnimationId);
+            document.getElementById('lvPlayBtn').textContent = '▶ 播放';
+        }
+
+        function lvStop() {
+            lvPause();
+            lvCurrentIndex = 0;
+            lvDrawFrame(0);
+        }
+
+        function lvExport() {
+            if (lvDisplayFrames.length === 0) return;
+
+            const btn = document.getElementById('lvExportBtn');
+            const orig = btn.textContent;
+            btn.textContent = '⏳ 录制中...';
+            btn.disabled = true;
+
+            const fps = parseInt(document.getElementById('lvFps').value);
+            const stream = lvCanvas.captureStream(fps);
+            const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                ? 'video/webm;codecs=vp9'
+                : 'video/webm';
+
+            const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8000000 });
+            const chunks = [];
+
+            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mime });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `longvideo_${Date.now()}.webm`;
+                a.click();
+                URL.revokeObjectURL(url);
+                btn.textContent = '✅ 已导出';
+                setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 2000);
+            };
+
+            recorder.start();
+            lvIsPlaying = true;
+            lvCurrentIndex = 0;
+            let lastTime = performance.now();
+            const frameDuration = 1000 / fps;
+
+            function recordFrame(timestamp) {
+                if (!lvIsPlaying || !recorder.state === 'recording') {
+                    recorder.stop();
+                    return;
+                }
+                if (timestamp - lastTime >= frameDuration) {
+                    lvDrawFrame(lvCurrentIndex);
+                    lvCurrentIndex++;
+                    if (lvCurrentIndex >= lvDisplayFrames.length) {
+                        lvIsPlaying = false;
+                        recorder.stop();
+                        document.getElementById('lvPlayBtn').textContent = '▶ 播放';
+                        return;
+                    }
+                    lastTime = timestamp;
+                }
+                requestAnimationFrame(recordFrame);
+            }
+            requestAnimationFrame(recordFrame);
+        }
+
+        function formatTimeLV(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function initLongVideo() {
+            document.getElementById('lvCanvas')?.addEventListener('click', () => {
+                if (lvDisplayFrames.length > 0) lvTogglePlay();
+            });
         }
 
         // 暴露到全局
