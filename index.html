@@ -12,12 +12,13 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background 0.4s;
         }
         .login-container {
             max-width: 400px;
@@ -159,34 +160,35 @@
         }
         .modal.active { display: flex; }
         .modal-content {
-            background: #16213e;
+            background: var(--modal-bg);
             padding: 30px;
             border-radius: 16px;
             width: 100%;
             max-width: 420px;
-            border: 1px solid #ffd700;
-            color: #fff;
+            border: 1px solid var(--modal-border);
+            color: var(--text-primary);
             max-height: 90vh;
             overflow-y: auto;
+            transition: background 0.4s, border-color 0.4s, color 0.4s;
         }
-        .modal-content h3 { color: #ffd700; margin-bottom: 20px; text-align: center; }
+        .modal-content h3 { color: var(--accent-color); margin-bottom: 20px; text-align: center; }
         .modal-content input {
-            background: #1a1a2e;
-            color: white;
-            border: 1px solid #2a2a3e;
+            background: var(--modal-input-bg);
+            color: var(--modal-input-text);
+            border: 1px solid var(--modal-input-border);
             margin-bottom: 12px;
         }
-        .modal-content input:focus { border-color: #ffd700; }
+        .modal-content input:focus { border-color: var(--accent-color); }
         .modal-content .hint-text { 
             font-size: 12px; 
-            color: #888; 
+            color: var(--modal-hint-text); 
             margin-bottom: 15px; 
             text-align: center;
         }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         .modal-buttons button { width: auto; padding: 8px 20px; }
-        .modal-buttons button:first-child { background: #2a2a3e; color: white; }
-        .modal-buttons button:first-child:hover { background: #3a3a4e; }
+        .modal-buttons button:first-child { background: var(--bg-tertiary); color: var(--text-primary); }
+        .modal-buttons button:first-child:hover { opacity: 0.8; }
         .modal-message { margin-top: 15px; font-size: 13px; text-align: center; min-height: 30px; }
         .resend-timer { color: #ffd700; font-weight: bold; }
         .step-indicator {
@@ -199,8 +201,9 @@
             padding: 6px 16px;
             border-radius: 20px;
             font-size: 12px;
-            background: #2a2a3e;
-            color: #888;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            transition: background 0.3s, color 0.3s;
         }
         .step-indicator .step.active {
             background: #ffd700;
