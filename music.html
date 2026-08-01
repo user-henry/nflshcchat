@@ -27,14 +27,14 @@
 
         /* 导航栏 - 与 chat.html 风格一致 */
         .nav {
-            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            background: var(--bg-secondary);
             padding: 10px 20px;
-            color: white;
+            color: var(--text-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            border-bottom: 1px solid #ffd700;
+            border-bottom: 1px solid var(--accent-color);
             width: 100%;
             max-width: 1200px;
             border-radius: 12px 12px 0 0;
@@ -51,16 +51,17 @@
             background-repeat: no-repeat; 
             background-position: center; 
         }
-        .nav h2 { font-size: 18px; color: #ffd700; }
+        .nav h2 { font-size: 18px; color: var(--accent-color); }
         .nav a { 
-            color: rgba(255,255,255,0.7); 
+            color: var(--text-primary);
+            opacity: 0.7;
             text-decoration: none; 
             margin-left: 16px; 
-            transition: color 0.3s;
+            transition: color 0.3s, opacity 0.3s;
             font-size: 14px;
         }
-        .nav a:hover { color: #ffd700; }
-        .nav a.active { color: #ffd700; font-weight: 600; }
+        .nav a:hover { color: var(--accent-color); opacity: 1; }
+        .nav a.active { color: var(--accent-color); font-weight: 600; opacity: 1; }
 
         @media (max-width: 768px) {
             .nav { flex-direction: column; gap: 8px; text-align: center; padding: 12px 16px; }
