@@ -1,59 +1,89 @@
 /**
- * NFLSHC Chat - 主题管理器
- * 在所有页面引入此脚本即可统一管理主题
+ * NFLSHC Chat - 共享主题管理器
+ * 所有页面引入此脚本后自动应用主题，localStorage 持久化
  */
 (function() {
     'use strict';
 
-    const THEME_KEY = 'nflshc_theme';
-    const DEFAULT_THEME = 'dark';
+    var THEME_KEY = 'nflshc_theme';
+    var DEFAULT_THEME = 'dark';
 
-    // 主题定义
-    const themes = {
-        dark:    { id: 'dark',    name: '暗夜黑金', icon: '🌙', color: '#ffd700', bg: '#1a1a2e', desc: '经典暗色主题，护眼舒适' },
-        light:   { id: 'light',   name: '晨曦白光', icon: '☀️', color: '#ffd700', bg: '#f5f5f5', desc: '明亮清新，适合日间使用' },
-        blue:    { id: 'blue',    name: '深海蓝调', icon: '🌊', color: '#3498db', bg: '#0d2137', desc: '沉稳蓝色，专注高效' },
-        purple:  { id: 'purple',  name: '紫罗兰夜', icon: '🔮', color: '#9b59b6', bg: '#1a0a2e', desc: '优雅紫色，激发灵感' },
-        green:   { id: 'green',   name: '翡翠绿意', icon: '🌿', color: '#2ecc71', bg: '#0a2e1a', desc: '自然绿色，舒缓放松' }
+    var themes = {
+        dark:   { id: 'dark',   name: '暗夜黑金', icon: '🌙', accent: '#ffd700' },
+        light:  { id: 'light',  name: '晨曦白光', icon: '☀️', accent: '#ffd700' },
+        blue:   { id: 'blue',   name: '深海蓝调', icon: '🌊', accent: '#3498db' },
+        purple: { id: 'purple', name: '紫罗兰夜', icon: '🔮', accent: '#9b59b6' },
+        green:  { id: 'green',  name: '翡翠绿意', icon: '🌿', accent: '#2ecc71' }
     };
 
     function getStoredTheme() {
-        return localStorage.getItem(THEME_KEY) || DEFAULT_THEME;
+        try {
+            return localStorage.getItem(THEME_KEY) || DEFAULT_THEME;
+        } catch (e) {
+            return DEFAULT_THEME;
+        }
     }
 
     function applyTheme(themeId) {
-        if (themeId === 'dark' || themeId === DEFAULT_THEME) {
-            document.documentElement.removeAttribute('data-theme');
+        var html = document.documentElement;
+        if (!html) return;
+        var theme = themes[themeId];
+        if (!theme) {
+            themeId = DEFAULT_THEME;
+            theme = themes[DEFAULT_THEME];
+        }
+        if (themeId === DEFAULT_THEME) {
+            html.removeAttribute('data-theme');
         } else {
-            document.documentElement.setAttribute('data-theme', themeId);
+            html.setAttribute('data-theme', themeId);
         }
-        // 更新 PWA theme-color
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta && themes[themeId]) {
-            meta.setAttribute('content', themes[themeId].color);
-        }
+        // 更新 meta theme-color
+        try {
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta && theme) {
+                meta.setAttribute('content', theme.accent || '#ffd700');
+            }
+        } catch (e) {}
     }
 
     function setTheme(themeId) {
         if (!themes[themeId]) return false;
-        localStorage.setItem(THEME_KEY, themeId);
+        try {
+            localStorage.setItem(THEME_KEY, themeId);
+        } catch (e) {}
         applyTheme(themeId);
-        // 派发自定义事件，通知同页面其它组件
-        window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: themeId, info: themes[themeId] } }));
+        try {
+            window.dispatchEvent(new CustomEvent('themechange', {
+                detail: { theme: themeId, info: themes[themeId] },
+                bubbles: false
+            }));
+        } catch (e) {}
         return true;
     }
 
-    // 页面加载时立即应用主题（避免闪烁）
+    function getTheme() {
+        var id = getStoredTheme();
+        return themes[id] ? id : DEFAULT_THEME;
+    }
+
+    function getThemeInfo(themeId) {
+        if (!themeId) themeId = getTheme();
+        return themes[themeId] || themes[DEFAULT_THEME];
+    }
+
+    function getThemes() {
+        return themes;
+    }
+
+    // ========== 页面加载时自动应用主题 ==========
     applyTheme(getStoredTheme());
 
-    // 暴露全局 API
+    // ========== 暴露 API ==========
     window.ThemeManager = {
-        getTheme: getStoredTheme,
         setTheme: setTheme,
-        getThemes: function() { return themes; },
-        getCurrentThemeInfo: function() { return themes[getStoredTheme()] || themes[DEFAULT_THEME]; },
-        THEME_KEY: THEME_KEY,
-        DEFAULT_THEME: DEFAULT_THEME
+        getTheme: getTheme,
+        getThemeInfo: getThemeInfo,
+        getThemes: getThemes
     };
 
 })();
