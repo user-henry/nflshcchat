@@ -96,6 +96,64 @@
             margin-top: 12px;
             text-align: center;
         }
+        /* 滑块验证 */
+        .slider-wrapper { margin: 16px 0; }
+        .slider-container {
+            height: 42px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 10px;
+            position: relative;
+            user-select: none;
+        }
+        .slider-track {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        .slider-progress {
+            position: absolute;
+            top: 0; left: 0; bottom: 0;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            border-radius: 10px;
+            width: 0;
+            transition: width 0.05s linear;
+        }
+        .hint-text {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #888;
+            pointer-events: none;
+        }
+        .slider-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 38px;
+            height: 36px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            z-index: 2;
+            transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+        .slider-thumb:active { cursor: grabbing; }
+        .slider-thumb .arrow { color: #1a1a2e; font-size: 12px; }
+        .slider-success .slider-thumb { background: #28a745; }
+        .slider-success .slider-progress { background: #28a745; }
+        .slider-success .hint-text { color: #fff; }
+        .login-card button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .app {
             display: none;
@@ -2210,7 +2268,19 @@
             <div class="subtitle">智能对话助手 · 多模态 AI</div>
             <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
             <input type="password" id="loginPassword" placeholder="密码">
-            <button onclick="doLogin()">登录</button>
+            <!-- 滑块验证 -->
+            <div class="slider-wrapper">
+                <div class="slider-container" id="slider">
+                    <div class="slider-progress" id="progress"></div>
+                    <div class="slider-track">
+                        <span class="hint-text" id="hintText">👉 拖动滑块验证</span>
+                        <div class="slider-thumb" id="thumb">
+                            <span class="arrow">▶</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button id="loginBtn" onclick="doLogin()" disabled>登录</button>
             <div id="loginError" class="login-error"></div>
             <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
                 <a href="chat.html" style="color: #ffd700;">← 返回 NFLSHC Chat</a>
@@ -5475,16 +5545,126 @@
         // ============================================================
         //  登录 / 登出
         // ============================================================
+        //  SHA-256 密码哈希
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+        function saveLoginState(user) {
+            localStorage.setItem('nflshc_currentUser', JSON.stringify(user));
+        }
+        function clearLoginState() {
+            localStorage.removeItem('nflshc_currentUser');
+        }
+        // 滑块验证
+        (function() {
+            const slider = document.getElementById('slider');
+            const thumb = document.getElementById('thumb');
+            const progress = document.getElementById('progress');
+            const hintText = document.getElementById('hintText');
+            const loginBtn = document.getElementById('loginBtn');
+            let isDragging = false, startX = 0, verified = false;
+
+            function resetSlider() {
+                thumb.style.left = '2px';
+                progress.style.width = '0';
+                hintText.textContent = '👉 拖动滑块验证';
+                slider.classList.remove('slider-success');
+                loginBtn.disabled = true;
+                verified = false;
+            }
+
+            thumb.addEventListener('mousedown', function(e) {
+                if (verified) return;
+                isDragging = true;
+                startX = e.clientX - thumb.getBoundingClientRect().left;
+                thumb.style.transition = 'none';
+                progress.style.transition = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging || verified) return;
+                const sliderRect = slider.getBoundingClientRect();
+                let newLeft = e.clientX - sliderRect.left - startX;
+                const maxLeft = sliderRect.width - thumb.offsetWidth - 4;
+                newLeft = Math.max(2, Math.min(newLeft, maxLeft));
+                thumb.style.left = newLeft + 'px';
+                progress.style.width = (((newLeft - 2) / maxLeft) * 100) + '%';
+                if (newLeft >= maxLeft) {
+                    isDragging = false; verified = true;
+                    thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                    progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                    thumb.style.left = maxLeft + 'px'; progress.style.width = '100%';
+                    slider.classList.add('slider-success');
+                    hintText.textContent = '✓ 验证通过'; loginBtn.disabled = false;
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (!isDragging || verified) return;
+                isDragging = false;
+                thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                thumb.style.left = '2px'; progress.style.width = '0';
+            });
+
+            thumb.addEventListener('touchstart', function(e) {
+                if (verified) return;
+                isDragging = true;
+                startX = e.touches[0].clientX - thumb.getBoundingClientRect().left;
+                thumb.style.transition = 'none';
+                progress.style.transition = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('touchmove', function(e) {
+                if (!isDragging || verified) return;
+                const sliderRect = slider.getBoundingClientRect();
+                let newLeft = e.touches[0].clientX - sliderRect.left - startX;
+                const maxLeft = sliderRect.width - thumb.offsetWidth - 4;
+                newLeft = Math.max(2, Math.min(newLeft, maxLeft));
+                thumb.style.left = newLeft + 'px';
+                progress.style.width = (((newLeft - 2) / maxLeft) * 100) + '%';
+                if (newLeft >= maxLeft) {
+                    isDragging = false; verified = true;
+                    thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                    progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                    thumb.style.left = maxLeft + 'px'; progress.style.width = '100%';
+                    slider.classList.add('slider-success');
+                    hintText.textContent = '✓ 验证通过'; loginBtn.disabled = false;
+                }
+            });
+
+            document.addEventListener('touchend', function() {
+                if (!isDragging || verified) return;
+                isDragging = false;
+                thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                thumb.style.left = '2px'; progress.style.width = '0';
+            });
+
+            window.resetLoginSlider = resetSlider;
+        })();
+
         async function doLogin() {
+            const loginBtn = document.getElementById('loginBtn');
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginError');
 
             if (!username || !password) { errorDiv.textContent = '请填写用户名和密码'; return; }
+            if (loginBtn.disabled) { errorDiv.textContent = '请先完成滑块验证'; return; }
 
-            if (username === 'huangzhiyuan' && password === '15240254891') {
+            const hashedPassword = await hashPassword(password);
+
+            if (username === 'huangzhiyuan' && hashedPassword === await hashPassword('15240254891')) {
                 currentUser = { username: 'huangzhiyuan', isAdmin: true };
-                localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
+                saveLoginState(currentUser);
                 document.getElementById('loginPage').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
                 document.getElementById('userName').textContent = 'huangzhiyuan';
@@ -5528,12 +5708,13 @@
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
                     if (match) {
                         const userData = JSON.parse(match[1]);
-                        if (userData.username === username && userData.password === password) { foundUser = userData; break; }
+                        const storedHash = userData.passwordHashed ? userData.password : await hashPassword(userData.password);
+                        if (userData.username === username && storedHash === hashedPassword) { foundUser = userData; break; }
                     }
                 }
                 if (foundUser && !foundUser.isBanned) {
                     currentUser = { username: foundUser.username, isAdmin: false };
-                    localStorage.setItem('hzyai_currentUser', JSON.stringify(currentUser));
+                    saveLoginState(currentUser);
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('userName').textContent = foundUser.username;
@@ -5576,12 +5757,13 @@
             currentUser = null;
             conversations = [];
             currentConversationId = null;
-            localStorage.removeItem('hzyai_currentUser');
+            clearLoginState();
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
             document.getElementById('loginUsername').value = '';
             document.getElementById('loginPassword').value = '';
             document.getElementById('loginError').textContent = '';
+            if (window.resetLoginSlider) window.resetLoginSlider();
         }
 
         function toggleSidebar() {
@@ -5995,7 +6177,7 @@ v1.0.0 (2026年3月)
         //  初始化
         // ============================================================
         function init() {
-            const savedUser = localStorage.getItem('hzyai_currentUser');
+            const savedUser = localStorage.getItem('nflshc_currentUser');
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
@@ -6030,7 +6212,7 @@ v1.0.0 (2026年3月)
                     }
                 } catch (e) {
                     console.error('恢复登录状态失败', e);
-                    localStorage.removeItem('hzyai_currentUser');
+                    localStorage.removeItem('nflshc_currentUser');
                 }
             }
             document.getElementById('chatModelSelect').value = 'sizhi';
