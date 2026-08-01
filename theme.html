@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>主题切换 - NFLSHC Chat</title>
-    <!-- PWA 支持 -->
-    <link rel="manifest" href="/nflshcchat/manifest.json">
-    <meta name="theme-color" content="#ffd700">
-    <!-- 主题 CSS -->
+    <title>NFLSHC Chat - 主题设置</title>
     <link rel="stylesheet" href="css/themes.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-primary);
@@ -20,163 +15,140 @@
             transition: background 0.4s, color 0.4s;
         }
 
-        /* ===== 顶部导航 ===== */
+        /* 顶部导航 */
         .top-bar {
             background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
             padding: 12px 24px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 100;
-            backdrop-filter: blur(10px);
             transition: background 0.4s, border-color 0.4s;
         }
-        .top-bar .logo-icon {
-            width: 36px; height: 36px;
-            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            border-radius: 8px;
-        }
-        .top-bar .title {
-            font-size: 18px;
-            font-weight: bold;
+        .top-bar .back-link {
             color: var(--accent-color);
-            flex: 1;
-            transition: color 0.4s;
-        }
-        .back-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 16px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
             text-decoration: none;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
+            font-size: 16px;
+            font-weight: 600;
+            transition: color 0.3s;
         }
-        .back-btn:hover {
+        .top-bar .back-link:hover { opacity: 0.8; }
+        .top-bar .title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .top-bar .badge {
             background: var(--accent-color);
             color: #1a1a2e;
-            border-color: var(--accent-color);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
         }
 
-        /* ===== 主内容区 ===== */
-        .main-container {
+        /* 主内容 */
+        .container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 30px 20px 60px;
+            padding: 40px 20px;
         }
-        .page-header { text-align: center; margin-bottom: 10px; }
-        .page-header h1 { font-size: 28px; color: var(--accent-color); transition: color 0.4s; }
-        .page-header p { color: var(--text-secondary); margin-top: 6px; font-size: 14px; transition: color 0.4s; }
-
-        /* ===== 当前主题指示器 ===== */
-        .current-theme-badge {
-            display: flex; align-items: center; justify-content: center;
-            gap: 10px; margin: 24px 0 30px;
-            padding: 12px 24px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+        .page-desc {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
             font-size: 15px;
-            transition: all 0.4s;
+            line-height: 1.6;
         }
-        .current-theme-badge .icon { font-size: 24px; }
-        .current-theme-badge .label { color: var(--text-secondary); }
-        .current-theme-badge .value { color: var(--accent-color); font-weight: bold; }
+        .page-desc .current-name {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
 
-        /* ===== 主题卡片网格 ===== */
+        /* 主题卡片网格 */
         .theme-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 16px;
-            margin-top: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
         }
+
         .theme-card {
             background: var(--bg-secondary);
-            border: 2px solid var(--border-color);
+            border: 3px solid var(--border-color);
             border-radius: 16px;
-            padding: 20px;
+            padding: 28px 20px;
+            text-align: center;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
             position: relative;
-            overflow: hidden;
+            user-select: none;
         }
         .theme-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            border-color: var(--accent-color);
+        }
+        .theme-card:active {
+            transform: scale(0.97);
         }
         .theme-card.active {
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px var(--accent-color), 0 8px 25px rgba(0,0,0,0.2);
-            transform: translateY(-4px);
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.15), 0 8px 25px rgba(0,0,0,0.2);
         }
-        .theme-card .card-preview {
-            height: 80px;
-            border-radius: 10px;
-            margin-bottom: 14px;
+        .theme-card .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            display: block;
+            transition: transform 0.3s;
+        }
+        .theme-card:hover .icon { transform: scale(1.1); }
+        .theme-card .name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+        .theme-card .accent-dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .theme-card .preview-bar {
             display: flex;
-            align-items: flex-end;
-            padding: 10px;
-            position: relative;
-            overflow: hidden;
+            gap: 6px;
+            margin-top: 14px;
+            justify-content: center;
         }
-        .theme-card .card-preview::before {
-            content: '';
-            position: absolute;
-            top: 8px; left: 10px;
-            width: 50px; height: 6px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 3px;
+        .theme-card .preview-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 2px solid rgba(255,255,255,0.15);
         }
-        .theme-card .card-preview::after {
-            content: '';
-            position: absolute;
-            top: 8px; right: 10px;
-            width: 28px; height: 6px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-        }
-        .theme-card .card-preview .preview-item {
-            width: 70%; height: 8px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 4px;
-            margin-bottom: 4px;
-        }
-        .theme-card .card-preview .preview-accent {
-            width: 40%; height: 8px;
-            border-radius: 4px;
-        }
-        .theme-card .card-body { display: flex; align-items: center; gap: 10px; }
-        .theme-card .card-icon { font-size: 28px; }
-        .theme-card .card-info { flex: 1; }
-        .theme-card .card-name { font-size: 16px; font-weight: bold; color: var(--text-primary); transition: color 0.4s; }
-        .theme-card .card-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; transition: color 0.4s; }
         .theme-card .check-mark {
             position: absolute;
-            top: 12px; right: 14px;
-            width: 24px; height: 24px;
+            top: 12px;
+            right: 14px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             background: var(--accent-color);
             color: #1a1a2e;
             display: none;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
         }
         .theme-card.active .check-mark { display: flex; }
 
-        /* ===== 应用提示 Toast ===== */
+        /* Toast 提示 */
         .toast {
             position: fixed;
             bottom: 30px;
@@ -184,14 +156,15 @@
             transform: translateX(-50%) translateY(100px);
             background: var(--bg-secondary);
             color: var(--text-primary);
-            border: 1px solid var(--accent-color);
             padding: 12px 28px;
-            border-radius: 10px;
-            font-size: 14px;
+            border-radius: 30px;
+            border: 1px solid var(--accent-color);
+            font-size: 15px;
+            font-weight: 600;
             z-index: 9999;
+            pointer-events: none;
             opacity: 0;
             transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
             box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
         .toast.show {
@@ -199,11 +172,13 @@
             opacity: 1;
         }
 
-        /* ===== 响应式 ===== */
+        /* 响应式 */
         @media (max-width: 600px) {
-            .theme-grid { grid-template-columns: 1fr; }
-            .top-bar { padding: 10px 16px; }
-            .top-bar .title { font-size: 16px; }
+            .container { padding: 20px 12px; }
+            .theme-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+            .theme-card { padding: 20px 12px; }
+            .theme-card .icon { font-size: 36px; }
+            .theme-card .name { font-size: 15px; }
         }
     </style>
 </head>
@@ -211,125 +186,117 @@
 
     <!-- 顶部导航 -->
     <div class="top-bar">
-        <div class="logo-icon"></div>
+        <a href="index.html" class="back-link">← 返回登录</a>
         <span class="title">主题设置</span>
-        <a href="index.html" class="back-btn">← 返回首页</a>
+        <span class="badge" id="currentBadge">暗夜黑金</span>
     </div>
 
     <!-- 主内容 -->
-    <div class="main-container">
-        <div class="page-header">
-            <h1>🎨 选择你喜欢的主题</h1>
-            <p>一键切换，所有页面实时生效</p>
-        </div>
-
-        <!-- 当前主题 -->
-        <div class="current-theme-badge" id="currentBadge">
-            <span class="icon" id="badgeIcon">🌙</span>
-            <span class="label">当前主题：</span>
-            <span class="value" id="badgeName">暗夜黑金</span>
-        </div>
-
-        <!-- 主题卡片 -->
-        <div class="theme-grid" id="themeGrid">
-            <!-- JS 动态生成 -->
-        </div>
+    <div class="container">
+        <p class="page-desc">
+            当前主题：<span class="current-name" id="currentName">暗夜黑金</span><br>
+            选择下方主题即可一键切换，所有页面即时生效
+        </p>
+        <div class="theme-grid" id="themeGrid"></div>
     </div>
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
-    <!-- 主题管理器 -->
     <script src="js/theme.js"></script>
-
     <script>
-        (function() {
-            var grid = document.getElementById('themeGrid');
-            var badgeIcon = document.getElementById('badgeIcon');
-            var badgeName = document.getElementById('badgeName');
-            var toast = document.getElementById('toast');
+    (function() {
+        var themes = window.ThemeManager.getThemes();
+        var themeIds = ['dark', 'light', 'blue', 'purple', 'green'];
+        var current = window.ThemeManager.getTheme();
+        var toastTimer = null;
+        var grid = document.getElementById('themeGrid');
+        var badge = document.getElementById('currentBadge');
+        var nameEl = document.getElementById('currentName');
 
-            var themes = window.ThemeManager.getThemes();
-            var current = window.ThemeManager.getTheme();
+        // 每个主题的颜色预览样本
+        var swatches = {
+            dark:   ['#1a1a2e', '#16213e', '#0f0f1a', '#ffd700'],
+            light:  ['#f5f5f5', '#ffffff', '#e8e8e8', '#ffd700'],
+            blue:   ['#0d2137', '#122c47', '#091a2c', '#3498db'],
+            purple: ['#1a0a2e', '#251545', '#0f0520', '#9b59b6'],
+            green:  ['#0a2e1a', '#0f4525', '#052010', '#2ecc71']
+        };
 
-            // 渲染主题卡片
-            function renderCards() {
-                grid.innerHTML = '';
-                var ids = Object.keys(themes);
-                for (var i = 0; i < ids.length; i++) {
-                    var t = themes[ids[i]];
-                    var isActive = (t.id === current);
-                    var card = document.createElement('div');
-                    card.className = 'theme-card' + (isActive ? ' active' : '');
-                    card.setAttribute('data-theme-id', t.id);
-                    card.innerHTML =
-                        '<div class="card-preview" style="background:' + t.bg + '; position:relative;">' +
-                            '<div style="position:relative;z-index:1;width:100%;">' +
-                                '<div class="preview-item"></div>' +
-                                '<div class="preview-item"></div>' +
-                                '<div class="preview-accent" style="background:' + t.color + ';"></div>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="card-body">' +
-                            '<span class="card-icon">' + t.icon + '</span>' +
-                            '<div class="card-info">' +
-                                '<div class="card-name">' + t.name + '</div>' +
-                                '<div class="card-desc">' + t.desc + '</div>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="check-mark">✓</div>';
-                    card.addEventListener('click', function() {
-                        selectTheme(t.id);
-                    });
-                    grid.appendChild(card);
+        function showToast(msg) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2000);
+        }
+
+        function updateUI(themeId) {
+            var info = window.ThemeManager.getThemeInfo(themeId);
+            badge.textContent = info.name;
+            nameEl.textContent = info.name;
+
+            var cards = grid.querySelectorAll('.theme-card');
+            cards.forEach(function(card) {
+                if (card.getAttribute('data-theme-id') === themeId) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
                 }
-                updateBadge();
-            }
-
-            function selectTheme(themeId) {
-                if (themeId === current) return;
-                window.ThemeManager.setTheme(themeId);
-                current = themeId;
-
-                // 更新卡片高亮
-                var cards = grid.querySelectorAll('.theme-card');
-                for (var i = 0; i < cards.length; i++) {
-                    cards[i].classList.toggle('active', cards[i].getAttribute('data-theme-id') === themeId);
-                }
-
-                updateBadge();
-                showToast('✅ 已切换至「' + themes[themeId].name + '」');
-            }
-
-            function updateBadge() {
-                var info = themes[current];
-                badgeIcon.textContent = info.icon;
-                badgeName.textContent = info.name;
-            }
-
-            function showToast(msg) {
-                toast.textContent = msg;
-                toast.classList.add('show');
-                clearTimeout(toast._timer);
-                toast._timer = setTimeout(function() {
-                    toast.classList.remove('show');
-                }, 2000);
-            }
-
-            // 监听外部主题变更
-            window.addEventListener('themechange', function(e) {
-                current = e.detail.theme;
-                var cards = grid.querySelectorAll('.theme-card');
-                for (var i = 0; i < cards.length; i++) {
-                    cards[i].classList.toggle('active', cards[i].getAttribute('data-theme-id') === current);
-                }
-                updateBadge();
             });
+        }
 
-            // 初始化
-            renderCards();
-        })();
+        function renderCards() {
+            var html = '';
+            for (var i = 0; i < themeIds.length; i++) {
+                var id = themeIds[i];
+                var t = themes[id];
+                if (!t) continue;
+                var isActive = (id === current);
+                var swatchColors = swatches[id] || [];
+
+                html += '<div class="theme-card' + (isActive ? ' active' : '') + '" data-theme-id="' + id + '">';
+                html += '<span class="check-mark">✓</span>';
+                html += '<span class="icon">' + t.icon + '</span>';
+                html += '<div class="name">' + t.name + '</div>';
+                html += '<div class="preview-bar">';
+                for (var s = 0; s < swatchColors.length; s++) {
+                    html += '<span class="preview-swatch" style="background:' + swatchColors[s] + '"></span>';
+                }
+                html += '</div>';
+                html += '</div>';
+            }
+            grid.innerHTML = html;
+
+            // 绑定点击事件
+            var cards = grid.querySelectorAll('.theme-card');
+            cards.forEach(function(card) {
+                card.addEventListener('click', function() {
+                    var themeId = this.getAttribute('data-theme-id');
+                    selectTheme(themeId);
+                });
+            });
+        }
+
+        function selectTheme(themeId) {
+            if (themeId === current) return; // 同主题不重复切换
+
+            var info = window.ThemeManager.getThemeInfo(themeId);
+            if (!info) return;
+
+            // 执行切换
+            window.ThemeManager.setTheme(themeId);
+            current = themeId;
+
+            // 更新 UI
+            updateUI(themeId);
+            showToast('已切换至 ' + info.name);
+        }
+
+        // 启动
+        updateUI(current);
+        renderCards();
+    })();
     </script>
-
 </body>
 </html>
