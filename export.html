@@ -425,7 +425,8 @@
                 '<div class="footer">\n' +
                 '    <p>导出自 NFLSHC Chat | 导出时间: ' + new Date().toLocaleString() + '</p>\n' +
                 '</div>\n' +
-                '</body>\n' +
+                '    <script src="js/theme.js"></script>
+</body>\n' +
                 '</html>';
             
             showProgress(100, '导出完成！');
@@ -467,5 +468,6 @@
         currentUser = checkAuth();
         if (currentUser) loadRooms();
     </script>
+    <script src="js/theme.js"></script>
 </body>
 </html>
