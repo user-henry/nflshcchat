@@ -7,6 +7,7 @@
     <!-- PWA 支持 -->
     <link rel="manifest" href="/nflshcchat/manifest.json">
     <meta name="theme-color" content="#ffd700">
+    <link rel="stylesheet" href="css/themes.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -249,7 +250,7 @@
         </div>
 
         <button id="loginBtn" disabled>登录</button>
-        <p><a onclick="showForgotPassword()">忘记密码？</a> | <a onclick="showRegister()">立即注册</a></p>
+        <p><a onclick="showForgotPassword()">忘记密码？</a> | <a onclick="showRegister()">立即注册</a> | <a href="theme.html">主题切换</a></p>
         <div id="message" class="message"></div>
     </div>
 
@@ -307,6 +308,7 @@
     </div>
 
     <script src="config.js"></script>
+    <script src="js/theme.js"></script>
     <script>
         // ============================================================
         //  配置
