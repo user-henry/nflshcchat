@@ -206,13 +206,17 @@
     <script src="js/theme.js"></script>
     <script>
     (function() {
-        var themes = window.ThemeManager.getThemes();
+        var THEME_KEY = 'nflshc_theme';
+
+        // 内联主题定义（不依赖外部文件，确保始终可用）
+        var INLINE_THEMES = {
+            dark:   { id: 'dark',   name: '暗夜黑金', icon: '🌙', accent: '#ffd700' },
+            light:  { id: 'light',  name: '晨曦白光', icon: '☀️', accent: '#ffd700' },
+            blue:   { id: 'blue',   name: '深海蓝调', icon: '🌊', accent: '#3498db' },
+            purple: { id: 'purple', name: '紫罗兰夜', icon: '🔮', accent: '#9b59b6' },
+            green:  { id: 'green',  name: '翡翠绿意', icon: '🌿', accent: '#2ecc71' }
+        };
         var themeIds = ['dark', 'light', 'blue', 'purple', 'green'];
-        var current = window.ThemeManager.getTheme();
-        var toastTimer = null;
-        var grid = document.getElementById('themeGrid');
-        var badge = document.getElementById('currentBadge');
-        var nameEl = document.getElementById('currentName');
 
         // 每个主题的颜色预览样本
         var swatches = {
@@ -223,6 +227,18 @@
             green:  ['#0a2e1a', '#0f4525', '#052010', '#2ecc71']
         };
 
+        // 从 localStorage 读取当前主题
+        function getStoredTheme() {
+            try { return localStorage.getItem(THEME_KEY) || 'dark'; }
+            catch (e) { return 'dark'; }
+        }
+        var current = getStoredTheme();
+
+        var toastTimer = null;
+        var grid = document.getElementById('themeGrid');
+        var badge = document.getElementById('currentBadge');
+        var nameEl = document.getElementById('currentName');
+
         function showToast(msg) {
             var t = document.getElementById('toast');
             t.textContent = msg;
@@ -232,36 +248,39 @@
         }
 
         function updateUI(themeId) {
-            var info = window.ThemeManager.getThemeInfo(themeId);
-            badge.textContent = info.name;
-            nameEl.textContent = info.name;
+            var info = INLINE_THEMES[themeId] || INLINE_THEMES['dark'];
+            if (badge) badge.textContent = info.name;
+            if (nameEl) nameEl.textContent = info.name;
 
+            if (!grid) return;
             var cards = grid.querySelectorAll('.theme-card');
-            cards.forEach(function(card) {
+            for (var i = 0; i < cards.length; i++) {
+                var card = cards[i];
                 if (card.getAttribute('data-theme-id') === themeId) {
                     card.classList.add('active');
                 } else {
                     card.classList.remove('active');
                 }
-            });
+            }
         }
 
         function renderCards() {
+            if (!grid) return;
             var html = '';
             for (var i = 0; i < themeIds.length; i++) {
                 var id = themeIds[i];
-                var t = themes[id];
+                var t = INLINE_THEMES[id];
                 if (!t) continue;
                 var isActive = (id === current);
-                var swatchColors = swatches[id] || [];
+                var sc = swatches[id] || [];
 
                 html += '<div class="theme-card' + (isActive ? ' active' : '') + '" data-theme-id="' + id + '">';
-                html += '<span class="check-mark">✓</span>';
+                html += '<span class="check-mark">&#10003;</span>';
                 html += '<span class="icon">' + t.icon + '</span>';
                 html += '<div class="name">' + t.name + '</div>';
                 html += '<div class="preview-bar">';
-                for (var s = 0; s < swatchColors.length; s++) {
-                    html += '<span class="preview-swatch" style="background:' + swatchColors[s] + '"></span>';
+                for (var s = 0; s < sc.length; s++) {
+                    html += '<span class="preview-swatch" style="background:' + sc[s] + '"></span>';
                 }
                 html += '</div>';
                 html += '</div>';
@@ -270,30 +289,48 @@
 
             // 绑定点击事件
             var cards = grid.querySelectorAll('.theme-card');
-            cards.forEach(function(card) {
-                card.addEventListener('click', function() {
-                    var themeId = this.getAttribute('data-theme-id');
-                    selectTheme(themeId);
-                });
-            });
+            for (var j = 0; j < cards.length; j++) {
+                (function(card) {
+                    card.addEventListener('click', function() {
+                        var tid = card.getAttribute('data-theme-id');
+                        selectTheme(tid);
+                    });
+                })(cards[j]);
+            }
+        }
+
+        function applyTheme(themeId) {
+            var htmlEl = document.documentElement;
+            if (!htmlEl) return;
+            if (themeId === 'dark') {
+                htmlEl.removeAttribute('data-theme');
+            } else {
+                htmlEl.setAttribute('data-theme', themeId);
+            }
         }
 
         function selectTheme(themeId) {
-            if (themeId === current) return; // 同主题不重复切换
+            if (themeId === current) return;
+            if (!INLINE_THEMES[themeId]) return;
 
-            var info = window.ThemeManager.getThemeInfo(themeId);
-            if (!info) return;
-
-            // 执行切换
-            window.ThemeManager.setTheme(themeId);
+            // 存储 + 应用
+            try { localStorage.setItem(THEME_KEY, themeId); } catch (e) {}
+            applyTheme(themeId);
             current = themeId;
 
-            // 更新 UI
+            // 也通过 ThemeManager 同步（如果可用）
+            if (window.ThemeManager && window.ThemeManager.setTheme) {
+                try { window.ThemeManager.setTheme(themeId); } catch (e) {}
+            }
+
             updateUI(themeId);
-            showToast('已切换至 ' + info.name);
+            showToast('已切换至 ' + INLINE_THEMES[themeId].name);
         }
 
-        // 启动
+        // 页面加载：先应用当前主题（确保 data-theme 正确）
+        applyTheme(current);
+
+        // 渲染 UI
         updateUI(current);
         renderCards();
     })();
