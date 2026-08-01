@@ -9,12 +9,12 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#1a0a2e 0%,#2d1b4e 30%,#1e1040 60%,#0d0625 100%);min-height:100vh;color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px}
-.nav{background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 100%);padding:10px 20px;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ffd700;width:100%;max-width:1000px;border-radius:12px 12px 0 0;margin-bottom:20px;position:relative;z-index:50}
+.nav{background:var(--bg-secondary);padding:10px 20px;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--accent-color);width:100%;max-width:1000px;border-radius:12px 12px 0 0;margin-bottom:20px;position:relative;z-index:50}
 .nav-left{display:flex;align-items:center;gap:12px}
 .logo{width:36px;height:36px;background-image:url(https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png);background-size:contain;background-repeat:no-repeat;background-position:center}
-.nav h2{font-size:18px;color:#ffd700}
-.nav a{color:rgba(255,255,255,.7);text-decoration:none;margin-left:16px;transition:color .3s;font-size:14px}
-.nav a:hover,.nav a.active{color:#ffd700}
+.nav h2{font-size:18px;color:var(--accent-color)}
+.nav a{color:var(--text-primary);opacity:0.7;text-decoration:none;margin-left:16px;transition:color .3s,opacity .3s;font-size:14px}
+.nav a:hover,.nav a.active{color:var(--accent-color);opacity:1}
 .container{width:100%;max-width:1000px}
 .header{text-align:center;margin-bottom:24px}
 .header h1{font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:6px;background:linear-gradient(90deg,#a78bfa,#c084fc,#f0abfc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
