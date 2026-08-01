@@ -35,8 +35,8 @@
     --text-primary: #1a1a2e;
     --text-secondary: #666;
     --border-color: #ddd;
-    --accent-color: #ffd700;
-    --accent-hover: #ffb347;
+    --accent-color: #b8860b;
+    --accent-hover: #d4a017;
     --input-bg: #ffffff;
     --login-card-bg: rgba(255,255,255,0.95);
     --login-input-bg: #ffffff;
@@ -46,7 +46,7 @@
     --login-subtext: #666;
     --login-body-gradient: linear-gradient(135deg, #e0e0e8 0%, #c8ccd4 100%);
     --modal-bg: #ffffff;
-    --modal-border: #ffd700;
+    --modal-border: #b8860b;
     --modal-input-bg: #f0f0f0;
     --modal-input-text: #333;
     --modal-input-border: #ddd;
@@ -136,7 +136,16 @@ body {
 
 .nav, .card, .modal-content, .room-selector, .search-card, .room-card, .user-item, .favorite-item, .result-item {
     background: var(--bg-secondary);
+    color: var(--text-primary);
     border-color: var(--border-color);
+}
+
+/* 导航栏链接默认继承文字颜色 */
+.nav a, .top-bar a {
+    color: var(--text-primary);
+}
+.nav a:hover, .top-bar a:hover {
+    color: var(--accent-color);
 }
 
 .room-item, .notice-item, .rank-item, .export-option {
