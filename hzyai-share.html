@@ -60,7 +60,7 @@
             background: var(--bg-primary, #1a1a2e);
             border: 1px solid var(--border-color, #2a2a3e);
             border-radius: 10px;
-            color: white;
+            color: var(--text-primary, #fff);
             font-size: 14px;
         }
         .login-card input:focus { outline: none; border-color: var(--accent-color, #ffd700); }
@@ -327,8 +327,8 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .conv-item:hover { background: #2a2a3e; }
-        .conv-item.selected { background: #2a2a3e; border-left: 3px solid #ffd700; }
+        .conv-item:hover { background: var(--border-color, #2a2a3e); }
+        .conv-item.selected { background: var(--border-color, #2a2a3e); border-left: 3px solid var(--accent-color, #ffd700); }
         .conv-item .conv-title { flex: 1; font-size: 14px; }
         .conv-item .conv-meta { font-size: 12px; color: var(--text-muted, #666); }
 
@@ -375,7 +375,7 @@
             border-radius: 8px;
             transition: all 0.2s;
         }
-        .msg-item:hover { background: #2a2a3e; }
+        .msg-item:hover { background: var(--border-color, #2a2a3e); }
         .msg-item .msg-avatar {
             width: 28px;
             height: 28px;
@@ -386,7 +386,7 @@
             font-size: 14px;
             flex-shrink: 0;
         }
-        .msg-item .msg-avatar.user { background: #2a2a3e; }
+        .msg-item .msg-avatar.user { background: var(--border-color, #2a2a3e); }
         .msg-item .msg-avatar.assistant { background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%); }
         .msg-item .msg-content {
             flex: 1;
@@ -587,7 +587,7 @@
             font-size: 14px;
             flex-shrink: 0;
         }
-        .public-detail-body .detail-msg .d-avatar.user { background: #2a2a3e; }
+        .public-detail-body .detail-msg .d-avatar.user { background: var(--border-color, #2a2a3e); }
         .public-detail-body .detail-msg .d-avatar.assistant { background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%); }
         .public-detail-body .detail-msg .d-content {
             flex: 1;

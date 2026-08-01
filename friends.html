@@ -17,7 +17,7 @@
         .card { background: #16213e; border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid #2a2a3e; }
         .card h2 { color: var(--accent-color, #ffd700); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #2a2a3e; }
         .add-friend-section { display: flex; gap: 10px; margin-bottom: 15px; }
-        .add-friend-section input { flex: 1; padding: 10px; border: 1px solid #2a2a3e; border-radius: 8px; background: #0f0f1a; color: white; font-size: 14px; }
+        .add-friend-section input { flex: 1; padding: 10px; border: 1px solid var(--border-color, #2a2a3e); border-radius: 8px; background: var(--input-bg, #0f0f1a); color: var(--text-primary, #fff); font-size: 14px; }
         .add-friend-section input:focus { outline: none; border-color: var(--accent-color, #ffd700); }
         .btn { background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%); color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn:hover { opacity: 0.9; }
@@ -35,11 +35,11 @@
         .friend-level.lv-high { background: #9b59b6; color: white; }
         .friend-level.lv-top { background: #ffd700; color: #1a1a2e; }
         .search-section { margin-bottom: 20px; }
-        .search-section input { width: 100%; padding: 10px; border: 1px solid #2a2a3e; border-radius: 8px; background: #0f0f1a; color: white; font-size: 14px; }
+        .search-section input { width: 100%; padding: 10px; border: 1px solid var(--border-color, #2a2a3e); border-radius: 8px; background: var(--input-bg, #0f0f1a); color: var(--text-primary, #fff); font-size: 14px; }
         .search-section input:focus { outline: none; border-color: var(--accent-color, #ffd700); }
         .friend-bio { font-size: 12px; color: #888; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
         .friend-info { flex: 1; }
-        .friend-name { font-weight: 600; color: white; cursor: pointer; }
+        .friend-name { font-weight: 600; color: var(--text-primary, #fff); cursor: pointer; }
         .friend-name:hover { color: var(--accent-color, #ffd700); }
         .friend-since { font-size: 12px; color: #888; margin-top: 4px; }
         .friend-actions { display: flex; gap: 8px; }
