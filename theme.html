@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主题切换 - NFLSHC Chat</title>
+    <!-- PWA 支持 -->
+    <link rel="manifest" href="/nflshcchat/manifest.json">
+    <meta name="theme-color" content="#ffd700">
+    <!-- 主题 CSS -->
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.4s, color 0.4s;
+        }
+
+        /* ===== 顶部导航 ===== */
+        .top-bar {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            transition: background 0.4s, border-color 0.4s;
+        }
+        .top-bar .logo-icon {
+            width: 36px; height: 36px;
+            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border-radius: 8px;
+        }
+        .top-bar .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--accent-color);
+            flex: 1;
+            transition: color 0.4s;
+        }
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: var(--accent-color);
+            color: #1a1a2e;
+            border-color: var(--accent-color);
+        }
+
+        /* ===== 主内容区 ===== */
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+        }
+        .page-header { text-align: center; margin-bottom: 10px; }
+        .page-header h1 { font-size: 28px; color: var(--accent-color); transition: color 0.4s; }
+        .page-header p { color: var(--text-secondary); margin-top: 6px; font-size: 14px; transition: color 0.4s; }
+
+        /* ===== 当前主题指示器 ===== */
+        .current-theme-badge {
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin: 24px 0 30px;
+            padding: 12px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.4s;
+        }
+        .current-theme-badge .icon { font-size: 24px; }
+        .current-theme-badge .label { color: var(--text-secondary); }
+        .current-theme-badge .value { color: var(--accent-color); font-weight: bold; }
+
+        /* ===== 主题卡片网格 ===== */
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 8px;
+        }
+        .theme-card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .theme-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .theme-card.active {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px var(--accent-color), 0 8px 25px rgba(0,0,0,0.2);
+            transform: translateY(-4px);
+        }
+        .theme-card .card-preview {
+            height: 80px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: flex-end;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .theme-card .card-preview::before {
+            content: '';
+            position: absolute;
+            top: 8px; left: 10px;
+            width: 50px; height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+        .theme-card .card-preview::after {
+            content: '';
+            position: absolute;
+            top: 8px; right: 10px;
+            width: 28px; height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+        .theme-card .card-preview .preview-item {
+            width: 70%; height: 8px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 4px;
+            margin-bottom: 4px;
+        }
+        .theme-card .card-preview .preview-accent {
+            width: 40%; height: 8px;
+            border-radius: 4px;
+        }
+        .theme-card .card-body { display: flex; align-items: center; gap: 10px; }
+        .theme-card .card-icon { font-size: 28px; }
+        .theme-card .card-info { flex: 1; }
+        .theme-card .card-name { font-size: 16px; font-weight: bold; color: var(--text-primary); transition: color 0.4s; }
+        .theme-card .card-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; transition: color 0.4s; }
+        .theme-card .check-mark {
+            position: absolute;
+            top: 12px; right: 14px;
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: #1a1a2e;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .theme-card.active .check-mark { display: flex; }
+
+        /* ===== 应用提示 Toast ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--accent-color);
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            .theme-grid { grid-template-columns: 1fr; }
+            .top-bar { padding: 10px 16px; }
+            .top-bar .title { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航 -->
+    <div class="top-bar">
+        <div class="logo-icon"></div>
+        <span class="title">主题设置</span>
+        <a href="index.html" class="back-btn">← 返回首页</a>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main-container">
+        <div class="page-header">
+            <h1>🎨 选择你喜欢的主题</h1>
+            <p>一键切换，所有页面实时生效</p>
+        </div>
+
+        <!-- 当前主题 -->
+        <div class="current-theme-badge" id="currentBadge">
+            <span class="icon" id="badgeIcon">🌙</span>
+            <span class="label">当前主题：</span>
+            <span class="value" id="badgeName">暗夜黑金</span>
+        </div>
+
+        <!-- 主题卡片 -->
+        <div class="theme-grid" id="themeGrid">
+            <!-- JS 动态生成 -->
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 主题管理器 -->
+    <script src="js/theme.js"></script>
+
+    <script>
+        (function() {
+            var grid = document.getElementById('themeGrid');
+            var badgeIcon = document.getElementById('badgeIcon');
+            var badgeName = document.getElementById('badgeName');
+            var toast = document.getElementById('toast');
+
+            var themes = window.ThemeManager.getThemes();
+            var current = window.ThemeManager.getTheme();
+
+            // 渲染主题卡片
+            function renderCards() {
+                grid.innerHTML = '';
+                var ids = Object.keys(themes);
+                for (var i = 0; i < ids.length; i++) {
+                    var t = themes[ids[i]];
+                    var isActive = (t.id === current);
+                    var card = document.createElement('div');
+                    card.className = 'theme-card' + (isActive ? ' active' : '');
+                    card.setAttribute('data-theme-id', t.id);
+                    card.innerHTML =
+                        '<div class="card-preview" style="background:' + t.bg + '; position:relative;">' +
+                            '<div style="position:relative;z-index:1;width:100%;">' +
+                                '<div class="preview-item"></div>' +
+                                '<div class="preview-item"></div>' +
+                                '<div class="preview-accent" style="background:' + t.color + ';"></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="card-body">' +
+                            '<span class="card-icon">' + t.icon + '</span>' +
+                            '<div class="card-info">' +
+                                '<div class="card-name">' + t.name + '</div>' +
+                                '<div class="card-desc">' + t.desc + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="check-mark">✓</div>';
+                    card.addEventListener('click', function() {
+                        selectTheme(t.id);
+                    });
+                    grid.appendChild(card);
+                }
+                updateBadge();
+            }
+
+            function selectTheme(themeId) {
+                if (themeId === current) return;
+                window.ThemeManager.setTheme(themeId);
+                current = themeId;
+
+                // 更新卡片高亮
+                var cards = grid.querySelectorAll('.theme-card');
+                for (var i = 0; i < cards.length; i++) {
+                    cards[i].classList.toggle('active', cards[i].getAttribute('data-theme-id') === themeId);
+                }
+
+                updateBadge();
+                showToast('✅ 已切换至「' + themes[themeId].name + '」');
+            }
+
+            function updateBadge() {
+                var info = themes[current];
+                badgeIcon.textContent = info.icon;
+                badgeName.textContent = info.name;
+            }
+
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timer);
+                toast._timer = setTimeout(function() {
+                    toast.classList.remove('show');
+                }, 2000);
+            }
+
+            // 监听外部主题变更
+            window.addEventListener('themechange', function(e) {
+                current = e.detail.theme;
+                var cards = grid.querySelectorAll('.theme-card');
+                for (var i = 0; i < cards.length; i++) {
+                    cards[i].classList.toggle('active', cards[i].getAttribute('data-theme-id') === current);
+                }
+                updateBadge();
+            });
+
+            // 初始化
+            renderCards();
+        })();
+    </script>
+
+</body>
+</html>
