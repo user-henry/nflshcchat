@@ -12,6 +12,9 @@
     --success: #28a745;
     --warning: #f39c12;
     --info: #3498db;
+    --text-muted: #888;
+    --accent-color-alpha: rgba(255, 200, 87, 0.12);
+    --hover-bg: rgba(255, 255, 255, 0.07);
     /* 登录/注册页专用变量 */
     --login-card-bg: rgba(255,255,255,0.95);
     --login-input-bg: #ffffff;
@@ -38,6 +41,9 @@
     --accent-color: #b8860b;
     --accent-hover: #d4a017;
     --input-bg: #ffffff;
+    --text-muted: #999;
+    --accent-color-alpha: rgba(184, 134, 11, 0.1);
+    --hover-bg: rgba(0, 0, 0, 0.04);
     --login-card-bg: rgba(255,255,255,0.95);
     --login-input-bg: #ffffff;
     --login-input-border: #ddd;
@@ -63,6 +69,8 @@
     --accent-color: #3498db;
     --accent-hover: #2980b9;
     --input-bg: #091a2c;
+    --text-muted: #aaa;
+    --accent-color-alpha: rgba(52, 152, 219, 0.12);
     --login-card-bg: rgba(255,255,255,0.95);
     --login-input-bg: #ffffff;
     --login-input-border: #e0e0e0;
@@ -88,6 +96,8 @@
     --accent-color: #9b59b6;
     --accent-hover: #8e44ad;
     --input-bg: #0f0520;
+    --text-muted: #aaa;
+    --accent-color-alpha: rgba(155, 89, 182, 0.12);
     --login-card-bg: rgba(255,255,255,0.95);
     --login-input-bg: #ffffff;
     --login-input-border: #e0e0e0;
@@ -113,6 +123,8 @@
     --accent-color: #2ecc71;
     --accent-hover: #27ae60;
     --input-bg: #052010;
+    --text-muted: #aaa;
+    --accent-color-alpha: rgba(46, 204, 113, 0.12);
     --login-card-bg: rgba(255,255,255,0.95);
     --login-input-bg: #ffffff;
     --login-input-border: #e0e0e0;
@@ -134,7 +146,7 @@ body {
     transition: background 0.3s, color 0.3s;
 }
 
-.nav, .card, .modal-content, .room-selector, .search-card, .room-card, .user-item, .favorite-item, .result-item {
+.nav, .card, .modal-content, .room-selector, .search-card, .room-card, .user-item, .favorite-item, .result-item, .player-card, .history-list {
     background: var(--bg-secondary);
     color: var(--text-primary);
     border-color: var(--border-color);
