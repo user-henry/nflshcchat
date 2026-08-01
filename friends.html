@@ -7,12 +7,12 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; min-height: 100vh; }
-        .nav { background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%); padding: 15px 30px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #ffd700; }
+        .nav { background: var(--bg-secondary); padding: 15px 30px; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--accent-color); }
         .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .nav h2 { font-size: 20px; color: #ffd700; }
-        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
-        .nav a:hover { color: #ffd700; }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
         .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
         .card { background: #16213e; border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid #2a2a3e; }
         .card h2 { color: #ffd700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #2a2a3e; }
