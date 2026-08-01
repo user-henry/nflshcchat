@@ -12,22 +12,22 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; min-height: 100vh; }
 
         .nav {
-            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            background: var(--bg-secondary);
             padding: 12px 30px;
-            color: white;
+            color: var(--text-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            border-bottom: 1px solid #ffd700;
+            border-bottom: 1px solid var(--accent-color);
             position: relative;
             z-index: 50;
         }
         .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .nav h2 { font-size: 20px; color: #ffd700; }
-        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
-        .nav a:hover { color: #ffd700; }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
         .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
 
         /* 移动端导航换行 */
