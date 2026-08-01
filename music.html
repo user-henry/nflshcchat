@@ -16,9 +16,9 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 30%, #1e1040 60%, #0d0625 100%);
+            background: var(--bg-primary, linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 30%, #1e1040 60%, #0d0625 100%));
             min-height: 100vh;
-            color: #fff;
+            color: var(--text-primary, #fff);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -27,14 +27,14 @@
 
         /* 导航栏 - 与 chat.html 风格一致 */
         .nav {
-            background: var(--bg-secondary);
+            background: var(--bg-secondary, #0f0f1a);
             padding: 10px 20px;
-            color: var(--text-primary);
+            color: var(--text-primary, #fff);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            border-bottom: 1px solid var(--accent-color);
+            border-bottom: 1px solid var(--accent-color, #ffd700);
             width: 100%;
             max-width: 1200px;
             border-radius: 12px 12px 0 0;
@@ -51,17 +51,17 @@
             background-repeat: no-repeat; 
             background-position: center; 
         }
-        .nav h2 { font-size: 18px; color: var(--accent-color); }
+        .nav h2 { font-size: 18px; color: var(--accent-color, #ffd700); }
         .nav a { 
-            color: var(--text-primary);
+            color: var(--text-primary, #fff);
             opacity: 0.7;
             text-decoration: none; 
             margin-left: 16px; 
             transition: color 0.3s, opacity 0.3s;
             font-size: 14px;
         }
-        .nav a:hover { color: var(--accent-color); opacity: 1; }
-        .nav a.active { color: var(--accent-color); font-weight: 600; opacity: 1; }
+        .nav a:hover { color: var(--accent-color, #ffd700); opacity: 1; }
+        .nav a.active { color: var(--accent-color, #ffd700); font-weight: 600; opacity: 1; }
 
         @media (max-width: 768px) {
             .nav { flex-direction: column; gap: 8px; text-align: center; padding: 12px 16px; }
@@ -92,7 +92,7 @@
         }
 
         .header p {
-            color: rgba(255, 255, 255, 0.45);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.45));
             font-size: 13px;
             letter-spacing: 1px;
         }
@@ -106,32 +106,32 @@
         .search-box input {
             flex: 1;
             padding: 12px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.06);
+            background: var(--input-bg, rgba(255, 255, 255, 0.06));
             backdrop-filter: blur(10px);
-            color: #fff;
+            color: var(--text-primary, #fff);
             font-size: 15px;
             outline: none;
             transition: all 0.3s ease;
         }
 
         .search-box input::placeholder {
-            color: rgba(255, 255, 255, 0.3);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.3));
         }
 
         .search-box input:focus {
-            border-color: rgba(255, 200, 87, 0.4);
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 20px rgba(255, 200, 87, 0.1);
+            border-color: var(--accent-color, rgba(255, 200, 87, 0.4));
+            background: var(--bg-secondary, rgba(255, 255, 255, 0.1));
+            box-shadow: 0 0 20px var(--accent-color, rgba(255, 200, 87, 0.1));
         }
 
         .search-box button {
             padding: 12px 24px;
             border: none;
             border-radius: 12px;
-            background: linear-gradient(135deg, #ff9a56, #ffc857);
-            color: #1a0a2e;
+            background: linear-gradient(135deg, var(--accent-color, #ff9a56), var(--accent-hover, #ffc857));
+            color: var(--bg-primary, #1a0a2e);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
@@ -156,10 +156,10 @@
         }
 
         .player-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--bg-secondary, rgba(255, 255, 255, 0.05));
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
             border-radius: 20px;
             padding: 28px 24px 24px;
             margin-bottom: 20px;
@@ -226,19 +226,19 @@
             font-size: 20px;
             font-weight: 600;
             margin-bottom: 4px;
-            color: #fff;
+            color: var(--text-primary, #fff);
             letter-spacing: 0.5px;
         }
 
         .song-artist {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.55);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.55));
             margin-bottom: 2px;
         }
 
         .song-album {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.35);
+            color: var(--text-muted, rgba(255, 255, 255, 0.35));
         }
 
         .progress-area {
@@ -248,7 +248,7 @@
         .progress-bar {
             width: 100%;
             height: 5px;
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--border-color, rgba(255, 255, 255, 0.1));
             border-radius: 3px;
             cursor: pointer;
             position: relative;
@@ -257,11 +257,11 @@
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #ff9a56, #ffc857);
+            background: linear-gradient(90deg, var(--accent-color, #ff9a56), var(--accent-hover, #ffc857));
             border-radius: 3px;
             width: 0%;
             transition: width 0.1s linear;
-            box-shadow: 0 0 10px rgba(255, 200, 87, 0.3);
+            box-shadow: 0 0 10px var(--accent-color, rgba(255, 200, 87, 0.3));
         }
 
         .time-display {
@@ -269,7 +269,7 @@
             justify-content: space-between;
             margin-top: 8px;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.4));
             font-variant-numeric: tabular-nums;
         }
 
@@ -286,8 +286,8 @@
             height: 44px;
             border: none;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
+            background: var(--bg-tertiary, rgba(255, 255, 255, 0.08));
+            color: var(--text-primary, #fff);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -297,16 +297,16 @@
         }
 
         .ctrl-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--border-color, rgba(255, 255, 255, 0.15));
             transform: scale(1.08);
         }
 
         .ctrl-btn.play-btn {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #ff9a56, #ffc857);
-            color: #1a0a2e;
-            box-shadow: 0 8px 28px rgba(255, 154, 86, 0.4);
+            background: linear-gradient(135deg, var(--accent-color, #ff9a56), var(--accent-hover, #ffc857));
+            color: var(--bg-primary, #1a0a2e);
+            box-shadow: 0 8px 28px var(--accent-color, rgba(255, 154, 86, 0.4));
         }
 
         .ctrl-btn.play-btn:hover {
@@ -336,7 +336,7 @@
         .volume-area svg {
             width: 16px;
             height: 16px;
-            fill: rgba(255, 255, 255, 0.5);
+            fill: var(--text-secondary, rgba(255, 255, 255, 0.5));
             flex-shrink: 0;
         }
 
@@ -345,7 +345,7 @@
             height: 4px;
             -webkit-appearance: none;
             appearance: none;
-            background: rgba(255, 255, 255, 0.12);
+            background: var(--border-color, rgba(255, 255, 255, 0.12));
             border-radius: 2px;
             outline: none;
         }
@@ -355,26 +355,26 @@
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ff9a56, #ffc857);
+            background: linear-gradient(135deg, var(--accent-color, #ff9a56), var(--accent-hover, #ffc857));
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(255, 154, 86, 0.4);
+            box-shadow: 0 2px 8px var(--accent-color, rgba(255, 154, 86, 0.4));
         }
 
         .volume-area input[type="range"]::-moz-range-thumb {
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ff9a56, #ffc857);
+            background: linear-gradient(135deg, var(--accent-color, #ff9a56), var(--accent-hover, #ffc857));
             cursor: pointer;
             border: none;
-            box-shadow: 0 2px 8px rgba(255, 154, 86, 0.4);
+            box-shadow: 0 2px 8px var(--accent-color, rgba(255, 154, 86, 0.4));
         }
 
         .history-list {
-            background: rgba(255, 255, 255, 0.04);
+            background: var(--bg-secondary, rgba(255, 255, 255, 0.04));
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
             border-radius: 16px;
             padding: 18px 16px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
@@ -390,14 +390,14 @@
         .history-list h3 {
             font-size: 13px;
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.45);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.45));
             letter-spacing: 1.5px;
             text-transform: uppercase;
         }
 
         .history-list .sync-status {
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.3);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.3));
             display: flex;
             align-items: center;
             gap: 6px;
@@ -433,14 +433,14 @@
         }
 
         .history-item:hover {
-            background: rgba(255, 255, 255, 0.07);
+            background: var(--hover-bg, rgba(255, 255, 255, 0.07));
         }
 
         .history-item .num {
             width: 24px;
             text-align: center;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.25);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.25));
             font-variant-numeric: tabular-nums;
             font-weight: 500;
             flex-shrink: 0;
@@ -453,7 +453,7 @@
 
         .history-item .info .name {
             font-size: 14px;
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--text-primary, rgba(255, 255, 255, 0.9));
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -462,7 +462,7 @@
 
         .history-item .info .artist {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.4));
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -472,7 +472,7 @@
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.06);
+            background: var(--bg-tertiary, rgba(255, 255, 255, 0.06));
             display: flex;
             align-items: center;
             justify-content: center;
@@ -483,13 +483,13 @@
 
         .history-item:hover .play-icon {
             opacity: 1;
-            background: linear-gradient(135deg, #ff9a56, #ffc857);
+            background: linear-gradient(135deg, var(--accent-color, #ff9a56), var(--accent-hover, #ffc857));
         }
 
         .history-item .play-icon svg {
             width: 12px;
             height: 12px;
-            fill: #1a0a2e;
+            fill: var(--bg-primary, #1a0a2e);
         }
 
         .history-item .delete-btn {
@@ -519,14 +519,14 @@
         .loading {
             text-align: center;
             padding: 40px 20px;
-            color: rgba(255, 255, 255, 0.5);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.5));
         }
 
         .loading .spinner {
             width: 36px;
             height: 36px;
-            border: 3px solid rgba(255, 255, 255, 0.08);
-            border-top-color: #ff9a56;
+            border: 3px solid var(--border-color, rgba(255, 255, 255, 0.08));
+            border-top-color: var(--accent-color, #ff9a56);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 auto 12px;
@@ -550,13 +550,22 @@
         .empty-history {
             text-align: center;
             padding: 30px 20px;
-            color: rgba(255, 255, 255, 0.3);
+            color: var(--text-secondary, rgba(255, 255, 255, 0.3));
             font-size: 13px;
+        }
+
+        /* 播放中的历史条目高亮 */
+        .history-item.playing {
+            background: var(--accent-color-alpha, rgba(255, 200, 87, 0.12));
+            border-left: 3px solid var(--accent-color, #ffd700);
+        }
+        .history-item.playing .name {
+            color: var(--accent-color, #ffd700);
         }
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-color, rgba(255, 255, 255, 0.12)); border-radius: 2px; }
 
         @media (max-width: 480px) {
             .header h1 { font-size: 22px; }
@@ -674,9 +683,10 @@
         let isPlaying = false;
         let currentUser = null;
         let playHistory = [];           // 本地历史
-        let cloudHistory = [];          // 云端历史 (用于去重)
         let isSyncing = false;
         let syncInterval = null;
+        let isPlayingFromHistory = false; // 标记是否正在播放历史歌曲
+        let currentHistoryIndex = -1;    // 当前播放的历史索引
 
         const audio = document.getElementById('audioPlayer');
         const gradients = [
@@ -693,14 +703,12 @@
         function checkAuth() {
             const userStr = sessionStorage.getItem('currentUser');
             if (!userStr) {
-                // 尝试从 localStorage 读取
                 const localUser = localStorage.getItem('nflshc_currentUser');
                 if (localUser) {
                     sessionStorage.setItem('currentUser', localUser);
                     currentUser = JSON.parse(localUser);
                     return currentUser;
                 }
-                // 未登录，跳转到登录页
                 window.location.href = 'index.html';
                 return null;
             }
@@ -717,9 +725,6 @@
         }
 
         // ==================== GitHub Issues 数据操作 ====================
-        // 仿照 chat.html 的存储方式：使用 label: 'music_history'
-        // 每条记录存储一个用户的所有音乐历史
-
         function getGithubHeaders() {
             return {
                 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
@@ -728,7 +733,6 @@
             };
         }
 
-        // 获取用户音乐历史 (从云端)
         async function fetchCloudMusicHistory(username) {
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=music_history&state=open&per_page=100`;
@@ -756,7 +760,6 @@
             }
         }
 
-        // 保存音乐历史到云端 (创建或更新)
         async function saveCloudMusicHistory(username, historyData) {
             try {
                 const existing = await fetchCloudMusicHistory(username);
@@ -768,14 +771,12 @@
                 const bodyContent = `音乐历史\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
 
                 if (existing) {
-                    // 更新现有 Issue
                     await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
                         method: 'PATCH',
                         headers: getGithubHeaders(),
                         body: JSON.stringify({ body: bodyContent })
                     });
                 } else {
-                    // 创建新 Issue
                     await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
                         method: 'POST',
                         headers: getGithubHeaders(),
@@ -795,7 +796,6 @@
         }
 
         // ==================== 历史管理 ====================
-        // 从 localStorage 加载本地历史
         function loadLocalHistory() {
             try {
                 const stored = localStorage.getItem('nflshc_music_history');
@@ -807,13 +807,11 @@
             } catch (e) {
                 playHistory = [];
             }
-            // 限制最多 50 条
             if (playHistory.length > 50) {
                 playHistory = playHistory.slice(0, 50);
             }
         }
 
-        // 保存本地历史
         function saveLocalHistory() {
             try {
                 localStorage.setItem('nflshc_music_history', JSON.stringify(playHistory));
@@ -822,9 +820,7 @@
             }
         }
 
-        // 添加歌曲到历史 (去重)
         function addToHistory(song) {
-            // 用 name + artist 去重
             const key = `${song.name}|${song.artist || ''}`;
             playHistory = playHistory.filter(item => 
                 `${item.name}|${item.artist || ''}` !== key
@@ -837,31 +833,25 @@
                 pic_url: song.pic_url || null,
                 addedAt: new Date().toISOString()
             });
-            // 限制 50 条
             if (playHistory.length > 50) {
                 playHistory = playHistory.slice(0, 50);
             }
             saveLocalHistory();
             renderHistory();
-            // 自动同步到云端
             syncToCloud();
         }
 
-        // 删除历史记录
         function removeFromHistory(index) {
             if (index >= 0 && index < playHistory.length) {
+                // 如果删除的是当前播放的歌曲，停止播放
+                if (isPlayingFromHistory && currentHistoryIndex === index) {
+                    audio.pause();
+                    isPlaying = false;
+                    isPlayingFromHistory = false;
+                    currentHistoryIndex = -1;
+                    updatePlayIcon();
+                }
                 playHistory.splice(index, 1);
-                saveLocalHistory();
-                renderHistory();
-                syncToCloud();
-            }
-        }
-
-        // 清空历史
-        function clearHistory() {
-            if (playHistory.length === 0) return;
-            if (confirm('确定要清空所有播放历史吗？')) {
-                playHistory = [];
                 saveLocalHistory();
                 renderHistory();
                 syncToCloud();
@@ -870,8 +860,7 @@
 
         // ==================== 云端同步 ====================
         async function syncToCloud() {
-            if (!currentUser) return;
-            if (isSyncing) return;
+            if (!currentUser || isSyncing) return;
             isSyncing = true;
             updateSyncStatus('syncing', '同步中...');
 
@@ -894,9 +883,7 @@
             try {
                 const result = await fetchCloudMusicHistory(currentUser.username);
                 if (result && result.data && result.data.history) {
-                    // 合并云端数据到本地 (云端优先)
                     const cloudHistory = result.data.history;
-                    // 合并：将云端记录合并到本地，去重
                     const localKeys = new Set(playHistory.map(item => `${item.name}|${item.artist || ''}`));
                     let merged = [...playHistory];
                     for (const item of cloudHistory) {
@@ -905,7 +892,6 @@
                             merged.push(item);
                         }
                     }
-                    // 按时间排序 (最新的在前)
                     merged.sort((a, b) => {
                         const ta = a.addedAt ? new Date(a.addedAt).getTime() : 0;
                         const tb = b.addedAt ? new Date(b.addedAt).getTime() : 0;
@@ -930,11 +916,6 @@
             textEl.textContent = text;
         }
 
-        // 手动同步
-        function manualSync() {
-            syncToCloud();
-        }
-
         // ==================== 渲染历史列表 ====================
         function renderHistory() {
             const container = document.getElementById('historyContent');
@@ -946,7 +927,7 @@
             }
 
             container.innerHTML = playHistory.map((item, index) => `
-                <div class="history-item" onclick="playFromHistory(${index})">
+                <div class="history-item ${isPlayingFromHistory && currentHistoryIndex === index ? 'playing' : ''}" data-index="${index}">
                     <div class="num">${index + 1}</div>
                     <div class="info">
                         <div class="name">${escapeHtml(item.name)}</div>
@@ -958,6 +939,13 @@
                     </div>
                 </div>
             `).join('');
+
+            // 为每个历史条目绑定点击事件
+            container.querySelectorAll('.history-item').forEach((el, index) => {
+                el.addEventListener('click', function() {
+                    playFromHistory(index);
+                });
+            });
         }
 
         function escapeHtml(text) {
@@ -987,6 +975,9 @@
                 const data = await response.json();
 
                 if (data.code === 1 && data.music_url) {
+                    // 取消历史播放状态
+                    isPlayingFromHistory = false;
+                    currentHistoryIndex = -1;
                     loadSong(data);
                     addToHistory(data);
                 } else {
@@ -1008,7 +999,6 @@
             document.getElementById('songAlbum').textContent = data.album ? `专辑：${data.album}` : '';
 
             const art = document.getElementById('albumArt');
-            // 如果有专辑封面图
             if (data.pic_url) {
                 art.innerHTML = `<img src="${data.pic_url}" alt="专辑封面" onerror="this.style.display='none';this.parentElement.innerHTML='🎵'">`;
             } else {
@@ -1024,10 +1014,60 @@
                 isPlaying = true;
                 updatePlayIcon();
             }).catch(() => {
-                // 自动播放失败，用户点击播放按钮再播放
                 isPlaying = false;
                 updatePlayIcon();
             });
+        }
+
+        // ===== 从历史记录播放（通过搜索） =====
+        async function playFromHistory(index) {
+            const item = playHistory[index];
+            if (!item) return;
+
+            // 显示加载状态
+            const btn = document.getElementById('searchBtn');
+            const loading = document.getElementById('loadingArea');
+            const errorArea = document.getElementById('errorArea');
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+            errorArea.style.display = 'none';
+
+            try {
+                // 使用歌曲名和歌手名搜索
+                const searchQuery = item.artist && item.artist !== '未知歌手' 
+                    ? `${item.name} ${item.artist}` 
+                    : item.name;
+                
+                const url = `${API_BASE}?plat=wy&type=json&apiKey=${API_KEY}&name=${encodeURIComponent(searchQuery)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.code === 1 && data.music_url) {
+                    // 标记为历史播放
+                    isPlayingFromHistory = true;
+                    currentHistoryIndex = index;
+                    
+                    loadSong(data);
+                    // 更新历史高亮
+                    renderHistory();
+                    
+                    // 更新输入框显示
+                    document.getElementById('searchInput').value = item.name;
+                } else {
+                    throw new Error(data.msg || '未找到该歌曲，请尝试其他关键词');
+                }
+            } catch (err) {
+                errorArea.innerHTML = `<div class="error-msg">❌ 播放失败: ${err.message}</div>`;
+                errorArea.style.display = 'block';
+                // 恢复状态
+                isPlayingFromHistory = false;
+                currentHistoryIndex = -1;
+                renderHistory();
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
         }
 
         function togglePlay() {
@@ -1080,36 +1120,6 @@
             return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        // 从历史播放
-        function playFromHistory(index) {
-            const item = playHistory[index];
-            if (item) {
-                // 构造与 API 返回格式一致的数据
-                const songData = {
-                    name: item.name,
-                    artist: item.artist,
-                    album: item.album,
-                    music_url: item.music_url,
-                    pic_url: item.pic_url || null
-                };
-                loadSong(songData);
-                // 移到历史最前面
-                const key = `${item.name}|${item.artist || ''}`;
-                playHistory = playHistory.filter(i => `${i.name}|${i.artist || ''}` !== key);
-                playHistory.unshift({
-                    name: item.name,
-                    artist: item.artist,
-                    album: item.album,
-                    music_url: item.music_url,
-                    pic_url: item.pic_url || null,
-                    addedAt: new Date().toISOString()
-                });
-                saveLocalHistory();
-                renderHistory();
-                syncToCloud();
-            }
-        }
-
         // ==================== Audio 事件绑定 ====================
         audio.addEventListener('timeupdate', () => {
             const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
@@ -1121,6 +1131,12 @@
         audio.addEventListener('ended', () => {
             isPlaying = false;
             updatePlayIcon();
+            // 如果是历史播放，清除高亮
+            if (isPlayingFromHistory) {
+                isPlayingFromHistory = false;
+                currentHistoryIndex = -1;
+                renderHistory();
+            }
         });
 
         audio.addEventListener('error', (e) => {
@@ -1128,18 +1144,21 @@
             const errorArea = document.getElementById('errorArea');
             errorArea.innerHTML = `<div class="error-msg">⚠️ 音频加载失败，请检查网络或尝试其他歌曲</div>`;
             errorArea.style.display = 'block';
+            if (isPlayingFromHistory) {
+                isPlayingFromHistory = false;
+                currentHistoryIndex = -1;
+                renderHistory();
+            }
         });
 
         // ==================== 快捷键支持 ====================
         document.addEventListener('keydown', (e) => {
-            // 空格键 播放/暂停 (仅在非输入框)
             if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                 if (e.key === ' ' || e.key === 'Space') {
                     e.preventDefault();
                     togglePlay();
                 }
             }
-            // Ctrl+Enter 搜索
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 searchMusic();
@@ -1148,32 +1167,22 @@
 
         // ==================== 初始化 ====================
         async function init() {
-            // 检查登录
             if (!checkAuth()) return;
 
-            // 加载本地历史
             loadLocalHistory();
-
-            // 渲染历史
             renderHistory();
-
-            // 从云端加载合并
             await loadFromCloud();
 
-            // 设置同步状态
             updateSyncStatus('', '已同步');
 
-            // 定期同步 (每60秒)
             syncInterval = setInterval(() => {
                 if (playHistory.length > 0) {
                     syncToCloud();
                 }
             }, 60000);
 
-            // 页面关闭前同步
             window.addEventListener('beforeunload', () => {
                 if (playHistory.length > 0) {
-                    // 使用 navigator.sendBeacon 或同步请求
                     syncToCloud();
                 }
             });
@@ -1182,7 +1191,6 @@
             console.log('📋 本地历史条数:', playHistory.length);
         }
 
-        // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', init);
     </script>
     <script src="js/theme.js"></script>
