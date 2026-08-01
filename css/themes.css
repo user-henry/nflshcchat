@@ -12,6 +12,20 @@
     --success: #28a745;
     --warning: #f39c12;
     --info: #3498db;
+    /* 登录/注册页专用变量 */
+    --login-card-bg: rgba(255,255,255,0.95);
+    --login-input-bg: #ffffff;
+    --login-input-border: #e0e0e0;
+    --login-input-text: #333;
+    --login-heading: #1a1a2e;
+    --login-subtext: #666;
+    --login-body-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    --modal-bg: #16213e;
+    --modal-border: #ffd700;
+    --modal-input-bg: #1a1a2e;
+    --modal-input-text: #fff;
+    --modal-input-border: #2a2a3e;
+    --modal-hint-text: #888;
 }
 
 [data-theme="light"] {
@@ -24,6 +38,19 @@
     --accent-color: #ffd700;
     --accent-hover: #ffb347;
     --input-bg: #ffffff;
+    --login-card-bg: rgba(255,255,255,0.95);
+    --login-input-bg: #ffffff;
+    --login-input-border: #ddd;
+    --login-input-text: #333;
+    --login-heading: #1a1a2e;
+    --login-subtext: #666;
+    --login-body-gradient: linear-gradient(135deg, #e0e0e8 0%, #c8ccd4 100%);
+    --modal-bg: #ffffff;
+    --modal-border: #ffd700;
+    --modal-input-bg: #f0f0f0;
+    --modal-input-text: #333;
+    --modal-input-border: #ddd;
+    --modal-hint-text: #888;
 }
 
 [data-theme="blue"] {
@@ -35,6 +62,20 @@
     --border-color: #1a3a5c;
     --accent-color: #3498db;
     --accent-hover: #2980b9;
+    --input-bg: #091a2c;
+    --login-card-bg: rgba(255,255,255,0.95);
+    --login-input-bg: #ffffff;
+    --login-input-border: #e0e0e0;
+    --login-input-text: #333;
+    --login-heading: #1a1a2e;
+    --login-subtext: #666;
+    --login-body-gradient: linear-gradient(135deg, #0d2137 0%, #091a2c 100%);
+    --modal-bg: #122c47;
+    --modal-border: #3498db;
+    --modal-input-bg: #0d2137;
+    --modal-input-text: #fff;
+    --modal-input-border: #1a3a5c;
+    --modal-hint-text: #aaa;
 }
 
 [data-theme="purple"] {
@@ -46,6 +87,20 @@
     --border-color: #3a1a6e;
     --accent-color: #9b59b6;
     --accent-hover: #8e44ad;
+    --input-bg: #0f0520;
+    --login-card-bg: rgba(255,255,255,0.95);
+    --login-input-bg: #ffffff;
+    --login-input-border: #e0e0e0;
+    --login-input-text: #333;
+    --login-heading: #1a1a2e;
+    --login-subtext: #666;
+    --login-body-gradient: linear-gradient(135deg, #1a0a2e 0%, #0f0520 100%);
+    --modal-bg: #251545;
+    --modal-border: #9b59b6;
+    --modal-input-bg: #1a0a2e;
+    --modal-input-text: #fff;
+    --modal-input-border: #3a1a6e;
+    --modal-hint-text: #aaa;
 }
 
 [data-theme="green"] {
@@ -57,6 +112,20 @@
     --border-color: #1a5c3a;
     --accent-color: #2ecc71;
     --accent-hover: #27ae60;
+    --input-bg: #052010;
+    --login-card-bg: rgba(255,255,255,0.95);
+    --login-input-bg: #ffffff;
+    --login-input-border: #e0e0e0;
+    --login-input-text: #333;
+    --login-heading: #1a1a2e;
+    --login-subtext: #666;
+    --login-body-gradient: linear-gradient(135deg, #0a2e1a 0%, #052010 100%);
+    --modal-bg: #0f4525;
+    --modal-border: #2ecc71;
+    --modal-input-bg: #0a2e1a;
+    --modal-input-text: #fff;
+    --modal-input-border: #1a5c3a;
+    --modal-hint-text: #aaa;
 }
 
 body {
@@ -78,6 +147,18 @@ body {
     background: var(--input-bg);
     color: var(--text-primary);
     border-color: var(--border-color);
+}
+
+/* 登录/注册页白卡片内的输入框不受全局主题覆盖 */
+.login-container input,
+.login-container textarea,
+.login-container select,
+.register-container input,
+.register-container textarea,
+.register-container select {
+    background: var(--login-input-bg) !important;
+    color: var(--login-input-text) !important;
+    border-color: var(--login-input-border) !important;
 }
 
 .rank-number, .stat-number, .room-name, .chat-header h3 {
