@@ -6,7 +6,7 @@
     <title>NFLSHC Chat - 好友</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; min-height: 100vh; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); min-height: 100vh; color: var(--text-primary); }
         .nav { background: var(--bg-secondary); padding: 15px 30px; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--accent-color); }
         .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
@@ -14,40 +14,40 @@
         .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
         .nav a:hover { color: var(--accent-color); }
         .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
-        .card { background: #16213e; border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid #2a2a3e; }
-        .card h2 { color: var(--accent-color, #ffd700); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #2a2a3e; }
+        .card { background: var(--bg-secondary); border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .card h2 { color: var(--accent-color); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); }
         .add-friend-section { display: flex; gap: 10px; margin-bottom: 15px; }
-        .add-friend-section input { flex: 1; padding: 10px; border: 1px solid var(--border-color, #2a2a3e); border-radius: 8px; background: var(--input-bg, #0f0f1a); color: var(--text-primary, #fff); font-size: 14px; }
-        .add-friend-section input:focus { outline: none; border-color: var(--accent-color, #ffd700); }
-        .btn { background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%); color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .add-friend-section input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-size: 14px; }
+        .add-friend-section input:focus { outline: none; border-color: var(--accent-color); }
+        .btn { background: var(--accent-color); color: var(--bg-primary); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn:hover { opacity: 0.9; }
-        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger { background: var(--danger); color: white; }
         .btn-sm { padding: 5px 12px; font-size: 12px; }
-        .friend-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #2a2a3e; gap: 15px; }
+        .friend-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid var(--border-color); gap: 15px; }
         .friend-item:last-child { border-bottom: none; }
-        .friend-avatar { width: 48px; height: 48px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; border: 2px solid #2a2a3e; }
+        .friend-avatar { width: 48px; height: 48px; border-radius: 50%; background-size: cover; background-position: center; flex-shrink: 0; border: 2px solid var(--border-color); }
         .online-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
-        .online-dot.online { background: #2ecc71; box-shadow: 0 0 4px #2ecc71; }
-        .online-dot.offline { background: #666; }
+        .online-dot.online { background: var(--success); box-shadow: 0 0 4px var(--success); }
+        .online-dot.offline { background: var(--text-muted); }
         .friend-level { display: inline-block; padding: 0 5px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: 4px; vertical-align: middle; }
-        .friend-level.lv-low { background: #2ecc71; color: #1a1a2e; }
-        .friend-level.lv-mid { background: #3498db; color: white; }
+        .friend-level.lv-low { background: var(--success); color: var(--bg-primary); }
+        .friend-level.lv-mid { background: var(--info); color: white; }
         .friend-level.lv-high { background: #9b59b6; color: white; }
-        .friend-level.lv-top { background: #ffd700; color: #1a1a2e; }
+        .friend-level.lv-top { background: var(--accent-color); color: var(--bg-primary); }
         .search-section { margin-bottom: 20px; }
-        .search-section input { width: 100%; padding: 10px; border: 1px solid var(--border-color, #2a2a3e); border-radius: 8px; background: var(--input-bg, #0f0f1a); color: var(--text-primary, #fff); font-size: 14px; }
-        .search-section input:focus { outline: none; border-color: var(--accent-color, #ffd700); }
-        .friend-bio { font-size: 12px; color: #888; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
+        .search-section input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-tertiary); color: var(--text-primary); font-size: 14px; }
+        .search-section input:focus { outline: none; border-color: var(--accent-color); }
+        .friend-bio { font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px; }
         .friend-info { flex: 1; }
-        .friend-name { font-weight: 600; color: var(--text-primary, #fff); cursor: pointer; }
-        .friend-name:hover { color: var(--accent-color, #ffd700); }
-        .friend-since { font-size: 12px; color: #888; margin-top: 4px; }
+        .friend-name { font-weight: 600; color: var(--text-primary); cursor: pointer; }
+        .friend-name:hover { color: var(--accent-color); }
+        .friend-since { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
         .friend-actions { display: flex; gap: 8px; }
-        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
         .message { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; }
-        .message.success { background: rgba(40,167,69,0.2); color: #28a745; }
-        .message.error { background: rgba(220,53,69,0.2); color: #dc3545; }
-        .loading { text-align: center; padding: 40px; color: #aaa; }
+        .message.success { background: rgba(40,167,69,0.2); color: var(--success); }
+        .message.error { background: rgba(220,53,69,0.2); color: var(--danger); }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
         @media (max-width: 768px) {
             .nav { flex-direction: column; gap: 10px; text-align: center; }
             .nav div:last-child { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }

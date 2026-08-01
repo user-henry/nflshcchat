@@ -7,8 +7,10 @@
 <link rel="manifest" href="/nflshcchat/manifest.json">
 <meta name="theme-color" content="#7c3aed">
 <style>
+:root,[data-theme="dark"],body:not([data-theme]){--wg-bg:linear-gradient(135deg,#1a0a2e 0%,#2d1b4e 30%,#1e1040 60%,#0d0625 100%);--wg-accent:#a78bfa;--wg-accent-dark:#7c3aed;--wg-accent-bg:rgba(167,139,250,.25);--wg-accent-soft:rgba(167,139,250,.1);--wg-token-anti:#c4b5fd;--wg-token-anti-bg:rgba(167,139,250,.15);--wg-token-pro:#93c5fd;--wg-token-pro-bg:rgba(96,165,250,.15);--wg-token-rand:#fde047;--wg-token-rand-bg:rgba(250,204,21,.1);--wg-warn:#f59e0b;--wg-warn-light:#fbbf24;--wg-warn-soft:rgba(251,191,36,.08);--wg-warn-border:rgba(251,191,36,.15);--wg-warn-text:rgba(251,191,36,.7);--wg-surface:rgba(255,255,255,.04);--wg-surface2:rgba(255,255,255,.03);--wg-surface-border:rgba(255,255,255,.08);--wg-surface-border2:rgba(255,255,255,.06);--wg-input-bg:rgba(255,255,255,.05);--wg-input-border:rgba(255,255,255,.1);--wg-btn-border:rgba(255,255,255,.15);--wg-hover-bg:rgba(255,255,255,.04);--wg-scrollbar:rgba(255,255,255,.1);--wg-dot:rgba(255,255,255,.1);--wg-dot-active:#a78bfa;--wg-stat-v3:#fda4af;--wg-stat-v4:#fbbf24;--wg-analysis-good:#4ade80;--wg-analysis-warn:#facc15;--wg-analysis-med:#fb923c;--wg-analysis-bad:#ef4444}
+[data-theme="light"]{--wg-bg:var(--bg-secondary);--wg-accent:#6d28d9;--wg-accent-dark:#5b21b6;--wg-accent-bg:rgba(124,58,237,.15);--wg-accent-soft:rgba(124,58,237,.08);--wg-token-anti:#6d28d9;--wg-token-anti-bg:rgba(124,58,237,.1);--wg-token-pro:#2563eb;--wg-token-pro-bg:rgba(37,99,235,.1);--wg-token-rand:#b45309;--wg-token-rand-bg:rgba(245,158,11,.12);--wg-warn:#d97706;--wg-warn-light:#f59e0b;--wg-warn-soft:rgba(245,158,11,.1);--wg-warn-border:rgba(245,158,11,.2);--wg-warn-text:#d97706;--wg-surface:var(--bg-secondary);--wg-surface2:rgba(0,0,0,.02);--wg-surface-border:var(--border-color);--wg-surface-border2:var(--border-color);--wg-input-bg:rgba(0,0,0,.03);--wg-input-border:rgba(0,0,0,.1);--wg-btn-border:rgba(0,0,0,.12);--wg-hover-bg:rgba(0,0,0,.04);--wg-scrollbar:rgba(0,0,0,.12);--wg-dot:rgba(0,0,0,.1);--wg-dot-active:#6d28d9;--wg-stat-v3:#e11d48;--wg-stat-v4:#d97706;--wg-analysis-good:#16a34a;--wg-analysis-warn:#ca8a04;--wg-analysis-med:#ea580c;--wg-analysis-bad:#dc2626}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#1a0a2e 0%,#2d1b4e 30%,#1e1040 60%,#0d0625 100%);min-height:100vh;color:var(--text-primary, #fff);display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--wg-bg);min-height:100vh;color:var(--text-primary);display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px}
 .nav{background:var(--bg-secondary);padding:10px 20px;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--accent-color);width:100%;max-width:1000px;border-radius:12px 12px 0 0;margin-bottom:20px;position:relative;z-index:50}
 .nav-left{display:flex;align-items:center;gap:12px}
 .logo{width:36px;height:36px;background-image:url(https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png);background-size:contain;background-repeat:no-repeat;background-position:center}
@@ -18,117 +20,119 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica N
 .container{width:100%;max-width:1000px}
 .header{text-align:center;margin-bottom:24px}
 .header h1{font-size:28px;font-weight:700;letter-spacing:2px;margin-bottom:6px;background:linear-gradient(90deg,#a78bfa,#c084fc,#f0abfc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.header p{color:var(--text-muted, rgba(255,255,255,.45));font-size:13px;letter-spacing:1px}
-.tab-nav{display:flex;gap:0;margin-bottom:20px;background:rgba(255,255,255,.05);border-radius:14px;padding:4px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.08)}
-.tab-btn{flex:1;padding:12px 20px;border:none;border-radius:11px;background:transparent;color:var(--text-secondary, rgba(255,255,255,.5));font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit;letter-spacing:1px}
-.tab-btn.active{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;box-shadow:0 4px 15px rgba(124,58,237,.3)}
-.tab-btn:hover:not(.active){color:var(--text-primary, rgba(255,255,255,.8))}
+.header p{color:var(--text-muted);font-size:13px;letter-spacing:1px}
+.tab-nav{display:flex;gap:0;margin-bottom:20px;background:var(--wg-surface);border-radius:14px;padding:4px;backdrop-filter:blur(10px);border:1px solid var(--wg-surface-border)}
+.tab-btn{flex:1;padding:12px 20px;border:none;border-radius:11px;background:transparent;color:var(--text-muted);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit;letter-spacing:1px}
+.tab-btn.active{background:linear-gradient(135deg,var(--wg-accent-dark),var(--wg-accent));color:#fff;box-shadow:0 4px 15px rgba(124,58,237,.3)}
+.tab-btn:hover:not(.active){color:var(--text-primary)}
 .game-panel{display:none}
 .game-panel.active{display:block;animation:fadeInUp .4s ease}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
-.card{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,.2)}
-label{display:block;font-size:12px;color:var(--text-muted, rgba(255,255,255,.45));margin-bottom:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
-textarea,input[type=text]{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;color:var(--text-primary, #fff);font-size:1rem;font-family:inherit;outline:none;transition:border-color .3s;line-height:1.8}
-textarea:focus,input[type=text]:focus{border-color:rgba(167,139,250,.4);box-shadow:0 0 20px rgba(124,58,237,.1)}
+.card{background:var(--wg-surface);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--wg-surface-border);border-radius:16px;padding:24px;margin-bottom:16px;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+textarea,input[type=text]{width:100%;background:var(--wg-input-bg);border:1px solid var(--wg-input-border);border-radius:10px;padding:14px;color:var(--text-primary);font-size:1rem;font-family:inherit;outline:none;transition:border-color .3s;line-height:1.8}
+textarea:focus,input[type=text]:focus{border-color:var(--wg-accent-soft);box-shadow:0 0 20px rgba(124,58,237,.1)}
 textarea{min-height:100px;resize:vertical}
-textarea::placeholder,input::placeholder{color:var(--text-muted, rgba(255,255,255,.25))}
+textarea::placeholder,input::placeholder{color:var(--text-muted)}
 .btn{padding:11px 26px;border:none;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
-.btn-primary{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}
+.btn-primary{background:linear-gradient(135deg,var(--wg-accent-dark),var(--wg-accent));color:#fff}
 .btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(124,58,237,.3)}
 .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-secondary{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--text-secondary, rgba(255,255,255,.6))}
-.btn-secondary:hover{border-color:var(--text-muted, rgba(255,255,255,.4));color:var(--text-primary, rgba(255,255,255,.9))}
+.btn-secondary{background:transparent;border:1px solid var(--wg-btn-border);color:var(--text-secondary)}
+.btn-secondary:hover{border-color:var(--text-muted);color:var(--text-primary)}
 .controls{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;align-items:center}
-.status-bar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;padding:10px 18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;font-size:.82rem;color:var(--text-muted, rgba(255,255,255,.45))}
-.status-bar.ready{border-color:rgba(167,139,250,.4);color:#a78bfa}
-.status-bar.error{border-color:#ef4444;color:#ef4444}
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.1);border-top-color:#a78bfa;border-radius:50%;animation:spin .8s linear infinite}
+.status-bar{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;padding:10px 18px;background:var(--wg-surface);border:1px solid var(--wg-surface-border2);border-radius:10px;font-size:.82rem;color:var(--text-muted)}
+.status-bar.ready{border-color:var(--wg-accent-soft);color:var(--wg-accent)}
+.status-bar.error{border-color:var(--danger);color:var(--danger)}
+.spinner{width:16px;height:16px;border:2px solid var(--wg-surface-border);border-top-color:var(--wg-accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.dot-g{width:8px;height:8px;border-radius:50%;background:#a78bfa;box-shadow:0 0 8px #a78bfa;flex-shrink:0}
-.dot-g.error{background:#ef4444;box-shadow:0 0 8px #ef4444}
-.slider-group{display:flex;align-items:center;gap:10px;margin-left:auto;color:var(--text-secondary, rgba(255,255,255,.5));font-size:.85rem}
-.slider-group input[type=range]{width:100px;accent-color:#a78bfa}
-.result-box{min-height:80px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px;font-size:1.15rem;line-height:2;white-space:pre-wrap;word-break:break-all;overflow-wrap:break-word}
+.dot-g{width:8px;height:8px;border-radius:50%;background:var(--wg-accent);box-shadow:0 0 8px var(--wg-accent);flex-shrink:0}
+.dot-g.error{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+.slider-group{display:flex;align-items:center;gap:10px;margin-left:auto;color:var(--text-secondary);font-size:.85rem}
+.slider-group input[type=range]{width:100px;accent-color:var(--wg-accent)}
+.result-box{min-height:80px;background:var(--wg-surface);border:1px solid var(--wg-surface-border);border-radius:10px;padding:18px;font-size:1.15rem;line-height:2;white-space:pre-wrap;word-break:break-all;overflow-wrap:break-word}
 .result-box .token{display:inline;padding:2px 0;border-radius:4px}
-.result-box .token.anti{background:rgba(167,139,250,.15);color:#c4b5fd;font-weight:600}
-.result-box .token.pronoun{background:rgba(96,165,250,.15);color:#93c5fd;font-weight:600}
-.result-box .token.random{background:rgba(250,204,21,.1);color:#fde047}
-.result-box .token.keep{color:var(--text-muted, rgba(255,255,255,.45))}
-.result-box .placeholder{color:var(--text-muted, rgba(255,255,255,.2));font-style:italic}
-.stats{display:flex;gap:16px;margin-top:12px;font-size:.8rem;color:var(--text-muted, rgba(255,255,255,.45));flex-wrap:wrap}
+.result-box .token.anti{background:var(--wg-token-anti-bg);color:var(--wg-token-anti);font-weight:600}
+.result-box .token.pronoun{background:var(--wg-token-pro-bg);color:var(--wg-token-pro);font-weight:600}
+.result-box .token.random{background:var(--wg-token-rand-bg);color:var(--wg-token-rand)}
+.result-box .token.keep{color:var(--text-muted)}
+.result-box .placeholder{color:var(--text-muted);opacity:.5;font-style:italic}
+.stats{display:flex;gap:16px;margin-top:12px;font-size:.8rem;color:var(--text-muted);flex-wrap:wrap}
 .stat-item span{font-weight:700}
-.s-anti{color:#c4b5fd}.s-pro{color:#93c5fd}.s-rand{color:#fde047}.s-keep{color:var(--text-muted, rgba(255,255,255,.4))}
-.detail-section{margin-top:16px;border-top:1px solid rgba(255,255,255,.06);padding-top:16px}
-.detail-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:var(--text-muted, rgba(255,255,255,.45));font-size:.85rem;user-select:none;margin-bottom:10px}
-.detail-toggle:hover{color:var(--text-primary, rgba(255,255,255,.7))}
+.s-anti{color:var(--wg-token-anti)}.s-pro{color:var(--wg-token-pro)}.s-rand{color:var(--wg-token-rand)}.s-keep{color:var(--text-muted)}
+.detail-section{margin-top:16px;border-top:1px solid var(--wg-surface-border2);padding-top:16px}
+.detail-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;color:var(--text-muted);font-size:.85rem;user-select:none;margin-bottom:10px}
+.detail-toggle:hover{color:var(--text-primary)}
 .detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;max-height:0;overflow:hidden;transition:max-height .4s}
 .detail-grid.open{max-height:3000px}
-.detail-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:.85rem;border:1px solid transparent}
-.detail-item:hover{border-color:rgba(255,255,255,.08)}
-.detail-item .orig{color:var(--text-muted, rgba(255,255,255,.4));text-decoration:line-through;text-decoration-color:#ef4444}
-.detail-item .arrow{color:var(--text-muted, rgba(255,255,255,.2));font-size:.75rem}
+.detail-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--wg-surface2);border-radius:8px;font-size:.85rem;border:1px solid transparent}
+.detail-item:hover{border-color:var(--wg-surface-border)}
+.detail-item .orig{color:var(--text-muted);text-decoration:line-through;text-decoration-color:var(--danger)}
+.detail-item .arrow{color:var(--text-muted);opacity:.4;font-size:.75rem}
 .detail-item .repl{font-weight:600}
+.repl.anti{color:var(--wg-token-anti)}.repl.pro{color:var(--wg-token-pro)}.repl.rand{color:var(--wg-token-rand)}.repl.keep{color:var(--text-muted)}
 .detail-item .tag{margin-left:auto;font-size:.65rem;padding:2px 8px;border-radius:4px;white-space:nowrap}
-.tag.anti{color:#c4b5fd;background:rgba(167,139,250,.1)}
-.tag.pro{color:#93c5fd;background:rgba(96,165,250,.1)}
-.tag.rand{color:#fde047;background:rgba(250,204,21,.08)}
-.tag.keep{color:var(--text-muted, rgba(255,255,255,.4));background:rgba(255,255,255,.05)}
-.legend{display:flex;gap:14px;margin-top:10px;font-size:.78rem;color:var(--text-muted, rgba(255,255,255,.4));flex-wrap:wrap}
+.tag.anti{color:var(--wg-token-anti);background:var(--wg-token-anti-bg)}
+.tag.pro{color:var(--wg-token-pro);background:var(--wg-token-pro-bg)}
+.tag.rand{color:var(--wg-token-rand);background:var(--wg-token-rand-bg)}
+.tag.keep{color:var(--text-muted);background:var(--wg-hover-bg)}
+.legend{display:flex;gap:14px;margin-top:10px;font-size:.78rem;color:var(--text-muted);flex-wrap:wrap}
 .legend-item{display:flex;align-items:center;gap:6px}
 .legend-box{width:12px;height:12px;border-radius:3px}
 /* 百语轮回 */
 .r2-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:16px}
 .r2-row{display:flex;gap:12px;align-items:center}
 .r2-row input[type=text]{flex:1}
-.btn-warn{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a0a2e}
+.btn-warn{background:linear-gradient(135deg,var(--wg-warn),var(--wg-warn-light));color:#1a0a2e}
 .btn-warn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(251,191,36,.3)}
 .btn-warn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.char-count{text-align:right;font-size:12px;color:var(--text-muted, rgba(255,255,255,.35));margin-top:4px}
-.mode-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:14px}
-.mode-switch .mode-label{font-size:13px;font-weight:600;color:#c4b5fd}
-.mode-switch .mode-desc{font-size:11px;color:var(--text-muted, rgba(255,255,255,.4))}
+.char-count{text-align:right;font-size:12px;color:var(--text-muted);margin-top:4px}
+.mode-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:var(--wg-surface2);border-radius:10px;margin-bottom:14px}
+.mode-switch .mode-label{font-size:13px;font-weight:600;color:var(--wg-accent)}
+.mode-switch .mode-label.mode-sim{color:var(--text-muted)}
+.mode-switch .mode-desc{font-size:11px;color:var(--text-muted)}
 .toggle-track{position:relative;width:48px;height:26px;cursor:pointer;flex-shrink:0}
 .toggle-track input{opacity:0;width:0;height:0;position:absolute}
-.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.15);border-radius:26px;transition:.3s}
+.toggle-slider{position:absolute;inset:0;background:var(--wg-btn-border);border-radius:26px;transition:.3s}
 .toggle-slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-input:checked+.toggle-slider{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+input:checked+.toggle-slider{background:linear-gradient(135deg,var(--wg-accent-dark),var(--wg-accent))}
 input:checked+.toggle-slider:before{transform:translateX(22px)}
 .progress-wrap{margin-top:16px;display:none}
 .progress-wrap.show{display:block}
-.progress-top{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:var(--text-secondary, rgba(255,255,255,.5))}
-.progress-bar-bg{width:100%;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
-.progress-bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#a78bfa,#fbbf24);border-radius:3px;width:0%;transition:width .3s}
-.progress-info{display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text-muted, rgba(255,255,255,.35))}
+.progress-top{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:var(--text-secondary)}
+.progress-bar-bg{width:100%;height:6px;background:var(--wg-surface-border);border-radius:3px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--wg-accent-dark),var(--wg-accent),var(--wg-warn-light));border-radius:3px;width:0%;transition:width .3s}
+.progress-info{display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text-muted)}
 .result-card{padding:14px 16px;border-radius:12px;margin-bottom:10px}
-.result-card.src{background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(167,139,250,.06));border:1px solid rgba(167,139,250,.18)}
-.result-card.dst{background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(245,158,11,.04));border:2px solid rgba(251,191,36,.25);position:relative;overflow:hidden}
-.result-card.dst::after{content:"";position:absolute;top:-30px;right:-30px;width:80px;height:80px;background:rgba(251,191,36,.08);border-radius:50%}
+.result-card.src{background:linear-gradient(135deg,var(--wg-accent-soft),var(--wg-accent-soft));border:1px solid var(--wg-accent-bg)}
+.result-card.dst{background:linear-gradient(135deg,var(--wg-warn-soft),var(--wg-warn-soft));border:2px solid var(--wg-warn-border);position:relative;overflow:hidden}
+.result-card.dst::after{content:"";position:absolute;top:-30px;right:-30px;width:80px;height:80px;background:var(--wg-warn-soft);border-radius:50%}
 .result-card .rc-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .result-card .rc-tag{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
-.rc-tag.lang{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}
-.rc-tag.final{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a0a2e}
-.result-card .rc-text{font-size:1.1rem;font-weight:600;color:var(--text-primary, #fff);word-break:break-word}
-.result-card .rc-sub{font-size:12px;color:var(--text-muted, rgba(255,255,255,.4));margin-top:4px}
+.rc-tag.lang{background:linear-gradient(135deg,var(--wg-accent-dark),var(--wg-accent));color:#fff}
+.rc-tag.final{background:linear-gradient(135deg,var(--wg-warn),var(--wg-warn-light));color:#1a0a2e}
+.result-card .rc-text{font-size:1.1rem;font-weight:600;color:var(--text-primary);word-break:break-word}
+.result-card .rc-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
 .step-scroll{max-height:350px;overflow-y:auto;padding-right:4px;margin-bottom:14px}
 .step-scroll::-webkit-scrollbar{width:3px}
-.step-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.step-scroll::-webkit-scrollbar-thumb{background:var(--wg-scrollbar);border-radius:2px}
 .step-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;transition:all .2s;border-left:3px solid transparent;animation:stepIn .3s ease}
-.step-item:hover{background:rgba(255,255,255,.04);border-left-color:#7c3aed}
+.step-item:hover{background:var(--wg-hover-bg);border-left-color:var(--wg-accent-dark)}
 @keyframes stepIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
-.step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.step-num.last{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a0a2e}
+.step-num{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--wg-accent-dark),var(--wg-accent));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.step-num.last{background:linear-gradient(135deg,var(--wg-warn),var(--wg-warn-light));color:#1a0a2e}
 .step-info{flex:1;min-width:0}
-.step-info .si-lang{font-size:11px;color:#a78bfa;font-weight:600}
-.step-info .si-text{font-size:13px;color:var(--text-primary, rgba(255,255,255,.85));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-info .si-lang{font-size:11px;color:var(--wg-accent);font-weight:600}
+.step-info .si-text{font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .jdots{display:flex;align-items:center;justify-content:center;gap:1px;margin-bottom:12px;flex-wrap:wrap}
-.jdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .3s}
-.jdot.done{background:#a78bfa}
-.jdot.current{background:#fbbf24;transform:scale(1.6);box-shadow:0 0 6px rgba(251,191,36,.4)}
+.jdot{width:6px;height:6px;border-radius:50%;background:var(--wg-dot);transition:all .3s}
+.jdot.done{background:var(--wg-accent)}
+.jdot.current{background:var(--wg-warn-light);transform:scale(1.6);box-shadow:0 0 6px rgba(251,191,36,.4)}
 .bottom-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
-.bs-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 10px;text-align:center}
+.bs-card{background:var(--wg-surface);border:1px solid var(--wg-surface-border2);border-radius:12px;padding:14px 10px;text-align:center}
 .bs-card .bs-val{font-size:1.5rem;font-weight:800}
-.bs-card .bs-label{font-size:11px;color:var(--text-muted, rgba(255,255,255,.35));margin-top:4px}
-.bs-val.v1{color:#c4b5fd}.bs-val.v2{color:#93c5fd}.bs-val.v3{color:#fda4af}.bs-val.v4{color:#fbbf24}
+.bs-card .bs-label{font-size:11px;color:var(--text-muted);margin-top:4px}
+.bs-val.v1{color:var(--wg-token-anti)}.bs-val.v2{color:var(--wg-token-pro)}.bs-val.v3{color:var(--wg-stat-v3)}.bs-val.v4{color:var(--wg-stat-v4)}
 .confetti{position:fixed;width:10px;height:10px;border-radius:2px;animation:confetti-fall 3.5s ease-out forwards;z-index:9999;pointer-events:none}
 @keyframes confetti-fall{0%{transform:translateY(-120px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
 @media(max-width:768px){
@@ -147,7 +151,7 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
 }
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+::-webkit-scrollbar-thumb{background:var(--wg-scrollbar);border-radius:2px}
 </style>
     <link rel="stylesheet" href="css/themes.css">
 </head>
@@ -199,10 +203,10 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
             <label>反转结果</label>
             <div class="result-box" id="resultBox"><span class="placeholder">等待处理...</span></div>
             <div class="legend">
-                <div class="legend-item"><div class="legend-box" style="background:rgba(167,139,250,.15);border:1px solid #a78bfa"></div>反义替换</div>
-                <div class="legend-item"><div class="legend-box" style="background:rgba(96,165,250,.15);border:1px solid #60a5fa"></div>人称反转</div>
-                <div class="legend-item"><div class="legend-box" style="background:rgba(250,204,21,.1);border:1px solid #facc15"></div>随机替换</div>
-                <div class="legend-item"><div class="legend-box" style="background:transparent;border:1px solid rgba(255,255,255,.15)"></div>保留原词</div>
+                <div class="legend-item"><div class="legend-box" style="background:var(--wg-token-anti-bg);border:1px solid var(--wg-token-anti)"></div>反义替换</div>
+                <div class="legend-item"><div class="legend-box" style="background:var(--wg-token-pro-bg);border:1px solid var(--wg-token-pro)"></div>人称反转</div>
+                <div class="legend-item"><div class="legend-box" style="background:var(--wg-token-rand-bg);border:1px solid var(--wg-token-rand)"></div>随机替换</div>
+                <div class="legend-item"><div class="legend-box" style="background:transparent;border:1px solid var(--wg-btn-border)"></div>保留原词</div>
             </div>
             <div class="stats" id="statsBox"></div>
             <div class="detail-section">
@@ -213,7 +217,7 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
                 <div class="detail-grid" id="detailGrid"></div>
             </div>
         </div>
-        <div style="text-align:center;font-size:11px;color:var(--text-muted, rgba(255,255,255,.2));padding:8px">词库来源：ChineseAntiword / ChineseSemanticKB · 通过 jsDelivr CDN 实时加载</div>
+        <div style="text-align:center;font-size:11px;color:var(--text-muted);opacity:.4;padding:8px">词库来源：ChineseAntiword / ChineseSemanticKB · 通过 jsDelivr CDN 实时加载</div>
     </div>
 
     <!-- ===== 游戏2: 百语轮回 ===== -->
@@ -238,11 +242,11 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
                     </div>
                     <label>翻译轮数</label>
                     <div class="r2-row">
-                        <input type="range" id="roundCount" min="10" max="100" value="50" style="flex:1;accent-color:#a78bfa">
-                        <span id="roundDisplay" style="font-size:1.5rem;font-weight:800;color:#c4b5fd;width:40px;text-align:center">50</span>
+                        <input type="range" id="roundCount" min="10" max="100" value="50" style="flex:1;accent-color:var(--wg-accent)">
+                        <span id="roundDisplay" style="font-size:1.5rem;font-weight:800;color:var(--wg-token-anti);width:40px;text-align:center">50</span>
                     </div>
-                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted, rgba(255,255,255,.3));margin-top:4px"><span>10轮</span><span>100轮</span></div>
-                    <div style="margin-top:12px;padding:10px 14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);border-radius:10px;font-size:12px;color:rgba(251,191,36,.7)">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);opacity:.6;margin-top:4px"><span>10轮</span><span>100轮</span></div>
+                    <div style="margin-top:12px;padding:10px 14px;background:var(--wg-warn-soft);border:1px solid var(--wg-warn-border);border-radius:10px;font-size:12px;color:var(--wg-warn-text)">
                         💡 建议输入简短词语（2-4字），如遇网络问题将自动切换为模拟模式
                     </div>
                     <button class="btn btn-warn" id="startBtn2" style="width:100%;margin-top:14px;padding:14px;font-size:1.05rem" onclick="startTranslationR2()">🚀 开始百语轮回</button>
@@ -256,26 +260,26 @@ input:checked+.toggle-slider:before{transform:translateX(22px)}
             <div>
                 <div class="card" style="min-height:500px;display:flex;flex-direction:column">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                        <span style="font-size:14px;font-weight:600;color:var(--text-primary, rgba(255,255,255,.7))">翻译轨迹</span>
+                        <span style="font-size:14px;font-weight:600;color:var(--text-primary)">翻译轨迹</span>
                         <div style="display:flex;gap:8px">
                             <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px" onclick="clearResultsR2()">清空</button>
                             <button class="btn btn-secondary" style="padding:6px 14px;font-size:12px" onclick="copyResultR2()">📋 复制</button>
                         </div>
                     </div>
-                    <div id="emptyStateR2" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted, rgba(255,255,255,.2))">
+                    <div id="emptyStateR2" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);opacity:.4">
                         <div style="font-size:3rem;margin-bottom:10px">🌍</div>
                         <div style="font-size:14px">输入词语，点击开始</div>
                     </div>
                     <div id="resultsR2" style="display:none;flex-direction:column;flex:1">
                         <div class="result-card src">
-                            <div class="rc-head"><span class="rc-tag lang">🇨🇳 中文</span><span style="font-size:11px;color:var(--text-muted, rgba(255,255,255,.4))">原始输入</span></div>
+                            <div class="rc-head"><span class="rc-tag lang">🇨🇳 中文</span><span style="font-size:11px;color:var(--text-muted)">原始输入</span></div>
                             <div class="rc-text" id="originalR2"></div>
                         </div>
                         <div class="jdots" id="journeyDots"></div>
                         <div class="step-scroll" id="stepsListR2"></div>
                         <div class="result-card dst">
-                            <div class="rc-head"><span class="rc-tag final">🇨🇳 回归中文</span><span style="font-size:11px;color:var(--text-secondary, rgba(255,255,255,.5))">历经 <b id="finalRounds">50</b> 轮</span></div>
-                            <div class="rc-text" id="finalResultR2" style="font-size:1.5rem;background:linear-gradient(90deg,#fbbf24,#f59e0b,#fb923c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"></div>
+                            <div class="rc-head"><span class="rc-tag final">🇨🇳 回归中文</span><span style="font-size:11px;color:var(--text-secondary)">历经 <b id="finalRounds">50</b> 轮</span></div>
+                            <div class="rc-text" id="finalResultR2" style="font-size:1.5rem;background:linear-gradient(90deg,var(--wg-warn-light),var(--wg-warn),#ea580c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"></div>
                             <div class="rc-sub" id="diffAnalysis"></div>
                         </div>
                     </div>
@@ -488,8 +492,7 @@ translateBtn.addEventListener('click', function() {
         else if (d.reason === '人称反转') { tagClass = 'pro'; tagText = '人称'; }
         else if (d.reason === '语义漂移') { tagClass = 'rand'; tagText = '漂移'; }
         else { tagClass = 'keep'; tagText = '保留'; }
-        var colorVar = tagClass === 'anti' ? '#c4b5fd' : tagClass === 'pro' ? '#93c5fd' : tagClass === 'rand' ? '#fde047' : 'rgba(255,255,255,.4)';
-        item.innerHTML = '<span class="orig">' + d.original + '</span><span class="arrow">→</span><span class="repl" style="color:' + colorVar + '">' + d.replaced + '</span><span class="tag ' + tagClass + '">' + tagText + '</span>';
+        item.innerHTML = '<span class="orig">' + d.original + '</span><span class="arrow">→</span><span class="repl ' + tagClass + '">' + d.replaced + '</span><span class="tag ' + tagClass + '">' + tagText + '</span>';
         detailGrid.appendChild(item);
     });
 });
@@ -565,8 +568,8 @@ document.getElementById('roundCount').addEventListener('input', function() { doc
 document.getElementById('modeToggle').addEventListener('change', function() {
     useRealAPI = this.checked;
     var label = document.getElementById('modeLabel'), desc = document.getElementById('modeDesc');
-    if (useRealAPI) { label.textContent = '🌐 真实 API 模式'; label.style.color = '#c4b5fd'; desc.textContent = '调用在线翻译接口，支持 30+ 种语言真实互译'; }
-    else { label.textContent = '📋 模拟模式'; label.style.color = 'rgba(255,255,255,.5)'; desc.textContent = '本地模拟翻译链，无需网络，即时完成'; }
+    if (useRealAPI) { label.textContent = '🌐 真实 API 模式'; label.className = 'mode-label'; desc.textContent = '调用在线翻译接口，支持 30+ 种语言真实互译'; }
+    else { label.textContent = '📋 模拟模式'; label.className = 'mode-label mode-sim'; desc.textContent = '本地模拟翻译链，无需网络，即时完成'; }
 });
 
 function getRandomLanguage(excludeCode) { var pool = languages.filter(function(l) { return l.code !== excludeCode; }); return pool[Math.floor(Math.random() * pool.length)]; }
@@ -637,12 +640,12 @@ function calculateSimilarity(s1, s2) {
 }
 
 function analyzeDifference(original, result) {
-    if (original === result) return '<span style="color:#4ade80;font-weight:700">✓ 完全保持原意，百转千回终不变</span>';
+    if (original === result) return '<span style="color:var(--wg-analysis-good);font-weight:700">✓ 完全保持原意，百转千回终不变</span>';
     var sim = calculateSimilarity(original, result);
-    if (sim > 80) return '<span style="color:#4ade80;font-weight:700">基本保持原意（语义相似度 ' + sim + '%）</span>';
-    if (sim > 50) return '<span style="color:#facc15;font-weight:700">部分语义漂移（语义相似度 ' + sim + '%）</span>';
-    if (sim > 20) return '<span style="color:#fb923c;font-weight:700">语义发生较大变化（语义相似度 ' + sim + '%）</span>';
-    return '<span style="color:#ef4444;font-weight:700">完全变成了另一个意思（语义相似度 ' + sim + '%）</span>';
+    if (sim > 80) return '<span style="color:var(--wg-analysis-good);font-weight:700">基本保持原意（语义相似度 ' + sim + '%）</span>';
+    if (sim > 50) return '<span style="color:var(--wg-analysis-warn);font-weight:700">部分语义漂移（语义相似度 ' + sim + '%）</span>';
+    if (sim > 20) return '<span style="color:var(--wg-analysis-med);font-weight:700">语义发生较大变化（语义相似度 ' + sim + '%）</span>';
+    return '<span style="color:var(--wg-analysis-bad);font-weight:700">完全变成了另一个意思（语义相似度 ' + sim + '%）</span>';
 }
 
 function createConfetti() {
@@ -680,7 +683,7 @@ async function startTranslationR2() {
     var dotCount = Math.min(rounds, 30);
     for (var i = 0; i < dotCount; i++) {
         var dot = document.createElement('div'); dot.className = 'jdot'; dot.id = 'jdot-' + i; journeyDots.appendChild(dot);
-        if (i < dotCount - 1) { var arrow = document.createElement('span'); arrow.textContent = '·'; arrow.style.color = 'rgba(255,255,255,.15)'; arrow.style.fontSize = '8px'; arrow.style.margin = '0 1px'; journeyDots.appendChild(arrow); }
+        if (i < dotCount - 1) { var arrow = document.createElement('span'); arrow.textContent = '·'; arrow.style.color = 'var(--wg-scrollbar)'; arrow.style.fontSize = '8px'; arrow.style.margin = '0 1px'; journeyDots.appendChild(arrow); }
     }
     var currentText = inputText, currentLangCode = 'zh';
     for (var i = 0; i < rounds; i++) {

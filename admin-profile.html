@@ -8,8 +8,9 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e;
+            background: var(--bg-primary);
             min-height: 100vh;
+            color: var(--text-primary);
         }
         .nav {
             background: var(--bg-secondary);
@@ -36,13 +37,13 @@
         
         .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
         .profile-card {
-            background: #16213e;
+            background: var(--bg-secondary);
             border-radius: 20px;
             overflow: hidden;
-            border: 1px solid #ffd700;
+            border: 1px solid var(--accent-color);
         }
         .profile-header {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            background: linear-gradient(135deg, var(--accent-color), #fbbf24);
             padding: 40px;
             text-align: center;
             position: relative;
@@ -62,7 +63,7 @@
             background-size: cover;
             background-position: center;
         }
-        .profile-header h1 { color: var(--bg-primary, #1a1a2e); margin-bottom: 5px; }
+        .profile-header h1 { color: var(--bg-primary); margin-bottom: 5px; }
         .admin-title {
             display: inline-block;
             background: #1a1a2e;

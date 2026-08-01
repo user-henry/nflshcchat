@@ -8,8 +8,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a2e;
-            color: var(--text-secondary, #ddd);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -18,18 +18,18 @@
             padding: 20px;
         }
         .offline-box {
-            background: #16213e;
+            background: var(--bg-secondary);
             border-radius: 20px;
             padding: 40px;
             max-width: 400px;
-            border: 1px solid #2a2a3e;
+            border: 1px solid var(--border-color);
         }
         .offline-box .icon { font-size: 64px; margin-bottom: 20px; display: block; }
-        .offline-box h1 { color: var(--accent-color, #ffd700); font-size: 24px; margin-bottom: 12px; }
-        .offline-box p { color: var(--text-muted, #888); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+        .offline-box h1 { color: var(--accent-color); font-size: 24px; margin-bottom: 12px; }
+        .offline-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
         .offline-box .retry-btn {
-            background: linear-gradient(135deg, #ffd700, #ffb347);
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--accent-color);
+            color: var(--bg-primary);
             border: none;
             padding: 12px 32px;
             border-radius: 10px;
@@ -41,7 +41,7 @@
         .offline-box .version {
             margin-top: 16px;
             font-size: 12px;
-            color: var(--text-muted, #555);
+            color: var(--text-muted);
         }
     </style>
     <link rel="stylesheet" href="css/themes.css">

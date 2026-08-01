@@ -8,8 +8,9 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e;
+            background: var(--bg-primary);
             min-height: 100vh;
+            color: var(--text-primary);
         }
         .nav {
             background: var(--bg-secondary);
@@ -36,10 +37,10 @@
         
         .container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
         .profile-card {
-            background: #16213e;
+            background: var(--bg-secondary);
             border-radius: 20px;
             overflow: hidden;
-            border: 1px solid #2a2a3e;
+            border: 1px solid var(--border-color);
         }
         .profile-header {
             background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
@@ -87,10 +88,10 @@
         .avatar-upload-note a:hover {
             text-decoration: underline;
         }
-        .profile-header h1 { color: #1a1a2e; margin-bottom: 5px; font-size: 24px; }
+        .profile-header h1 { color: var(--bg-primary); margin-bottom: 5px; font-size: 24px; }
         .admin-badge {
-            background: #1a1a2e;
-            color: var(--accent-color, #ffd700);
+            background: var(--bg-primary);
+            color: var(--accent-color);
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 14px;
@@ -105,33 +106,33 @@
         .profile-body { padding: 30px; }
         .info-section { margin-bottom: 25px; }
         .info-section h3 {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             margin-bottom: 10px;
             padding-bottom: 5px;
-            border-bottom: 1px solid #2a2a3e;
+            border-bottom: 1px solid var(--border-color);
         }
-        .info-section p { color: #ddd; line-height: 1.6; }
+        .info-section p { color: var(--text-primary); line-height: 1.6; }
         .rooms-list { margin-top: 10px; }
         .room-tag {
             display: inline-block;
-            background: #2a2a3e;
+            background: var(--bg-tertiary);
             padding: 5px 12px;
             border-radius: 20px;
             margin: 5px;
             font-size: 13px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
         }
         
-        .edit-form { margin-top: 30px; padding-top: 20px; border-top: 1px solid #2a2a3e; }
-        .edit-form h3 { color: var(--accent-color, #ffd700); margin-bottom: 15px; }
+        .edit-form { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .edit-form h3 { color: var(--accent-color); margin-bottom: 15px; }
         .edit-form input, .edit-form textarea {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            background: var(--bg-primary, #1a1a2e);
-            color: var(--text-primary, #fff);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
             font-family: inherit;
         }
         .edit-form textarea { resize: vertical; min-height: 100px; }
@@ -152,13 +153,13 @@
         }
         .share-card-modal.show { display: flex; }
         .share-card-content {
-            background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #ffd700;
+            background: var(--bg-secondary); border: 2px solid var(--accent-color);
             border-radius: 20px; padding: 30px; text-align: center; max-width: 380px; width: 90%;
         }
-        .share-card-content .share-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #ffd700; margin: 0 auto 12px; background-size: cover; background-position: center; }
-        .share-card-content h2 { color: var(--accent-color, #ffd700); margin-bottom: 8px; }
-        .share-card-content p { color: #aaa; font-size: 14px; margin-bottom: 6px; }
-        .share-card-content .share-link { background: #0f0f1a; padding: 8px 12px; border-radius: 8px; font-size: 12px; color: var(--accent-color, #ffd700); word-break: break-all; margin: 12px 0; }
+        .share-card-content .share-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--accent-color); margin: 0 auto 12px; background-size: cover; background-position: center; }
+        .share-card-content h2 { color: var(--accent-color); margin-bottom: 8px; }
+        .share-card-content p { color: var(--text-secondary); font-size: 14px; margin-bottom: 6px; }
+        .share-card-content .share-link { background: var(--bg-tertiary); padding: 8px 12px; border-radius: 8px; font-size: 12px; color: var(--accent-color); word-break: break-all; margin: 12px 0; }
         .share-card-content .share-actions { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
         .message {
             margin-top: 15px;
@@ -166,9 +167,9 @@
             border-radius: 8px;
             text-align: center;
         }
-        .message.success { background: rgba(40,167,69,0.2); color: #28a745; }
-        .message.error { background: rgba(220,53,69,0.2); color: #dc3545; }
-        .loading { text-align: center; padding: 40px; color: #aaa; }
+        .message.success { background: rgba(40,167,69,0.2); color: var(--success); }
+        .message.error { background: rgba(220,53,69,0.2); color: var(--danger); }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
         .avatar-upload-preview { background-size: cover; background-position: center; }
     </style>
     <link rel="stylesheet" href="css/themes.css">

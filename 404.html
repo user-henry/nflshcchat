@@ -11,12 +11,12 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #1a1a2e;
+            background: var(--bg-primary);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            color: var(--text-primary, #eef4ff);
+            color: var(--text-primary);
             padding: 20px;
         }
         .container {
@@ -36,22 +36,19 @@
         .container .code {
             font-size: 80px;
             font-weight: 700;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--accent-color);
             line-height: 1;
             margin-bottom: 8px;
         }
         .container h1 {
             font-size: 28px;
             font-weight: 700;
-            color: var(--text-primary, #eef4ff);
+            color: var(--text-primary);
             margin-bottom: 12px;
         }
         .container p {
             font-size: 16px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             line-height: 1.7;
             margin-bottom: 24px;
         }
@@ -73,8 +70,8 @@
             gap: 8px;
         }
         .container .links .btn-primary {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--accent-color);
+            color: var(--bg-primary);
         }
         .container .links .btn-primary:hover {
             transform: translateY(-2px);
@@ -82,20 +79,20 @@
         }
         .container .links .btn-outline {
             background: transparent;
-            border: 1px solid rgba(255,255,255,0.08);
-            color: var(--text-secondary, #aaa);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
         }
         .container .links .btn-outline:hover {
-            border-color: #f59e0b;
-            color: #f59e0b;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
         .container .footer {
             margin-top: 32px;
             font-size: 12px;
-            color: var(--text-muted, #444);
+            color: var(--text-muted);
         }
         .container .footer a {
-            color: #f59e0b;
+            color: var(--accent-color);
             text-decoration: none;
         }
         .container .footer a:hover {
