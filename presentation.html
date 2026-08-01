@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -139,6 +139,7 @@
         @media (max-width: 800px) { .slide { padding: 1rem; } h1 { font-size: 2rem; } }
         footer { margin-top: 2rem; text-align: center; font-size: 0.7rem; opacity: 0.7; }
     </style>
+    <link rel="stylesheet" href="css/themes.css">
 </head>
 <body>
 <!-- 封面：Logo 只在这里出现一次 -->
@@ -330,5 +331,6 @@
         function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
     })();
 </script>
+    <script src="js/theme.js"></script>
 </body>
 </html>
