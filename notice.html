@@ -45,7 +45,7 @@
             transition: transform 0.2s;
         }
         .notice-item:hover { transform: translateY(-3px); }
-        .notice-title { font-size: 20px; font-weight: bold; color: #ffd700; margin-bottom: 10px; }
+        .notice-title { font-size: 20px; font-weight: bold; color: var(--accent-color, #ffd700); margin-bottom: 10px; }
         .notice-meta { font-size: 12px; color: #aaa; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3e; }
         .notice-content {
             color: #ddd;
@@ -72,7 +72,7 @@
             padding: 0;
         }
         .notice-content a {
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
             text-decoration: none;
         }
         .notice-content a:hover {
@@ -106,7 +106,7 @@
         }
         .notice-content th {
             background: #1a1a2e;
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
         }
         .notice-content img {
             max-width: 100%;
@@ -129,7 +129,7 @@
             border: 1px solid #ffd700;
             margin-top: 20px;
         }
-        .admin-panel h3 { color: #ffd700; margin-bottom: 20px; }
+        .admin-panel h3 { color: var(--accent-color, #ffd700); margin-bottom: 20px; }
         .admin-panel input, .admin-panel textarea {
             width: 100%;
             padding: 12px;
@@ -142,7 +142,7 @@
         }
         .admin-panel textarea { resize: vertical; min-height: 200px; }
         .admin-panel button {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
             color: #1a1a2e;
             border: none;
             padding: 12px 24px;
@@ -171,7 +171,7 @@
         }
         .preview-label {
             font-size: 12px;
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
             margin-bottom: 10px;
             padding-bottom: 5px;
             border-bottom: 1px solid #2a2a3e;
@@ -230,13 +230,13 @@
             justify-content: center;
         }
         .page-btn:hover:not(.active):not(:disabled) {
-            border-color: #ffd700;
-            color: #ffd700;
+            border-color: var(--accent-color, #ffd700);
+            color: var(--accent-color, #ffd700);
         }
         .page-btn.active {
             background: #ffd700;
             color: #1a1a2e;
-            border-color: #ffd700;
+            border-color: var(--accent-color, #ffd700);
         }
         .page-btn:disabled {
             opacity: 0.35;

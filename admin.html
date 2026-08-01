@@ -48,8 +48,8 @@
             text-align: center;
             border: 1px solid #2a2a3e;
         }
-        .stat-number { font-size: 36px; font-weight: bold; color: #ffd700; }
-        .stat-label { color: #aaa; margin-top: 8px; }
+        .stat-number { font-size: 36px; font-weight: bold; color: var(--accent-color, #ffd700); }
+        .stat-label { color: var(--text-secondary, #aaa); margin-top: 8px; }
         
         .tabs {
             display: flex;
@@ -66,7 +66,7 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .tab-btn.active { background: #ffd700; color: #1a1a2e; border-color: #ffd700; }
+        .tab-btn.active { background: #ffd700; color: var(--bg-primary, #1a1a2e); border-color: var(--accent-color, #ffd700); }
         
         .card {
             background: #16213e;
@@ -75,7 +75,7 @@
             margin-bottom: 30px;
             border: 1px solid #2a2a3e;
         }
-        .card h2 { color: #ffd700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3e; }
+        .card h2 { color: var(--accent-color, #ffd700); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #2a2a3e; }
         
         .rooms-grid {
             display: grid;
@@ -89,7 +89,7 @@
             border: 1px solid #2a2a3e;
             transition: transform 0.2s;
         }
-        .room-card:hover { transform: translateY(-3px); border-color: #ffd700; }
+        .room-card:hover { transform: translateY(-3px); border-color: var(--accent-color, #ffd700); }
         .room-header {
             display: flex;
             justify-content: space-between;
@@ -98,7 +98,7 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-        .room-name { font-size: 18px; font-weight: bold; color: #ffd700; }
+        .room-name { font-size: 18px; font-weight: bold; color: var(--accent-color, #ffd700); }
         .room-type {
             font-size: 11px;
             padding: 3px 10px;
@@ -106,14 +106,14 @@
         }
         .room-type.private { background: #dc3545; color: white; }
         .room-type.group { background: #28a745; color: white; }
-        .room-info p { color: #aaa; font-size: 13px; margin-bottom: 6px; }
+        .room-info p { color: var(--text-secondary, #aaa); font-size: 13px; margin-bottom: 6px; }
         .room-members {
             background: #0f0f1a;
             border-radius: 8px;
             padding: 10px;
             margin: 12px 0;
         }
-        .room-members h4 { color: #ffd700; font-size: 12px; margin-bottom: 8px; }
+        .room-members h4 { color: var(--accent-color, #ffd700); font-size: 12px; margin-bottom: 8px; }
         .member-list { display: flex; flex-wrap: wrap; gap: 6px; }
         .member-tag {
             background: #2a2a3e;
@@ -122,7 +122,7 @@
             font-size: 11px;
             color: #ddd;
         }
-        .member-tag.creator { background: #ffd700; color: #1a1a2e; }
+        .member-tag.creator { background: #ffd700; color: var(--bg-primary, #1a1a2e); }
         
         .user-list { max-height: 500px; overflow-y: auto; }
         .user-item {
@@ -137,15 +137,15 @@
             gap: 15px;
         }
         .user-info { flex: 1; }
-        .user-name { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
-        .user-meta { font-size: 12px; color: #aaa; }
+        .user-name { font-weight: bold; color: var(--accent-color, #ffd700); margin-bottom: 5px; }
+        .user-meta { font-size: 12px; color: var(--text-secondary, #aaa); }
         .admin-badge, .banned-badge {
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 11px;
             margin-left: 8px;
         }
-        .admin-badge { background: #ffd700; color: #1a1a2e; }
+        .admin-badge { background: #ffd700; color: var(--bg-primary, #1a1a2e); }
         .banned-badge { background: #dc3545; color: white; }
         
         .actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -158,7 +158,7 @@
         }
         .ban-user-btn, .ban-btn { background: #dc3545; color: white; }
         .unban-user-btn, .unban-btn { background: #28a745; color: white; }
-        .notify-user-btn { background: #ffc107; color: #1a1a2e; }
+        .notify-user-btn { background: #ffc107; color: var(--bg-primary, #1a1a2e); }
         
         .clean-btn {
             background: #dc3545;
@@ -174,8 +174,8 @@
         .clean-btn:hover { transform: translateY(-2px); background: #c82333; }
         .clean-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         
-        .empty-state { text-align: center; padding: 40px; color: #666; }
-        .loading { text-align: center; padding: 40px; color: #aaa; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted, #666); }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary, #aaa); }
         
         .modal {
             display: none;
@@ -193,7 +193,7 @@
             width: 450px;
             border: 1px solid #ffd700;
         }
-        .modal-content h3 { color: #ffd700; margin-bottom: 20px; }
+        .modal-content h3 { color: var(--accent-color, #ffd700); margin-bottom: 20px; }
         .modal-content input, .modal-content textarea {
             width: 100%;
             padding: 12px;
@@ -208,7 +208,7 @@
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
         .modal-buttons button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
         .modal-buttons button:first-child { background: #2a2a3e; color: white; }
-        .modal-buttons button:last-child { background: #ffd700; color: #1a1a2e; }
+        .modal-buttons button:last-child { background: #ffd700; color: var(--bg-primary, #1a1a2e); }
         
         .progress-bar {
             width: 100%;
@@ -227,7 +227,7 @@
         .stats-info {
             text-align: center;
             font-size: 12px;
-            color: #aaa;
+            color: var(--text-secondary, #aaa);
             margin-top: 10px;
         }
         
@@ -278,7 +278,7 @@
                 <button id="cleanDuplicateUsersBtn" class="clean-btn" onclick="cleanDuplicateUsers()">
                     🧹 清除多余账号
                 </button>
-                <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
+                <p style="font-size: 12px; color: var(--text-secondary, #aaa); margin-top: 10px;">
                     此操作将删除因重复注册产生的相同用户名账号，仅保留最新创建的一个。
                 </p>
             </div>
@@ -293,7 +293,7 @@
     <div id="notifyModal" class="modal">
         <div class="modal-content">
             <h3>📨 发送系统通知</h3>
-            <p style="color: #aaa; margin-bottom: 15px;">发送给: <span id="notifyTargetUser" style="color: #ffd700;"></span></p>
+            <p style="color: var(--text-secondary, #aaa); margin-bottom: 15px;">发送给: <span id="notifyTargetUser" style="color: var(--accent-color, #ffd700);"></span></p>
             <input type="text" id="notifyTitle" placeholder="通知标题">
             <textarea id="notifyMessage" placeholder="通知内容..."></textarea>
             <div class="modal-buttons">
@@ -496,7 +496,7 @@
                                 `<button class="unban-btn" onclick="toggleRoomBan('${room.id}', false)">解除封禁群聊</button>` :
                                 `<button class="ban-btn" onclick="toggleRoomBan('${room.id}', true)">封禁群聊</button>`}
                             </div>
-                        ` : '<div style="margin-top: 12px;"><span style="font-size: 12px; color: #888;">💡 私聊无法封禁，只能封禁用户</span></div>'}
+                        ` : '<div style="margin-top: 12px;"><span style="font-size: 12px; color: var(--text-muted, #888);">💡 私聊无法封禁，只能封禁用户</span></div>'}
                     </div>
                 `;
             }).join('');

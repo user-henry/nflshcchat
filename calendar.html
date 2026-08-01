@@ -17,7 +17,7 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0a0a1a;
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
             min-height: 100vh;
         }
 
@@ -58,13 +58,13 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .header-left .subtitle { font-size: 12px; color: #555; margin-top: 2px; }
+        .header-left .subtitle { font-size: 12px; color: var(--text-muted, #555); margin-top: 2px; }
         .header-right {
             display: flex; align-items: center;
             gap: 12px; flex-wrap: wrap;
         }
         .header-right .nav-link {
-            color: #888; text-decoration: none;
+            color: var(--text-muted, #888); text-decoration: none;
             font-size: 13px; padding: 6px 14px;
             border-radius: 8px; transition: all 0.2s;
         }
@@ -98,12 +98,12 @@
             width: 100%;
             min-height: 650px;
             height: auto;
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
         }
 
         /* ===== FullCalendar 暗色主题覆盖 ===== */
         .fc {
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
         }
         .fc .fc-toolbar-title {
             color: #f59e0b;
@@ -111,7 +111,7 @@
         .fc .fc-button-primary {
             background: rgba(255,255,255,0.06);
             border-color: rgba(255,255,255,0.08);
-            color: #aaa;
+            color: var(--text-secondary, #aaa);
         }
         .fc .fc-button-primary:hover {
             background: rgba(245, 158, 11, 0.15);
@@ -134,17 +134,17 @@
             background: rgba(245, 158, 11, 0.05);
         }
         .fc .fc-daygrid-day-number {
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
         }
         .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
-            color: #555;
+            color: var(--text-muted, #555);
         }
         .fc .fc-col-header-cell {
             background: rgba(255,255,255,0.03);
             border-color: rgba(255,255,255,0.04);
         }
         .fc .fc-col-header-cell-cushion {
-            color: #888;
+            color: var(--text-muted, #888);
             font-weight: 500;
         }
         .fc .fc-daygrid-event {
@@ -167,7 +167,7 @@
             border-color: rgba(255,255,255,0.04);
         }
         .fc .fc-timegrid-axis {
-            color: #666;
+            color: var(--text-muted, #666);
         }
         .fc .fc-timegrid-event {
             background: #f59e0b;
@@ -186,12 +186,12 @@
             color: #f59e0b;
         }
         .fc .fc-list-day-side-text {
-            color: #888;
+            color: var(--text-muted, #888);
         }
         .fc .fc-list-event {
             background: rgba(255,255,255,0.02);
             border-color: rgba(255,255,255,0.04);
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
         }
         .fc .fc-list-event:hover {
             background: rgba(255,255,255,0.04);
@@ -205,10 +205,10 @@
         }
         .fc .fc-popover-header {
             background: rgba(255,255,255,0.04);
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
         }
         .fc .fc-popover-close {
-            color: #666;
+            color: var(--text-muted, #666);
         }
         .fc .fc-more-popover .fc-popover-body {
             background: #16213e;
@@ -233,7 +233,7 @@
             padding: 12px 24px; border-radius: 12px;
             font-size: 13px; z-index: 99999;
             background: #16213e; border: 1px solid rgba(255,255,255,0.06);
-            color: #eef4ff; opacity: 0;
+            color: var(--text-primary, #eef4ff); opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
             box-shadow: 0 8px 40px rgba(0,0,0,0.4);

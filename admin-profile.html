@@ -62,11 +62,11 @@
             background-size: cover;
             background-position: center;
         }
-        .profile-header h1 { color: #1a1a2e; margin-bottom: 5px; }
+        .profile-header h1 { color: var(--bg-primary, #1a1a2e); margin-bottom: 5px; }
         .admin-title {
             display: inline-block;
             background: #1a1a2e;
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
@@ -76,12 +76,12 @@
         .profile-body { padding: 30px; }
         .info-section { margin-bottom: 25px; }
         .info-section h3 {
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
             margin-bottom: 10px;
             padding-bottom: 5px;
             border-bottom: 1px solid #2a2a3e;
         }
-        .info-section p { color: #ddd; line-height: 1.6; }
+        .info-section p { color: var(--text-secondary, #ddd); line-height: 1.6; }
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -94,12 +94,12 @@
             border-radius: 12px;
             text-align: center;
         }
-        .stat-number { font-size: 28px; font-weight: bold; color: #ffd700; }
-        .stat-label { font-size: 12px; color: #aaa; }
+        .stat-number { font-size: 28px; font-weight: bold; color: var(--accent-color, #ffd700); }
+        .stat-label { font-size: 12px; color: var(--text-secondary, #aaa); }
         
         .btn {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
+            color: var(--bg-primary, #1a1a2e);
             border: none;
             padding: 10px 20px;
             border-radius: 8px;
@@ -108,7 +108,7 @@
             text-decoration: none;
             display: inline-block;
         }
-        .loading { text-align: center; padding: 40px; color: #aaa; }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary, #aaa); }
         
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: 1fr; gap: 10px; }

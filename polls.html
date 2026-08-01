@@ -13,7 +13,7 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0a0a1a;
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
             min-height: 100vh;
         }
 
@@ -66,13 +66,13 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .header-left .subtitle { font-size: 12px; color: #555; margin-top: 2px; }
+        .header-left .subtitle { font-size: 12px; color: var(--text-muted, #555); margin-top: 2px; }
         .header-right {
             display: flex; align-items: center;
             gap: 12px; flex-wrap: wrap;
         }
         .header-right .nav-link {
-            color: #888; text-decoration: none;
+            color: var(--text-muted, #888); text-decoration: none;
             font-size: 13px; padding: 6px 14px;
             border-radius: 8px; transition: all 0.2s;
         }
@@ -91,11 +91,11 @@
             width: 28px; height: 28px; border-radius: 50%;
             background: linear-gradient(135deg, #f59e0b, #d97706);
             display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 700; color: #1a1a2e;
+            font-size: 12px; font-weight: 700; color: var(--bg-primary, #1a1a2e);
         }
         .user-badge .plan {
             font-size: 10px; padding: 2px 10px; border-radius: 20px;
-            background: rgba(255,255,255,0.06); color: #888;
+            background: rgba(255,255,255,0.06); color: var(--text-muted, #888);
         }
 
         .stats-grid {
@@ -121,7 +121,7 @@
             color: #f59e0b;
         }
         .stat-card .label {
-            font-size: 12px; color: #666; margin-top: 4px;
+            font-size: 12px; color: var(--text-muted, #666); margin-top: 4px;
         }
 
         .toolbar {
@@ -142,7 +142,7 @@
         }
         .btn-primary {
             background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: #1a1a2e;
+            color: var(--bg-primary, #1a1a2e);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
@@ -151,11 +151,11 @@
         .btn-outline {
             background: transparent;
             border: 1px solid rgba(255,255,255,0.08);
-            color: #aaa;
+            color: var(--text-secondary, #aaa);
         }
         .btn-outline:hover { border-color: #f59e0b; color: #f59e0b; }
-        .btn-ghost { background: transparent; color: #888; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: #eef4ff; }
+        .btn-ghost { background: transparent; color: var(--text-muted, #888); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--text-primary, #eef4ff); }
 
         .search-box {
             display: flex; align-items: center;
@@ -170,12 +170,12 @@
         }
         .search-box input {
             background: none; border: none;
-            padding: 8px 10px; color: #eef4ff;
+            padding: 8px 10px; color: var(--text-primary, #eef4ff);
             font-size: 13px; outline: none; width: 160px;
             font-family: inherit;
         }
-        .search-box input::placeholder { color: #555; }
-        .search-box .icon { color: #555; font-size: 14px; }
+        .search-box input::placeholder { color: var(--text-muted, #555); }
+        .search-box .icon { color: var(--text-muted, #555); font-size: 14px; }
 
         .polls-grid {
             display: grid;
@@ -204,7 +204,7 @@
             color: #f59e0b;
         }
         .poll-card .poll-meta {
-            font-size: 12px; color: #666;
+            font-size: 12px; color: var(--text-muted, #666);
             display: flex; gap: 16px; flex-wrap: wrap;
         }
         .poll-card .poll-meta span { display: flex; align-items: center; gap: 4px; }
@@ -246,7 +246,7 @@
             font-size: 14px; color: #ddd; flex: 1;
         }
         .poll-card .poll-option .opt-votes {
-            font-size: 12px; color: #666; margin: 0 12px;
+            font-size: 12px; color: var(--text-muted, #666); margin: 0 12px;
             min-width: 40px; text-align: right;
         }
         .poll-card .poll-option .opt-bar {
@@ -274,7 +274,7 @@
         }
         .poll-card .poll-option .opt-status {
             font-size: 11px;
-            color: #888;
+            color: var(--text-muted, #888);
             margin-left: 8px;
             display: none;
         }
@@ -289,7 +289,7 @@
             padding-top: 12px;
             border-top: 1px solid rgba(255,255,255,0.04);
             font-size: 12px;
-            color: #666;
+            color: var(--text-muted, #666);
         }
         .poll-card .poll-footer .actions {
             display: flex; gap: 8px;
@@ -297,7 +297,7 @@
         .poll-card .poll-footer .actions button {
             background: transparent;
             border: none;
-            color: #666;
+            color: var(--text-muted, #666);
             cursor: pointer;
             font-size: 13px;
             padding: 4px 8px;
@@ -314,10 +314,10 @@
         }
 
         .empty-state {
-            text-align: center; padding: 80px 20px; color: #555;
+            text-align: center; padding: 80px 20px; color: var(--text-muted, #555);
         }
         .empty-state .icon { font-size: 56px; display: block; margin-bottom: 16px; opacity: 0.5; }
-        .empty-state h3 { color: #888; font-size: 18px; margin-bottom: 8px; }
+        .empty-state h3 { color: var(--text-muted, #888); font-size: 18px; margin-bottom: 8px; }
         .empty-state p { font-size: 14px; }
 
         .modal-overlay {
@@ -352,13 +352,13 @@
             background-clip: text;
         }
         .modal .modal-header .close {
-            background: none; border: none; color: #666;
+            background: none; border: none; color: var(--text-muted, #666);
             font-size: 24px; cursor: pointer;
             transition: color 0.2s;
         }
         .modal .modal-header .close:hover { color: #dc3545; }
         .modal label {
-            display: block; font-size: 13px; color: #888;
+            display: block; font-size: 13px; color: var(--text-muted, #888);
             margin-bottom: 4px; margin-top: 12px;
         }
         .modal input[type="text"],
@@ -367,7 +367,7 @@
             border: 1px solid rgba(255,255,255,0.06);
             border-radius: 10px;
             background: rgba(255,255,255,0.04);
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
             font-size: 14px;
             font-family: inherit;
             transition: border-color 0.2s;
@@ -384,7 +384,7 @@
         .modal .option-row input { flex: 1; }
         .modal .option-row .remove-opt {
             background: none; border: none;
-            color: #666; cursor: pointer;
+            color: var(--text-muted, #666); cursor: pointer;
             font-size: 16px; padding: 4px 8px;
             border-radius: 6px;
             transition: all 0.2s;
@@ -396,7 +396,7 @@
         .modal .add-opt-btn {
             background: transparent;
             border: 1px dashed rgba(255,255,255,0.08);
-            color: #888;
+            color: var(--text-muted, #888);
             padding: 8px 16px;
             border-radius: 8px;
             cursor: pointer;
@@ -414,7 +414,7 @@
         }
         .modal .settings-row label {
             display: flex; align-items: center; gap: 6px;
-            font-size: 13px; color: #888; cursor: pointer;
+            font-size: 13px; color: var(--text-muted, #888); cursor: pointer;
             margin: 0;
         }
         .modal .settings-row input[type="checkbox"] {
@@ -432,14 +432,14 @@
         }
         .modal .modal-actions .cancel {
             background: rgba(255,255,255,0.04);
-            color: #888;
+            color: var(--text-muted, #888);
         }
         .modal .modal-actions .cancel:hover {
             background: rgba(255,255,255,0.08);
         }
         .modal .modal-actions .submit {
             background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: #1a1a2e;
+            color: var(--bg-primary, #1a1a2e);
         }
         .modal .modal-actions .submit:hover {
             transform: translateY(-2px);
@@ -460,7 +460,7 @@
             padding: 12px 24px; border-radius: 12px;
             font-size: 13px; z-index: 99999;
             background: #16213e; border: 1px solid rgba(255,255,255,0.06);
-            color: #eef4ff; opacity: 0;
+            color: var(--text-primary, #eef4ff); opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
             box-shadow: 0 8px 40px rgba(0,0,0,0.4);

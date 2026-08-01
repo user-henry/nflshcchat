@@ -13,7 +13,7 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #0a0a1a;
-            color: #eef4ff;
+            color: var(--text-primary, #eef4ff);
             min-height: 100vh;
         }
 
@@ -69,7 +69,7 @@
             background-clip: text;
         }
         .header-left .subtitle {
-            font-size: 12px; color: #666; margin-top: 2px;
+            font-size: 12px; color: var(--text-muted, #666); margin-top: 2px;
         }
         .header-left .subtitle .badge {
             display: inline-block;
@@ -85,7 +85,7 @@
             gap: 12px; flex-wrap: wrap;
         }
         .header-right .nav-link {
-            color: #888; text-decoration: none;
+            color: var(--text-muted, #888); text-decoration: none;
             font-size: 13px; padding: 6px 14px;
             border-radius: 8px; transition: all 0.2s;
         }
@@ -107,11 +107,11 @@
             width: 28px; height: 28px; border-radius: 50%;
             background: linear-gradient(135deg, #f59e0b, #d97706);
             display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 700; color: #1a1a2e;
+            font-size: 12px; font-weight: 700; color: var(--bg-primary, #1a1a2e);
         }
         .user-badge .plan {
             font-size: 10px; padding: 2px 10px; border-radius: 20px;
-            background: rgba(255,255,255,0.06); color: #888;
+            background: rgba(255,255,255,0.06); color: var(--text-muted, #888);
         }
 
         /* ===== Tab ===== */
@@ -125,13 +125,13 @@
         }
         .tab-btn {
             padding: 10px 20px; border: none; border-radius: 10px;
-            background: transparent; color: #888;
+            background: transparent; color: var(--text-muted, #888);
             font-size: 13px; font-weight: 500; cursor: pointer;
             transition: all 0.3s;
             display: flex; align-items: center; gap: 8px;
             font-family: inherit;
         }
-        .tab-btn:hover { color: #eef4ff; background: rgba(255,255,255,0.04); }
+        .tab-btn:hover { color: var(--text-primary, #eef4ff); background: rgba(255,255,255,0.04); }
         .tab-btn.active {
             background: rgba(245, 158, 11, 0.12);
             color: #f59e0b;
@@ -139,7 +139,7 @@
         }
         .tab-btn .badge {
             font-size: 10px; background: rgba(255,255,255,0.06);
-            padding: 1px 8px; border-radius: 12px; color: #666;
+            padding: 1px 8px; border-radius: 12px; color: var(--text-muted, #666);
         }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
@@ -159,7 +159,7 @@
         }
         .stat-card:hover { border-color: rgba(245, 158, 11, 0.2); background: rgba(255,255,255,0.05); }
         .stat-card .number { font-size: 26px; font-weight: 700; color: #f59e0b; }
-        .stat-card .label { font-size: 12px; color: #666; margin-top: 4px; }
+        .stat-card .label { font-size: 12px; color: var(--text-muted, #666); margin-top: 4px; }
 
         /* ===== 工具栏 ===== */
         .toolbar {
@@ -178,7 +178,7 @@
         }
         .btn-primary {
             background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: #1a1a2e;
+            color: var(--bg-primary, #1a1a2e);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
@@ -188,11 +188,11 @@
         .btn-outline {
             background: transparent;
             border: 1px solid rgba(255,255,255,0.08);
-            color: #aaa;
+            color: var(--text-secondary, #aaa);
         }
         .btn-outline:hover { border-color: #f59e0b; color: #f59e0b; }
-        .btn-ghost { background: transparent; color: #888; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: #eef4ff; }
+        .btn-ghost { background: transparent; color: var(--text-muted, #888); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.04); color: var(--text-primary, #eef4ff); }
         .btn-danger { background: rgba(220, 53, 69, 0.12); color: #dc3545; }
         .btn-danger:hover { background: rgba(220, 53, 69, 0.22); }
         .btn-sm { padding: 4px 12px; font-size: 12px; }
@@ -211,12 +211,12 @@
         }
         .search-box input {
             background: none; border: none;
-            padding: 8px 10px; color: #eef4ff;
+            padding: 8px 10px; color: var(--text-primary, #eef4ff);
             font-size: 13px; outline: none; width: 160px;
             font-family: inherit;
         }
-        .search-box input::placeholder { color: #555; }
-        .search-box .icon { color: #555; font-size: 14px; }
+        .search-box input::placeholder { color: var(--text-muted, #555); }
+        .search-box .icon { color: var(--text-muted, #555); font-size: 14px; }
 
         /* ===== 图片网格 ===== */
         .gallery-grid {
@@ -274,7 +274,7 @@
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .gallery-item .info .meta {
-            font-size: 11px; color: #555; margin-top: 4px;
+            font-size: 11px; color: var(--text-muted, #555); margin-top: 4px;
             display: flex; justify-content: space-between;
         }
         .gallery-item .info .meta .cdn-badge {
@@ -287,10 +287,10 @@
 
         /* ===== 空状态 ===== */
         .empty-state {
-            text-align: center; padding: 80px 20px; color: #555;
+            text-align: center; padding: 80px 20px; color: var(--text-muted, #555);
         }
         .empty-state .icon { font-size: 56px; display: block; margin-bottom: 16px; opacity: 0.5; }
-        .empty-state h3 { color: #888; font-size: 18px; margin-bottom: 8px; }
+        .empty-state h3 { color: var(--text-muted, #888); font-size: 18px; margin-bottom: 8px; }
         .empty-state p { font-size: 14px; }
 
         /* ===== 上传弹窗 ===== */
@@ -317,7 +317,7 @@
         }
         .modal .modal-header h3 { color: #f59e0b; font-size: 20px; }
         .modal .modal-header .close {
-            background: none; border: none; color: #666;
+            background: none; border: none; color: var(--text-muted, #666);
             font-size: 24px; cursor: pointer;
         }
         .modal .modal-header .close:hover { color: #dc3545; }
@@ -329,16 +329,16 @@
         }
         .modal .drop-zone:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.04); }
         .modal .drop-zone.dragover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.08); }
-        .modal .drop-zone .icon { font-size: 40px; display: block; margin-bottom: 12px; color: #555; }
-        .modal .drop-zone p { color: #888; font-size: 14px; }
-        .modal .drop-zone .hint { font-size: 12px; color: #555; margin-top: 8px; }
+        .modal .drop-zone .icon { font-size: 40px; display: block; margin-bottom: 12px; color: var(--text-muted, #555); }
+        .modal .drop-zone p { color: var(--text-muted, #888); font-size: 14px; }
+        .modal .drop-zone .hint { font-size: 12px; color: var(--text-muted, #555); margin-top: 8px; }
         .modal .drop-zone input { display: none; }
         .modal .options-row {
             display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap;
         }
         .modal .options-row label {
             display: flex; align-items: center; gap: 6px;
-            font-size: 12px; color: #888; cursor: pointer;
+            font-size: 12px; color: var(--text-muted, #888); cursor: pointer;
         }
         .modal .options-row input[type="checkbox"] {
             accent-color: #f59e0b; width: 14px; height: 14px;
@@ -353,7 +353,7 @@
             width: 0%; transition: width 0.3s;
         }
         .modal .progress-wrap .text {
-            font-size: 12px; color: #888; margin-top: 8px; text-align: center;
+            font-size: 12px; color: var(--text-muted, #888); margin-top: 8px; text-align: center;
         }
         .modal .powered-by {
             margin-top: 16px; text-align: center;
@@ -368,7 +368,7 @@
             padding: 12px 24px; border-radius: 12px;
             font-size: 13px; z-index: 99999;
             background: #16213e; border: 1px solid rgba(255,255,255,0.06);
-            color: #eef4ff; opacity: 0;
+            color: var(--text-primary, #eef4ff); opacity: 0;
             transition: opacity 0.3s;
             pointer-events: none;
             box-shadow: 0 8px 40px rgba(0,0,0,0.4);

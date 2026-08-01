@@ -72,7 +72,7 @@
         }
         .suggestion-title { font-weight: bold; color: #ffd700; margin-bottom: 8px; }
         .suggestion-content { color: #aaa; margin-bottom: 8px; }
-        .suggestion-meta { font-size: 11px; color: #666; margin-bottom: 8px; }
+        .suggestion-meta { font-size: 11px; color: var(--text-muted, #666); margin-bottom: 8px; }
         .status {
             display: inline-block;
             padding: 3px 10px;
@@ -84,7 +84,7 @@
         .status.in-progress { background: #3498db; color: white; }
         .status.completed { background: #2ecc71; color: #1a1a2e; }
         .status.rejected { background: #e74c3c; color: white; }
-        .empty-state { text-align: center; padding: 40px; color: #666; }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted, #666); }
         .message { margin-top: 15px; padding: 10px; border-radius: 8px; text-align: center; }
         .message.success { background: rgba(46,204,113,0.2); color: #2ecc71; }
         .message.error { background: rgba(231,76,60,0.2); color: #e74c3c; }
@@ -260,7 +260,7 @@
                     </div>
                     <div>
                         <span class="status ${statusMap[sug.status]?.class || 'pending'}">${statusMap[sug.status]?.text || '待审核'}</span>
-                        ${sug.adminNote ? `<span style="margin-left: 10px; font-size: 12px; color: #888;">备注: ${escapeHtml(sug.adminNote)}</span>` : ''}
+                        ${sug.adminNote ? `<span style="margin-left: 10px; font-size: 12px; color: var(--text-muted, #888);">备注: ${escapeHtml(sug.adminNote)}</span>` : ''}
                     </div>
                 </div>
             `).join('');

@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#ffd700">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; min-height: 100vh; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary, #1a1a2e); min-height: 100vh; }
 
         .nav {
             background: var(--bg-secondary);
@@ -28,7 +28,7 @@
         .nav h2 { font-size: 20px; color: var(--accent-color); }
         .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
         .nav a:hover { color: var(--accent-color); }
-        .admin-badge-nav { background: #ffd700; color: #1a1a2e; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
+        .admin-badge-nav { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px; }
 
         /* 移动端导航换行 */
         @media (max-width: 768px) {
@@ -51,7 +51,7 @@
             display: inline-block;
             background: none;
             border: none;
-            color: white;
+            color: var(--text-primary, #fff);
             font-size: inherit;
             font-family: inherit;
             padding: 0;
@@ -77,9 +77,9 @@
             right: 0;
             width: 350px;
             max-height: 400px;
-            background: #16213e;
+            background: var(--bg-secondary, #16213e);
             border-radius: 12px;
-            border: 1px solid #ffd700;
+            border: 1px solid var(--accent-color, #ffd700);
             z-index: 1000;
             overflow-y: auto;
             display: none;
@@ -95,20 +95,20 @@
         }
         
         .notification-panel.show { display: block; }
-        .notification-item { padding: 12px; border-bottom: 1px solid #2a2a3e; cursor: pointer; }
-        .notification-item:hover { background: #1a1a2e; }
-        .notification-item.unread { background: #2a1a3e; border-left: 3px solid #ffd700; }
-        .notification-title { font-weight: bold; color: #ffd700; margin-bottom: 5px; }
-        .notification-content { font-size: 12px; color: #aaa; }
-        .notification-time { font-size: 10px; color: #666; margin-top: 5px; }
-        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: #ffd700; font-weight: bold; background: #0f0f1a; position: sticky; top: 0; z-index: 1; }
+        .notification-item { padding: 12px; border-bottom: 1px solid var(--border-color, #2a2a3e); cursor: pointer; }
+        .notification-item:hover { background: var(--bg-primary, #1a1a2e); }
+        .notification-item.unread { background: #2a1a3e; border-left: 3px solid var(--accent-color, #ffd700); }
+        .notification-title { font-weight: bold; color: var(--accent-color, #ffd700); margin-bottom: 5px; }
+        .notification-content { font-size: 12px; color: var(--text-secondary, #aaa); }
+        .notification-time { font-size: 10px; color: var(--text-muted, #666); margin-top: 5px; }
+        .notification-header { padding: 12px 15px; border-bottom: 1px solid #ffd700; color: var(--accent-color, #ffd700); font-weight: bold; background: var(--bg-tertiary, #0f0f1a); position: sticky; top: 0; z-index: 1; }
 
         /* 聊天容器 */
         .chat-container {
             display: flex;
             max-width: 1400px;
             margin: 20px auto;
-            background: #16213e;
+            background: var(--bg-secondary, #16213e);
             border-radius: 12px;
             overflow: hidden;
             height: calc(100vh - 80px);
@@ -116,18 +116,18 @@
         }
         .rooms-sidebar {
             width: 320px;
-            background: #0f0f1a;
+            background: var(--bg-tertiary, #0f0f1a);
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #2a2a3e;
+            border-right: 1px solid var(--border-color, #2a2a3e);
         }
-        .rooms-header { padding: 20px; border-bottom: 1px solid #2a2a3e; }
-        .rooms-header h3 { color: #ffd700; margin-bottom: 10px; }
+        .rooms-header { padding: 20px; border-bottom: 1px solid var(--border-color, #2a2a3e); }
+        .rooms-header h3 { color: var(--accent-color, #ffd700); margin-bottom: 10px; }
         .create-room-btn {
             width: 100%;
             padding: 10px;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
+            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            color: var(--bg-primary, #1a1a2e);
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -139,40 +139,40 @@
             margin-bottom: 8px;
             border-radius: 10px;
             cursor: pointer;
-            background: #1a1a2e;
+            background: var(--bg-primary, #1a1a2e);
             transition: all 0.2s;
         }
-        .room-item:hover { background: #2a2a3e; transform: translateX(5px); }
-        .room-item.active { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); color: #1a1a2e; }
+        .room-item:hover { background: var(--bg-tertiary, #2a2a3e); transform: translateX(5px); }
+        .room-item.active { background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%); color: var(--bg-primary, #1a1a2e); }
         .room-name { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; flex-wrap: wrap; }
         .room-type { font-size: 11px; opacity: 0.7; }
         .room-verify-badge { font-size: 10px; background: #f39c12; padding: 2px 6px; border-radius: 10px; margin-left: 8px; }
 
-        .chat-main { flex: 1; display: flex; flex-direction: column; background: #16213e; position: relative; min-width: 0; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: var(--bg-secondary, #16213e); position: relative; min-width: 0; }
         .chat-header {
             padding: 15px 20px;
-            border-bottom: 1px solid #2a2a3e;
-            background: #1a1a2e;
+            border-bottom: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary, #1a1a2e);
         }
-        .chat-header h3 { color: #ffd700; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .chat-header h3 { color: var(--accent-color, #ffd700); margin-bottom: 5px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .settings-btn {
-            background: #2a2a3e;
+            background: var(--bg-tertiary, #2a2a3e);
             border: none;
-            color: white;
+            color: var(--text-primary, #fff);
             padding: 4px 12px;
             border-radius: 20px;
             cursor: pointer;
             font-size: 12px;
         }
-        .settings-btn:hover { background: #ffd700; color: #1a1a2e; }
-        .verify-code { font-size: 12px; background: #2a2a3e; padding: 4px 12px; border-radius: 20px; color: #aaa; display: inline-block; }
-        .announcement { font-size: 12px; color: #aaa; margin-top: 8px; padding-top: 8px; border-top: 1px solid #2a2a3e; word-break: break-word; }
+        .settings-btn:hover { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); }
+        .verify-code { font-size: 12px; background: var(--bg-tertiary, #2a2a3e); padding: 4px 12px; border-radius: 20px; color: var(--text-secondary, #aaa); display: inline-block; }
+        .announcement { font-size: 12px; color: var(--text-secondary, #aaa); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color, #2a2a3e); word-break: break-word; }
         .markdown-hint {
             font-size: 11px;
-            color: #888;
+            color: var(--text-muted, #888);
             margin-top: 5px;
             padding: 4px 8px;
-            background: #0f0f1a;
+            background: var(--bg-tertiary, #0f0f1a);
             border-radius: 6px;
             display: inline-block;
         }
@@ -199,9 +199,9 @@
             margin-bottom: 15px;
         }
         .load-more-btn {
-            background: #2a2a3e;
-            color: #ffd700;
-            border: 1px solid #3a3a4e;
+            background: var(--bg-tertiary, #2a2a3e);
+            color: var(--accent-color, #ffd700);
+            border: 1px solid var(--border-color, #3a3a4e);
             padding: 8px 20px;
             border-radius: 20px;
             cursor: pointer;
@@ -209,8 +209,8 @@
             transition: all 0.2s;
         }
         .load-more-btn:hover {
-            background: #ffd700;
-            color: #1a1a2e;
+            background: var(--accent-color, #ffd700);
+            color: var(--bg-primary, #1a1a2e);
         }
         .load-more-btn:disabled {
             opacity: 0.5;
@@ -243,7 +243,7 @@
         .message.own .message-avatar { order: 2; }
         .message-sender {
             font-size: 12px;
-            color: #aaa;
+            color: var(--text-secondary, #aaa);
             cursor: pointer;
         }
         .message.own .message-sender {
@@ -252,7 +252,7 @@
         .message:not(.own) .message-sender {
             text-align: left;
         }
-        .message-sender:hover { text-decoration: underline; color: #ffd700; }
+        .message-sender:hover { text-decoration: underline; color: var(--accent-color, #ffd700); }
         
         .message-bubble-wrapper {
             position: relative;
@@ -262,8 +262,8 @@
         .message-bubble {
             padding: 10px 16px;
             border-radius: 18px;
-            background: #1a1a2e;
-            color: white;
+            background: var(--bg-primary, #1a1a2e);
+            color: var(--text-primary, #fff);
             word-wrap: break-word;
             word-break: break-word;
             white-space: normal;
@@ -272,8 +272,8 @@
             overflow-wrap: break-word;
         }
         .message.own .message-bubble {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
+            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            color: var(--bg-primary, #1a1a2e);
         }
         
         .message-bubble code {
@@ -298,7 +298,7 @@
             padding: 0;
         }
         .message-bubble a {
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
             text-decoration: none;
             word-break: break-all;
         }
@@ -306,10 +306,10 @@
             text-decoration: underline;
         }
         .message-bubble blockquote {
-            border-left: 3px solid #ffd700;
+            border-left: 3px solid var(--accent-color, #ffd700);
             margin: 8px 0;
             padding-left: 12px;
-            color: #ccc;
+            color: var(--text-secondary, #ccc);
             word-break: break-word;
         }
         .message-bubble ul, .message-bubble ol {
@@ -330,7 +330,7 @@
             display: block;
         }
         .message-bubble th, .message-bubble td {
-            border: 1px solid #555;
+            border: 1px solid var(--border-color, #555);
             padding: 4px 8px;
         }
         .message-bubble img {
@@ -339,7 +339,7 @@
         }
         .message-bubble .mention {
             background: #2ecc71;
-            color: #1a1a2e;
+            color: var(--bg-primary, #1a1a2e);
             padding: 2px 6px;
             border-radius: 12px;
             font-weight: bold;
@@ -399,7 +399,7 @@
         
         .message-time {
             font-size: 10px;
-            color: #666;
+            color: var(--text-muted, #666);
             margin-top: 4px;
         }
         .message.own .message-time {
@@ -414,8 +414,8 @@
         /* 输入区域 */
         .input-container {
             padding: 20px;
-            border-top: 1px solid #2a2a3e;
-            background: #1a1a2e;
+            border-top: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary, #1a1a2e);
         }
         .input-area {
             display: flex;
@@ -426,22 +426,22 @@
         .chat-input {
             width: 100%;
             padding: 12px;
-            border: 1px solid #2a2a3e;
+            border: 1px solid var(--border-color, #2a2a3e);
             border-radius: 24px;
-            background: #0f0f1a;
-            color: white;
+            background: var(--bg-tertiary, #0f0f1a);
+            color: var(--text-primary, #fff);
             resize: vertical;
             font-family: inherit;
             font-size: 16px;
             word-wrap: break-word;
             word-break: break-word;
         }
-        .chat-input:focus { outline: none; border-color: #ffd700; }
+        .chat-input:focus { outline: none; border-color: var(--accent-color, #ffd700); }
         .send-btn {
             width: 100%;
             padding: 12px 28px;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
+            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            color: var(--bg-primary, #1a1a2e);
             border: none;
             border-radius: 24px;
             cursor: pointer;
@@ -449,14 +449,14 @@
             font-size: 16px;
         }
         .preview-area {
-            background: #0f0f1a;
+            background: var(--bg-tertiary, #0f0f1a);
             border-radius: 12px;
             padding: 12px;
             margin-top: 8px;
         }
         .preview-label {
             font-size: 11px;
-            color: #888;
+            color: var(--text-muted, #888);
             margin-bottom: 8px;
             display: flex;
             align-items: center;
@@ -464,7 +464,7 @@
             flex-wrap: wrap;
         }
         .preview-content {
-            background: #16213e;
+            background: var(--bg-secondary, #16213e);
             border-radius: 12px;
             padding: 12px;
             min-height: 60px;
@@ -476,10 +476,10 @@
         .preview-content p { margin: 0 0 5px 0; }
         .preview-content:empty::before {
             content: "输入内容后将在此显示预览效果";
-            color: #666;
+            color: var(--text-muted, #666);
             font-style: italic;
         }
-        .empty-state { text-align: center; padding: 60px; color: #666; }
+        .empty-state { text-align: center; padding: 60px; color: var(--text-muted, #666); }
         
         .scroll-to-bottom-btn {
             position: absolute;
@@ -488,8 +488,8 @@
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            color: #1a1a2e;
+            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            color: var(--bg-primary, #1a1a2e);
             border: none;
             cursor: pointer;
             display: none;
@@ -513,31 +513,31 @@
             z-index: 2000;
         }
         .modal-content {
-            background: #1a1a2e;
+            background: var(--bg-primary, #1a1a2e);
             padding: 25px;
             border-radius: 16px;
             width: 90%;
             max-width: 450px;
-            border: 1px solid #ffd700;
+            border: 1px solid var(--accent-color, #ffd700);
             max-height: 80vh;
             overflow-y: auto;
         }
-        .modal-content h3 { color: #ffd700; margin-bottom: 20px; }
+        .modal-content h3 { color: var(--accent-color, #ffd700); margin-bottom: 20px; }
         .modal-content input, .modal-content select, .modal-content textarea {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
-            border: 1px solid #2a2a3e;
+            border: 1px solid var(--border-color, #2a2a3e);
             border-radius: 8px;
-            background: #0f0f1a;
-            color: white;
+            background: var(--bg-tertiary, #0f0f1a);
+            color: var(--text-primary, #fff);
         }
         .modal-content textarea { resize: vertical; font-family: inherit; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
         .modal-buttons button { padding: 8px 20px; border-radius: 8px; cursor: pointer; }
         
-        .admin-badge { background: #fbbf24; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
-        .owner-badge { background: #ffd700; color: #1a1a2e; padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
+        .admin-badge { background: #fbbf24; color: var(--bg-primary, #1a1a2e); padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
+        .owner-badge { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); padding: 2px 6px; border-radius: 12px; font-size: 10px; margin-left: 5px; }
         
         /* 移动端布局 */
         @media (max-width: 768px) {
@@ -549,7 +549,7 @@
                 bottom: 0;
                 z-index: 200;
                 transition: left 0.3s ease;
-                border-right: 1px solid #ffd700;
+                border-right: 1px solid var(--accent-color, #ffd700);
                 border-radius: 0;
             }
             .rooms-sidebar.open {
@@ -584,8 +584,8 @@
                 position: fixed;
                 bottom: 20px;
                 left: 20px;
-                background: #ffd700;
-                color: #1a1a2e;
+                background: var(--accent-color, #ffd700);
+                color: var(--bg-primary, #1a1a2e);
                 width: 48px;
                 height: 48px;
                 border-radius: 50%;
@@ -613,16 +613,16 @@
             }
         }
         .voice-btn {
-            background: #2a2a3e;
+            background: var(--bg-tertiary, #2a2a3e);
             border: none;
-            color: white;
+            color: var(--text-primary, #fff);
             padding: 8px 12px;
             border-radius: 20px;
             cursor: pointer;
             font-size: 16px;
             transition: all 0.2s;
         }
-        .voice-btn:hover { background: #ffd700; color: #1a1a2e; }
+        .voice-btn:hover { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); }
         .voice-btn.recording { background: #dc3545; color: white; animation: pulse 1s infinite; }
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -646,31 +646,31 @@
         }
         .voice-message-label {
             font-size: 11px;
-            color: #888;
+            color: var(--text-muted, #888);
             margin-top: 4px;
         }
 
         /* === Feature #6: Reply/Quote === */
         .reply-btn {
             position: absolute; top: -8px; left: -8px;
-            background: #3498db; color: white; border: none;
+            background: var(--info, #3498db); color: white; border: none;
             padding: 4px 8px; border-radius: 20px; font-size: 10px;
             cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 10;
         }
         .message-bubble-wrapper:hover .reply-btn { opacity: 1; }
         .reply-preview-bar {
-            display: none; background: #0d1b2a; padding: 8px 14px;
-            border-radius: 10px; margin-bottom: 8px; font-size: 13px; color: #888;
-            border-left: 3px solid #3498db; align-items: center; justify-content: space-between;
+            display: none; background: var(--bg-secondary, #0d1b2a); padding: 8px 14px;
+            border-radius: 10px; margin-bottom: 8px; font-size: 13px; color: var(--text-muted, #888);
+            border-left: 3px solid var(--info, #3498db); align-items: center; justify-content: space-between;
         }
         .reply-preview-bar.show { display: flex; }
         .reply-preview-bar .reply-preview-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .reply-preview-bar .reply-cancel-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; margin-left: 8px; }
+        .reply-preview-bar .reply-cancel-btn { background: none; border: none; color: var(--danger, #e74c3c); cursor: pointer; font-size: 14px; margin-left: 8px; }
         .reply-quote {
-            background: rgba(52, 152, 219, 0.1); border-left: 3px solid #3498db;
-            padding: 6px 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 12px; color: #aaa;
+            background: rgba(52, 152, 219, 0.1); border-left: 3px solid var(--info, #3498db);
+            padding: 6px 12px; margin-bottom: 8px; border-radius: 0 8px 8px 0; font-size: 12px; color: var(--text-secondary, #aaa);
         }
-        .reply-quote .reply-quote-sender { color: #3498db; font-weight: 600; }
+        .reply-quote .reply-quote-sender { color: var(--info, #3498db); font-weight: 600; }
 
         /* === Feature #7: Pinned Messages === */
         .pin-btn {
@@ -692,7 +692,7 @@
         .code-block-wrapper { position: relative; margin: 8px 0; }
         .copy-code-btn {
             position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.12);
-            border: none; color: #ccc; padding: 4px 10px; border-radius: 8px; cursor: pointer;
+            border: none; color: var(--text-secondary, #ccc); padding: 4px 10px; border-radius: 8px; cursor: pointer;
             font-size: 11px; opacity: 0; transition: opacity 0.2s;
         }
         .code-block-wrapper:hover .copy-code-btn { opacity: 1; }
@@ -703,17 +703,17 @@
             display: inline-block; padding: 1px 6px; border-radius: 10px;
             font-size: 10px; font-weight: bold; margin-left: 4px; vertical-align: middle;
         }
-        .level-low { background: #2ecc71; color: #1a1a2e; }
+        .level-low { background: #2ecc71; color: var(--bg-primary, #1a1a2e); }
         .level-mid { background: #3498db; color: white; }
         .level-high { background: #9b59b6; color: white; }
-        .level-top { background: #ffd700; color: #1a1a2e; }
+        .level-top { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); }
 
         /* === Feature #14: Personal Card Share === */
         .share-card-btn {
-            background: #2a2a3e; color: #ffd700; border: 1px solid #3a3a4e;
+            background: var(--bg-tertiary, #2a2a3e); color: var(--accent-color, #ffd700); border: 1px solid var(--border-color, #3a3a4e);
             padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 12px;
         }
-        .share-card-btn:hover { background: #ffd700; color: #1a1a2e; }
+        .share-card-btn:hover { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); }
 
 </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -803,7 +803,7 @@
             </select>
             <div id="privateOptions" style="display: none;">
                 <input type="text" id="privateUser" placeholder="私聊对象用户名" style="width: 100%; margin-bottom: 10px;">
-                <button type="button" onclick="quickChatWithAI()" style="width: 100%; background: #2ecc71; color: #1a1a2e; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🤖 与 AI 小助手私聊</button>
+                <button type="button" onclick="quickChatWithAI()" style="width: 100%; background: #2ecc71; color: var(--bg-primary, #1a1a2e); padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">🤖 与 AI 小助手私聊</button>
             </div>
             <div id="groupSettings" style="display: none;">
                 <select id="joinType">
@@ -816,7 +816,7 @@
             </div>
             <div class="modal-buttons">
                 <button onclick="closeCreateRoomModal()">取消</button>
-                <button onclick="createRoom()" style="background: #ffd700;">创建</button>
+                <button onclick="createRoom()" style="background: var(--accent-color, #ffd700);">创建</button>
             </div>
         </div>
     </div>
@@ -825,12 +825,12 @@
         <div class="modal-content">
             <h3 id="joinRoomName">加入群聊</h3>
             <div id="joinVerifySection" style="display: none;">
-                <p style="color: #aaa; margin-bottom: 10px;">请输入验证码：</p>
+                <p style="color: var(--text-secondary, #aaa); margin-bottom: 10px;">请输入验证码：</p>
                 <input type="text" id="joinVerifyCode" placeholder="验证码">
             </div>
             <div class="modal-buttons">
                 <button onclick="closeJoinRoomModal()">取消</button>
-                <button onclick="confirmJoinRoom()" style="background: #ffd700;">加入</button>
+                <button onclick="confirmJoinRoom()" style="background: var(--accent-color, #ffd700);">加入</button>
             </div>
             <div id="joinMessage" style="margin-top: 10px; font-size: 12px;"></div>
         </div>
@@ -858,7 +858,7 @@
                 </div>
                 <div class="form-group">
                     <label>群管理员</label>
-                    <div id="adminList" style="background: #0f0f1a; border-radius: 8px; padding: 10px; max-height: 150px; overflow-y: auto;"></div>
+                    <div id="adminList" style="background: var(--bg-tertiary, #0f0f1a); border-radius: 8px; padding: 10px; max-height: 150px; overflow-y: auto;"></div>
                     <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
                         <input type="text" id="addAdminUser" placeholder="用户名" style="flex:1;">
                         <button onclick="addAdmin()" style="width: auto; padding: 8px 15px;">添加</button>
@@ -868,12 +868,12 @@
                 <button onclick="leaveRoom()" style="background: #dc3545; color: white;">退出群聊</button>
             </div>
             <div id="normalUserSettings" style="display: none;">
-                <p style="color: #aaa;">只有群主和管理员可以修改群设置</p>
+                <p style="color: var(--text-secondary, #aaa);">只有群主和管理员可以修改群设置</p>
                 <button onclick="leaveRoom()" style="background: #dc3545; color: white; margin-top: 10px;">退出群聊</button>
             </div>
             <div class="modal-buttons">
                 <button onclick="closeRoomSettingsModal()">关闭</button>
-                <button onclick="saveRoomSettings()" style="background: #ffd700;" id="saveSettingsBtn">保存</button>
+                <button onclick="saveRoomSettings()" style="background: var(--accent-color, #ffd700);" id="saveSettingsBtn">保存</button>
             </div>
         </div>
     </div>
@@ -1472,7 +1472,7 @@
             }
             const container = document.getElementById('notificationList');
             if (!container) return;
-            if (allNotifications.length === 0) { container.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">暂无通知</div>'; return; }
+            if (allNotifications.length === 0) { container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted, #666);">暂无通知</div>'; return; }
             allNotifications.sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
             container.innerHTML = allNotifications.map(n => `
                 <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="markAsRead('${n.id}')">
@@ -1721,7 +1721,7 @@
                     const isMember = room.members && room.members.includes(currentUser.username);
                     if (!isMember) {
                         pendingJoinRoom = room;
-                        document.getElementById('joinRoomName').innerHTML = `加入群聊「${escapeHtml(room.name)}」<br><span style="font-size: 12px; color: #aaa;">该群聊需要验证码才能加入</span>`;
+                        document.getElementById('joinRoomName').innerHTML = `加入群聊「${escapeHtml(room.name)}」<br><span style="font-size: 12px; color: var(--text-secondary, #aaa);">该群聊需要验证码才能加入</span>`;
                         document.getElementById('joinVerifySection').style.display = 'block';
                         document.getElementById('joinVerifyCode').value = '';
                         document.getElementById('joinMessage').innerHTML = '';
@@ -1749,7 +1749,7 @@
             const admins = currentRoom.admins || [];
             const adminListDiv = document.getElementById('adminList');
             adminListDiv.innerHTML = admins.map(admin => `<div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>${escapeHtml(admin)}</span>${isOwner && admin !== currentRoom.creator ? `<button onclick="removeAdmin('${admin}')" style="background: #dc3545; padding: 2px 8px;">移除</button>` : ''}</div>`).join('');
-            if (admins.length === 0) adminListDiv.innerHTML = '<div style="padding: 5px; color: #aaa;">暂无管理员</div>';
+            if (admins.length === 0) adminListDiv.innerHTML = '<div style="padding: 5px; color: var(--text-secondary, #aaa);">暂无管理员</div>';
             document.getElementById('adminOnlySettings').style.display = canEdit ? 'block' : 'none';
             document.getElementById('normalUserSettings').style.display = canEdit ? 'none' : 'block';
             document.getElementById('saveSettingsBtn').style.display = canEdit ? 'block' : 'none';

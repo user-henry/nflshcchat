@@ -52,18 +52,18 @@
             color: #333333;
         }
         input:focus {
-            border-color: #ffd700;
+            border-color: var(--accent-color, #ffd700);
             outline: none;
             box-shadow: 0 0 0 3px rgba(255,215,0,0.15);
         }
         input::placeholder {
             color: #999;
         }
-        input:focus { outline: none; border-color: #ffd700; }
+        input:focus { outline: none; border-color: var(--accent-color, #ffd700); }
         button {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
             color: #1a1a2e;
             border: none;
             border-radius: 10px;
@@ -79,7 +79,7 @@
             transform: none;
         }
         p { margin-top: 20px; color: #666; }
-        a { color: #ffd700; text-decoration: none; font-weight: bold; cursor: pointer; }
+        a { color: var(--accent-color, #ffd700); text-decoration: none; font-weight: bold; cursor: pointer; }
         a:hover { text-decoration: underline; }
         .message { margin-top: 15px; font-size: 14px; min-height: 40px; }
 
@@ -200,7 +200,7 @@
         .modal-buttons button:first-child { background: var(--bg-tertiary); color: var(--text-primary); }
         .modal-buttons button:first-child:hover { opacity: 0.8; }
         .modal-message { margin-top: 15px; font-size: 13px; text-align: center; min-height: 30px; }
-        .resend-timer { color: #ffd700; font-weight: bold; }
+        .resend-timer { color: var(--accent-color, #ffd700); font-weight: bold; }
         .step-indicator {
             display: flex;
             justify-content: center;
@@ -291,7 +291,7 @@
             <!-- ===== 步骤2: 输入验证码 ===== -->
             <div id="step2" style="display:none;">
                 <p style="color: #aaa; font-size: 14px; margin-bottom: 12px;">
-                    验证码已发送到 <strong id="emailDisplay" style="color: #ffd700;"></strong>
+                    验证码已发送到 <strong id="emailDisplay" style="color: var(--accent-color, #ffd700);"></strong>
                 </p>
                 <div class="code-input-group">
                     <input type="text" id="verifyCodeInput" placeholder="输入6位验证码" maxlength="6" autocomplete="off">
@@ -306,7 +306,7 @@
             <!-- ===== 步骤3: 重置密码 ===== -->
             <div id="step3" style="display:none;">
                 <p style="color: #aaa; font-size: 14px; margin-bottom: 12px;">
-                    正在为 <strong id="resetUsernameDisplay" style="color: #ffd700;"></strong> 重置密码
+                    正在为 <strong id="resetUsernameDisplay" style="color: var(--accent-color, #ffd700);"></strong> 重置密码
                 </p>
                 <input type="password" id="newPassword" placeholder="新密码（至少6位）">
                 <input type="password" id="confirmPassword" placeholder="确认新密码">
@@ -630,11 +630,11 @@
 
             // 检查是否在冷却期
             if (resendCountdown < 120 && resendCountdown > 0) {
-                msgDiv.innerHTML = `<span style="color: #ffd700;">⏳ 请等待 <span class="resend-timer">${resendCountdown}</span> 秒后重试</span>`;
+                msgDiv.innerHTML = `<span style="color: var(--accent-color, #ffd700);">⏳ 请等待 <span class="resend-timer">${resendCountdown}</span> 秒后重试</span>`;
                 return;
             }
 
-            msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 验证中...</span>';
+            msgDiv.innerHTML = '<span style="color: var(--accent-color, #ffd700);">⏳ 验证中...</span>';
 
             try {
                 const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
@@ -803,7 +803,7 @@
                 return;
             }
 
-            msgDiv.innerHTML = '<span style="color: #ffd700;">⏳ 正在重置密码...</span>';
+            msgDiv.innerHTML = '<span style="color: var(--accent-color, #ffd700);">⏳ 正在重置密码...</span>';
 
             try {
                 const hashedPassword = await hashPassword(newPassword);

@@ -61,7 +61,7 @@
             padding: 1rem 2.5rem;
             font-size: 1.5rem;
             font-weight: bold;
-            color: #ffd700;
+            color: var(--accent-color, #ffd700);
             border-radius: 48px;
             cursor: pointer;
             transition: all 0.3s;
@@ -110,7 +110,7 @@
             padding: 0.8rem;
             font-size: 0.85rem;
         }
-        .message-sender { color: #ffd700; font-weight: bold; }
+        .message-sender { color: var(--accent-color, #ffd700); font-weight: bold; }
         .search-box { margin-bottom: 1rem; display: flex; gap: 8px; }
         .search-box input { flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 40px; padding: 0.5rem 1rem; color: white; }
         /* 解决方案卡片 */
@@ -128,12 +128,12 @@
             transition: transform 0.2s, border-color 0.2s;
             cursor: pointer;
         }
-        .solution-card:hover { transform: translateY(-5px); border-color: #ffd700; }
-        .solution-title { font-size: 1.3rem; font-weight: bold; color: #ffd700; margin-bottom: 0.5rem; }
+        .solution-card:hover { transform: translateY(-5px); border-color: var(--accent-color, #ffd700); }
+        .solution-title { font-size: 1.3rem; font-weight: bold; color: var(--accent-color, #ffd700); margin-bottom: 0.5rem; }
         .solution-demo { margin-top: 1rem; font-size: 0.8rem; background: #010409; padding: 0.6rem; border-radius: 16px; }
-        .stat-number { font-size: 2.2rem; font-weight: bold; color: #ffd700; }
+        .stat-number { font-size: 2.2rem; font-weight: bold; color: var(--accent-color, #ffd700); }
         .nav-controls { position: fixed; bottom: 2rem; right: 2rem; z-index: 200; display: flex; gap: 12px; }
-        .nav-btn { background: #1e293b; border: 1px solid #ffd700; width: 48px; height: 48px; border-radius: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ffd700; }
+        .nav-btn { background: #1e293b; border: 1px solid #ffd700; width: 48px; height: 48px; border-radius: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent-color, #ffd700); }
         .slide-progress { position: fixed; bottom: 1.5rem; left: 2rem; background: #0f172a; padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.8rem; z-index: 200; }
         .code-block { background: #010409; padding: 0.8rem; border-radius: 16px; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; }
         @media (max-width: 800px) { .slide { padding: 1rem; } h1 { font-size: 2rem; } }

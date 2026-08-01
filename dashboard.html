@@ -57,10 +57,10 @@
         .profile-info h1 { color: var(--accent-color); font-size: 24px; margin-bottom: 5px; }
         .profile-info .level-display { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         .profile-info .level-display .level-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-        .level-low { background: #2ecc71; color: #1a1a2e; }
+        .level-low { background: #2ecc71; color: var(--bg-primary, #1a1a2e); }
         .level-mid { background: #3498db; color: white; }
         .level-high { background: #9b59b6; color: white; }
-        .level-top { background: #ffd700; color: #1a1a2e; }
+        .level-top { background: #ffd700; color: var(--bg-primary, #1a1a2e); }
         .xp-bar-container { background: var(--bg-tertiary); border-radius: 10px; height: 14px; overflow: hidden; margin-top: 5px; }
         .xp-bar-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, var(--accent-color), var(--accent-hover)); transition: width 0.5s ease; }
         .xp-text { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
@@ -500,7 +500,7 @@
             // Rooms list
             const roomsDiv = document.getElementById('roomsList');
             if (myRooms.length === 0) {
-                roomsDiv.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">暂无参与的聊天室</div>';
+                roomsDiv.innerHTML = '<div style="text-align:center;color: var(--text-muted, #888);padding:20px;">暂无参与的聊天室</div>';
             } else {
                 roomsDiv.innerHTML = myRooms.map(room => {
                     const roomMsgCount = allMessages.filter(m => m.roomId === room.id && !m.isRecalled).length;
@@ -544,7 +544,7 @@
             const recentMsgs = myMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8);
             const activityDiv = document.getElementById('activityList');
             if (recentMsgs.length === 0) {
-                activityDiv.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">暂无活动记录</div>';
+                activityDiv.innerHTML = '<div style="text-align:center;color: var(--text-muted, #888);padding:20px;">暂无活动记录</div>';
             } else {
                 activityDiv.innerHTML = recentMsgs.map(msg => {
                     const room = allRooms.find(r => r.id === msg.roomId);
