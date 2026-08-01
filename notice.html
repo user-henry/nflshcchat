@@ -12,14 +12,14 @@
             min-height: 100vh;
         }
         .nav {
-            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            background: var(--bg-secondary);
             padding: 15px 30px;
-            color: white;
+            color: var(--text-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            border-bottom: 1px solid #ffd700;
+            border-bottom: 1px solid var(--accent-color);
         }
         .nav-left { display: flex; align-items: center; gap: 15px; }
         .logo {
@@ -30,9 +30,9 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-        .nav h2 { font-size: 20px; color: #ffd700; }
-        .nav a { color: white; text-decoration: none; margin-left: 20px; transition: color 0.3s; }
-        .nav a:hover { color: #ffd700; }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color 0.3s; }
+        .nav a:hover { color: var(--accent-color); }
         
         .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
         .notice-list { margin-bottom: 30px; }
