@@ -607,6 +607,7 @@
     let allImages = [];
     let filteredImages = [];
     let isUploading = false;
+    let lastSaveError = null;
 
     // ============================================================
     //  登录检查（必须登录，否则跳转）
@@ -712,9 +713,12 @@
             let data;
             try { data = JSON.parse(text); } catch (e) { data = {}; }
             if (!res.ok || data.number === undefined) {
+                const reason = data && (data.detail || data.error || data.msg) ? (data.detail || data.error || data.msg) : text;
                 console.error('保存到图床失败:', res.status, text);
+                lastSaveError = `HTTP ${res.status}: ${reason}`;
                 return null;
             }
+            lastSaveError = null;
             return data.number;
         } catch (error) {
             console.error('保存到图床异常:', error);
@@ -887,7 +891,8 @@
                     success++;
                 } else {
                     // 保存失败：不要静默当作成功，明确提示用户
-                    showToast(`❌ ${file.name} 保存到图床失败`, 'error');
+                    const why = (typeof lastSaveError === 'string' && lastSaveError) ? ` (${lastSaveError})` : '';
+                    showToast(`❌ ${file.name} 保存到图床失败${why}`, 'error');
                     failed++;
                 }
 
