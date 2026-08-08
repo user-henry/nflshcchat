@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>HZYAI - 智能对话助手</title>
@@ -2874,7 +2876,7 @@
     <!-- 移动端菜单按钮 -->
     <button class="menu-btn" id="menuBtn" style="display: none;" onclick="toggleSidebar()">☰</button>
 
-    <script src="config.js"></script>
+    
     <script>
         // ============================================================
         //  🌟 配置
@@ -2992,10 +2994,9 @@
             if (!currentUser) return [];
             try {
                 const url =
-                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getGitHubLabel()}&state=open`;
+                    `${WORKER_API}/api/legacy/issues?labels=${getGitHubLabel()}&state=open`;
                 const response = await fetch(url, {
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -3028,20 +3029,18 @@
 
                 if (existing && existing.issueNumber) {
                     await fetch(
-                        `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                        `${WORKER_API}/api/legacy/issues/${existing.issueNumber}`, {
                             method: 'PATCH',
                             headers: {
-                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({ body: issueBody })
                         });
                 } else {
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    await fetch(`${WORKER_API}/api/legacy/issues`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                             'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json'
                         },
@@ -3139,10 +3138,9 @@
         async function loadCharactersFromGitHub() {
             try {
                 const url =
-                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getCharacterLabel()}&state=open`;
+                    `${WORKER_API}/api/legacy/issues?labels=${getCharacterLabel()}&state=open`;
                 const response = await fetch(url, {
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -3174,20 +3172,18 @@
 
                 if (existing && existing.issueNumber) {
                     await fetch(
-                        `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                        `${WORKER_API}/api/legacy/issues/${existing.issueNumber}`, {
                             method: 'PATCH',
                             headers: {
-                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({ body: issueBody })
                         });
                 } else {
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    await fetch(`${WORKER_API}/api/legacy/issues`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                             'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json'
                         },
@@ -3255,10 +3251,9 @@
         async function loadTasksFromGitHub() {
             try {
                 const url =
-                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getTaskLabel()}&state=open`;
+                    `${WORKER_API}/api/legacy/issues?labels=${getTaskLabel()}&state=open`;
                 const response = await fetch(url, {
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -3290,20 +3285,18 @@
 
                 if (existing && existing.issueNumber) {
                     await fetch(
-                        `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                        `${WORKER_API}/api/legacy/issues/${existing.issueNumber}`, {
                             method: 'PATCH',
                             headers: {
-                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({ body: issueBody })
                         });
                 } else {
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    await fetch(`${WORKER_API}/api/legacy/issues`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                             'Accept': 'application/vnd.github.v3+json',
                             'Content-Type': 'application/json'
                         },
@@ -5699,9 +5692,9 @@
 
             try {
                 const url =
-                    `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                    `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
                 const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 let foundUser = null;
