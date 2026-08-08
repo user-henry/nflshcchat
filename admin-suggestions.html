@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 建议审核</title>
@@ -122,7 +124,7 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
+    
     <script>
         let currentAdmin = null;
         let allSuggestions = [];
@@ -147,9 +149,9 @@
 
         async function loadSuggestions() {
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=suggestion&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=suggestion&state=open`;
                 const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 allSuggestions = [];
@@ -225,10 +227,9 @@
             const updatedBody = `网站建议\n\`\`\`json\n${JSON.stringify(suggestion, null, 2)}\n\`\`\``;
             
             try {
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${suggestion.issueNumber}`, {
+                await fetch(`${WORKER_API}/api/legacy/issues/${suggestion.issueNumber}`, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -248,10 +249,9 @@
                     isRead: false
                 };
                 const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                await fetch(`${WORKER_API}/api/legacy/issues`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
