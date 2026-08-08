@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>NFLSHC Chat - 音乐</title>
@@ -672,7 +674,7 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
+    
     <script>
         // ==================== 配置 ====================
         const API_KEY = '9a36c99b7cf7cf30f903a182cfcd7953';
@@ -727,7 +729,6 @@
         // ==================== GitHub Issues 数据操作 ====================
         function getGithubHeaders() {
             return {
-                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                 'Accept': 'application/vnd.github.v3+json',
                 'Content-Type': 'application/json'
             };
@@ -735,7 +736,7 @@
 
         async function fetchCloudMusicHistory(username) {
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=music_history&state=open&per_page=100`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=music_history&state=open&per_page=100`;
                 const res = await fetch(url, { headers: getGithubHeaders() });
                 const issues = await res.json();
                 
@@ -771,13 +772,13 @@
                 const bodyContent = `音乐历史\n\`\`\`json\n${JSON.stringify(payload, null, 2)}\n\`\`\``;
 
                 if (existing) {
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${existing.issueNumber}`, {
+                    await fetch(`${WORKER_API}/api/legacy/issues/${existing.issueNumber}`, {
                         method: 'PATCH',
                         headers: getGithubHeaders(),
                         body: JSON.stringify({ body: bodyContent })
                     });
                 } else {
-                    await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                    await fetch(`${WORKER_API}/api/legacy/issues`, {
                         method: 'POST',
                         headers: getGithubHeaders(),
                         body: JSON.stringify({
