@@ -329,23 +329,28 @@
             // Load messages with pagination
             document.getElementById('loadingProgress').style.display = 'block';
             allMessages = [];
-            let page = 1;
-            let hasMore = true;
-            while (hasMore) {
-                updateProgress(Math.min(50, page * 5), `正在加载消息... 第${page}页，已加载 ${allMessages.length} 条`);
-                const res = await fetch(`${baseUrl}?labels=chatmessage&state=open&per_page=100&page=${page}`, { headers });
-                const linkHeader = res.headers.get('Link');
-                hasMore = linkHeader && linkHeader.includes('rel="next"');
-                const issues = await res.json();
-                if (issues.length === 0) break;
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        try { allMessages.push(JSON.parse(match[1])); } catch(e) {}
-                    }
+            // 聊天消息实际存储在专用 /api/messages 端点（不再走 legacy chatmessage issues）
+            // 端点仅支持 limit（无 offset），单次大 limit 拉取全部
+            updateProgress(10, `正在加载消息...`);
+            const msgRes = await fetch(`${WORKER_API}/api/messages?limit=50000`, { headers });
+            if (msgRes.ok) {
+                const rows = await msgRes.json();
+                const arr = Array.isArray(rows) ? rows : [];
+                for (const m of arr) {
+                    allMessages.push({
+                        id: m.id,
+                        roomId: m.room_id,
+                        sender: m.sender,
+                        content: m.content,
+                        timestamp: m.timestamp,
+                        isRecalled: m.is_recalled,
+                        isPinned: m.is_pinned,
+                        mentions: m.mentions,
+                        replyTo: m.reply_to,
+                        number: m.id
+                    });
                 }
-                page++;
-                if (page > 30) break;
+                updateProgress(50, `已加载 ${allMessages.length} 条消息`);
             }
 
             // Load rooms

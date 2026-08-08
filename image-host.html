@@ -663,9 +663,9 @@
                 if (match) {
                     try {
                         const data = JSON.parse(match[1]);
-                        // 仅展示当前用户上传的、且含有效图片地址的条目
+                        // 仅展示含有效图片地址的条目；按上传者过滤（大小写不敏感，避免用户名大小写不一致导致历史记录全部隐藏）
                         if (!data.url) continue;
-                        if (data.uploadedBy && data.uploadedBy !== currentUser.username) continue;
+                        if (data.uploadedBy && data.uploadedBy.toLowerCase() !== currentUser.username.toLowerCase()) continue;
                         images.push({ ...data, issueNumber: issue.number });
                     } catch(e) {}
                 }
