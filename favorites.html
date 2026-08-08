@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 我的收藏</title>
@@ -72,7 +74,7 @@
             .favorite-header { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
     </style>
-    <script src="config.js"></script>
+    
 </head>
 <body>
     <div class="nav">
@@ -112,9 +114,9 @@
         }
 
         async function loadRooms() {
-            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
+            const url = `${WORKER_API}/api/legacy/issues?labels=chatroom&state=open`;
             const res = await fetch(url, {
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
             });
             const issues = await res.json();
             for (const issue of issues) {
@@ -133,9 +135,9 @@
 
         async function loadFavorites() {
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=favorite&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=favorite&state=open`;
                 const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await res.json();
                 const favorites = [];
@@ -178,10 +180,9 @@
         async function deleteFavorite(issueNumber) {
             if (!confirm('确定要删除这条收藏吗？')) return;
             try {
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
+                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
