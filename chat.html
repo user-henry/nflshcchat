@@ -897,53 +897,31 @@
         function calculateLevel(xp) { return Math.floor(Math.sqrt(xp / 10)) + 1; }
         function getLevelClass(level) { if (level <= 3) return 'level-low'; if (level <= 6) return 'level-mid'; if (level <= 9) return 'level-high'; return 'level-top'; }
 
-        // Load user avatar URLs from GitHub Issues
+        // Load user avatar URLs from D1 Worker API
         async function loadUserAvatars(usernames) {
             var toLoad = usernames.filter(function(u) { return !userAvatarCache[u]; });
             if (toLoad.length === 0) return;
             try {
-                var url = 'https://api.github.com/repos/' + CONFIG.GITHUB_USERNAME + '/' + CONFIG.GITHUB_REPO + '/issues?labels=user&state=open&per_page=100';
-                var res = await fetch(url, { headers: { 'Authorization': 'token ' + CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
-                var issues = await res.json();
+                var res = await fetch(CONFIG.WORKER_API + '/api/users');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                var users = await res.json();
                 toLoad.forEach(function(username) {
-                    var issue = issues.find(function(i) {
-                        try { return JSON.parse(i.body.match(/```json\n([\s\S]*?)\n```/)[1]).username === username; } catch(e) { return false; }
-                    });
-                    if (issue) {
-                        try {
-                            var ud = JSON.parse(issue.body.match(/```json\n([\s\S]*?)\n```/)[1]);
-                            if (ud.avatarUrl) userAvatarCache[username] = ud.avatarUrl;
-                        } catch(e) {}
-                    }
+                    var u = users.find(function(x) { return x.username === username; });
+                    if (u && u.avatar) userAvatarCache[username] = u.avatar;
                 });
             } catch(e) { console.error('Failed to load user avatars:', e); }
         }
 
-        // Load global message counts for level badges
+        // Load global message counts for level badges (from D1 Worker)
         async function loadGlobalMsgCounts() {
             try {
-                let page = 1;
-                let hasMore = true;
-                while (hasMore) {
-                    const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=chatmessage&state=open&per_page=100&page=' + page;
-                    const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
-                    const linkHeader = res.headers.get('Link');
-                    hasMore = linkHeader && linkHeader.includes('rel="next"');
-                    const issues = await res.json();
-                    if (issues.length === 0) break;
-                    for (const issue of issues) {
-                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                        if (match) {
-                            try {
-                                const msgData = JSON.parse(match[1]);
-                                if (!msgData.isRecalled) {
-                                    globalMsgCounts[msgData.sender] = (globalMsgCounts[msgData.sender] || 0) + 1;
-                                }
-                            } catch(e) {}
-                        }
+                const res = await fetch(CONFIG.WORKER_API + '/api/messages?limit=5000');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const all = await res.json();
+                for (const m of all) {
+                    if (!m.is_recalled) {
+                        globalMsgCounts[m.sender] = (globalMsgCounts[m.sender] || 0) + 1;
                     }
-                    page++;
-                    if (page > 30) break;
                 }
             } catch(e) { console.error('加载全局消息计数失败:', e); }
         }
@@ -1037,23 +1015,22 @@
         async function loadHistoryMessages(page = 1) {
             if (!currentRoom) return [];
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=50&page=${page}`;
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const linkHeader = res.headers.get('Link');
-                const issues = await res.json();
-                const roomMessages = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (msgData.roomId === currentRoom.id && !msgData.isRecalled) {
-                            roomMessages.push(msgData);
-                        }
-                    }
-                }
-                const hasNext = linkHeader && linkHeader.includes('rel="next"');
+                const res = await fetch(CONFIG.WORKER_API + '/api/messages?room_id=' + encodeURIComponent(currentRoom.id) + '&limit=1000');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const all = await res.json();
+                const skip = (page - 1) * 50;
+                const roomMessages = all
+                    .filter(m => m.room_id === currentRoom.id && !m.is_recalled)
+                    .slice(skip, skip + 50)
+                    .map(function(m) {
+                        return {
+                            id: m.id, roomId: m.room_id, sender: m.sender, content: m.content,
+                            mentions: m.mentions ? JSON.parse(m.mentions) : [],
+                            hasMentionAll: !!m.has_mention_all, replyTo: m.reply_to,
+                            isRecalled: !!m.is_recalled, isPinned: !!m.is_pinned, timestamp: m.timestamp
+                        };
+                    });
+                const hasNext = all.filter(m => m.room_id === currentRoom.id && !m.is_recalled).length > skip + 50;
                 return { messages: roomMessages, hasNext };
             } catch (error) {
                 console.error('加载历史消息失败:', error);
@@ -1064,27 +1041,20 @@
         async function loadNewMessages() {
             if (!currentRoom) return [];
             try {
-                let url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=50`;
-                if (newestMessageTimestamp) {
-                    url += `&since=${encodeURIComponent(newestMessageTimestamp)}`;
-                }
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await res.json();
-                const newMessages = [];
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (msgData.roomId === currentRoom.id && !msgData.isRecalled) {
-                            const exists = allMessages.some(m => m.id === msgData.id);
-                            if (!exists) {
-                                newMessages.push(msgData);
-                            }
-                        }
-                    }
-                }
+                const res = await fetch(CONFIG.WORKER_API + '/api/messages?room_id=' + encodeURIComponent(currentRoom.id) + '&limit=1000');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const all = await res.json();
+                const newMessages = all
+                    .filter(m => m.room_id === currentRoom.id && !m.is_recalled)
+                    .map(function(m) {
+                        return {
+                            id: m.id, roomId: m.room_id, sender: m.sender, content: m.content,
+                            mentions: m.mentions ? JSON.parse(m.mentions) : [],
+                            hasMentionAll: !!m.has_mention_all, replyTo: m.reply_to,
+                            isRecalled: !!m.is_recalled, isPinned: !!m.is_pinned, timestamp: m.timestamp
+                        };
+                    })
+                    .filter(m => !allMessages.some(x => x.id === m.id));
                 return newMessages;
             } catch (error) {
                 console.error('加载新消息失败:', error);
@@ -1329,20 +1299,26 @@
                 isRecalled: false
             };
             try {
-                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(botMessage, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                await fetch(CONFIG.WORKER_API + '/api/messages', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: `Message: ${botMessage.id}`, body: issueBody, labels: ['chatmessage'] })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: botMessage.id,
+                        room_id: botMessage.roomId,
+                        sender: botMessage.sender,
+                        content: botMessage.content,
+                        mentions: [],
+                        has_mention_all: false,
+                        reply_to: null,
+                        is_recalled: false,
+                        is_pinned: false,
+                        timestamp: botMessage.timestamp
+                    })
                 });
-                console.log('机器人回复已发送:', content);
+                console.log('机器人回复已发送 (D1):', content);
                 await pollNewMessages();
             } catch (error) {
-                console.error('机器人消息发送失败:', error);
+                console.error('机器人消息发送失败 (D1):', error);
             }
         }
 
