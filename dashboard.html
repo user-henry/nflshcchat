@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 个人数据仪表盘</title>
@@ -200,7 +202,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="config.js"></script>
+    
 </head>
 <body>
     <div class="nav">
@@ -321,8 +323,8 @@
         }
 
         async function loadAllData() {
-            const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
-            const headers = { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' };
+            const baseUrl = `${WORKER_API}/api/legacy/issues`;
+            const headers = { 'Accept': 'application/vnd.github.v3+json' };
 
             // Load messages with pagination
             document.getElementById('loadingProgress').style.display = 'block';
@@ -412,8 +414,8 @@
                 return { username: 'huangzhiyuan', avatarUrl: SITE_LOGO, bio: '平台创始人', createdAt: new Date().toISOString() };
             }
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
