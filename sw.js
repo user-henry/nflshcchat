@@ -5,32 +5,34 @@ const CACHE_VERSION = 'v2.2.0';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
 // 需要缓存的资源列表
+// 注意：站点部署在根路径（nflshcchat.cc.cd），不是 /nflshcchat/ 子路径，
+// 因此所有资源一律用根路径 "/..."，否则 cache.addAll 会因 404 全部失败、SW 安装崩溃。
 const urlsToCache = [
-  '/nflshcchat/',
-  '/nflshcchat/index.html',
-  '/nflshcchat/chat.html',
-  '/nflshcchat/register.html',
-  '/nflshcchat/profile.html',
-  '/nflshcchat/friends.html',
-  '/nflshcchat/dashboard.html',
-  '/nflshcchat/search.html',
-  '/nflshcchat/favorites.html',
-  '/nflshcchat/export.html',
-  '/nflshcchat/about.html',
-  '/nflshcchat/notice.html',
-  '/nflshcchat/suggestions.html',
-  '/nflshcchat/stats.html',
-  '/nflshcchat/hzyai.html',
-  '/nflshcchat/arena.html',
-  '/nflshcchat/admin.html',
-  '/nflshcchat/admin-suggestions.html',
-  '/nflshcchat/ai-profile.html',
-  '/nflshcchat/showcase.html',
-  '/nflshcchat/config.js',
-  '/nflshcchat/shortcuts.js',
-  '/nflshcchat/css/themes.css',
-  '/nflshcchat/manifest.json',
-  '/nflshcchat/offline.html',
+  '/',
+  '/index.html',
+  '/chat.html',
+  '/register.html',
+  '/profile.html',
+  '/friends.html',
+  '/dashboard.html',
+  '/search.html',
+  '/favorites.html',
+  '/export.html',
+  '/about.html',
+  '/notice.html',
+  '/suggestions.html',
+  '/stats.html',
+  '/hzyai.html',
+  '/arena.html',
+  '/admin.html',
+  '/admin-suggestions.html',
+  '/ai-profile.html',
+  '/showcase.html',
+  '/config.js',
+  '/shortcuts.js',
+  '/css/themes.css',
+  '/manifest.json',
+  '/offline.html',
   'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'
 ];
@@ -91,7 +93,7 @@ self.addEventListener('fetch', event => {
           .catch(() => {
             // 离线时的备用页面
             if (event.request.mode === 'navigate') {
-              return caches.match('/nflshcchat/offline.html');
+              return caches.match('/offline.html');
             }
           });
       })
