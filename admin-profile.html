@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 管理员中心</title>
@@ -133,7 +135,7 @@
         <div class="loading">加载中...</div>
     </div>
 
-    <script src="config.js"></script>
+    
     <script>
         let currentAdmin = null;
         let allUsers = [];
@@ -165,10 +167,10 @@
                     isAdmin: true
                 };
                 
-                const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+                const baseUrl = `${WORKER_API}/api/legacy/issues`;
                 
                 const usersRes = await fetch(`${baseUrl}?labels=user&state=open`, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const userIssues = await usersRes.json();
                 allUsers = [];
@@ -181,7 +183,7 @@
                 }
 
                 const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const roomIssues = await roomsRes.json();
                 allRooms = [];
@@ -194,7 +196,7 @@
                 }
 
                 const msgRes = await fetch(`${baseUrl}?labels=chatmessage&state=open`, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const msgIssues = await msgRes.json();
                 allMessages = [];
