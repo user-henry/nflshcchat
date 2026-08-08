@@ -208,34 +208,29 @@
         }
 
         async function loadAllMessages() {
-            let allMsg = [];
-            let page = 1;
-            let hasMore = true;
-            
             try {
-                while (hasMore) {
-                    const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
-                    const res = await fetch(url, {
-                        headers: { 'Accept': 'application/vnd.github.v3+json' }
+                // 聊天消息实际存储在专用 /api/messages 端点（不再走 legacy chatmessage issues）
+                const res = await fetch(`${WORKER_API}/api/messages?limit=50000`, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const rows = await res.json();
+                const arr = Array.isArray(rows) ? rows : [];
+                const allMsg = [];
+                for (const m of arr) {
+                    if (m.is_recalled) continue;
+                    allMsg.push({
+                        id: m.id,
+                        roomId: m.room_id,
+                        sender: m.sender,
+                        content: m.content,
+                        timestamp: m.timestamp,
+                        isRecalled: m.is_recalled,
+                        isPinned: m.is_pinned,
+                        mentions: m.mentions,
+                        replyTo: m.reply_to,
+                        number: m.id
                     });
-                    
-                    const linkHeader = res.headers.get('Link');
-                    hasMore = linkHeader && linkHeader.includes('rel="next"');
-                    
-                    const issues = await res.json();
-                    if (issues.length === 0) break;
-                    
-                    for (const issue of issues) {
-                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                        if (match) {
-                            const msgData = JSON.parse(match[1]);
-                            if (!msgData.isRecalled) {
-                                allMsg.push(msgData);
-                            }
-                        }
-                    }
-                    page++;
-                    if (page > 20) break; // 最多加载20页（2000条）
                 }
                 return allMsg;
             } catch (error) {

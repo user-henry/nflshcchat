@@ -222,71 +222,61 @@
 
         async function loadAllMessages() {
             let allMsg = [];
-            let page = 1;
-            let hasMore = true;
-            
             showProgress(5, '正在扫描消息...');
-            
-            while (hasMore) {
-                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
-                const res = await fetch(url, {
+            try {
+                // 聊天消息实际存储在专用 /api/messages 端点（不再走 legacy chatmessage issues）
+                const res = await fetch(`${WORKER_API}/api/messages?limit=50000`, {
                     headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
-                
-                const linkHeader = res.headers.get('Link');
-                hasMore = linkHeader && linkHeader.includes('rel="next"');
-                
-                const issues = await res.json();
-                if (issues.length === 0) break;
-                
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (!msgData.isRecalled) {
-                            allMsg.push(msgData);
-                        }
-                    }
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const rows = await res.json();
+                const arr = Array.isArray(rows) ? rows : [];
+                for (const m of arr) {
+                    if (m.is_recalled) continue;
+                    allMsg.push({
+                        id: m.id,
+                        roomId: m.room_id,
+                        sender: m.sender,
+                        content: m.content,
+                        timestamp: m.timestamp,
+                        isRecalled: m.is_recalled,
+                        isPinned: m.is_pinned,
+                        mentions: m.mentions,
+                        replyTo: m.reply_to,
+                        number: m.id
+                    });
                 }
-                
-                showProgress(Math.min(5 + page * 2, 30), `已扫描 ${page * 100} 条消息...`);
-                page++;
-                if (page > 50) break;
+                showProgress(30, `已扫描 ${allMsg.length} 条消息...`);
+            } catch (e) {
+                console.error('加载消息失败:', e);
             }
-            
             return allMsg;
         }
 
         async function loadRoomMessages(roomId) {
-            let roomMsg = [];
-            let page = 1;
-            let hasMore = true;
-            
-            while (hasMore) {
-                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
-                const res = await fetch(url, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+            // 聊天消息实际存储在专用 /api/messages 端点，按 room_id 过滤
+            const res = await fetch(`${WORKER_API}/api/messages?room_id=${encodeURIComponent(roomId)}&limit=50000`, {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (!res.ok) return [];
+            const rows = await res.json();
+            const arr = Array.isArray(rows) ? rows : [];
+            const roomMsg = [];
+            for (const m of arr) {
+                if (m.is_recalled) continue;
+                roomMsg.push({
+                    id: m.id,
+                    roomId: m.room_id,
+                    sender: m.sender,
+                    content: m.content,
+                    timestamp: m.timestamp,
+                    isRecalled: m.is_recalled,
+                    isPinned: m.is_pinned,
+                    mentions: m.mentions,
+                    replyTo: m.reply_to,
+                    number: m.id
                 });
-                
-                const linkHeader = res.headers.get('Link');
-                hasMore = linkHeader && linkHeader.includes('rel="next"');
-                
-                const issues = await res.json();
-                if (issues.length === 0) break;
-                
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        if (msgData.roomId === roomId && !msgData.isRecalled) {
-                            roomMsg.push(msgData);
-                        }
-                    }
-                }
-                page++;
-                if (page > 50) break;
             }
-            
             return roomMsg;
         }
 
