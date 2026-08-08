@@ -663,6 +663,9 @@
                 if (match) {
                     try {
                         const data = JSON.parse(match[1]);
+                        // 仅展示当前用户上传的、且含有效图片地址的条目
+                        if (!data.url) continue;
+                        if (data.uploadedBy && data.uploadedBy !== currentUser.username) continue;
                         images.push({ ...data, issueNumber: issue.number });
                     } catch(e) {}
                 }
@@ -708,15 +711,15 @@
     // ============================================================
     async function deleteImageFromGitHub(issueNumber) {
         try {
-            await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
-                method: 'PATCH',
+            const label = getImageLabel();
+            const res = await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}?labels=${encodeURIComponent(label)}`, {
+                method: 'DELETE',
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ state: 'closed' })
+                }
             });
-            return true;
+            return res.ok;
         } catch (error) {
             console.error('从 GitHub 删除失败:', error);
             return false;
