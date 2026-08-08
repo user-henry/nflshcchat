@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 举报中心</title>
@@ -254,7 +256,7 @@
             border-color: var(--accent-color, #ffd700);
         }
     </style>
-    <script src="config.js"></script>
+    
     <script>
         // ============================================================
         //  举报中心 - GitHub Issues 存储版本
@@ -284,8 +286,8 @@
         // ============================================================
         async function loadReports() {
             try {
-                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=' + REPORT_LABEL + '&state=open';
-                const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                const url = WORKER_API + '/api/legacy/issues?labels=' + REPORT_LABEL + '&state=open';
+                const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 allReports = [];
                 for (const issue of issues) {
@@ -325,9 +327,9 @@
             };
             try {
                 const issueBody = '举报信息\n```json\n' + JSON.stringify(report, null, 2) + '\n```';
-                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues', {
+                await fetch(WORKER_API + '/api/legacy/issues', {
                     method: 'POST',
-                    headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: '举报: ' + report.reporter + ' → ' + report.targetUser, body: issueBody, labels: [REPORT_LABEL] })
                 });
                 document.getElementById('targetUser').value = '';
@@ -341,8 +343,8 @@
         async function checkUserExists(username) {
             if (username === 'huangzhiyuan') return true;
             try {
-                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=user&state=open';
-                const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                const url = WORKER_API + '/api/legacy/issues?labels=user&state=open';
+                const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 for (const issue of issues) {
                     const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
@@ -420,9 +422,9 @@
         async function updateReportOnGitHub(report) {
             try {
                 var issueBody = '举报信息\n```json\n' + JSON.stringify(report, null, 2) + '\n```';
-                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + report.issueNumber, {
+                await fetch(WORKER_API + '/api/legacy/issues/' + report.issueNumber, {
                     method: 'PATCH',
-                    headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ body: issueBody })
                 });
             } catch (error) { console.error('更新举报失败:', error); alert('更新失败: ' + error.message); }
@@ -465,8 +467,8 @@
 
         async function toggleUserBan(username, shouldBan) {
             try {
-                var url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=user&state=open';
-                var res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                var url = WORKER_API + '/api/legacy/issues?labels=user&state=open';
+                var res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
                 var issues = await res.json();
                 for (var i = 0; i < issues.length; i++) {
                     var match = issues[i].body.match(/```json\n([\s\S]*?)\n```/);
@@ -474,9 +476,9 @@
                         var userData = JSON.parse(match[1]);
                         if (userData.username === username) {
                             userData.isBanned = shouldBan;
-                            await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + issues[i].number, {
+                            await fetch(WORKER_API + '/api/legacy/issues/' + issues[i].number, {
                                 method: 'PATCH',
-                                headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ body: '用户信息\n```json\n' + JSON.stringify(userData, null, 2) + '\n```' })
                             });
                             return true;
