@@ -1417,9 +1417,18 @@
         function checkAuth() {
             const userStr = sessionStorage.getItem('currentUser');
             if (!userStr) { window.location.href = 'index.html'; return null; }
-            const user = JSON.parse(userStr);
-            document.getElementById('username').textContent = user.username;
-            if (user.isAdmin) document.getElementById('adminBadge').style.display = 'inline-block';
+            let user;
+            try { user = JSON.parse(userStr); } catch(e) { window.location.href = 'index.html'; return null; }
+            if (!user || !user.username) {
+                // 兼容旧存储 / 异常结构
+                console.warn('currentUser 结构异常:', user);
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+                return null;
+            }
+            const un = document.getElementById('username');
+            if (un) un.textContent = user.username;
+            if (user.isAdmin) { const b = document.getElementById('adminBadge'); if (b) b.style.display = 'inline-block'; }
             return user;
         }
 
@@ -1536,7 +1545,11 @@
                     }
                 }
                 renderRooms();
-            } catch (error) { console.error('加载聊天室失败 (D1):', error); }
+            } catch (error) {
+                console.error('加载聊天室失败 (D1):', error);
+                const c = document.getElementById('roomsList');
+                if (c) c.innerHTML = '<div class="empty-state">⚠️ 聊天室加载失败：' + (error && error.message ? error.message : error) + '<br>请刷新重试</div>';
+            }
         }
 
         function parseJsonArray(v) {
