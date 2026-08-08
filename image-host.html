@@ -708,10 +708,16 @@
                     labels: [label]
                 })
             });
-            const data = await res.json();
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch (e) { data = {}; }
+            if (!res.ok || data.number === undefined) {
+                console.error('保存到图床失败:', res.status, text);
+                return null;
+            }
             return data.number;
         } catch (error) {
-            console.error('保存到 GitHub 失败:', error);
+            console.error('保存到图床异常:', error);
             return null;
         }
     }
@@ -860,7 +866,8 @@
                 const result = await uploadToImgURL(file, { dedup, compress, watermark });
 
                 const imageData = {
-                    id: result.imgid,
+                    id: Number(Date.now()),
+                    imgid: result.imgid,
                     filename: result.filename || file.name,
                     url: result.url,
                     thumbnail_url: result.thumbnail_url || result.url,
@@ -872,14 +879,17 @@
                     views: 0
                 };
 
-                // 保存到 GitHub Issues
+                // 保存到图床(D1)
                 const issueNumber = await saveImageToGitHub(imageData);
                 if (issueNumber) {
                     imageData.issueNumber = issueNumber;
+                    allImages.unshift(imageData);
+                    success++;
+                } else {
+                    // 保存失败：不要静默当作成功，明确提示用户
+                    showToast(`❌ ${file.name} 保存到图床失败`, 'error');
+                    failed++;
                 }
-
-                allImages.unshift(imageData);
-                success++;
 
             } catch (error) {
                 console.error('上传失败:', error);
@@ -911,10 +921,10 @@
         if (!img) { showToast('图片不存在', 'error'); return; }
 
         try {
-            // 从 ImgURL 删除
-            await deleteImagesFromImgURL([imageId]);
+            // 从 ImgURL 删除（使用 ImgURL 的图片 id，而非 D1 主键；旧数据 imgid 在 id 字段）
+            await deleteImagesFromImgURL([img.imgid || img.id]);
 
-            // 从 GitHub Issues 删除
+            // 从图床(D1) 删除
             if (img.issueNumber) {
                 await deleteImageFromGitHub(img.issueNumber);
             }
