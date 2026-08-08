@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 数据导出</title>
@@ -123,7 +125,7 @@
             margin-top: 10px;
         }
     </style>
-    <script src="config.js"></script>
+    
 </head>
 <body>
     <div class="nav">
@@ -226,9 +228,9 @@
             showProgress(5, '正在扫描消息...');
             
             while (hasMore) {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
                 const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 
                 const linkHeader = res.headers.get('Link');
@@ -261,9 +263,9 @@
             let hasMore = true;
             
             while (hasMore) {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
                 const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 
                 const linkHeader = res.headers.get('Link');
@@ -290,9 +292,9 @@
 
         async function loadRooms() {
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatroom&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=chatroom&state=open`;
                 const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await res.json();
                 allRooms = [];
