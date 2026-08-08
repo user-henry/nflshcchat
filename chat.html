@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>NFLSHC Chat - 聊天室</title>
@@ -878,14 +880,12 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
     <script>
+        const WORKER_API = 'https://worker.nflshcchat.cc.cd';
         let currentUser = null;
         let currentRoom = null;
         let allRooms = [];
         let allMessages = [];
-        // Worker API 地址；优先取 config.js，若 Actions 生成的 config 未注入则回退到固定域名
-        const WORKER_API = (window.CONFIG && window.WORKER_API) ? window.WORKER_API : 'https://worker.nflshcchat.cc.cd';
         let messages = {};
         let pollInterval = null;
         let allNotifications = [];
@@ -1426,8 +1426,8 @@
         // ========== 通知功能（仅电脑端有效） ==========
         async function loadNotifications() {
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=system_notification&state=open`;
-                const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+                const url = `${WORKER_API}/api/legacy/issues?labels=system_notification&state=open`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
                 const issues = await res.json();
                 allNotifications = [];
                 for (const issue of issues) {
@@ -1466,9 +1466,9 @@
             if (!notif || notif.isRead) return;
             notif.isRead = true;
             const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${notif.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${notif.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             await loadNotifications();
@@ -1570,10 +1570,9 @@
             };
             try {
                 const issueBody = `收藏消息\n\`\`\`json\n${JSON.stringify(favoriteData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                await fetch(`${WORKER_API}/api/legacy/issues`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -1591,9 +1590,9 @@
             if (Date.now() - new Date(msg.timestamp).getTime() > 120000) { alert('只能撤回2分钟内的消息'); return; }
             msg.isRecalled = true;
             const updatedBody = `聊天消息\n\`\`\`json\n${JSON.stringify(msg, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${msg.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${msg.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             await pollNewMessages();
@@ -1701,9 +1700,9 @@
                 isRead: false
             };
             const notifBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+            await fetch(`${WORKER_API}/api/legacy/issues`, {
                 method: 'POST',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: `系统通知: @${mentionedUser}`, body: notifBody, labels: ['system_notification'] })
             });
         }
@@ -1772,9 +1771,9 @@
             else currentRoom.verifyCode = null;
             currentRoom.updatedAt = new Date().toISOString();
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             alert('群设置已保存');
@@ -1790,9 +1789,9 @@
             if (currentRoom.admins.includes(username)) { alert('已是管理员'); return; }
             currentRoom.admins.push(username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             alert(`已添加 ${username} 为管理员`);
@@ -1804,9 +1803,9 @@
             if (!confirm(`确定要移除 ${username} 的管理员权限吗？`)) return;
             currentRoom.admins = currentRoom.admins.filter(a => a !== username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             alert(`已移除 ${username} 的管理员权限`);
@@ -1817,9 +1816,9 @@
             if (!confirm('确定要退出该群聊吗？')) return;
             if (currentRoom.members) currentRoom.members = currentRoom.members.filter(m => m !== currentUser.username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             alert('已退出群聊');
@@ -1861,9 +1860,9 @@
             };
             try {
                 const issueBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(roomData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                await fetch(`${WORKER_API}/api/legacy/issues`, {
                     method: 'POST',
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `ChatRoom: ${roomData.id}`, body: issueBody, labels: ['chatroom'] })
                 });
                 closeCreateRoomModal();
@@ -1885,9 +1884,9 @@
             if (room.members.includes(currentUser.username)) { alert('您已在群聊中'); return; }
             room.members.push(currentUser.username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${room.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${room.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             alert(`✅ 已成功加入群聊「${room.name}」`);
@@ -2088,9 +2087,9 @@
             
             try {
                 const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                await fetch(`${WORKER_API}/api/legacy/issues`, {
                     method: 'POST',
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
                 });
                 await pollNewMessages();
@@ -2132,15 +2131,15 @@
                 let page = 1;
                 let found = false;
                 while (!found && page <= 10) {
-                    const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=chatmessage&state=open&per_page=100&page=' + page;
-                    const res = await fetch(url, { headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json' } });
+                    const url = WORKER_API + '/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=' + page;
+                    const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
                     const issues = await res.json();
                     for (const issue of issues) {
                         if (issue.title === 'Message: ' + msg.id) {
                             const body = '聊天消息\n```json\n' + JSON.stringify(msg, null, 2) + '\n```';
-                            await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + issue.number, {
+                            await fetch(WORKER_API + '/api/legacy/issues/' + issue.number, {
                                 method: 'PATCH',
-                                headers: { 'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ body: body })
                             });
                             found = true;
