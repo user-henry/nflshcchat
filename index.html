@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 登录</title>
@@ -320,7 +322,7 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
+    
     <script src="js/theme.js"></script>
     <script>
         // ============================================================
@@ -522,9 +524,9 @@
             }
 
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
                 const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 let foundUser = null;
@@ -637,9 +639,9 @@
             msgDiv.innerHTML = '<span style="color: var(--accent-color, #ffd700);">⏳ 验证中...</span>';
 
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
                 const response = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const issues = await response.json();
                 let foundUser = null;
@@ -676,10 +678,9 @@
                 foundUser.resetCode = verifyCode;
                 foundUser.resetCodeExpiry = codeExpiry;
                 const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(foundUser, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${issueNumber}`, {
+                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -813,10 +814,9 @@
                 delete currentResetUser.resetCodeExpiry;
 
                 const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(currentResetUser, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${currentResetUser.issueNumber}`, {
+                await fetch(`${WORKER_API}/api/legacy/issues/${currentResetUser.issueNumber}`, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
