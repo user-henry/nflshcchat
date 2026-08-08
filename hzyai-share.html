@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HZYAI - 对话分享</title>
@@ -931,7 +933,7 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
+    
     <script>
         // ============================================================
         //  配置（复用 hzyai.html 的配置）
@@ -1081,10 +1083,9 @@
             }
 
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
                 const res = await fetch(url, {
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -1162,10 +1163,9 @@
             status.className = 'fetch-status';
 
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${getHzyaiLabel()}&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=${getHzyaiLabel()}&state=open`;
                 const res = await fetch(url, {
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -1383,10 +1383,9 @@
 
             try {
                 const issueBody = `HZYAI公开对话\n\`\`\`json\n${JSON.stringify(publicData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                await fetch(`${WORKER_API}/api/legacy/issues`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -1427,10 +1426,9 @@
             container.innerHTML = '<div class="empty-state"><span class="icon">⏳</span>加载中...</div>';
 
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=hzyai_public_chat&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=hzyai_public_chat&state=open`;
                 const res = await fetch(url, {
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -1672,10 +1670,9 @@
 
             try {
                 const issueBody = 'HZYAI公开角色\n```json\n' + JSON.stringify(publicChar, null, 2) + '\n```';
-                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues', {
+                await fetch(WORKER_API + '/api/legacy/issues', {
                     method: 'POST',
                     headers: {
-                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -1699,10 +1696,9 @@
             container.innerHTML = '<div style="color:#666;text-align:center;padding:20px;">⏳ 加载中...</div>';
 
             try {
-                const url = 'https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues?labels=' + PUBLIC_CHAR_LABEL + '&state=open';
+                const url = WORKER_API + '/api/legacy/issues?labels=' + PUBLIC_CHAR_LABEL + '&state=open';
                 const res = await fetch(url, {
                     headers: {
-                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -1765,10 +1761,9 @@
             char.usageCount = (char.usageCount || 0) + 1;
             try {
                 const issueBody = 'HZYAI公开角色\n```json\n' + JSON.stringify(char, null, 2) + '\n```';
-                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + char.issueNumber, {
+                await fetch(WORKER_API + '/api/legacy/issues/' + char.issueNumber, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
@@ -1782,10 +1777,9 @@
             const char = publicCharacters.find(c => c.id === charId);
             if (!char) return;
             try {
-                await fetch('https://api.github.com/repos/' + window.CONFIG.GITHUB_USERNAME + '/' + window.CONFIG.GITHUB_REPO + '/issues/' + char.issueNumber, {
+                await fetch(WORKER_API + '/api/legacy/issues/' + char.issueNumber, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': 'token ' + window.CONFIG.GITHUB_TOKEN,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
