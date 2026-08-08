@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat - 管理员后台</title>
@@ -309,7 +311,7 @@
         <div id="progressText" class="stats-info"></div>
     </div>
 
-    <script src="config.js"></script>
+    
     <script>
         let currentAdmin = null;
         let allUsers = [];
@@ -349,9 +351,9 @@
             progressDiv.style.display = 'block';
             
             while (hasMore) {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
                 const res = await fetch(url, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 
                 const linkHeader = res.headers.get('Link');
@@ -386,11 +388,11 @@
 
         async function loadAllData() {
             try {
-                const baseUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`;
+                const baseUrl = `${WORKER_API}/api/legacy/issues`;
                 
                 // 用户数据
                 const usersRes = await fetch(`${baseUrl}?labels=user&state=open`, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const userIssues = await usersRes.json();
                 allUsers = [];
@@ -401,7 +403,7 @@
 
                 // 聊天室数据
                 const roomsRes = await fetch(`${baseUrl}?labels=chatroom&state=open`, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const roomIssues = await roomsRes.json();
                 allRooms = [];
@@ -415,7 +417,7 @@
 
                 // 通知数据
                 const notifRes = await fetch(`${baseUrl}?labels=system_notification&state=open`, {
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
                 const notifIssues = await notifRes.json();
                 allNotifications = [];
@@ -556,10 +558,9 @@
             button.disabled = true;
 
             try {
-                const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=user&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
                 const response = await fetch(url, {
                     headers: {
-                        'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -619,11 +620,10 @@
                 let failedCount = 0;
                 for (const dup of toDelete) {
                     try {
-                        const deleteUrl = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${dup.issueNumber}`;
+                        const deleteUrl = `${WORKER_API}/api/legacy/issues/${dup.issueNumber}`;
                         const deleteResponse = await fetch(deleteUrl, {
                             method: 'PATCH',
                             headers: {
-                                'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
@@ -668,9 +668,9 @@
             };
             try {
                 const issueBody = `系统通知\n\`\`\`json\n${JSON.stringify(notificationData, null, 2)}\n\`\`\``;
-                await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+                await fetch(`${WORKER_API}/api/legacy/issues`, {
                     method: 'POST',
-                    headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title: `系统通知: ${title}`, body: issueBody, labels: ['system_notification'] })
                 });
                 alert(`通知已发送给 ${currentNotifyUser}`);
@@ -688,9 +688,9 @@
             if (!user) return;
             user.isBanned = shouldBan;
             const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(user, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${user.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${user.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除封禁`);
@@ -703,9 +703,9 @@
             if (!room) return;
             room.isBanned = shouldBan;
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${room.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${room.issueNumber}`, {
                 method: 'PATCH',
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body: updatedBody })
             });
             alert(shouldBan ? `群聊已被封禁` : `群聊已解除封禁`);
