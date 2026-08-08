@@ -884,6 +884,8 @@
         let currentRoom = null;
         let allRooms = [];
         let allMessages = [];
+        // Worker API 地址；优先取 config.js，若 Actions 生成的 config 未注入则回退到固定域名
+        const WORKER_API = (window.CONFIG && window.WORKER_API) ? window.WORKER_API : 'https://worker.nflshcchat.cc.cd';
         let messages = {};
         let pollInterval = null;
         let allNotifications = [];
@@ -902,7 +904,7 @@
             var toLoad = usernames.filter(function(u) { return !userAvatarCache[u]; });
             if (toLoad.length === 0) return;
             try {
-                var res = await fetch(CONFIG.WORKER_API + '/api/users');
+                var res = await fetch(WORKER_API + '/api/users');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 var users = await res.json();
                 toLoad.forEach(function(username) {
@@ -915,7 +917,7 @@
         // Load global message counts for level badges (from D1 Worker)
         async function loadGlobalMsgCounts() {
             try {
-                const res = await fetch(CONFIG.WORKER_API + '/api/messages?limit=5000');
+                const res = await fetch(WORKER_API + '/api/messages?limit=5000');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const all = await res.json();
                 for (const m of all) {
@@ -1015,7 +1017,7 @@
         async function loadHistoryMessages(page = 1) {
             if (!currentRoom) return [];
             try {
-                const res = await fetch(CONFIG.WORKER_API + '/api/messages?room_id=' + encodeURIComponent(currentRoom.id) + '&limit=1000');
+                const res = await fetch(WORKER_API + '/api/messages?room_id=' + encodeURIComponent(currentRoom.id) + '&limit=1000');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const all = await res.json();
                 const skip = (page - 1) * 50;
@@ -1041,7 +1043,7 @@
         async function loadNewMessages() {
             if (!currentRoom) return [];
             try {
-                const res = await fetch(CONFIG.WORKER_API + '/api/messages?room_id=' + encodeURIComponent(currentRoom.id) + '&limit=1000');
+                const res = await fetch(WORKER_API + '/api/messages?room_id=' + encodeURIComponent(currentRoom.id) + '&limit=1000');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const all = await res.json();
                 const newMessages = all
@@ -1299,7 +1301,7 @@
                 isRecalled: false
             };
             try {
-                await fetch(CONFIG.WORKER_API + '/api/messages', {
+                await fetch(WORKER_API + '/api/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1507,7 +1509,7 @@
 
         async function loadRooms() {
             try {
-                const res = await fetch(CONFIG.WORKER_API + '/api/rooms');
+                const res = await fetch(WORKER_API + '/api/rooms');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const rows = await res.json();
                 allRooms = [];
@@ -1635,7 +1637,7 @@
                 isRecalled: false
             };
             try {
-                await fetch(CONFIG.WORKER_API + '/api/messages', {
+                await fetch(WORKER_API + '/api/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1899,7 +1901,7 @@
         async function checkUserBanned(username) {
             if (isSystemAdmin(username) || username === BOT_CONFIG.name) return false;
             try {
-                const res = await fetch(CONFIG.WORKER_API + '/api/users');
+                const res = await fetch(WORKER_API + '/api/users');
                 if (!res.ok) return false;
                 const users = await res.json();
                 const u = users.find(x => x.username === username);
@@ -1910,7 +1912,7 @@
         async function checkUserExists(username) {
             if (isSystemAdmin(username) || username === BOT_CONFIG.name) return true;
             try {
-                const res = await fetch(CONFIG.WORKER_API + '/api/users');
+                const res = await fetch(WORKER_API + '/api/users');
                 if (!res.ok) return false;
                 const users = await res.json();
                 return users.some(x => x.username === username);
