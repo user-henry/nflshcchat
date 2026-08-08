@@ -338,51 +338,56 @@
             window.location.href = 'index.html'; 
         }
 
-        // ========== 分页加载所有消息 ==========
+        // 统一解析 issue.body 中的 JSON 代码块。
+        // 使用贪婪匹配到最后一个 ``` ，避免正文内嵌代码块导致内容被截断。
+        function parseIssueJson(issue) {
+            if (!issue || typeof issue.body !== 'string') return null;
+            const match = issue.body.match(/```json\s*\n([\s\S]*)\n```/);
+            if (!match) return null;
+            try {
+                return JSON.parse(match[1]);
+            } catch (e) {
+                // 回退到非贪婪匹配，兼容正文尾部还有其他内容的情况
+                const fallback = issue.body.match(/```json\s*\n([\s\S]*?)\n```/);
+                if (!fallback) return null;
+                try { return JSON.parse(fallback[1]); } catch (e2) { return null; }
+            }
+        }
+
+        // ========== 加载所有消息 ==========
+        // 注意：Worker 的 /api/legacy/issues 会一次性返回该 label 的全部记录，
+        // 并不支持 page/per_page 分页，也不返回 Link 头。
+        // 因此这里只请求一次；若沿用旧的翻页循环会重复累加同一批数据。
         async function loadAllMessages() {
-            let allMsg = [];
-            let page = 1;
-            let hasMore = true;
-            
             const progressDiv = document.getElementById('loadingProgress');
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
-            
-            progressDiv.style.display = 'block';
-            
-            while (hasMore) {
-                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+
+            if (progressDiv) progressDiv.style.display = 'block';
+            if (progressText) progressText.innerHTML = '正在加载消息...';
+            if (progressFill) progressFill.style.width = '30%';
+
+            const allMsg = [];
+            try {
+                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open`;
                 const res = await fetch(url, {
                     headers: { 'Accept': 'application/vnd.github.v3+json' }
                 });
-                
-                const linkHeader = res.headers.get('Link');
-                hasMore = linkHeader && linkHeader.includes('rel="next"');
-                
                 const issues = await res.json();
-                if (issues.length === 0) break;
-                
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const msgData = JSON.parse(match[1]);
-                        allMsg.push(msgData);
-                    }
+
+                for (const issue of (Array.isArray(issues) ? issues : [])) {
+                    const msgData = parseIssueJson(issue);
+                    if (msgData) allMsg.push(msgData);
                 }
-                
-                const percent = Math.min(95, page * 2);
-                progressFill.style.width = `${percent}%`;
-                progressText.innerHTML = `正在加载消息... 已加载 ${allMsg.length} 条 (第${page}页)`;
-                page++;
-                if (page > 50) break;
+
+                if (progressFill) progressFill.style.width = '100%';
+                if (progressText) progressText.innerHTML = `✅ 消息加载完成！共 ${allMsg.length} 条消息`;
+                setTimeout(() => { if (progressDiv) progressDiv.style.display = 'none'; }, 1500);
+            } catch (e) {
+                console.error('加载消息失败:', e);
+                if (progressText) progressText.innerHTML = '❌ 消息加载失败：' + (e && e.message ? e.message : e);
             }
-            
-            progressFill.style.width = '100%';
-            progressText.innerHTML = `✅ 消息加载完成！共 ${allMsg.length} 条消息`;
-            setTimeout(() => {
-                progressDiv.style.display = 'none';
-            }, 1500);
-            
+
             return allMsg;
         }
 
@@ -396,9 +401,9 @@
                 });
                 const userIssues = await usersRes.json();
                 allUsers = [];
-                for (const issue of userIssues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) { const userData = JSON.parse(match[1]); allUsers.push({ ...userData, issueNumber: issue.number }); }
+                for (const issue of (Array.isArray(userIssues) ? userIssues : [])) {
+                    const userData = parseIssueJson(issue);
+                    if (userData) allUsers.push({ ...userData, issueNumber: issue.number });
                 }
 
                 // 聊天室数据
@@ -407,9 +412,9 @@
                 });
                 const roomIssues = await roomsRes.json();
                 allRooms = [];
-                for (const issue of roomIssues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) { const roomData = JSON.parse(match[1]); allRooms.push({ ...roomData, issueNumber: issue.number }); }
+                for (const issue of (Array.isArray(roomIssues) ? roomIssues : [])) {
+                    const roomData = parseIssueJson(issue);
+                    if (roomData) allRooms.push({ ...roomData, issueNumber: issue.number });
                 }
 
                 // 消息数据（分页加载所有）
@@ -421,16 +426,24 @@
                 });
                 const notifIssues = await notifRes.json();
                 allNotifications = [];
-                for (const issue of notifIssues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) { allNotifications.push(JSON.parse(match[1])); }
+                for (const issue of (Array.isArray(notifIssues) ? notifIssues : [])) {
+                    const notifData = parseIssueJson(issue);
+                    if (notifData) allNotifications.push(notifData);
                 }
 
                 updateStats();
                 renderRooms();
                 renderUsers();
                 renderNotifications();
-            } catch (error) { console.error('加载数据失败:', error); }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                const progressDiv = document.getElementById('loadingProgress');
+                const progressText = document.getElementById('progressText');
+                if (progressDiv && progressText) {
+                    progressDiv.style.display = 'block';
+                    progressText.textContent = '❌ 加载失败：' + (error && error.message ? error.message : error);
+                }
+            }
         }
 
         function updateStats() {
@@ -567,11 +580,10 @@
                 const issues = await response.json();
 
                 const userMap = new Map();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                for (const issue of (Array.isArray(issues) ? issues : [])) {
+                    const userData = parseIssueJson(issue);
+                    if (userData) {
                         try {
-                            const userData = JSON.parse(match[1]);
                             const username = userData.username;
                             const createdAt = new Date(userData.createdAt);
                             if (!userMap.has(username)) {
