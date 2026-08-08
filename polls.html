@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat · 投票中心</title>
@@ -613,7 +615,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="config.js"></script>
+
 <script>
     // ============================================================
     //  配置
@@ -650,10 +652,9 @@
         grid.innerHTML = '<div class="empty-state"><span class="icon">⏳</span>加载中...</div>';
 
         try {
-            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${POLL_LABEL}&state=open`;
+            const url = `${WORKER_API}/api/legacy/issues?labels=${POLL_LABEL}&state=open`;
             const res = await fetch(url, {
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             });
@@ -872,10 +873,9 @@
 
         try {
             const issueBody = `投票数据\n\`\`\`json\n${JSON.stringify(poll, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${poll.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${poll.issueNumber}`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
@@ -1005,10 +1005,9 @@
 
         try {
             const issueBody = `投票数据\n\`\`\`json\n${JSON.stringify(pollData, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+            await fetch(`${WORKER_API}/api/legacy/issues`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
@@ -1045,10 +1044,9 @@
         if (!poll) return;
 
         try {
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${poll.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${poll.issueNumber}`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
@@ -1072,10 +1070,9 @@
 
         try {
             const issueBody = `投票数据\n\`\`\`json\n${JSON.stringify(poll, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${poll.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${poll.issueNumber}`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
