@@ -662,13 +662,13 @@
                 // 优先使用 worker 透传的原始数据（含 url 等完整字段）
                 let parsed = issue.raw || null;
                 if (!parsed) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    const match = issue.body.match(/```json\r?\n([\s\S]*?)\r?\n```/);
                     if (!match) continue;
                     try { parsed = JSON.parse(match[1]); } catch (e) { continue; }
                 }
                 // 外层 obj 通常不含 url，真正的图片数据（imageData）被嵌套在 obj.body 的 fenced json 中
                 if (!parsed.url && parsed.body) {
-                    const m2 = parsed.body.match(/```json\n([\s\S]*?)\n```/);
+                    const m2 = parsed.body.match(/```json\r?\n([\s\S]*?)\r?\n```/);
                     if (m2) {
                         try {
                             const inner = JSON.parse(m2[1]);
