@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFLSHC Chat · 文章</title>
@@ -161,7 +163,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="config.js"></script>
+    
 </head>
 <body>
 
@@ -277,9 +279,9 @@
         container.innerHTML = '<div class="empty-state"><span class="icon">⏳</span>加载中...</div>';
 
         try {
-            const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=${ARTICLE_LABEL}&state=open`;
+            const url = `${WORKER_API}/api/legacy/issues?labels=${ARTICLE_LABEL}&state=open`;
             const res = await fetch(url, {
-                headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
             });
             const issues = await res.json();
             allArticles = [];
@@ -432,10 +434,9 @@
 
         try {
             const issueBody = `文章数据\n\`\`\`json\n${JSON.stringify(articleData, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues`, {
+            await fetch(`${WORKER_API}/api/legacy/issues`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
@@ -505,10 +506,9 @@
         if (!article) { closeModal('deleteModal'); return; }
 
         try {
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${article.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${article.issueNumber}`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
@@ -531,10 +531,9 @@
     async function updateArticleOnGitHub(article) {
         try {
             const issueBody = `文章数据\n\`\`\`json\n${JSON.stringify(article, null, 2)}\n\`\`\``;
-            await fetch(`https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues/${article.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${article.issueNumber}`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
