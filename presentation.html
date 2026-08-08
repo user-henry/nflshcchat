@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>GitHub's Infinite Possibilities | Tech Talk by HZY</title>
@@ -211,7 +213,7 @@
     <div class="slide-progress" id="slideProgress">Slide 1 / 6</div>
 </div>
 
-<script src="config.js"></script>
+
 <script>
     (function() {
         // ----- 幻灯片导航 -----
@@ -236,8 +238,8 @@
                 let allMsgs = [];
                 let page = 1;
                 while(true) {
-                    const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
-                    const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}` }});
+                    const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                    const res = await fetch(url, { headers: {}});
                     const issues = await res.json();
                     if(issues.length === 0) break;
                     for(const issue of issues) {
@@ -274,8 +276,8 @@
             try {
                 let total = 0, page=1;
                 while(true) {
-                    const url = `https://api.github.com/repos/${window.CONFIG.GITHUB_USERNAME}/${window.CONFIG.GITHUB_REPO}/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
-                    const res = await fetch(url, { headers: { 'Authorization': `token ${window.CONFIG.GITHUB_TOKEN}` }});
+                    const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
+                    const res = await fetch(url, { headers: {}});
                     const issues = await res.json();
                     total += issues.length;
                     if(issues.length < 100) break;
