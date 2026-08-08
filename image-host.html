@@ -659,15 +659,26 @@
             const images = [];
 
             for (const issue of issues) {
-                const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                if (match) {
-                    try {
-                        const data = JSON.parse(match[1]);
-                        // 仅展示含有效图片地址的条目（system/calendar 等无 url 的记录会被跳过）
-                        if (!data.url) continue;
-                        images.push({ ...data, issueNumber: issue.number });
-                    } catch(e) {}
+                // 优先使用 worker 透传的原始数据（含 url 等完整字段）
+                let parsed = issue.raw || null;
+                if (!parsed) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (!match) continue;
+                    try { parsed = JSON.parse(match[1]); } catch (e) { continue; }
                 }
+                // 外层 obj 通常不含 url，真正的图片数据（imageData）被嵌套在 obj.body 的 fenced json 中
+                if (!parsed.url && parsed.body) {
+                    const m2 = parsed.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (m2) {
+                        try {
+                            const inner = JSON.parse(m2[1]);
+                            parsed = { ...parsed, ...inner };
+                        } catch (e) {}
+                    }
+                }
+                // 仅展示含有效图片地址的条目（system/calendar/post 等无 url 的记录会被跳过）
+                if (!parsed || !parsed.url) continue;
+                images.push({ ...parsed, issueNumber: issue.number });
             }
 
             images.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
