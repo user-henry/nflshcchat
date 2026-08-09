@@ -241,19 +241,6 @@
         function getLevelClass(level) { if (level <= 3) return 'level-low'; if (level <= 6) return 'level-mid'; if (level <= 9) return 'level-high'; return 'level-top'; }
 
         async function loadUserData(username) {
-            if (isSystemAdmin(username)) {
-                return {
-                    username: 'huangzhiyuan',
-                    email: 'admin@nflshc.com',
-                    bio: '平台创始人及系统管理员，负责网站的维护和管理。',
-                    createdAt: new Date().toISOString(),
-                    isBanned: false,
-                    avatar: SITE_LOGO,
-                    isAdmin: true,
-                    passwordHashed: true
-                };
-            }
-            
             const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
             const res = await fetch(url, {
                 headers: { 'Accept': 'application/vnd.github.v3+json' }
@@ -273,6 +260,19 @@
                 }
             }
             
+            if (isSystemAdmin(username)) {
+                return {
+                    username: 'huangzhiyuan',
+                    email: 'admin@nflshc.com',
+                    bio: '平台创始人及系统管理员，负责网站的维护和管理。',
+                    createdAt: new Date().toISOString(),
+                    isBanned: false,
+                    avatar: SITE_LOGO,
+                    avatarUrl: SITE_LOGO,
+                    isAdmin: true,
+                    passwordHashed: true
+                };
+            }
             return null;
         }
 
@@ -332,8 +332,11 @@
             const user = viewUser;
             Object.assign(user, updates);
             user.updatedAt = new Date().toISOString();
+            // 确保头像同时写入 avatar（D1 列名）与 avatarUrl（兼容旧数据）
+            if (user.avatarUrl) user.avatar = user.avatarUrl;
+            const idForUpdate = user.issueNumber || user.username;
             const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(user, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${user.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/legacy/issues/${encodeURIComponent(idForUpdate)}?labels=user`, {
                 method: 'PATCH',
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
