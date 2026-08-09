@@ -1844,10 +1844,10 @@
             else currentRoom.verifyCode = null;
             currentRoom.updatedAt = new Date().toISOString();
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/rooms/${currentRoom.id}`, {
                 method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentRoom)
             });
             alert('群设置已保存');
             closeRoomSettingsModal();
@@ -1862,10 +1862,10 @@
             if (currentRoom.admins.includes(username)) { alert('已是管理员'); return; }
             currentRoom.admins.push(username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/rooms/${currentRoom.id}`, {
                 method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentRoom)
             });
             alert(`已添加 ${username} 为管理员`);
             document.getElementById('addAdminUser').value = '';
@@ -1876,10 +1876,10 @@
             if (!confirm(`确定要移除 ${username} 的管理员权限吗？`)) return;
             currentRoom.admins = currentRoom.admins.filter(a => a !== username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/rooms/${currentRoom.id}`, {
                 method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentRoom)
             });
             alert(`已移除 ${username} 的管理员权限`);
             showRoomSettings();
@@ -1889,10 +1889,10 @@
             if (!confirm('确定要退出该群聊吗？')) return;
             if (currentRoom.members) currentRoom.members = currentRoom.members.filter(m => m !== currentUser.username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(currentRoom, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${currentRoom.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/rooms/${currentRoom.id}`, {
                 method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentRoom)
             });
             alert('已退出群聊');
             closeRoomSettingsModal();
@@ -1957,10 +1957,10 @@
             if (room.members.includes(currentUser.username)) { alert('您已在群聊中'); return; }
             room.members.push(currentUser.username);
             const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${room.issueNumber}`, {
+            await fetch(`${WORKER_API}/api/rooms/${room.id}`, {
                 method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(room)
             });
             alert(`✅ 已成功加入群聊「${room.name}」`);
             await loadRooms();
@@ -2217,33 +2217,14 @@
 
         async function updateMessageOnGitHub(msg) {
             try {
-                // Search across multiple pages to find the issue
-                let page = 1;
-                let found = false;
-                while (!found && page <= 10) {
-                    const url = WORKER_API + '/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=' + page;
-                    const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
-                    const issues = await res.json();
-                    for (const issue of issues) {
-                        if (issue.title === 'Message: ' + msg.id) {
-                            const body = '聊天消息\n```json\n' + JSON.stringify(msg, null, 2) + '\n```';
-                            await fetch(WORKER_API + '/api/legacy/issues/' + issue.number, {
-                                method: 'PATCH',
-                                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ body: body })
-                            });
-                            found = true;
-                            alert(msg.isPinned ? '📌 已置顶' : '已取消置顶');
-                            break;
-                        }
-                    }
-                    const linkHeader = res.headers.get('Link');
-                    if (!linkHeader || !linkHeader.includes('rel="next"')) break;
-                    page++;
-                }
-                if (!found) {
-                    alert('无法找到该消息的存储记录，置顶操作可能未生效');
-                }
+                // 直接按消息 id 更新 messages 表，无需遍历分页查找
+                const res = await fetch(`${WORKER_API}/api/messages/${encodeURIComponent(msg.id)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_pinned: !!msg.isPinned })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                alert(msg.isPinned ? '📌 已置顶' : '已取消置顶');
             } catch (e) {
                 console.error('更新置顶状态失败:', e);
                 alert('置顶失败：' + e.message);
