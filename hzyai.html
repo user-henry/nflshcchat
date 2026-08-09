@@ -108,6 +108,7 @@
             border-radius: 10px;
             position: relative;
             user-select: none;
+            touch-action: none;
         }
         .slider-track {
             position: absolute;
@@ -146,6 +147,9 @@
             cursor: grab;
             z-index: 2;
             transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .slider-thumb:active { cursor: grabbing; }
         .slider-thumb .arrow { color: var(--bg-primary, #1a1a2e); font-size: 12px; }
@@ -6089,7 +6093,7 @@
         function clearLoginState() {
             localStorage.removeItem('nflshc_currentUser');
         }
-        // 滑块验证
+        // 滑块验证（使用 Pointer Events，兼容鼠标/触屏/触控笔）
         (function() {
             const slider = document.getElementById('slider');
             const thumb = document.getElementById('thumb');
@@ -6097,85 +6101,66 @@
             const hintText = document.getElementById('hintText');
             const loginBtn = document.getElementById('loginBtn');
             let isDragging = false, startX = 0, verified = false;
+            const THUMB_W = 38, PAD = 2;
+
+            function maxLeft() {
+                return Math.max(0, slider.getBoundingClientRect().width - THUMB_W - PAD * 2);
+            }
 
             function resetSlider() {
-                thumb.style.left = '2px';
+                isDragging = false; verified = false;
+                thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                thumb.style.left = PAD + 'px';
                 progress.style.width = '0';
                 hintText.textContent = '👉 拖动滑块验证';
                 slider.classList.remove('slider-success');
                 loginBtn.disabled = true;
-                verified = false;
             }
 
-            thumb.addEventListener('mousedown', function(e) {
+            function moveTo(clientX) {
+                const sliderRect = slider.getBoundingClientRect();
+                let newLeft = clientX - sliderRect.left - startX;
+                newLeft = Math.max(PAD, Math.min(newLeft, maxLeft()));
+                thumb.style.left = newLeft + 'px';
+                progress.style.width = (((newLeft - PAD) / maxLeft()) * 100) + '%';
+                if (newLeft >= maxLeft()) {
+                    isDragging = false; verified = true;
+                    thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                    progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
+                    thumb.style.left = maxLeft() + PAD + 'px'; progress.style.width = '100%';
+                    slider.classList.add('slider-success');
+                    hintText.textContent = '✓ 验证通过'; loginBtn.disabled = false;
+                }
+            }
+
+            function onDown(e) {
                 if (verified) return;
                 isDragging = true;
                 startX = e.clientX - thumb.getBoundingClientRect().left;
                 thumb.style.transition = 'none';
                 progress.style.transition = 'none';
-                e.preventDefault();
-            });
-
-            document.addEventListener('mousemove', function(e) {
-                if (!isDragging || verified) return;
-                const sliderRect = slider.getBoundingClientRect();
-                let newLeft = e.clientX - sliderRect.left - startX;
-                const maxLeft = sliderRect.width - thumb.offsetWidth - 4;
-                newLeft = Math.max(2, Math.min(newLeft, maxLeft));
-                thumb.style.left = newLeft + 'px';
-                progress.style.width = (((newLeft - 2) / maxLeft) * 100) + '%';
-                if (newLeft >= maxLeft) {
-                    isDragging = false; verified = true;
-                    thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
-                    progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
-                    thumb.style.left = maxLeft + 'px'; progress.style.width = '100%';
-                    slider.classList.add('slider-success');
-                    hintText.textContent = '✓ 验证通过'; loginBtn.disabled = false;
+                if (thumb.setPointerCapture && e.pointerId !== undefined) {
+                    try { thumb.setPointerCapture(e.pointerId); } catch (_) {}
                 }
-            });
-
-            document.addEventListener('mouseup', function() {
+                e.preventDefault();
+            }
+            function onMove(e) {
+                if (!isDragging || verified) return;
+                moveTo(e.clientX);
+            }
+            function onUp() {
                 if (!isDragging || verified) return;
                 isDragging = false;
                 thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
                 progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
-                thumb.style.left = '2px'; progress.style.width = '0';
-            });
+                thumb.style.left = PAD + 'px'; progress.style.width = '0';
+            }
 
-            thumb.addEventListener('touchstart', function(e) {
-                if (verified) return;
-                isDragging = true;
-                startX = e.touches[0].clientX - thumb.getBoundingClientRect().left;
-                thumb.style.transition = 'none';
-                progress.style.transition = 'none';
-                e.preventDefault();
-            });
-
-            document.addEventListener('touchmove', function(e) {
-                if (!isDragging || verified) return;
-                const sliderRect = slider.getBoundingClientRect();
-                let newLeft = e.touches[0].clientX - sliderRect.left - startX;
-                const maxLeft = sliderRect.width - thumb.offsetWidth - 4;
-                newLeft = Math.max(2, Math.min(newLeft, maxLeft));
-                thumb.style.left = newLeft + 'px';
-                progress.style.width = (((newLeft - 2) / maxLeft) * 100) + '%';
-                if (newLeft >= maxLeft) {
-                    isDragging = false; verified = true;
-                    thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
-                    progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
-                    thumb.style.left = maxLeft + 'px'; progress.style.width = '100%';
-                    slider.classList.add('slider-success');
-                    hintText.textContent = '✓ 验证通过'; loginBtn.disabled = false;
-                }
-            });
-
-            document.addEventListener('touchend', function() {
-                if (!isDragging || verified) return;
-                isDragging = false;
-                thumb.style.transition = 'left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
-                progress.style.transition = 'width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1.2)';
-                thumb.style.left = '2px'; progress.style.width = '0';
-            });
+            thumb.addEventListener('pointerdown', onDown);
+            thumb.addEventListener('pointermove', onMove);
+            thumb.addEventListener('pointerup', onUp);
+            thumb.addEventListener('pointercancel', onUp);
 
             window.resetLoginSlider = resetSlider;
         })();
