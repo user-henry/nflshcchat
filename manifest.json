@@ -1,7 +1,7 @@
 {
   "name": "NFLSHC Chat",
   "short_name": "NFLSHC",
-  "description": "基于 GitHub Issues 的轻量级聊天平台",
+  "description": "基于 Cloudflare D1 的轻量级聊天平台",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1a2e",
