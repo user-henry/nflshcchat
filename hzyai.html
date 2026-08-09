@@ -16,7 +16,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             height: 100vh;
             overflow: hidden;
         }
@@ -27,18 +27,18 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, var(--bg-primary, #1a1a2e) 0%, var(--bg-tertiary, #0f0f1a) 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
         .login-card {
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 20px;
             padding: 40px;
             width: 380px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
         .login-logo {
@@ -54,13 +54,13 @@
             font-size: 28px;
             margin-bottom: 8px;
             text-align: center;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
         .login-card .subtitle {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             margin-bottom: 30px;
             font-size: 14px;
             text-align: center;
@@ -69,21 +69,21 @@
             width: 100%;
             padding: 12px 16px;
             margin-bottom: 16px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             border-radius: 10px;
-            color: var(--text-primary, #fff);
+            color: var(--text-primary);
             font-size: 14px;
         }
         .login-card input:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .login-card button {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
-            color: var(--bg-primary, #1a1a2e);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: var(--bg-primary);
             border: none;
             border-radius: 10px;
             font-weight: bold;
@@ -94,7 +94,7 @@
             transform: translateY(-1px);
         }
         .login-error {
-            color: var(--danger, #dc3545);
+            color: var(--danger);
             font-size: 13px;
             margin-top: 12px;
             text-align: center;
@@ -103,8 +103,8 @@
         .slider-wrapper { margin: 16px 0; }
         .slider-container {
             height: 42px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             border-radius: 10px;
             position: relative;
             user-select: none;
@@ -122,7 +122,7 @@
         .slider-progress {
             position: absolute;
             top: 0; left: 0; bottom: 0;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
             border-radius: 10px;
             width: 0;
             transition: width 0.05s linear;
@@ -132,7 +132,7 @@
             position: relative;
             z-index: 1;
             font-size: 13px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             pointer-events: none;
         }
         .slider-thumb {
@@ -141,7 +141,7 @@
             left: 2px;
             width: 38px;
             height: 36px;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -155,10 +155,10 @@
             pointer-events: auto;
         }
         .slider-thumb:active { cursor: grabbing; }
-        .slider-thumb .arrow { color: var(--bg-primary, #1a1a2e); font-size: 12px; }
-        .slider-success .slider-thumb { background: var(--success, #28a745); }
-        .slider-success .slider-progress { background: var(--success, #28a745); }
-        .slider-success .hint-text { color: var(--text-primary, #fff); }
+        .slider-thumb .arrow { color: var(--bg-primary); font-size: 12px; }
+        .slider-success .slider-thumb { background: var(--success); }
+        .slider-success .slider-progress { background: var(--success); }
+        .slider-success .hint-text { color: var(--text-primary); }
         .login-card button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -172,8 +172,8 @@
 
         .sidebar {
             width: 280px;
-            background: var(--bg-tertiary, #0f0f1a);
-            border-right: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             position: fixed;
@@ -183,7 +183,7 @@
         }
         .sidebar-header {
             padding: 20px;
-            border-bottom: 1px solid var(--border-color, #2a2a3e);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -198,7 +198,7 @@
         }
         .sidebar-header h2 {
             font-size: 20px;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -206,8 +206,8 @@
         .new-chat-btn {
             margin: 16px 20px;
             padding: 12px;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
-            color: var(--bg-primary, #1a1a2e);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: var(--bg-primary);
             border: none;
             border-radius: 12px;
             font-weight: bold;
@@ -231,15 +231,15 @@
             margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             position: relative;
         }
         .conversation-item:hover {
-            background: var(--bg-tertiary, #2a2a3e);
+            background: var(--bg-tertiary);
         }
         .conversation-item.active {
-            background: var(--bg-tertiary, #2a2a3e);
-            border-left: 3px solid var(--accent-color, #ffd700);
+            background: var(--bg-tertiary);
+            border-left: 3px solid var(--accent-color);
         }
         .conversation-title {
             font-size: 14px;
@@ -252,7 +252,7 @@
         }
         .conversation-time {
             font-size: 11px;
-            color: var(--text-muted, #666);
+            color: var(--text-muted);
         }
         .delete-conv {
             position: absolute;
@@ -260,7 +260,7 @@
             top: 8px;
             opacity: 0;
             transition: opacity 0.2s;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 12px;
             background: none;
@@ -272,7 +272,7 @@
             top: 8px;
             opacity: 0;
             transition: opacity 0.2s;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 12px;
             background: none;
@@ -283,15 +283,15 @@
             opacity: 1;
         }
         .delete-conv:hover {
-            color: var(--danger, #dc3545);
+            color: var(--danger);
         }
         .export-conv-btn:hover {
-            color: var(--success, #2ecc71);
+            color: var(--success);
         }
 
         .user-info {
             padding: 16px 20px;
-            border-top: 1px solid var(--border-color, #2a2a3e);
+            border-top: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -300,12 +300,12 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: var(--bg-primary, #1a1a2e);
+            color: var(--bg-primary);
         }
         .user-name {
             font-size: 14px;
@@ -313,13 +313,13 @@
         }
         .user-role {
             font-size: 11px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
         }
         .logout-btn {
             margin-left: auto;
             background: none;
             border: none;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 18px;
         }
@@ -328,8 +328,8 @@
             display: flex;
             gap: 4px;
             padding: 8px 16px;
-            background: var(--bg-tertiary, #0f0f1a);
-            border-bottom: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
             flex-wrap: wrap;
         }
         .mode-tab {
@@ -337,7 +337,7 @@
             border: none;
             border-radius: 8px;
             background: transparent;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 13px;
             font-weight: 500;
@@ -346,12 +346,12 @@
             white-space: nowrap;
         }
         .mode-tab:hover {
-            color: var(--text-primary, #fff);
+            color: var(--text-primary);
             background: var(--hover-bg, rgba(255,255,255,0.05));
         }
         .mode-tab.active {
-            background: var(--accent-color, #ffd700);
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--accent-color);
+            color: var(--bg-primary);
         }
 
         .main-chat {
@@ -360,12 +360,12 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
         }
         .chat-header {
             padding: 12px 24px;
-            border-bottom: 1px solid var(--border-color, #2a2a3e);
-            background: var(--bg-secondary, #16213e);
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -374,11 +374,11 @@
         }
         .chat-header h1 {
             font-size: 18px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
         }
         .chat-header p {
             font-size: 12px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
         }
         .chat-header .model-selector {
             display: flex;
@@ -387,30 +387,30 @@
         }
         .chat-header .model-selector label {
             font-size: 12px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
         }
         .chat-header .model-selector select {
             padding: 4px 10px;
             border-radius: 6px;
-            background: var(--bg-primary, #1a1a2e);
-            color: var(--text-primary, #fff);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
             font-size: 12px;
             cursor: pointer;
         }
         .chat-header .model-selector select:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
 
         .daily-quote {
-            background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,215,0,0.02));
-            border-left: 3px solid var(--accent-color, #ffd700);
+            background: linear-gradient(135deg, var(--accent-color-alpha), rgba(255,215,0,0.02));
+            border-left: 3px solid var(--accent-color);
             padding: 8px 16px;
             margin: 6px 24px 0 24px;
             border-radius: 0 8px 8px 0;
             font-size: 13px;
-            color: var(--text-secondary, #ccc);
+            color: var(--text-secondary);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -420,7 +420,7 @@
         .daily-quote .refresh-btn {
             background: none;
             border: none;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             cursor: pointer;
             font-size: 16px;
             padding: 4px 8px;
@@ -439,7 +439,7 @@
             margin: 0;
             padding: 0;
             border: none;
-            color: var(--text-secondary, #ccc);
+            color: var(--text-secondary);
             font-style: italic;
         }
         .daily-quote .quote-content blockquote p {
@@ -447,27 +447,27 @@
         }
         .daily-quote .quote-content blockquote footer {
             font-style: normal;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 12px;
             margin-top: 4px;
         }
         .daily-quote .quote-loading {
-            color: var(--text-muted, #666);
+            color: var(--text-muted);
             font-style: italic;
         }
 
         .sync-bar {
             padding: 8px 24px;
-            background: var(--bg-secondary, #16213e);
-            border-bottom: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
         .sync-btn {
-            background: var(--bg-tertiary, #2a2a3e);
-            color: var(--accent-color, #ffd700);
+            background: var(--bg-tertiary);
+            color: var(--accent-color);
             border: none;
             padding: 4px 10px;
             border-radius: 20px;
@@ -477,11 +477,11 @@
             white-space: nowrap;
         }
         .sync-btn:hover {
-            background: var(--accent-color, #ffd700);
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--accent-color);
+            color: var(--bg-primary);
         }
         .sync-btn.sync-character {
-            background: #9b59b6;
+            background: var(--extra-purple);
             color: white;
         }
         .sync-btn.sync-character:hover {
@@ -498,14 +498,14 @@
         }
         .sync-warning {
             font-size: 11px;
-            color: var(--warning, #f39c12);
+            color: var(--warning);
             display: flex;
             align-items: center;
             gap: 6px;
         }
         .sync-status {
             font-size: 11px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             margin-left: auto;
         }
 
@@ -537,11 +537,11 @@
             flex-shrink: 0;
         }
         .message.user .message-avatar {
-            background: var(--bg-tertiary, #2a2a3e);
+            background: var(--bg-tertiary);
             margin-left: 10px;
         }
         .message.assistant .message-avatar {
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
             margin-right: 10px;
         }
         .message-content {
@@ -552,15 +552,15 @@
             font-size: 14px;
         }
         .message.user .message-content {
-            background: var(--bg-tertiary, #2a2a3e);
-            color: var(--text-primary, #fff);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
         }
         .message.assistant .message-content {
-            background: var(--bg-secondary, #16213e);
-            color: var(--text-secondary, #ccc);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
         }
         .message-content pre {
-            background: var(--bg-tertiary, #0f0f1a);
+            background: var(--bg-tertiary);
             padding: 10px;
             border-radius: 6px;
             overflow-x: auto;
@@ -574,36 +574,36 @@
             max-width: 100%;
             border-radius: 8px;
             margin: 6px 0;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .message-content video {
             max-width: 100%;
             border-radius: 8px;
             margin: 6px 0;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
 
         .input-area {
             padding: 16px 24px;
-            border-top: 1px solid var(--border-color, #2a2a3e);
-            background: var(--bg-secondary, #16213e);
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
         }
         .input-wrapper {
             display: flex;
             gap: 10px;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             border-radius: 14px;
             padding: 6px 12px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .input-wrapper:focus-within {
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .input-wrapper textarea {
             flex: 1;
             background: none;
             border: none;
-            color: var(--text-primary, #fff);
+            color: var(--text-primary);
             font-size: 14px;
             resize: none;
             font-family: inherit;
@@ -615,8 +615,8 @@
             outline: none;
         }
         .send-btn {
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
-            color: var(--bg-primary, #1a1a2e);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: var(--bg-primary);
             border: none;
             border-radius: 10px;
             padding: 6px 16px;
@@ -632,14 +632,14 @@
             display: flex;
             gap: 4px;
             padding: 10px 14px;
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 16px;
             width: fit-content;
         }
         .thinking span {
             width: 6px;
             height: 6px;
-            background: var(--text-muted, #888);
+            background: var(--text-muted);
             border-radius: 50%;
             animation: blink 1.4s infinite;
         }
@@ -656,7 +656,7 @@
             flex: 1;
             flex-direction: column;
             padding: 20px;
-            background: var(--bg-tertiary, #0f172a);
+            background: var(--bg-tertiary);
             overflow-y: auto;
         }
         .draw-mode.active {
@@ -668,7 +668,7 @@
         }
         .draw-header h2 {
             font-size: 24px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -676,7 +676,7 @@
             flex-wrap: wrap;
         }
         .draw-header p {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
             margin-top: 4px;
         }
@@ -700,27 +700,27 @@
             min-width: 100px;
             padding: 10px 14px;
             border-radius: 10px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
-            color: var(--text-primary, #fff);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
             font-size: 13px;
         }
         .draw-input-row input:focus,
         .draw-input-row select:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .draw-input-row select option {
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
         }
         .draw-prompt-input {
             flex: 3;
             min-width: 160px;
         }
         .image-upload-btn {
-            background: var(--bg-tertiary, #2a2a3e);
-            border: 1px solid var(--border-color, #2a2a3e);
-            color: var(--text-secondary, #aaa);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
             padding: 6px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -732,19 +732,19 @@
             white-space: nowrap;
         }
         .image-upload-btn:hover {
-            border-color: var(--accent-color, #ffd700);
-            color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
         .image-upload-btn.has-image {
-            border-color: var(--success, #2ecc71);
-            color: var(--success, #2ecc71);
+            border-color: var(--success);
+            color: var(--success);
         }
         .reference-preview {
             display: none;
             margin-top: 8px;
             max-width: 120px;
             border-radius: 8px;
-            border: 2px solid var(--accent-color, #ffd700);
+            border: 2px solid var(--accent-color);
             overflow: hidden;
             cursor: pointer;
             position: relative;
@@ -766,8 +766,8 @@
         }
         .draw-generate-btn {
             padding: 10px 24px;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
-            color: var(--bg-primary, #1a1a2e);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: var(--bg-primary);
             border: none;
             border-radius: 10px;
             font-weight: bold;
@@ -791,15 +791,15 @@
             align-items: center;
             justify-content: center;
             min-height: 240px;
-            background: var(--bg-primary, #0a0f1c);
+            background: var(--bg-primary);
             border-radius: 14px;
-            border: 1px dashed var(--border-color, #2a2a3e);
+            border: 1px dashed var(--border-color);
             padding: 20px;
             position: relative;
             overflow: hidden;
         }
         .draw-result-area .placeholder {
-            color: var(--text-muted, #555);
+            color: var(--text-muted);
             font-size: 14px;
             text-align: center;
         }
@@ -832,8 +832,8 @@
         .draw-result-area .spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid var(--border-color, #2a2a3e);
-            border-top-color: var(--accent-color, #ffd700);
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-color);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -841,7 +841,7 @@
             to { transform: rotate(360deg); }
         }
         .draw-result-area .loading-text {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
         }
         .draw-history {
@@ -864,7 +864,7 @@
             transition: border-color 0.2s;
         }
         .draw-history-item:hover {
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .draw-history-item img,
         .draw-history-item video {
@@ -879,7 +879,7 @@
             flex: 1;
             flex-direction: column;
             padding: 20px;
-            background: var(--bg-tertiary, #0f172a);
+            background: var(--bg-tertiary);
             overflow-y: auto;
         }
         .vision-mode.active {
@@ -891,7 +891,7 @@
         }
         .vision-header h2 {
             font-size: 24px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -899,7 +899,7 @@
             flex-wrap: wrap;
         }
         .vision-header p {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
             margin-top: 4px;
         }
@@ -923,15 +923,15 @@
             min-width: 100px;
             padding: 10px 14px;
             border-radius: 10px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
-            color: var(--text-primary, #fff);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
             font-size: 13px;
         }
         .vision-input-row select:focus,
         .vision-input-row input:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .vision-input-row .prompt-input {
             flex: 3;
@@ -944,9 +944,9 @@
             align-items: center;
         }
         .vision-upload-area .upload-btn {
-            background: var(--bg-tertiary, #2a2a3e);
-            border: 1px solid var(--border-color, #2a2a3e);
-            color: var(--text-secondary, #aaa);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
             padding: 6px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -954,19 +954,19 @@
             transition: all 0.3s;
         }
         .vision-upload-area .upload-btn:hover {
-            border-color: var(--accent-color, #ffd700);
-            color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
         .vision-upload-area .upload-btn.has-file {
-            border-color: #2ecc71;
-            color: #2ecc71;
+            border-color: var(--success);
+            color: var(--success);
         }
         .vision-preview {
             display: none;
             margin-top: 8px;
             max-width: 120px;
             border-radius: 8px;
-            border: 2px solid #ffd700;
+            border: 2px solid var(--accent-color);
             overflow: hidden;
             cursor: pointer;
             position: relative;
@@ -1001,7 +1001,7 @@
             overflow: hidden;
         }
         .vision-result-area .placeholder {
-            color: #555;
+            color: var(--text-muted);
             font-size: 14px;
             text-align: center;
         }
@@ -1023,12 +1023,12 @@
             width: 40px;
             height: 40px;
             border: 3px solid #2a2a3e;
-            border-top-color: var(--accent-color, #ffd700);
+            border-top-color: var(--accent-color);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
         .vision-result-area .loading-text {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
         }
         .vision-result-area .output-text {
@@ -1036,7 +1036,7 @@
             width: 100%;
             max-height: 400px;
             overflow-y: auto;
-            color: var(--text-secondary, #ccc);
+            color: var(--text-secondary);
             padding: 16px;
             background: #0a0f1c;
             border-radius: 8px;
@@ -1062,7 +1062,7 @@
         }
         .task-header h2 {
             font-size: 24px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1070,7 +1070,7 @@
             flex-wrap: wrap;
         }
         .task-header p {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
             margin-top: 4px;
         }
@@ -1094,15 +1094,15 @@
             min-width: 100px;
             padding: 10px 14px;
             border-radius: 10px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             color: white;
             font-size: 13px;
         }
         .task-input-row select:focus,
         .task-input-row input:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .task-input-row .prompt-input {
             flex: 3;
@@ -1110,8 +1110,8 @@
         }
         .task-generate-btn {
             padding: 10px 24px;
-            background: linear-gradient(135deg, var(--accent-color, #ffd700) 0%, var(--accent-hover, #ffb347) 100%);
-            color: var(--bg-primary, #1a1a2e);
+            background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
+            color: var(--bg-primary);
             border: none;
             border-radius: 10px;
             font-weight: bold;
@@ -1142,7 +1142,7 @@
             overflow: hidden;
         }
         .task-result-area .placeholder {
-            color: #555;
+            color: var(--text-muted);
             font-size: 14px;
             text-align: center;
         }
@@ -1164,12 +1164,12 @@
             width: 40px;
             height: 40px;
             border: 3px solid #2a2a3e;
-            border-top-color: var(--accent-color, #ffd700);
+            border-top-color: var(--accent-color);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
         .task-result-area .loading-text {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
         }
         .task-result-area .output-text {
@@ -1177,7 +1177,7 @@
             width: 100%;
             max-height: 400px;
             overflow-y: auto;
-            color: var(--text-secondary, #ccc);
+            color: var(--text-secondary);
             padding: 16px;
             background: #0a0f1c;
             border-radius: 8px;
@@ -1195,12 +1195,12 @@
             width: 100%;
         }
         .task-history-item {
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 8px 12px;
             font-size: 12px;
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             cursor: pointer;
             transition: border-color 0.2s;
             max-width: 200px;
@@ -1209,7 +1209,7 @@
             white-space: nowrap;
         }
         .task-history-item:hover {
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
 
         /* ===== 角色管理模式 ===== */
@@ -1230,7 +1230,7 @@
         }
         .character-header h2 {
             font-size: 24px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1238,7 +1238,7 @@
             flex-wrap: wrap;
         }
         .character-header p {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
             margin-top: 4px;
         }
@@ -1249,25 +1249,25 @@
             margin-top: 12px;
         }
         .character-card {
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 16px;
             cursor: pointer;
             transition: all 0.2s;
         }
         .character-card:hover {
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
             transform: translateY(-2px);
         }
         .character-card .name {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 4px;
         }
         .character-card .persona {
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             font-size: 12px;
             margin-bottom: 8px;
         }
@@ -1277,11 +1277,11 @@
             flex-wrap: wrap;
         }
         .character-card .tags span {
-            background: var(--bg-tertiary, #2a2a3e);
+            background: var(--bg-tertiary);
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 10px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
         }
         .character-card .actions {
             display: flex;
@@ -1297,7 +1297,7 @@
             cursor: pointer;
         }
         .character-card .actions .edit-btn {
-            background: #3498db;
+            background: var(--info);
             color: white;
         }
         .character-card .actions .delete-btn {
@@ -1305,8 +1305,8 @@
             color: white;
         }
         .character-card .actions .select-btn {
-            background: #2ecc71;
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--success);
+            color: var(--bg-primary);
         }
         .character-modal {
             display: none;
@@ -1324,8 +1324,8 @@
             display: flex;
         }
         .character-modal-content {
-            background: var(--bg-secondary, #16213e);
-            border: 1px solid #ffd700;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-color);
             border-radius: 16px;
             padding: 30px;
             max-width: 500px;
@@ -1334,11 +1334,11 @@
             overflow-y: auto;
         }
         .character-modal-content h3 {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             margin-bottom: 16px;
         }
         .character-modal-content label {
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             font-size: 13px;
             display: block;
             margin-bottom: 4px;
@@ -1350,8 +1350,8 @@
             padding: 10px;
             margin-bottom: 12px;
             border-radius: 8px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             color: white;
             font-family: inherit;
             font-size: 13px;
@@ -1364,7 +1364,7 @@
         .character-modal-content textarea:focus,
         .character-modal-content select:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .character-modal-content .modal-actions {
             display: flex;
@@ -1380,12 +1380,12 @@
             font-weight: bold;
         }
         .character-modal-content .modal-actions .cancel-btn {
-            background: var(--bg-tertiary, #2a2a3e);
+            background: var(--bg-tertiary);
             color: white;
         }
         .character-modal-content .modal-actions .save-btn {
-            background: var(--accent-color, #ffd700);
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--accent-color);
+            color: var(--bg-primary);
         }
 
         /* ===== 对话角色选择器 ===== */
@@ -1394,9 +1394,9 @@
             align-items: center;
             gap: 8px;
             padding: 4px 12px;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             border-radius: 8px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .chat-role-selector select {
             background: transparent;
@@ -1411,8 +1411,8 @@
         }
         .chat-role-selector .role-badge {
             font-size: 10px;
-            background: var(--accent-color, #ffd700);
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--accent-color);
+            color: var(--bg-primary);
             padding: 1px 8px;
             border-radius: 12px;
             font-weight: bold;
@@ -1424,7 +1424,7 @@
             top: 0;
             bottom: 0;
             width: 300px;
-            background: var(--bg-tertiary, #0f0f1a);
+            background: var(--bg-tertiary);
             border-left: 1px solid #2a2a3e;
             overflow-y: auto;
             padding: 20px;
@@ -1433,17 +1433,17 @@
             margin-bottom: 24px;
         }
         .info-section h3 {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             font-size: 15px;
             margin-bottom: 10px;
             padding-bottom: 6px;
-            border-bottom: 1px solid var(--border-color, #2a2a3e);
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: 8px;
         }
         .info-section p {
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             font-size: 13px;
             line-height: 1.6;
             margin-bottom: 8px;
@@ -1452,7 +1452,7 @@
             list-style: none;
         }
         .feature-list li {
-            color: var(--text-secondary, #ccc);
+            color: var(--text-secondary);
             font-size: 13px;
             padding: 4px 0;
             display: flex;
@@ -1463,12 +1463,12 @@
             content: "✨";
         }
         .command-example {
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             padding: 6px 10px;
             border-radius: 6px;
             font-family: monospace;
             font-size: 12px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             margin: 4px 0;
         }
         .footer-note {
@@ -1477,7 +1477,7 @@
             margin-top: 16px;
             border-top: 1px solid #2a2a3e;
             font-size: 11px;
-            color: #666;
+            color: var(--text-muted);
         }
 
         .video-container {
@@ -1499,7 +1499,7 @@
         }
         .video-caption {
             font-size: 12px;
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             margin-top: 6px;
             text-align: center;
         }
@@ -1508,10 +1508,10 @@
             width: 5px;
         }
         ::-webkit-scrollbar-track {
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
         }
         ::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary, #2a2a3e);
+            background: var(--bg-tertiary);
             border-radius: 3px;
         }
 
@@ -1521,15 +1521,15 @@
             align-items: center;
             gap: 8px;
             padding: 4px 8px;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             border-radius: 8px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
             flex-wrap: wrap;
         }
         .voice-control-panel select,
         .voice-control-panel input[type="checkbox"] {
-            background: var(--bg-tertiary, #0f0f1a);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
             color: white;
             padding: 2px 6px;
             border-radius: 4px;
@@ -1539,10 +1539,10 @@
         .voice-control-panel select:focus,
         .voice-control-panel input[type="checkbox"]:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .voice-control-panel label {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 11px;
             display: flex;
             align-items: center;
@@ -1557,14 +1557,14 @@
             transition: all 0.3s;
         }
         .voice-status-dot.idle {
-            background: #555;
+            background: var(--text-muted);
         }
         .voice-status-dot.listening {
             background: #ff4444;
             animation: pulse-voice 1s infinite;
         }
         .voice-status-dot.recognizing {
-            background: var(--accent-color, #ffd700);
+            background: var(--accent-color);
             animation: pulse-voice 0.6s infinite;
         }
         @keyframes pulse-voice {
@@ -1573,13 +1573,13 @@
         }
         .voice-status-text {
             font-size: 11px;
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             min-width: 80px;
         }
         .voice-btn {
             background: transparent;
             border: none;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 16px;
             padding: 4px 8px;
@@ -1587,7 +1587,7 @@
             transition: all 0.3s;
         }
         .voice-btn:hover {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             background: rgba(255,215,0,0.1);
         }
         .voice-btn:disabled {
@@ -1600,7 +1600,7 @@
         .voice-clear-btn {
             background: transparent;
             border: none;
-            color: #666;
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 14px;
             padding: 2px 6px;
@@ -1608,7 +1608,7 @@
             transition: all 0.3s;
         }
         .voice-clear-btn:hover {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             background: rgba(255,215,0,0.1);
         }
 
@@ -1710,7 +1710,7 @@
         .tts-btn {
             background: none;
             border: none;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 14px;
             margin-left: 8px;
@@ -1719,7 +1719,7 @@
             transition: all 0.3s;
         }
         .tts-btn:hover {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             background: rgba(255,215,0,0.1);
         }
 
@@ -1741,10 +1741,10 @@
         }
         .film-header h2 {
             font-size: 26px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
         }
         .film-header p {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 14px;
         }
         .film-workflow {
@@ -1753,14 +1753,14 @@
             width: 100%;
         }
         .film-step {
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .film-step h3 {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             font-size: 18px;
             margin-bottom: 12px;
         }
@@ -1774,19 +1774,19 @@
             min-width: 200px;
             padding: 10px 14px;
             border-radius: 8px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             color: white;
             font-size: 14px;
         }
         .film-input-area input:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .film-btn {
             padding: 10px 24px;
-            background: linear-gradient(135deg, #ffd700, #ffb347);
-            color: var(--bg-primary, #1a1a2e);
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: var(--bg-primary);
             border: none;
             border-radius: 8px;
             font-weight: bold;
@@ -1806,7 +1806,7 @@
             padding: 14px;
             background: #0a0f1c;
             border-radius: 8px;
-            color: var(--text-secondary, #ccc);
+            color: var(--text-secondary);
             white-space: pre-wrap;
             font-size: 14px;
             line-height: 1.7;
@@ -1820,8 +1820,8 @@
             margin: 16px 0;
         }
         .film-scene-card {
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 12px;
             text-align: center;
@@ -1835,12 +1835,12 @@
         }
         .film-scene-card .scene-label {
             font-size: 12px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             margin: 8px 0 4px;
         }
         .film-scene-card .scene-prompt {
             font-size: 11px;
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -1860,14 +1860,14 @@
             cursor: pointer;
         }
         .film-scene-card .scene-actions .gen-vid-btn {
-            background: #2ecc71;
-            color: var(--bg-primary, #1a1a2e);
+            background: var(--success);
+            color: var(--bg-primary);
         }
         .film-scene-card .scene-actions .gen-vid-btn:disabled {
             opacity: 0.5;
         }
         .film-scene-card .scene-actions .gen-img-btn {
-            background: #3498db;
+            background: var(--info);
             color: white;
         }
         .film-scene-card video {
@@ -1888,7 +1888,7 @@
             border-radius: 8px;
         }
         .loading-text {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
         }
         @media (max-width: 768px) {
             .film-grid {
@@ -1898,10 +1898,10 @@
         /* ===== 统计面板样式 ===== */
         .stats-panel {
             display: none;
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 20px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
             margin: 6px 24px 0 24px;
         }
         .stats-panel.active {
@@ -1916,12 +1916,12 @@
             gap: 8px;
         }
         .stats-panel .stats-header h3 {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             font-size: 16px;
         }
         .stats-panel .stats-header .reset-btn {
-            background: var(--bg-tertiary, #2a2a3e);
-            color: var(--text-muted, #888);
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
             border: none;
             padding: 4px 12px;
             border-radius: 6px;
@@ -1939,7 +1939,7 @@
             gap: 10px;
         }
         .stats-grid .stat-item {
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             border-radius: 8px;
             padding: 12px;
             text-align: center;
@@ -1947,16 +1947,16 @@
         .stats-grid .stat-item .stat-number {
             font-size: 24px;
             font-weight: bold;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
         }
         .stats-grid .stat-item .stat-label {
             font-size: 11px;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             margin-top: 4px;
         }
-        .stats-grid .stat-item .stat-number.blue { color: #3498db; }
-        .stats-grid .stat-item .stat-number.green { color: #2ecc71; }
-        .stats-grid .stat-item .stat-number.purple { color: #9b59b6; }
+        .stats-grid .stat-item .stat-number.blue { color: var(--info); }
+        .stats-grid .stat-item .stat-number.green { color: var(--success); }
+        .stats-grid .stat-item .stat-number.purple { color: var(--extra-purple); }
         .stats-grid .stat-item .stat-number.red { color: #dc3545; }
         .model-usage-list {
             display: flex;
@@ -1965,15 +1965,15 @@
             margin-top: 10px;
         }
         .model-usage-list .model-tag {
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             padding: 4px 12px;
             border-radius: 16px;
             font-size: 11px;
-            color: var(--text-secondary, #aaa);
-            border: 1px solid var(--border-color, #2a2a3e);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
         }
         .model-usage-list .model-tag .count {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             font-weight: bold;
         }
         .stats-detail {
@@ -1981,18 +1981,18 @@
             padding-top: 12px;
             border-top: 1px solid #2a2a3e;
             font-size: 11px;
-            color: #666;
+            color: var(--text-muted);
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
         }
         .stats-detail .today-calls {
-            color: #2ecc71;
+            color: var(--success);
         }
         .stats-toggle-btn {
             background: transparent;
             border: none;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 12px;
             padding: 2px 8px;
@@ -2001,7 +2001,7 @@
             margin-left: 8px;
         }
         .stats-toggle-btn:hover {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             background: rgba(255,215,0,0.1);
         }
         @media (max-width: 768px) {
@@ -2033,10 +2033,10 @@
         }
         .longvideo-header h2 {
             font-size: 26px;
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
         }
         .longvideo-header p {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 14px;
             margin-top: 4px;
         }
@@ -2046,10 +2046,10 @@
             width: 100%;
         }
         .longvideo-settings {
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 20px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .longvideo-row {
             display: flex;
@@ -2064,7 +2064,7 @@
         .longvideo-group label {
             display: block;
             font-size: 12px;
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             margin-bottom: 4px;
             font-weight: 600;
         }
@@ -2073,8 +2073,8 @@
             width: 100%;
             padding: 10px 12px;
             border-radius: 8px;
-            background: var(--bg-primary, #1a1a2e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             color: white;
             font-size: 13px;
             font-family: inherit;
@@ -2086,11 +2086,11 @@
         .longvideo-group select:focus,
         .longvideo-group textarea:focus {
             outline: none;
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
         .lv-hint {
             font-size: 10px;
-            color: #666;
+            color: var(--text-muted);
             display: block;
             margin-top: 3px;
         }
@@ -2103,9 +2103,9 @@
         .lv-mode-btn {
             padding: 6px 12px;
             border-radius: 6px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
             background: transparent;
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             cursor: pointer;
             font-size: 12px;
             transition: all 0.2s;
@@ -2113,37 +2113,37 @@
         }
         .lv-frame-btn:hover,
         .lv-mode-btn:hover {
-            border-color: var(--accent-color, #ffd700);
-            color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
         }
         .lv-frame-btn.active,
         .lv-mode-btn.active {
-            background: var(--accent-color, #ffd700);
-            color: var(--bg-primary, #1a1a2e);
-            border-color: var(--accent-color, #ffd700);
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            border-color: var(--accent-color);
         }
         .lv-duration-display {
             display: flex;
             align-items: center;
             gap: 12px;
             padding: 10px 14px;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             border-radius: 8px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .lv-duration-display span {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
         }
         .lv-duration-display strong {
-            color: var(--accent-color, #ffd700);
+            color: var(--accent-color);
             font-size: 20px;
         }
         .lv-generate-btn {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #ffd700, #ffb347);
-            color: var(--bg-primary, #1a1a2e);
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: var(--bg-primary);
             border: none;
             border-radius: 8px;
             font-weight: bold;
@@ -2162,20 +2162,20 @@
         .lv-progress-area {
             margin-top: 16px;
             padding: 16px;
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 8px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .lv-progress-bar {
             width: 100%;
             height: 6px;
-            background: var(--bg-primary, #1a1a2e);
+            background: var(--bg-primary);
             border-radius: 3px;
             overflow: hidden;
         }
         .lv-progress-bar #lvProgressFill {
             height: 100%;
-            background: linear-gradient(90deg, #ffd700, #ffb347);
+            background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
             transition: width 0.3s;
             width: 0%;
         }
@@ -2184,24 +2184,24 @@
             justify-content: space-between;
             margin-top: 8px;
             font-size: 13px;
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
         }
         .lv-progress-detail {
             font-size: 11px;
-            color: #666;
+            color: var(--text-muted);
             margin-top: 4px;
         }
         .lv-player {
             margin-top: 16px;
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 12px;
             padding: 16px;
-            border: 1px solid var(--border-color, #2a2a3e);
+            border: 1px solid var(--border-color);
         }
         .lv-player-header {
             display: flex;
             justify-content: space-between;
-            color: var(--text-secondary, #aaa);
+            color: var(--text-secondary);
             font-size: 13px;
             margin-bottom: 10px;
         }
@@ -2226,7 +2226,7 @@
             font-weight: 600;
             font-size: 13px;
             font-family: inherit;
-            background: var(--bg-tertiary, #2a2a3e);
+            background: var(--bg-tertiary);
             color: white;
             transition: background 0.2s;
         }
@@ -2234,7 +2234,7 @@
             background: #3a3a4e;
         }
         #lvTimeDisplay {
-            color: var(--text-muted, #888);
+            color: var(--text-muted);
             font-size: 13px;
             font-variant-numeric: tabular-nums;
             margin-left: auto;
@@ -2256,7 +2256,7 @@
             flex-shrink: 0;
         }
         .lv-thumbnails img.active {
-            border-color: var(--accent-color, #ffd700);
+            border-color: var(--accent-color);
         }
 
         @media (max-width: 768px) {
@@ -2275,10 +2275,10 @@
             padding: 0 16px 16px;
         }
         .tts-panel, .embed-panel {
-            background: var(--bg-secondary, #16213e);
+            background: var(--bg-secondary);
             border-radius: 10px;
             padding: 18px;
-            color: var(--text-primary, #fff);
+            color: var(--text-primary);
         }
         .tts-panel label, .embed-panel label { display:block; margin: 10px 0 6px; font-size: 13px; color:#bbb; }
         .tts-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
@@ -2292,8 +2292,8 @@
             overflow: auto;
         }
         .market-card {
-            background: var(--bg-secondary, #16213e);
-            border: 1px solid var(--border-color, #2a2a3e);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 10px;
             padding: 14px;
             display: flex;
@@ -2301,13 +2301,13 @@
             gap: 6px;
         }
         .market-card-icon { font-size: 22px; }
-        .market-card-name { font-weight: 600; color: var(--text-primary, #fff); }
+        .market-card-name { font-weight: 600; color: var(--text-primary); }
         .market-card-id { font-size: 11px; color: #6fa8ff; word-break: break-all; }
         .market-card-desc { font-size: 12px; color: #999; }
         .market-chat-btn {
             margin-top: 6px;
-            background: var(--accent-color, #ffd700);
-            color: #1a1a2e;
+            background: var(--accent-color);
+            color: var(--bg-primary);
             border: none;
             border-radius: 6px;
             padding: 6px 10px;
@@ -2317,9 +2317,9 @@
 
         /* 统一生成历史面板（代码/音频/搜索/图像/视频） */
         .gen-history-panel { margin-top:14px; border-top:1px solid #2a2a40; padding-top:10px; }
-        .gen-history-title { font-size:13px; color:#ffd700; margin-bottom:8px; font-weight:600; }
+        .gen-history-title { font-size:13px; color:var(--accent-color); margin-bottom:8px; font-weight:600; }
         .gen-history-list { display:flex; flex-direction:column; gap:8px; max-height:340px; overflow:auto; }
-        .gen-history-item { background:#1a1a2e; border:1px solid #2a2a40; border-radius:8px; padding:8px 10px; }
+        .gen-history-item { background:var(--bg-primary); border:1px solid #2a2a40; border-radius:8px; padding:8px 10px; }
         .gen-history-head { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:13px; color:#eee; }
         .gen-history-time { font-size:11px; color:#777; margin-top:4px; }
         .gen-del-btn, .msg-del-btn { background:transparent; border:none; cursor:pointer; font-size:14px; line-height:1; padding:2px 4px; border-radius:4px; }
@@ -2331,6 +2331,24 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+<div id="fatalErrorBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:10px 14px;font:13px/1.5 monospace;white-space:pre-wrap;max-height:40vh;overflow:auto;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>
+<script>
+(function(){
+  function show(msg){
+    var b=document.getElementById('fatalErrorBar');
+    if(!b) return;
+    b.style.display='block';
+    b.textContent += msg + "\n";
+  }
+  window.addEventListener('error', function(e){
+    show('[JS閿欒] ' + (e.message||e.error) + (e.filename?(' @ '+e.filename+':'+e.lineno):''));
+  });
+  window.__fatal = show;
+  window.addEventListener('unhandledrejection', function(e){
+    show('[Promise閿欒] ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+})();
+</script>
 
     <!-- ===== 登录页面 ===== -->
     <div id="loginPage" class="login-container">
@@ -2354,8 +2372,8 @@
             </div>
             <button id="loginBtn" onclick="doLogin()" disabled>登录</button>
             <div id="loginError" class="login-error"></div>
-            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
-                <a href="chat.html" style="color: var(--accent-color, #ffd700);">← 返回 NFLSHC Chat</a>
+            <div style="margin-top: 20px; text-align: center; font-size: 12px; color: var(--text-muted);">
+                <a href="chat.html" style="color: var(--accent-color);">← 返回 NFLSHC Chat</a>
             </div>
         </div>
     </div>
@@ -2454,7 +2472,7 @@
                             </select>
                         </div>
                         <div class="chat-role-selector">
-                            <span style="color:#888;font-size:11px;">🎭 角色：</span>
+                            <span style="color:var(--text-muted);font-size:11px;">🎭 角色：</span>
                             <select id="chatRoleSelect">
                                 <option value="">无角色</option>
                             </select>
@@ -2469,7 +2487,7 @@
                     <button class="sync-btn sync-character" onclick="pullCharactersFromGitHub()">📥 拉取角色</button>
                     <button class="sync-btn sync-task" onclick="syncAllTasksToGitHub()">⏰ 同步任务</button>
                     <button class="sync-btn sync-task" onclick="pullTasksFromGitHub()">📥 拉取任务</button>
-                    <button class="sync-btn" onclick="exportCurrentChatMD()" id="exportMdBtn" style="background:#2ecc71;color:#1a1a2e;">📝 导出 MD</button>
+                    <button class="sync-btn" onclick="exportCurrentChatMD()" id="exportMdBtn" style="background:var(--success);color:var(--bg-primary);">📝 导出 MD</button>
                     <div class="sync-warning">⚠️ 爬取需要时间</div>
                     <div class="sync-status" id="syncStatus"></div>
                 </div>
@@ -2548,7 +2566,7 @@
                 </div>
                 <div class="tts-panel">
                     <label>输入要合成的文本：</label>
-                    <textarea id="ttsText" rows="4" placeholder="输入要转换为语音的文字..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;"></textarea>
+                    <textarea id="ttsText" rows="4" placeholder="输入要转换为语音的文字..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);"></textarea>
                     <div class="tts-row">
                         <label>语言：
                             <select id="ttsLang">
@@ -2562,7 +2580,7 @@
                             </select>
                         </label>
                         <button class="draw-generate-btn" onclick="startTTS()">🔊 合成语音</button>
-                        <button class="draw-generate-btn" onclick="stopTTS()" style="background:#e74c3c;">⏹ 停止</button>
+                        <button class="draw-generate-btn" onclick="stopTTS()" style="background:var(--danger);">⏹ 停止</button>
                     </div>
                     <div id="ttsPlayer" class="tts-player" style="display:none;">
                         <audio id="ttsAudio" controls style="width:100%;"></audio>
@@ -2589,9 +2607,9 @@
                 </div>
                 <div class="embed-panel">
                     <label>文本（每行一条，或单段文本）：</label>
-                    <textarea id="embedText" rows="5" placeholder="例如：&#10;猫是一种可爱的宠物&#10;狗是人类忠实的伙伴" style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;"></textarea>
+                    <textarea id="embedText" rows="5" placeholder="例如：&#10;猫是一种可爱的宠物&#10;狗是人类忠实的伙伴" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);"></textarea>
                     <button class="draw-generate-btn" onclick="generateEmbedding()">🧮 生成向量</button>
-                    <button class="draw-generate-btn" onclick="semanticSearch()" style="background:#9b59b6;">🔎 语义检索</button>
+                    <button class="draw-generate-btn" onclick="semanticSearch()" style="background:var(--extra-purple);">🔎 语义检索</button>
                     <div id="embedResult" class="embed-result"></div>
                     <div class="gen-history-panel">
                         <div class="gen-history-title">🔎 语义检索历史</div>
@@ -2646,7 +2664,7 @@
                         <label class="upload-btn" id="visionUploadLabel">📎 上传文件
                             <input type="file" id="visionFileInput" accept="image/*,video/*,.pdf,.txt,.docx,.xlsx,.pptx" style="display:none;" onchange="handleVisionUpload(this)" multiple>
                         </label>
-                        <span style="font-size:12px;color:#666;">支持图片、视频、PDF、TXT、Word、Excel、PPT</span>
+                        <span style="font-size:12px;color:var(--text-muted);">支持图片、视频、PDF、TXT、Word、Excel、PPT</span>
                     </div>
                     <div id="visionPreview" class="vision-preview" onclick="removeVisionFile()">
                         <img id="visionPreviewImg" alt="预览">
@@ -2657,7 +2675,7 @@
                     <div class="placeholder" id="visionPlaceholder">
                         <span class="icon">👁️</span>
                         上传文件并输入问题后点击「分析」<br>
-                        <span style="font-size:12px;color:#555;">基于智谱视觉模型</span>
+                        <span style="font-size:12px;color:var(--text-muted);">基于智谱视觉模型</span>
                     </div>
                     <div class="loading-spinner" id="visionLoading">
                         <div class="spinner"></div>
@@ -2698,9 +2716,9 @@
                         <img id="drawReferenceImg" alt="参考图">
                         <span class="remove-hint">✕ 移除</span>
                     </div>
-                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
+                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:var(--text-muted);">
                         <span>💡 支持文生图 · 图生图（多图输入） · Pollinations AI / Agnes Image / 智谱 Cogview · 输出 URL</span>
-                        <span style="color:#888;">|</span>
+                        <span style="color:var(--text-muted);">|</span>
                         <span>🔄 极速版: 512x512 (turbo) · 专业版: 1440x1440 (flux+增强)</span>
                     </div>
                 </div>
@@ -2708,14 +2726,14 @@
                     <div class="placeholder" id="drawPlaceholder">
                         <span class="icon">🖼️</span>
                         输入描述后点击「生成」<br>
-                        <span style="font-size:12px; color:#555;">支持 Pollinations AI · Agnes Image · 智谱 Cogview</span>
+                        <span style="font-size:12px; color:var(--text-muted);">支持 Pollinations AI · Agnes Image · 智谱 Cogview</span>
                     </div>
                     <div class="loading-spinner" id="drawLoading">
                         <div class="spinner"></div>
                         <div class="loading-text">⏳ AI 正在创作中...</div>
                     </div>
                     <img id="drawOutput" style="display:none;" alt="生成的图片">
-                    <button class="draw-generate-btn" id="drawDownloadBtn" style="display:none; margin-top:10px; background:#2ecc71; color:#1a1a2e;" onclick="downloadCurrentMedia('image')">📥 下载</button>
+                    <button class="draw-generate-btn" id="drawDownloadBtn" style="display:none; margin-top:10px; background:var(--success); color:var(--bg-primary);" onclick="downloadCurrentMedia('image')">📥 下载</button>
                 </div>
                 <div class="draw-history" id="drawHistory"></div>
             </div>
@@ -2751,7 +2769,7 @@
                         <img id="videoReferenceImg" alt="参考图">
                         <span class="remove-hint">✕ 移除</span>
                     </div>
-                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:#666;">
+                    <div class="draw-input-row" style="gap:8px; font-size:12px; color:var(--text-muted);">
                         <span>💡 基于 Agnes Video V2.0 / 智谱 CogVideoX-Flash · 异步生成 · 请耐心等待</span>
                     </div>
                 </div>
@@ -2759,14 +2777,14 @@
                     <div class="placeholder" id="videoPlaceholder">
                         <span class="icon">🎞️</span>
                         输入描述后点击「生成」<br>
-                        <span style="font-size:12px; color:#555;">支持文生视频 · 异步生成</span>
+                        <span style="font-size:12px; color:var(--text-muted);">支持文生视频 · 异步生成</span>
                     </div>
                     <div class="loading-spinner" id="videoLoading">
                         <div class="spinner"></div>
                         <div class="loading-text">⏳ AI 正在生成视频，请稍候...</div>
                     </div>
                     <video id="videoOutput" style="display:none;" controls></video>
-                    <button class="draw-generate-btn" id="videoDownloadBtn" style="display:none; margin-top:10px; background:#2ecc71; color:#1a1a2e;" onclick="downloadCurrentMedia('video')">📥 下载</button>
+                    <button class="draw-generate-btn" id="videoDownloadBtn" style="display:none; margin-top:10px; background:var(--success); color:var(--bg-primary);" onclick="downloadCurrentMedia('video')">📥 下载</button>
                 </div>
                 <div class="draw-history" id="videoHistory"></div>
             </div>
@@ -2794,7 +2812,7 @@
                     <div class="placeholder" id="taskPlaceholder">
                         <span class="icon">⏰</span>
                         设置定时任务，AI 将按时推送<br>
-                        <span style="font-size:12px;color:#555;">支持新闻、天气、提醒和自定义内容</span>
+                        <span style="font-size:12px;color:var(--text-muted);">支持新闻、天气、提醒和自定义内容</span>
                     </div>
                     <div class="loading-spinner" id="taskLoading">
                         <div class="spinner"></div>
@@ -2813,16 +2831,16 @@
                     <button class="draw-generate-btn" onclick="showCharacterModal()" style="margin-top:10px;">+ 创建角色</button>
                 </div>
                 <!-- 在角色选项卡中添加 RAG 角色说明 -->
-                <div style="margin-top: 20px; padding: 16px 20px; background: rgba(255,215,0,0.08); border: 1px solid #ffd700; border-radius: 12px;">
+                <div style="margin-top: 20px; padding: 16px 20px; background: var(--accent-color-alpha); border: 1px solid var(--accent-color); border-radius: 12px;">
                     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                         <span style="font-size: 24px;">📚</span>
                         <div>
-                            <strong style="color: var(--accent-color, #ffd700); font-size: 16px;">系统内置角色：📚 RAG 增强回答</strong>
-                            <p style="color: var(--text-secondary, #aaa); font-size: 13px; margin: 4px 0 0 0;">
+                            <strong style="color: var(--accent-color); font-size: 16px;">系统内置角色：📚 RAG 增强回答</strong>
+                            <p style="color: var(--text-secondary); font-size: 13px; margin: 4px 0 0 0;">
                                 此角色已预置完整的 NFLSHC Chat 知识库，可直接用于回答关于项目功能、使用、架构等问题。
                                 <br>
-                                <span style="color: var(--text-muted, #888); font-size: 12px;">
-                                    📖 知识库来源：<a href="https://user-henry.github.io/help-nflshc202401/rag" target="_blank" style="color: var(--accent-color, #ffd700);">help-nflshc202401/rag</a>
+                                <span style="color: var(--text-muted); font-size: 12px;">
+                                    📖 知识库来源：<a href="https://user-henry.github.io/help-nflshc202401/rag" target="_blank" style="color: var(--accent-color);">help-nflshc202401/rag</a>
                                     （如知识库内容丢失，可自行访问此链接获取）
                                 </span>
                             </p>
@@ -2830,7 +2848,7 @@
                     </div>
                 </div>
                 <div class="character-grid" id="characterGrid">
-                    <div style="text-align:center;color:#666;padding:40px;width:100%;">暂无角色，点击上方创建</div>
+                    <div style="text-align:center;color:var(--text-muted);padding:40px;width:100%;">暂无角色，点击上方创建</div>
                 </div>
             </div>
 
@@ -2865,7 +2883,7 @@
                         <div id="sceneGrid" class="film-grid"></div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
                             <button class="film-btn" onclick="generateAllScenes()" id="generateAllScenesBtn">⚡ 生成全部场景</button>
-                            <button class="film-btn" onclick="generateAllImages()" id="generateAllImagesBtn" style="background:#3498db;">🖼️ 生成全部参考图</button>
+                            <button class="film-btn" onclick="generateAllImages()" id="generateAllImagesBtn" style="background:var(--info);">🖼️ 生成全部参考图</button>
                         </div>
                     </div>
 
@@ -2876,25 +2894,25 @@
                             <!-- 合成进度 -->
                             <div id="compositeProgress" style="display:none; text-align:center; padding:20px;">
                                 <div class="spinner" style="margin:0 auto 12px;"></div>
-                                <p id="compositeProgressText" style="color:#ffd700;">⏳ 正在合成短片...</p>
-                                <div style="width:100%; max-width:400px; margin:12px auto; background:#1a1a2e; border-radius:8px; overflow:hidden; height:6px;">
-                                    <div id="compositeProgressBar" style="width:0%; height:100%; background:linear-gradient(135deg, #ffd700, #ffb347); transition:width 0.5s;"></div>
+                                <p id="compositeProgressText" style="color:var(--accent-color);">⏳ 正在合成短片...</p>
+                                <div style="width:100%; max-width:400px; margin:12px auto; background:var(--bg-primary); border-radius:8px; overflow:hidden; height:6px;">
+                                    <div id="compositeProgressBar" style="width:0%; height:100%; background:linear-gradient(135deg, var(--accent-color), var(--accent-hover)); transition:width 0.5s;"></div>
                                 </div>
                             </div>
                             <!-- 视频播放器 -->
                             <video id="compositeVideo" controls style="width:100%; max-height:400px; border-radius:8px; display:none;"></video>
                             <!-- 占位 -->
-                            <div id="compositePlaceholder" style="color:#666; text-align:center; padding:40px;">
+                            <div id="compositePlaceholder" style="color:var(--text-muted); text-align:center; padding:40px;">
                                 <span style="font-size:48px; display:block; margin-bottom:12px;">🎞️</span>
                                 <p>生成所有场景后，点击下方按钮合成完整短片</p>
-                                <p style="font-size:13px; color:#555; margin-top:8px;">需要至少 2 个场景的参考图</p>
+                                <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">需要至少 2 个场景的参考图</p>
                             </div>
                             <!-- 操作按钮 -->
                             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
                                 <button class="film-btn" onclick="compositeFilm()" id="compositeBtn">🔗 合成完整短片</button>
-                                <button class="film-btn" onclick="exportFilmProject()" style="background:#2ecc71;">📦 导出项目</button>
-                                <button class="film-btn" id="downloadCompositeBtn" style="display:none; background:#3498db;" onclick="downloadCompositeVideo()">📥 下载短片</button>
-                                <button class="film-btn" id="playAllBtn" style="display:none; background:#9b59b6;" onclick="playAllScenes()">▶️ 顺序播放全部片段</button>
+                                <button class="film-btn" onclick="exportFilmProject()" style="background:var(--success);">📦 导出项目</button>
+                                <button class="film-btn" id="downloadCompositeBtn" style="display:none; background:var(--info);" onclick="downloadCompositeVideo()">📥 下载短片</button>
+                                <button class="film-btn" id="playAllBtn" style="display:none; background:var(--extra-purple);" onclick="playAllScenes()">▶️ 顺序播放全部片段</button>
                             </div>
                             <!-- 片段列表 -->
                             <div id="sceneClipList" style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;"></div>
@@ -3019,7 +3037,7 @@
                             <button onclick="lvTogglePlay()" id="lvPlayBtn">▶ 播放</button>
                             <button onclick="lvStop()">⏹ 停止</button>
                             <span id="lvTimeDisplay">00:00 / 00:00</span>
-                            <button onclick="lvExport()" id="lvExportBtn" style="background:#2ecc71;color:#1a1a2e;">📥 导出</button>
+                            <button onclick="lvExport()" id="lvExportBtn" style="background:var(--success);color:var(--bg-primary);">📥 导出</button>
                         </div>
                         <div class="lv-thumbnails" id="lvThumbnails"></div>
                     </div>
@@ -3381,7 +3399,7 @@
             if (!container) return;
             const items = genHistory.filter(r => r.type === type);
             container.innerHTML = items.length === 0 ?
-                '<div style="padding:10px;color:#666;font-size:12px;">暂无历史</div>' :
+                '<div style="padding:10px;color:var(--text-muted);font-size:12px;">暂无历史</div>' :
                 items.map(genItemHtml).join('');
         }
 
@@ -3834,7 +3852,7 @@
             const statusDiv = document.getElementById('syncStatus');
             if (statusDiv) {
                 statusDiv.textContent = message;
-                statusDiv.style.color = type === 'error' ? 'var(--danger, #dc3545)' : (type === 'success' ? 'var(--success, #28a745)' : 'var(--warning, #f39c12)');
+                statusDiv.style.color = type === 'error' ? 'var(--danger)' : (type === 'success' ? 'var(--success)' : 'var(--warning)');
             }
         }
 
@@ -3845,7 +3863,7 @@
             const container = document.getElementById('conversationsList');
             if (!container) return;
             if (conversations.length === 0) {
-                container.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">暂无对话</div>';
+                container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">暂无对话</div>';
                 return;
             }
             container.innerHTML = conversations.map(conv => {
@@ -3856,7 +3874,7 @@
                 return `
                 <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" onclick="switchConversation('${conv.id}')">
                     <div class="conversation-title">
-                        ${tIcon} ${escapeHtml(conv.title)} ${roleTag ? `<span style="font-size:10px;color:var(--accent-color, #ffd700);">${escapeHtml(roleTag)}</span>` : ''} <span style="font-size:10px;color:#888;">[${tTag}]</span>
+                        ${tIcon} ${escapeHtml(conv.title)} ${roleTag ? `<span style="font-size:10px;color:var(--accent-color);">${escapeHtml(roleTag)}</span>` : ''} <span style="font-size:10px;color:var(--text-muted);">[${tTag}]</span>
                         <button class="export-conv-btn" onclick="event.stopPropagation(); exportSingleChatMD('${conv.id}')" title="导出为 Markdown">📝</button>
                         <button class="delete-conv" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">🗑️</button>
                     </div>
@@ -4316,7 +4334,7 @@
                 // 更新所有播报按钮状态
                 document.querySelectorAll('.tts-btn').forEach(btn => {
                     btn.textContent = '⏹️';
-                    btn.style.color = 'var(--accent-color, #ffd700)';
+                    btn.style.color = 'var(--accent-color)';
                 });
             };
 
@@ -4324,7 +4342,7 @@
                 console.log('🔊 播报结束');
                 document.querySelectorAll('.tts-btn').forEach(btn => {
                     btn.textContent = '🔊';
-                    btn.style.color = '#888';
+                    btn.style.color = 'var(--text-muted)';
                 });
                 currentUtterance = null;
             };
@@ -4333,7 +4351,7 @@
                 console.error('TTS 播报错误:', e);
                 document.querySelectorAll('.tts-btn').forEach(btn => {
                     btn.textContent = '🔊';
-                    btn.style.color = '#888';
+                    btn.style.color = 'var(--text-muted)';
                 });
                 currentUtterance = null;
             };
@@ -4357,7 +4375,7 @@
                 currentUtterance = null;
                 document.querySelectorAll('.tts-btn').forEach(btn => {
                     btn.textContent = '🔊';
-                    btn.style.color = '#888';
+                    btn.style.color = 'var(--text-muted)';
                 });
             }
         }
@@ -4746,7 +4764,7 @@
                 loading.classList.remove('active');
                 placeholder.style.display = 'block';
                 placeholder.innerHTML =
-                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查网络或稍后重试</span>`;
+                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:var(--text-muted);">请检查网络或稍后重试</span>`;
             } finally {
                 generateBtn.disabled = false;
                 generateBtn.textContent = '🎨 生成';
@@ -4963,7 +4981,7 @@
                 loading.classList.remove('active');
                 placeholder.style.display = 'block';
                 placeholder.innerHTML =
-                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+                    `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:var(--text-muted);">请检查 API Key 或稍后重试</span>`;
             } finally {
                 generateBtn.disabled = false;
                 generateBtn.textContent = '🎬 生成';
@@ -5104,7 +5122,7 @@
                 loading.classList.remove('active');
                 placeholder.style.display = 'block';
                 placeholder.innerHTML =
-                    `<span class="icon">❌</span>分析失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:#555;">请检查 API Key 或稍后重试</span>`;
+                    `<span class="icon">❌</span>分析失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:var(--text-muted);">请检查 API Key 或稍后重试</span>`;
             } finally {
                 analyzeBtn.disabled = false;
                 analyzeBtn.textContent = '🔍 分析';
@@ -5200,14 +5218,14 @@
             const container = document.getElementById('taskHistory');
             if (!container) return;
             if (tasks.length === 0) {
-                container.innerHTML = '<div style="text-align:center;color:#666;padding:20px;width:100%;">暂无任务</div>';
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;width:100%;">暂无任务</div>';
                 return;
             }
             container.innerHTML = tasks.map(task => `
                 <div class="task-history-item" onclick="executeTask('${task.id}')">
                     ${task.active ? '🟢' : '🔴'} ${task.type} - ${task.time}
-                    <span style="font-size:10px;color:var(--text-muted, #666);">${task.lastRun ? new Date(task.lastRun).toLocaleTimeString() : '未运行'}</span>
-                    <button onclick="event.stopPropagation(); deleteTask('${task.id}')" style="background:transparent;border:none;color:var(--danger, #dc3545);cursor:pointer;margin-left:6px;">✕</button>
+                    <span style="font-size:10px;color:var(--text-muted);">${task.lastRun ? new Date(task.lastRun).toLocaleTimeString() : '未运行'}</span>
+                    <button onclick="event.stopPropagation(); deleteTask('${task.id}')" style="background:transparent;border:none;color:var(--danger);cursor:pointer;margin-left:6px;">✕</button>
                 </div>
             `).join('');
         }
@@ -5265,7 +5283,7 @@
             if (!container) return;
             if (characters.length === 0) {
                 container.innerHTML =
-                    '<div style="text-align:center;color:#666;padding:40px;width:100%;">暂无角色，点击上方创建</div>';
+                    '<div style="text-align:center;color:var(--text-muted);padding:40px;width:100%;">暂无角色，点击上方创建</div>';
                 return;
             }
             container.innerHTML = characters.map(char => `
@@ -5527,8 +5545,8 @@
         function showToast(msg, type) {
             const toast = document.createElement('div');
             toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:8px;color:white;font-size:14px;z-index:9999;transition:opacity 0.3s;pointer-events:none;';
-            toast.style.background = type === 'error' ? 'var(--danger, #dc3545)' : type === 'warning' ? 'var(--warning, #f39c12)' : 'var(--success, #2ecc71)';
-            toast.style.color = type === 'warning' ? 'var(--bg-primary, #1a1a2e)' : 'white';
+            toast.style.background = type === 'error' ? 'var(--danger)' : type === 'warning' ? 'var(--warning)' : 'var(--success)';
+            toast.style.color = type === 'warning' ? 'var(--bg-primary)' : 'white';
             toast.textContent = msg;
             document.body.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
@@ -5587,15 +5605,15 @@
                 if (reply) {
                     filmProject.script = reply;
                     filmProject.status = 'scripted';
-                    output.innerHTML = `<pre style="white-space:pre-wrap;color: var(--text-secondary, #ddd);">${escapeHtml(reply)}</pre>`;
+                    output.innerHTML = `<pre style="white-space:pre-wrap;color: var(--text-secondary);">${escapeHtml(reply)}</pre>`;
                     document.getElementById('step2').style.display = 'block';
                     document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    output.innerHTML = '<span style="color:var(--danger, #dc3545);">❌ 生成失败，请重试</span>';
+                    output.innerHTML = '<span style="color:var(--danger);">❌ 生成失败，请重试</span>';
                 }
             } catch (error) {
                 console.error('生成剧本失败:', error);
-                output.innerHTML = '<span style="color:var(--danger, #dc3545);">❌ 生成失败: ' + error.message + '</span>';
+                output.innerHTML = '<span style="color:var(--danger);">❌ 生成失败: ' + error.message + '</span>';
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🚀 生成剧本';
@@ -5628,14 +5646,14 @@
                         document.getElementById('step3').style.display = 'block';
                         document.getElementById('step3').scrollIntoView({ behavior: 'smooth' });
                     } else {
-                        output.innerHTML = '<span style="color:var(--danger, #dc3545);">❌ 解析分镜数据失败，请重试</span>';
+                        output.innerHTML = '<span style="color:var(--danger);">❌ 解析分镜数据失败，请重试</span>';
                     }
                 } else {
-                    output.innerHTML = '<span style="color:var(--danger, #dc3545);">❌ 生成失败，请重试</span>';
+                    output.innerHTML = '<span style="color:var(--danger);">❌ 生成失败，请重试</span>';
                 }
             } catch (error) {
                 console.error('生成分镜失败:', error);
-                output.innerHTML = '<span style="color:var(--danger, #dc3545);">❌ 生成失败: ' + error.message + '</span>';
+                output.innerHTML = '<span style="color:var(--danger);">❌ 生成失败: ' + error.message + '</span>';
             }
         }
 
@@ -5647,8 +5665,8 @@
                     <div class="scene-label">🎬 镜头 ${index + 1}</div>
                     <div class="scene-prompt"><strong>${escapeHtml(scene.scene_name)}</strong></div>
                     <div class="scene-prompt" style="margin:4px 0;">${escapeHtml(scene.scene_description)}</div>
-                    <div style="font-size:10px;color:var(--text-muted, #666);margin:4px 0;">提示词: ${escapeHtml(scene.image_prompt || '无')}</div>
-                    ${scene.imageUrl ? `<img src="${scene.imageUrl}" alt="参考图">` : '<div style="background:var(--bg-primary, #0a0f1c);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--text-muted, #555);font-size:12px;">🖼️ 未生成</div>'}
+                    <div style="font-size:10px;color:var(--text-muted);margin:4px 0;">提示词: ${escapeHtml(scene.image_prompt || '无')}</div>
+                    ${scene.imageUrl ? `<img src="${scene.imageUrl}" alt="参考图">` : '<div style="background:var(--bg-primary);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;">🖼️ 未生成</div>'}
                     ${scene.videoUrl ? `<video src="${scene.videoUrl}" controls></video>` : ''}
                     <div class="scene-actions">
                         <button class="gen-img-btn" onclick="generateSceneImage(${index})">🎨 参考图</button>
@@ -5953,8 +5971,8 @@
                 placeholder.style.display = 'block';
                 placeholder.innerHTML = `
                     <span style="font-size:48px; display:block; margin-bottom:12px;">❌</span>
-                    <p style="color:var(--danger, #dc3545);">合成失败：${error.message}</p>
-                    <p style="color:var(--text-muted, #666); font-size:13px; margin-top:8px;">请检查网络或稍后重试</p>
+                    <p style="color:var(--danger);">合成失败：${error.message}</p>
+                    <p style="color:var(--text-muted); font-size:13px; margin-top:8px;">请检查网络或稍后重试</p>
                 `;
                 showToast('❌ 合成失败: ' + error.message, 'error');
             } finally {
@@ -5971,11 +5989,11 @@
             container.innerHTML = filmProject.scenes.map((scene, index) => {
                 const hasVideo = !!scene.videoUrl;
                 return `
-                    <div style="background:var(--bg-primary, #1a1a2e); border:1px solid ${hasVideo ? 'var(--success, #2ecc71)' : 'var(--border-color, #2a2a3e)'}; border-radius:6px; padding:6px 12px; font-size:11px; display:flex; align-items:center; gap:6px;">
+                    <div style="background:var(--bg-primary); border:1px solid ${hasVideo ? 'var(--success)' : 'var(--border-color)'}; border-radius:6px; padding:6px 12px; font-size:11px; display:flex; align-items:center; gap:6px;">
                         <span>🎬 ${index + 1}</span>
-                        ${hasVideo ? '<span style="color:var(--success, #2ecc71);">✅</span>' : '<span style="color:var(--text-muted, #666);">⏳</span>'}
-                        <span style="color:var(--text-muted, #888); max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(scene.scene_name || '未命名')}</span>
-                        ${hasVideo ? `<button onclick="playSingleScene(${index})" style="background:transparent; border:none; color:var(--accent-color, #ffd700); cursor:pointer; font-size:12px;">▶️</button>` : ''}
+                        ${hasVideo ? '<span style="color:var(--success);">✅</span>' : '<span style="color:var(--text-muted);">⏳</span>'}
+                        <span style="color:var(--text-muted); max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(scene.scene_name || '未命名')}</span>
+                        ${hasVideo ? `<button onclick="playSingleScene(${index})" style="background:transparent; border:none; color:var(--accent-color); cursor:pointer; font-size:12px;">▶️</button>` : ''}
                     </div>
                 `;
             }).join('');
@@ -6217,9 +6235,9 @@
                 lastEmbeddings = results.map((d, i) => ({ text: lines[i], vector: d.data || [] }));
                 recordCall(model, lines.length * 5);
                 resultEl.innerHTML = lastEmbeddings.map(e =>
-                    `<div style="margin:8px 0;padding:8px;background:#1a1a2e;border-radius:6px;">
-                        <div style="font-size:12px;color:#ffd700;">「${escapeHtml(e.text)}」</div>
-                        <div style="font-size:11px;color:#888;">维度：${e.vector.length} · 前3维：${e.vector.slice(0,3).map(n=>n.toFixed(4)).join(', ')}</div>
+                    `<div style="margin:8px 0;padding:8px;background:var(--bg-primary);border-radius:6px;">
+                        <div style="font-size:12px;color:var(--accent-color);">「${escapeHtml(e.text)}」</div>
+                        <div style="font-size:11px;color:var(--text-muted);">维度：${e.vector.length} · 前3维：${e.vector.slice(0,3).map(n=>n.toFixed(4)).join(', ')}</div>
                     </div>`).join('');
             } catch (e) {
                 resultEl.innerHTML = '❌ 生成失败：' + e.message;
@@ -6249,9 +6267,9 @@
                 const ranked = lastEmbeddings.map(e => ({ text: e.text, score: cosineSim(qv, e.vector) }))
                     .sort((a, b) => b.score - a.score);
                 recordCall(model, 5);
-                const searchHtml = '<div style="margin:6px 0;color:#2ecc71;">🔎 检索结果（按相似度）：</div>' +
-                    ranked.map(e => `<div style="padding:6px 10px;background:#1a1a2e;border-radius:6px;margin:4px 0;">
-                        <span style="color:#ffd700;">${e.score.toFixed(4)}</span> · ${escapeHtml(e.text)}</div>`).join('');
+                const searchHtml = '<div style="margin:6px 0;color:var(--success);">🔎 检索结果（按相似度）：</div>' +
+                    ranked.map(e => `<div style="padding:6px 10px;background:var(--bg-primary);border-radius:6px;margin:4px 0;">
+                        <span style="color:var(--accent-color);">${e.score.toFixed(4)}</span> · ${escapeHtml(e.text)}</div>`).join('');
                 resultEl.innerHTML = searchHtml;
                 // 保存到本地 + 云端 D1
                 addGenRecord('search', { title: query, content: searchHtml.replace(/<[^>]+>/g, ' ') });
@@ -7054,7 +7072,12 @@ v1.0.0 (2026年3月)
                     }
                 } catch (e) {
                     console.error('恢复登录状态失败', e);
-                    localStorage.removeItem('nflshc_currentUser');
+                    if (window.__fatal) window.__fatal('init渲染失败: ' + (e && e.message ? e.message : e));
+                    // 渲染失败时不白屏：回退到登录页（保留登录态，刷新可重试）
+                    const _lp = document.getElementById('loginPage');
+                    const _ap = document.getElementById('app');
+                    if (_lp) _lp.style.display = 'flex';
+                    if (_ap) _ap.style.display = 'none';
                 }
             }
             document.getElementById('chatModelSelect').value = 'sizhi';
