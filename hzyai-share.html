@@ -1313,7 +1313,7 @@
                             <span class="role-label ${roleClass}">${roleLabel}</span>
                             <div class="msg-text">${contentHtml}</div>
                         </div>
-                        <div class="msg-check ${isSelected ? 'checked' : ''}" onclick="toggleMessage(${index})" title="${isSelected ? '取消公开' : '公开此消息'}"></div>
+                        <div class="msg-check ${isSelected ? 'checked' : ''}" onclick="toggleMessage('${index}')" title="${isSelected ? '取消公开' : '公开此消息'}"></div>
                     </div>
                 `;
             }).join('');
