@@ -117,6 +117,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 10px;
+            pointer-events: none;
         }
         .slider-progress {
             position: absolute;
@@ -125,6 +126,7 @@
             border-radius: 10px;
             width: 0;
             transition: width 0.05s linear;
+            pointer-events: none;
         }
         .hint-text {
             position: relative;
@@ -150,6 +152,7 @@
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
+            pointer-events: auto;
         }
         .slider-thumb:active { cursor: grabbing; }
         .slider-thumb .arrow { color: var(--bg-primary, #1a1a2e); font-size: 12px; }
@@ -6158,9 +6161,9 @@
             }
 
             thumb.addEventListener('pointerdown', onDown);
-            thumb.addEventListener('pointermove', onMove);
-            thumb.addEventListener('pointerup', onUp);
-            thumb.addEventListener('pointercancel', onUp);
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onUp);
+            window.addEventListener('pointercancel', onUp);
 
             window.resetLoginSlider = resetSlider;
         })();
