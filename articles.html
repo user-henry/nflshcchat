@@ -271,6 +271,13 @@
         return div.innerHTML;
     }
 
+    function fmtDate(d) {
+        if (!d) return '未知时间';
+        const dt = (d instanceof Date) ? d : new Date(d);
+        if (isNaN(dt.getTime())) return '未知时间';
+        try { return dt.toLocaleString('zh-CN'); } catch (e) { return String(d); }
+    }
+
     // ============================================================
     //  加载文章
     // ============================================================
@@ -302,7 +309,7 @@
                 }
             }
 
-            allArticles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            allArticles.sort((a, b) => (new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
             renderArticleList();
 
         } catch (error) {
@@ -324,7 +331,7 @@
             <div class="article-item" onclick="viewArticle('${article.id}')">
                 <div class="article-title">${escapeHtml(article.title)}</div>
                 <div class="article-meta">
-                    👤 ${escapeHtml(article.author)} · ${new Date(article.createdAt).toLocaleString()}
+                    👤 ${escapeHtml(article.author)} · ${fmtDate(article.createdAt)}
                     ${article.visible === false ? ' · <span class="visibility-badge">🔒 仅自己可见</span>' : ''}
                 </div>
                 <div class="article-preview">${escapeHtml(article.content.substring(0, 150))}${article.content.length > 150 ? '...' : ''}</div>
@@ -363,7 +370,7 @@
                     </div>
                 </div>
                 <div style="font-size:12px;color:#888;margin:8px 0;">
-                    👤 ${escapeHtml(article.author)} · ${new Date(article.createdAt).toLocaleString()}
+                    👤 ${escapeHtml(article.author)} · ${fmtDate(article.createdAt)}
                     ${article.visible === false ? ' · 🔒 仅自己可见' : ''}
                     · 💬 回复数: ${article.replies ? article.replies.length : 0}
                 </div>
@@ -377,7 +384,7 @@
         if (article.replies && article.replies.length > 0) {
             repliesHtml = article.replies.map((reply, index) => `
                 <div class="reply-item">
-                    <div class="reply-meta">#${index + 1} · 👤 ${escapeHtml(reply.author)} · ${new Date(reply.createdAt).toLocaleString()}</div>
+                    <div class="reply-meta">#${index + 1} · 👤 ${escapeHtml(reply.author)} · ${fmtDate(reply.createdAt)}</div>
                     <div class="reply-content">${renderMarkdown(reply.content)}</div>
                     ${reply.author === currentUser.username ? `<button onclick="deleteReply('${article.id}', ${index})" style="background:transparent;border:none;color:#dc3545;cursor:pointer;font-size:11px;margin-top:4px;">删除</button>` : ''}
                 </div>
