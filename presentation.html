@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
@@ -157,8 +157,8 @@
         <!-- SLIDE 1: Introduction -->
         <section class="slide"><div class="slide-content">
             <h1>🌍 GitHub is more than code hosting</h1>
-            <p style="font-size: 1.2rem; margin-top: 1rem;">Today we explore how GitHub Issues + API can build a <span style="color:#ffd700;">FULLY FUNCTIONAL CHAT APP</span> — no backend server required.</p>
-            <div class="flex-2col"><div class="col"><div class="code-block">✅ GitHub as Database<br>✅ Real‑time Messaging via REST<br>✅ Markdown + AI bot<br>✅ Live Demo from real data</div></div></div>
+            <p style="font-size: 1.2rem; margin-top: 1rem;">Today we explore how Cloudflare D1 + Workers API can build a <span style="color:#ffd700;">FULLY FUNCTIONAL CHAT APP</span> — no backend server required.</p>
+            <div class="flex-2col"><div class="col"><div class="code-block">✅ Cloudflare D1 as Database<br>✅ Real‑time Messaging via REST<br>✅ Markdown + AI bot<br>✅ Live Demo from real data</div></div></div>
             <footer>← scroll down / use arrows →</footer>
         </div></section>
 
@@ -167,13 +167,13 @@
             <h2>📜 Real messages from NFLSHC Chat</h2>
             <p>Below are actual <strong>chatmessage</strong> issues fetched from GitHub. No fake data.</p>
             <div class="search-box"><input type="text" id="msgSearch" placeholder="Filter by sender or content..."><button id="searchBtn" style="background:#ffd700; border:none; border-radius:40px; padding:0 20px;">🔍</button></div>
-            <div id="fullMessagesList" class="message-list-container"><div class="code-block">Loading real messages from GitHub Issues ...</div></div>
-            <footer>💡 Every message is a GitHub Issue — permanently stored, searchable, versioned.</footer>
+            <div id="fullMessagesList" class="message-list-container"><div class="code-block">Loading real messages from Cloudflare D1 ...</div></div>
+            <footer>💡 Every message is stored in Cloudflare D1 — permanently stored, searchable, versioned.</footer>
         </div></section>
 
         <!-- SLIDE 3: NFLSHC Chat Architecture + Markdown Demo -->
         <section class="slide"><div class="slide-content">
-            <h2>💬 Architecture: Pure Frontend + GitHub API</h2>
+            <h2>💬 Architecture: Pure Frontend + Cloudflare Workers API</h2>
             <div class="flex-2col">
                 <div class="col"><div class="code-block">// sendMessage()<br>POST /repos/{owner}/{repo}/issues<br>Body: { content, roomId, sender }<br>Labels: ['chatmessage']</div></div>
                 <div class="col"><div class="demo-box"><i class="fab fa-markdown"></i> <strong>Markdown Preview</strong><br><input type="text" id="mdInput" placeholder="**bold** or `code`" style="width:100%; background:#1e293b; border-radius:24px; padding:8px; border:1px solid gold; color:white;"><div id="mdPreview" class="code-block" style="margin-top:8px;"></div></div></div>
@@ -193,10 +193,10 @@
         <section class="slide"><div class="slide-content">
             <h2>🛠️ Solving Real Problems (Interactive Demos)</h2>
             <div class="solution-grid">
-                <div class="solution-card" id="corsCard"><div class="solution-title">🌐 CORS & Tokens</div><div>GitHub API allows CORS + Personal Access Token. <span id="tokenStatus" style="color:#2ecc71;">✓ Configured</span></div><div class="solution-demo" id="corsDemo">Click card → test API</div></div>
+                <div class="solution-card" id="corsCard"><div class="solution-title">🌐 CORS & Tokens</div><div>Cloudflare Workers API allows CORS + Personal Access Token. <span id="tokenStatus" style="color:#2ecc71;">✓ Configured</span></div><div class="solution-demo" id="corsDemo">Click card → test API</div></div>
                 <div class="solution-card" id="pollingCard"><div class="solution-title">⏱️ Real-time Polling</div><div>Short polling every 3s → instant message feeling.<br><span id="pollCounter">0</span> polls simulated</div><div class="solution-demo">Live counter ↑</div></div>
                 <div class="solution-card" id="mobileCard"><div class="solution-title">📱 Mobile Notification Fix</div><div>CSS media queries hide notification bell on mobile. Click to see how.</div><div class="solution-demo" id="mobileDemo">📱 Tap to preview fix</div></div>
-                <div class="solution-card"><div class="solution-title">📊 Total Messages Stored</div><div id="totalMsgStat" class="stat-number">--</div><div>Real messages in GitHub Issues (label: chatmessage)</div><div class="solution-demo">Auto-updated from API</div></div>
+                <div class="solution-card"><div class="solution-title">📊 Total Messages Stored</div><div id="totalMsgStat" class="stat-number">--</div><div>Real messages in Cloudflare D1 (label: chatmessage)</div><div class="solution-demo">Auto-updated from API</div></div>
             </div>
             <footer>✨ Each fix is documented in about.html changelog — click cards for live demos</footer>
         </div></section>
@@ -204,7 +204,7 @@
         <!-- SLIDE 6: Thank you -->
         <section class="slide"><div class="slide-content" style="text-align:center;">
             <h1>🚀 The Future is Limitless</h1>
-            <div style="font-size:1.2rem; margin:1rem 0;">GitHub Issues → backendless apps, AI bots, internal tools, and more.</div>
+            <div style="font-size:1.2rem; margin:1rem 0;">Cloudflare D1 → backendless apps, AI bots, internal tools, and more.</div>
             <div class="code-block" style="display:inline-block;">Open Source · MIT · github.com/user-henry/nflshcchat</div>
             <footer style="margin-top:2rem;">Thank you! — HZY, 2026</footer>
         </div></section>
@@ -327,7 +327,7 @@
         function startPollingDemo() {
             setInterval(() => { pollCount++; document.getElementById('pollCounter').innerText = pollCount; }, 3000);
         }
-        document.getElementById('corsCard').onclick = () => { alert('✅ GitHub API supports CORS. We use a personal token stored in config.js. No proxy needed!'); };
+        document.getElementById('corsCard').onclick = () => { alert('✅ Cloudflare Workers API supports CORS. We use a personal token stored in config.js. No proxy needed!'); };
         document.getElementById('mobileCard').onclick = () => { alert('📱 Mobile fix: CSS @media hides the notification bell on phones. We also fixed the auto-expand issue.'); };
         
         function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
@@ -336,3 +336,4 @@
     <script src="js/theme.js"></script>
 </body>
 </html>
+
