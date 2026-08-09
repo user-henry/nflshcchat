@@ -1013,6 +1013,39 @@
             if (isNearBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
+        // 历史数据用 camelCase（roomId/isVoice），新数据用 snake_case（room_id/is_voice），
+        // 两种写法在同一张表里并存，这里统一兼容，避免"只能加载一半消息"。
+        function matchesRoom(m, roomId) {
+            return (m.room_id || m.roomId) === roomId;
+        }
+
+        function asArray(v) {
+            if (Array.isArray(v)) return v;
+            if (typeof v === 'string' && v.trim()) {
+                try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch (e) { return []; }
+            }
+            return [];
+        }
+
+        function normalizeMessage(m) {
+            return {
+                id: m.id,
+                roomId: m.room_id || m.roomId,
+                sender: m.sender,
+                content: m.content,
+                mentions: asArray(m.mentions),
+                hasMentionAll: !!(m.has_mention_all || m.hasMentionAll),
+                replyTo: m.reply_to || m.replyTo || null,
+                isRecalled: !!(m.is_recalled || m.isRecalled),
+                isPinned: !!(m.is_pinned || m.isPinned),
+                timestamp: m.timestamp,
+                // 语音消息字段：缺了这三个，渲染分支 msg.isVoice 永远为 false
+                isVoice: !!(m.is_voice || m.isVoice),
+                voiceData: m.voice_data || m.voiceData || null,
+                voiceDuration: m.voice_duration || m.voiceDuration || 0
+            };
+        }
+
         async function loadHistoryMessages(page = 1) {
             if (!currentRoom) return [];
             try {
@@ -1021,17 +1054,10 @@
                 const all = await res.json();
                 const skip = (page - 1) * 50;
                 const roomMessages = all
-                    .filter(m => m.room_id === currentRoom.id && !m.is_recalled)
+                    .filter(m => matchesRoom(m, currentRoom.id) && !m.is_recalled)
                     .slice(skip, skip + 50)
-                    .map(function(m) {
-                        return {
-                            id: m.id, roomId: m.room_id, sender: m.sender, content: m.content,
-                            mentions: m.mentions ? JSON.parse(m.mentions) : [],
-                            hasMentionAll: !!m.has_mention_all, replyTo: m.reply_to,
-                            isRecalled: !!m.is_recalled, isPinned: !!m.is_pinned, timestamp: m.timestamp
-                        };
-                    });
-                const hasNext = all.filter(m => m.room_id === currentRoom.id && !m.is_recalled).length > skip + 50;
+                    .map(normalizeMessage);
+                const hasNext = all.filter(m => matchesRoom(m, currentRoom.id) && !m.is_recalled).length > skip + 50;
                 return { messages: roomMessages, hasNext };
             } catch (error) {
                 console.error('加载历史消息失败:', error);
@@ -1046,15 +1072,8 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const all = await res.json();
                 const newMessages = all
-                    .filter(m => m.room_id === currentRoom.id && !m.is_recalled)
-                    .map(function(m) {
-                        return {
-                            id: m.id, roomId: m.room_id, sender: m.sender, content: m.content,
-                            mentions: m.mentions ? JSON.parse(m.mentions) : [],
-                            hasMentionAll: !!m.has_mention_all, replyTo: m.reply_to,
-                            isRecalled: !!m.is_recalled, isPinned: !!m.is_pinned, timestamp: m.timestamp
-                        };
-                    })
+                    .filter(m => matchesRoom(m, currentRoom.id) && !m.is_recalled)
+                    .map(normalizeMessage)
                     .filter(m => !allMessages.some(x => x.id === m.id));
                 return newMessages;
             } catch (error) {
@@ -1439,11 +1458,22 @@
                 const issues = await res.json();
                 allNotifications = [];
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const notif = JSON.parse(match[1]);
-                        if (notif.targetUser === currentUser.username) allNotifications.push({ ...notif, issueNumber: issue.number });
-                    }
+                    const match = issue.body.match(/```json\s*([\s\S]*?)\s*```/);
+                    if (!match) continue;
+                    let notif;
+                    try { notif = JSON.parse(match[1]); } catch (e) { continue; }
+                    if (!notif || typeof notif !== 'object') continue;
+                    // D1 行是 target_user，历史数据是 targetUser，两种都要认
+                    const target = notif.target_user || notif.targetUser;
+                    if (target !== currentUser.username) continue;
+                    allNotifications.push({
+                        ...notif,
+                        id: notif.id || issue.number,
+                        title: notif.title || '通知',
+                        content: notif.content || '',
+                        isRead: !!(notif.is_read || notif.isRead),
+                        sentAt: notif.sent_at || notif.sentAt || issue.created_at
+                    });
                 }
                 updateNotificationUI();
             } catch (error) { console.error('加载通知失败:', error); }
@@ -1470,15 +1500,21 @@
         }
 
         async function markAsRead(notificationId) {
-            const notif = allNotifications.find(n => n.id === notificationId);
+            const notif = allNotifications.find(n => String(n.id) === String(notificationId));
             if (!notif || notif.isRead) return;
-            notif.isRead = true;
-            const updatedBody = `系统通知\n\`\`\`json\n${JSON.stringify(notif, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${notif.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
+            try {
+                // 直接更新 notifications 表的 is_read 列（旧代码用已失效的 issueNumber 且缺 labels，必然 400）
+                const res = await fetch(`${WORKER_API}/api/notifications/${encodeURIComponent(notif.id)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_read: true })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                notif.isRead = true;
+            } catch (error) {
+                console.error('标记已读失败:', error);
+                return;
+            }
             await loadNotifications();
         }
 
@@ -1581,15 +1617,25 @@
                 createdAt: new Date().toISOString()
             };
             try {
-                const issueBody = `收藏消息\n\`\`\`json\n${JSON.stringify(favoriteData, null, 2)}\n\`\`\``;
-                await fetch(`${WORKER_API}/api/legacy/issues`, {
+                // 直写 favorites 表，确保 user / message_id / room_id 等真实列有值，
+                // 否则"我的收藏"按 user 过滤时什么都查不到。
+                const res = await fetch(`${WORKER_API}/api/favorites`, {
                     method: 'POST',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: `Favorite: ${favoriteData.id}`, body: issueBody, labels: ['favorite'] })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: favoriteData.id,
+                        message_id: msg.id,
+                        room_id: msg.roomId,
+                        sender: msg.sender,
+                        content: msg.content,
+                        user: currentUser.username,
+                        created_at: favoriteData.createdAt
+                    })
                 });
+                // 关键：必须检查返回状态，否则写入失败也会提示"已收藏"
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json().catch(() => ({}));
+                if (data && data.ok === false) throw new Error(data.error || '写入失败');
                 alert('⭐ 已收藏');
             } catch (error) {
                 alert('收藏失败：' + error.message);
@@ -1600,13 +1646,19 @@
             const msg = allMessages.find(m => m.id === messageId);
             if (!msg || msg.sender !== currentUser.username) return;
             if (Date.now() - new Date(msg.timestamp).getTime() > 120000) { alert('只能撤回2分钟内的消息'); return; }
-            msg.isRecalled = true;
-            const updatedBody = `聊天消息\n\`\`\`json\n${JSON.stringify(msg, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${msg.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
+            // D1 迁移后已无 issueNumber，必须用消息自身 id 走 messages 表
+            try {
+                const res = await fetch(`${WORKER_API}/api/messages/${encodeURIComponent(msg.id)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_recalled: true })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                msg.isRecalled = true;
+            } catch (error) {
+                alert('撤回失败：' + error.message);
+                return;
+            }
             await pollNewMessages();
             renderMessages();
         }
@@ -2107,12 +2159,29 @@
             };
             
             try {
-                const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
-                await fetch(`${WORKER_API}/api/legacy/issues`, {
+                // 与文本消息走同一条写入路径（/api/messages），
+                // 否则 room_id 只会存在 raw_json 里，历史消息按 room_id 过滤时永远查不到。
+                const res = await fetch(`${WORKER_API}/api/messages`, {
                     method: 'POST',
-                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: messageData.id,
+                        room_id: currentRoom.id,
+                        sender: messageData.sender,
+                        content: messageData.content,
+                        mentions: [],
+                        has_mention_all: false,
+                        reply_to: null,
+                        is_recalled: false,
+                        is_pinned: false,
+                        timestamp: messageData.timestamp,
+                        // 语音字段无独立列，随 raw_json 一起持久化
+                        is_voice: true,
+                        voice_data: base64Audio,
+                        voice_duration: duration
+                    })
                 });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 await pollNewMessages();
                 renderMessages();
             } catch (error) {
