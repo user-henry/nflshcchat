@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
@@ -2314,7 +2314,19 @@
             cursor: pointer;
             font-weight: 600;
         }
-    </style>
+
+        /* 统一生成历史面板（代码/音频/搜索/图像/视频） */
+        .gen-history-panel { margin-top:14px; border-top:1px solid #2a2a40; padding-top:10px; }
+        .gen-history-title { font-size:13px; color:#ffd700; margin-bottom:8px; font-weight:600; }
+        .gen-history-list { display:flex; flex-direction:column; gap:8px; max-height:340px; overflow:auto; }
+        .gen-history-item { background:#1a1a2e; border:1px solid #2a2a40; border-radius:8px; padding:8px 10px; }
+        .gen-history-head { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:13px; color:#eee; }
+        .gen-history-time { font-size:11px; color:#777; margin-top:4px; }
+        .gen-del-btn, .msg-del-btn { background:transparent; border:none; cursor:pointer; font-size:14px; line-height:1; padding:2px 4px; border-radius:4px; }
+        .gen-del-btn:hover, .msg-del-btn:hover { background:#ff4757; }
+        .msg-del-btn { margin-left:auto; opacity:.6; }
+        .message-content { display:flex; align-items:flex-start; gap:6px; flex-wrap:wrap; }
+        .gen-history-item pre { background:#0f0f1e; padding:6px; border-radius:6px; font-size:12px; }
     <link rel="stylesheet" href="css/themes.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -2520,6 +2532,10 @@
                         <button class="send-btn" onclick="sendCode()">生成</button>
                     </div>
                 </div>
+                <div class="gen-history-panel">
+                    <div class="gen-history-title">💻 代码生成历史</div>
+                    <div id="codeHistory" class="gen-history-list"></div>
+                </div>
             </div>
 
             <!-- ====== 语音合成模式 ====== -->
@@ -2552,6 +2568,10 @@
                         <audio id="ttsAudio" controls style="width:100%;"></audio>
                     </div>
                     <div id="ttsStatus" class="sync-status"></div>
+                    <div class="gen-history-panel">
+                        <div class="gen-history-title">🎤 语音合成历史</div>
+                        <div id="ttsHistory" class="gen-history-list"></div>
+                    </div>
                 </div>
             </div>
 
@@ -2573,6 +2593,10 @@
                     <button class="draw-generate-btn" onclick="generateEmbedding()">🧮 生成向量</button>
                     <button class="draw-generate-btn" onclick="semanticSearch()" style="background:#9b59b6;">🔎 语义检索</button>
                     <div id="embedResult" class="embed-result"></div>
+                    <div class="gen-history-panel">
+                        <div class="gen-history-title">🔎 语义检索历史</div>
+                        <div id="searchHistory" class="gen-history-list"></div>
+                    </div>
                 </div>
             </div>
 
@@ -3215,8 +3239,177 @@
         const STORAGE_KEYS = {
             conversations: 'hzyai_conversations_',
             characters: 'hzyai_characters',
-            tasks: 'hzyai_tasks'
+            tasks: 'hzyai_tasks',
+            genHistory: 'hzyai_gen_'
         };
+
+        // 统一“生成历史”（代码/音频/搜索/绘图/视频），用于本地持久化 + 云端 D1 同步
+        let genHistory = [];
+
+        function loadGenFromLocal() {
+            if (!currentUser) return;
+            const saved = localStorage.getItem(STORAGE_KEYS.genHistory + currentUser.username);
+            if (saved) {
+                try { genHistory = JSON.parse(saved); } catch (e) { genHistory = []; }
+            } else {
+                genHistory = [];
+            }
+        }
+
+        function saveGenToLocal() {
+            if (!currentUser) return;
+            localStorage.setItem(STORAGE_KEYS.genHistory + currentUser.username, JSON.stringify(genHistory));
+        }
+
+        function getGenLabel() {
+            return `hzyai_${currentUser.username}_gen`;
+        }
+
+        async function loadGenFromGitHub() {
+            if (!currentUser) return [];
+            try {
+                const url = `${WORKER_API}/api/legacy/issues?labels=${getGenLabel()}&state=open`;
+                const response = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+                const issues = await response.json();
+                const list = [];
+                for (const issue of issues) {
+                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
+                    if (match) {
+                        try {
+                            const data = JSON.parse(match[1]);
+                            if (Array.isArray(data)) list.push(...data);
+                            else if (data.items) list.push(...data.items);
+                        } catch (e) {}
+                    }
+                }
+                return list;
+            } catch (error) {
+                console.error('从云端加载生成历史失败:', error);
+                return [];
+            }
+        }
+
+        async function saveGenToGitHub() {
+            if (!currentUser) return;
+            try {
+                const issueBody = `HZYAI生成历史\n\`\`\`json\n${JSON.stringify({ items: genHistory }, null, 2)}\n\`\`\``;
+                const existing = await loadGenFromGitHub();
+                // 简单策略：整批覆盖（用单个 issue 存储全部生成历史）
+                const label = getGenLabel();
+                const allIssues = await (await fetch(`${WORKER_API}/api/legacy/issues?labels=${label}&state=open`,
+                    { headers: { 'Accept': 'application/vnd.github.v3+json' } })).json();
+                if (allIssues && allIssues.length > 0) {
+                    await fetch(`${WORKER_API}/api/legacy/issues/${allIssues[0].number}`, {
+                        method: 'PATCH',
+                        headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ body: issueBody })
+                    });
+                } else {
+                    await fetch(`${WORKER_API}/api/legacy/issues`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: `HZYAI_GEN: ${currentUser.username}`, body: issueBody, labels: [label] })
+                    });
+                }
+                return true;
+            } catch (error) {
+                console.error('保存生成历史到云端失败:', error);
+                return false;
+            }
+        }
+
+        // 新增一条生成记录（type: code/audio/search/image/video）
+        function addGenRecord(type, { title, prompt, content, url, extra }) {
+            if (!currentUser) return;
+            const rec = {
+                id: Date.now().toString() + Math.random().toString(36).slice(2, 6),
+                type,
+                title: title || '',
+                prompt: prompt || '',
+                content: content || '',
+                url: url || '',
+                extra: extra || null,
+                timestamp: new Date().toISOString()
+            };
+            genHistory.unshift(rec);
+            // 仅保留最近 200 条，避免无限膨胀
+            if (genHistory.length > 200) genHistory = genHistory.slice(0, 200);
+            saveGenToLocal();
+            renderGenHistory(type);
+            // 异步同步到云端 D1
+            saveGenToGitHub().catch(e => console.warn('生成历史云端同步失败:', e));
+            return rec;
+        }
+
+        function deleteGenRecord(id) {
+            genHistory = genHistory.filter(r => r.id !== id);
+            saveGenToLocal();
+            renderAllGenHistory();
+            saveGenToGitHub().catch(e => console.warn('生成历史云端同步失败:', e));
+        }
+
+        function genIcon(type) {
+            return ({ code: '💻', audio: '🎤', search: '🔎', image: '🎨', video: '🎬' })[type] || '📄';
+        }
+
+        function genItemHtml(r) {
+            let preview = '';
+            if (r.type === 'code') {
+                preview = `<pre style="max-height:160px;overflow:auto;white-space:pre-wrap;">${escapeHtml((r.content || '').substring(0, 600))}</pre>`;
+            } else if (r.type === 'audio') {
+                preview = r.url ? `<audio controls src="${r.url}" style="width:100%;"></audio>` : '';
+            } else if (r.type === 'search') {
+                preview = `<div style="font-size:12px;">${escapeHtml((r.content || '').substring(0, 300))}</div>`;
+            } else {
+                preview = r.url ? `<img src="${r.url}" style="max-height:120px;border-radius:6px;">` : '';
+            }
+            return `
+            <div class="gen-history-item" data-id="${r.id}">
+                <div class="gen-history-head">
+                    <span>${genIcon(r.type)} ${escapeHtml(r.title || r.prompt || r.type)}</span>
+                    <button class="gen-del-btn" onclick="deleteGenRecord('${r.id}')" title="删除">🗑️</button>
+                </div>
+                ${preview}
+                <div class="gen-history-time">${formatTime(r.timestamp)}</div>
+            </div>`;
+        }
+
+        function renderGenHistory(type) {
+            const container = document.getElementById(type === 'code' ? 'codeHistory' :
+                type === 'audio' ? 'ttsHistory' :
+                type === 'search' ? 'searchHistory' : null);
+            if (!container) return;
+            const items = genHistory.filter(r => r.type === type);
+            container.innerHTML = items.length === 0 ?
+                '<div style="padding:10px;color:#666;font-size:12px;">暂无历史</div>' :
+                items.map(genItemHtml).join('');
+        }
+
+        function renderAllGenHistory() {
+            renderGenHistory('code');
+            renderGenHistory('audio');
+            renderGenHistory('search');
+        }
+
+        async function pullGenFromGitHub() {
+            if (!currentUser) return;
+            try {
+                const cloud = await loadGenFromGitHub();
+                if (!cloud.length) return;
+                const localIds = new Set(genHistory.map(r => r.id));
+                let added = 0;
+                for (const r of cloud) {
+                    if (!localIds.has(r.id)) { genHistory.push(r); added++; }
+                }
+                if (added > 0) {
+                    genHistory.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                    saveGenToLocal();
+                    renderAllGenHistory();
+                }
+            } catch (e) {
+                console.warn('自动拉取生成历史失败:', e);
+            }
+        }
 
         function loadConversationsFromLocal() {
             if (!currentUser) return;
@@ -3269,11 +3462,12 @@
             return `hzyai_${currentUser.username}`;
         }
 
-        async function loadFromGitHub() {
+        async function loadFromGitHub(opts) {
             if (!currentUser) return [];
             try {
+                const typeQ = (opts && opts.type) ? `&type=${encodeURIComponent(opts.type)}` : '';
                 const url =
-                    `${WORKER_API}/api/legacy/issues?labels=${getGitHubLabel()}&state=open`;
+                    `${WORKER_API}/api/legacy/issues?labels=${getGitHubLabel()}&state=open${typeQ}`;
                 const response = await fetch(url, {
                     headers: {
                         'Accept': 'application/vnd.github.v3+json'
@@ -3286,7 +3480,10 @@
                     if (match) {
                         try {
                             const conv = JSON.parse(match[1]);
-                            githubConversations.push({ ...conv, issueNumber: issue.number });
+                            // 优先用数据内 type，其次 worker 行 type
+                            conv.type = conv.type || issue.type || currentMode || 'chat';
+                            conv._issueNumber = issue.number;
+                            githubConversations.push(conv);
                         } catch (e) {}
                     }
                 }
@@ -3297,18 +3494,23 @@
             }
         }
 
-        async function saveConversationToGitHub(conversation) {
+        async function saveConversationToGitHub(conversation, skipLookup) {
             if (!currentUser) return;
+            // 空的新对话（无消息）不上传：避免拉取后显示一堆无标题空白对话
+            const msgs = conversation.messages || [];
+            if (msgs.length === 0 && !(conversation._issueNumber)) {
+                return false;
+            }
             try {
-                const existingIssues = await loadFromGitHub();
-                const existing = existingIssues.find(c => c.id === conversation.id);
-
-                const issueBody = `HZYAI对话数据\n\`\`\`json\n${JSON.stringify(conversation, null, 2)}\n\`\`\``;
+                const convType = conversation.type || currentMode || 'chat';
+                const existing = skipLookup ? conversation._issueNumber : null;
+                const issueBody = `HZYAI对话数据\n\`\`\`json\n${JSON.stringify({ ...conversation, type: convType }, null, 2)}\n\`\`\``;
                 const labels = [getGitHubLabel()];
+                const q = `?type=${encodeURIComponent(convType)}`;
 
-                if (existing && existing.issueNumber) {
+                if (existing) {
                     await fetch(
-                        `${WORKER_API}/api/legacy/issues/${existing.issueNumber}`, {
+                        `${WORKER_API}/api/legacy/issues/${existing}${q}`, {
                             method: 'PATCH',
                             headers: {
                                 'Accept': 'application/vnd.github.v3+json',
@@ -3317,7 +3519,7 @@
                             body: JSON.stringify({ body: issueBody })
                         });
                 } else {
-                    await fetch(`${WORKER_API}/api/legacy/issues`, {
+                    const res = await fetch(`${WORKER_API}/api/legacy/issues${q}`, {
                         method: 'POST',
                         headers: {
                             'Accept': 'application/vnd.github.v3+json',
@@ -3325,6 +3527,8 @@
                         },
                         body: JSON.stringify({ title: `HZYAI: ${conversation.title}`, body: issueBody, labels: labels })
                     });
+                    const j = await res.json().catch(() => ({}));
+                    if (j && j.number) conversation._issueNumber = j.number;
                 }
                 conversation.synced = true;
                 return true;
@@ -3332,6 +3536,20 @@
                 console.error('保存到云端失败:', error);
                 return false;
             }
+        }
+
+        // 删除对话：本地移除 + 云端删除对应 issue
+        async function deleteConversationOnCloud(conversation) {
+            if (!currentUser) return;
+            try {
+                const num = conversation._issueNumber;
+                if (num) {
+                    await fetch(`${WORKER_API}/api/legacy/issues/${num}?labels=${encodeURIComponent(getGitHubLabel())}`, {
+                        method: 'DELETE',
+                        headers: { 'Accept': 'application/vnd.github.v3+json' }
+                    });
+                }
+            } catch (e) { console.warn('云端删除对话失败:', e); }
         }
 
         async function pullFromGitHub() {
@@ -3342,37 +3560,17 @@
             document.getElementById('pushBtn').disabled = true;
 
             try {
+                // 以云端为唯一权威源：完全覆盖本地（刷新不保留，统一在“对话”选项卡渲染）
                 const githubConvs = await loadFromGitHub();
-                let updatedCount = 0,
-                    newCount = 0;
-                for (const githubConv of githubConvs) {
-                    const localConv = conversations.find(c => c.id === githubConv.id);
-                    if (localConv) {
-                        const localMessageIds = new Set(localConv.messages.map(m =>
-                            `${m.role}_${m.timestamp}_${m.content.substring(0, 50)}`));
-                        const newMessages = githubConv.messages.filter(m => {
-                            const key = `${m.role}_${m.timestamp}_${m.content.substring(0, 50)}`;
-                            return !localMessageIds.has(key);
-                        });
-                        if (newMessages.length > 0) {
-                            localConv.messages.push(...newMessages);
-                            localConv.messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                            localConv.updatedAt = githubConv.updatedAt;
-                            localConv.title = githubConv.title;
-                            updatedCount++;
-                        }
-                    } else {
-                        conversations.push(githubConv);
-                        newCount++;
-                    }
-                }
-                saveConversationsToLocal();
+                conversations = githubConvs;
+                // 排序：最近更新在前
+                conversations.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
                 renderConversationsList();
                 if (currentConversationId) {
                     const currentConv = conversations.find(c => c.id === currentConversationId);
                     if (currentConv) renderMessages(currentConv.messages);
                 }
-                setSyncStatus(`✅ 完成！更新 ${updatedCount} 个，新增 ${newCount} 个`, 'success');
+                setSyncStatus(`✅ 已从云端加载 ${conversations.length} 个对话`, 'success');
                 setTimeout(() => setSyncStatus('', ''), 3000);
             } catch (error) {
                 setSyncStatus(`❌ 失败: ${error.message}`, 'error');
@@ -3393,7 +3591,7 @@
             try {
                 let successCount = 0;
                 for (const conv of conversations) {
-                    if (await saveConversationToGitHub(conv)) successCount++;
+                    if (await saveConversationToGitHub(conv, conv._issueNumber)) successCount++;
                 }
                 saveConversationsToLocal();
                 setSyncStatus(`✅ 上传完成！已同步 ${successCount}/${conversations.length} 个对话`, 'success');
@@ -3653,10 +3851,12 @@
             container.innerHTML = conversations.map(conv => {
                 const role = characters.find(c => c.id === conv.roleId);
                 const roleTag = role ? `🎭 ${role.name}` : '';
+                const tIcon = ({ chat:'💬', vision:'👁️', image:'🎨', video:'🎬', code:'💻', audio:'🎤', search:'🔎' })[conv.type] || '💬';
+                const tTag = ({ chat:'对话', vision:'视觉', image:'绘图', video:'视频', code:'代码', audio:'语音', search:'检索' })[conv.type] || '对话';
                 return `
                 <div class="conversation-item ${currentConversationId === conv.id ? 'active' : ''}" onclick="switchConversation('${conv.id}')">
                     <div class="conversation-title">
-                        ${escapeHtml(conv.title)} ${roleTag ? `<span style="font-size:10px;color:var(--accent-color, #ffd700);">${escapeHtml(roleTag)}</span>` : ''}
+                        ${tIcon} ${escapeHtml(conv.title)} ${roleTag ? `<span style="font-size:10px;color:var(--accent-color, #ffd700);">${escapeHtml(roleTag)}</span>` : ''} <span style="font-size:10px;color:#888;">[${tTag}]</span>
                         <button class="export-conv-btn" onclick="event.stopPropagation(); exportSingleChatMD('${conv.id}')" title="导出为 Markdown">📝</button>
                         <button class="delete-conv" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">🗑️</button>
                     </div>
@@ -3704,10 +3904,11 @@
                 const ttsButton = msg.role === 'assistant'
                     ? `<button class="tts-btn" onclick="speakText('${escapeHtml(msg.content.replace(/"/g, '\\"'))}')" title="播报此消息">🔊</button>`
                     : '';
+                const delButton = `<button class="msg-del-btn" onclick="deleteMessage('${conversation.id}', '${msg.id}')" title="删除此消息">🗑️</button>`;
                 return `
-                    <div class="message ${msg.role}">
+                    <div class="message ${msg.role}" data-msg-id="${msg.id}">
                         <div class="message-avatar">${msg.role === 'user' ? '👤' : '🤖'}</div>
-                        <div class="message-content">${content} ${ttsButton}</div>
+                        <div class="message-content">${content} ${ttsButton} ${delButton}</div>
                     </div>
                 `;
             }).join('');
@@ -3724,7 +3925,7 @@
         function addMessage(role, content, mediaUrl, mediaType) {
             const conversation = conversations.find(c => c.id === currentConversationId);
             if (!conversation) return;
-            const msg = { role, content, timestamp: new Date().toISOString() };
+            const msg = { id: Date.now().toString() + Math.random().toString(36).slice(2, 6), role, content, timestamp: new Date().toISOString() };
             if (mediaUrl) { msg.mediaUrl = mediaUrl;
                 msg.mediaType = mediaType || 'image'; }
             conversation.messages.push(msg);
@@ -3749,7 +3950,8 @@
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 synced: false,
-                roleId: null
+                roleId: null,
+                type: currentMode || 'chat'
             };
             conversations.unshift(newConv);
             saveConversationsToLocal();
@@ -3762,9 +3964,11 @@
         }
 
         function deleteConversation(convId) {
+            const target = conversations.find(c => c.id === convId);
             if (conversations.length === 1) {
                 if (confirm('这是最后一个对话，删除后将创建新对话。确定删除吗？')) {
                     conversations = [];
+                    if (target) deleteConversationOnCloud(target);
                     saveConversationsToLocal();
                     createNewConversation();
                 }
@@ -3781,8 +3985,21 @@
                     createNewConversation();
                 }
             }
+            if (target) deleteConversationOnCloud(target);
             saveConversationsToLocal();
             renderConversationsList();
+        }
+
+        // 删除单条消息（对话/vision/image/video），并同步到本地与云端 D1
+        function deleteMessage(convId, msgId) {
+            const conversation = conversations.find(c => c.id === convId);
+            if (!conversation) return;
+            if (!confirm('确定删除这条消息吗？')) return;
+            conversation.messages = conversation.messages.filter(m => m.id !== msgId);
+            saveConversationsToLocal();
+            renderMessages(conversation.messages);
+            // 云端同步
+            saveConversationToGitHub(conversation).catch(e => console.warn('删除消息云端同步失败:', e));
         }
 
         // ============================================================
@@ -4521,6 +4738,7 @@
 
                 addToHistory('image', imageUrl, prompt);
                 addMessage('assistant', `🎨 生成的图片：${prompt}`, imageUrl, 'image');
+                addGenRecord('image', { prompt: prompt, url: imageUrl });
                 removeReferenceImage();
 
             } catch (error) {
@@ -4737,6 +4955,7 @@
 
                 addToHistory('video', videoUrl, prompt);
                 addMessage('assistant', `🎬 生成的视频：${prompt}`, videoUrl, 'video');
+                addGenRecord('video', { prompt: prompt, url: videoUrl });
                 removeVideoReferenceImage();
 
             } catch (error) {
@@ -5911,15 +6130,19 @@
                     body: JSON.stringify({
                         model: model,
                         messages: [{ role: 'system', content: '你是一位资深程序员，请直接给出完整、可运行、带必要注释的代码，不要废话。' }, { role: 'user', content: text }],
-                        stream: false
+                        stream: false,
+                        max_tokens: 8192
                     })
                 });
                 if (!response.ok) throw new Error(`CF 调用失败 (${response.status})`);
                 const data = await response.json();
                 recordCall(model, 300);
                 const area = document.getElementById('codeMessagesArea');
-                area.lastChild.querySelector('.message-content').innerHTML = renderMarkdown(data.response || '（空响应）');
+                const codeText = data.response || '（空响应）';
+                area.lastChild.querySelector('.message-content').innerHTML = renderMarkdown(codeText);
                 area.scrollTop = area.scrollHeight;
+                // 保存到本地 + 云端 D1
+                addGenRecord('code', { title: text.slice(0, 40), prompt: text, content: codeText });
             } catch (e) {
                 const area = document.getElementById('codeMessagesArea');
                 area.lastChild.querySelector('.message-content').textContent = '❌ 生成失败：' + e.message;
@@ -5954,6 +6177,8 @@
                 document.getElementById('ttsPlayer').style.display = 'block';
                 audio.play();
                 status.textContent = '✅ 合成完成';
+                // 保存到本地 + 云端 D1
+                addGenRecord('audio', { title: text.slice(0, 40), prompt: text, url: ttsAudioUrl });
             } catch (e) {
                 status.textContent = '❌ 合成失败：' + e.message;
             }
@@ -6024,9 +6249,12 @@
                 const ranked = lastEmbeddings.map(e => ({ text: e.text, score: cosineSim(qv, e.vector) }))
                     .sort((a, b) => b.score - a.score);
                 recordCall(model, 5);
-                resultEl.innerHTML = '<div style="margin:6px 0;color:#2ecc71;">🔎 检索结果（按相似度）：</div>' +
+                const searchHtml = '<div style="margin:6px 0;color:#2ecc71;">🔎 检索结果（按相似度）：</div>' +
                     ranked.map(e => `<div style="padding:6px 10px;background:#1a1a2e;border-radius:6px;margin:4px 0;">
                         <span style="color:#ffd700;">${e.score.toFixed(4)}</span> · ${escapeHtml(e.text)}</div>`).join('');
+                resultEl.innerHTML = searchHtml;
+                // 保存到本地 + 云端 D1
+                addGenRecord('search', { title: query, content: searchHtml.replace(/<[^>]+>/g, ' ') });
             } catch (e) {
                 resultEl.innerHTML = '❌ 检索失败：' + e.message;
             }
@@ -6090,6 +6318,7 @@
 
         function formatTime(isoString) {
             const date = new Date(isoString);
+            if (isNaN(date.getTime())) return '未知时间';
             const now = new Date();
             const diff = now - date;
             if (diff < 60000) return '刚刚';
@@ -6253,19 +6482,29 @@
                 document.getElementById('userName').textContent = 'huangzhiyuan';
                 document.getElementById('userRole').textContent = '管理员';
                 document.getElementById('userAvatar').textContent = '👑';
-                loadConversationsFromLocal();
-                loadCharactersFromLocal();
-                ensureRAGCharacter();
-                loadTasksFromLocal();
-                populateRoleSelect();
-                renderConversationsList();
-                renderCharactersGrid();
-                renderTasks();
-                if (conversations.length > 0) {
-                    currentConversationId = conversations[0].id;
-                    const conv = conversations[0];
-                    document.getElementById('chatTitle').textContent = conv.title;
-                    if (conv.roleId) {
+                    loadConversationsFromLocal();
+                    loadCharactersFromLocal();
+                    ensureRAGCharacter();
+                    loadTasksFromLocal();
+                    populateRoleSelect();
+                    renderConversationsList();
+                    // 自动从云端 (worker.nflshcchat.cc.cd) 拉取历史对话，保证刷新后历史同步
+                    if (typeof pullFromGitHub === 'function') {
+                        pullFromGitHub().catch(e => console.warn('自动拉取历史失败:', e));
+                    }
+                    // 自动加载并同步“生成历史”（代码/音频/搜索/图像/视频）
+                    loadGenFromLocal();
+                    renderAllGenHistory();
+                    if (typeof pullGenFromGitHub === 'function') {
+                        pullGenFromGitHub().catch(e => console.warn('自动拉取生成历史失败:', e));
+                    }
+                    renderCharactersGrid();
+                    renderTasks();
+                    if (conversations.length > 0) {
+                        currentConversationId = conversations[0].id;
+                        const conv = conversations[0];
+                        document.getElementById('chatTitle').textContent = conv.title;
+                        if (conv.roleId) {
                         document.getElementById('chatRoleSelect').value = conv.roleId;
                         document.getElementById('currentRoleBadge').style.display = 'inline';
                     }
@@ -6309,6 +6548,16 @@
                     loadTasksFromLocal();
                     populateRoleSelect();
                     renderConversationsList();
+                    // 自动从云端 (worker.nflshcchat.cc.cd) 拉取历史对话，保证刷新后历史同步
+                    if (typeof pullFromGitHub === 'function') {
+                        pullFromGitHub().catch(e => console.warn('自动拉取历史失败:', e));
+                    }
+                    // 自动加载并同步“生成历史”（代码/音频/搜索/图像/视频）
+                    loadGenFromLocal();
+                    renderAllGenHistory();
+                    if (typeof pullGenFromGitHub === 'function') {
+                        pullGenFromGitHub().catch(e => console.warn('自动拉取生成历史失败:', e));
+                    }
                     renderCharactersGrid();
                     renderTasks();
                     if (conversations.length > 0) {
@@ -6776,6 +7025,16 @@ v1.0.0 (2026年3月)
                     loadTasksFromLocal();
                     populateRoleSelect();
                     renderConversationsList();
+                    // 自动从云端 (worker.nflshcchat.cc.cd) 拉取历史对话，保证刷新后历史同步
+                    if (typeof pullFromGitHub === 'function') {
+                        pullFromGitHub().catch(e => console.warn('自动拉取历史失败:', e));
+                    }
+                    // 自动加载并同步“生成历史”（代码/音频/搜索/图像/视频）
+                    loadGenFromLocal();
+                    renderAllGenHistory();
+                    if (typeof pullGenFromGitHub === 'function') {
+                        pullGenFromGitHub().catch(e => console.warn('自动拉取生成历史失败:', e));
+                    }
                     renderCharactersGrid();
                     renderTasks();
                     if (conversations.length > 0) {
