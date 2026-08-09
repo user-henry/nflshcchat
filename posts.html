@@ -278,6 +278,13 @@
         return div.innerHTML;
     }
 
+    function fmtDate(d) {
+        if (!d) return '未知时间';
+        const dt = (d instanceof Date) ? d : new Date(d);
+        if (isNaN(dt.getTime())) return '未知时间';
+        try { return dt.toLocaleString('zh-CN'); } catch (e) { return String(d); }
+    }
+
     // ============================================================
     //  加载帖子
     // ============================================================
@@ -307,7 +314,7 @@
                 }
             }
 
-            allPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            allPosts.sort((a, b) => (new Date(b.createdAt || 0) - new Date(a.createdAt || 0)));
             renderPostList();
 
         } catch (error) {
@@ -329,7 +336,7 @@
             <div class="post-item" onclick="viewPost('${post.id}')">
                 <div class="post-title">${escapeHtml(post.title)}</div>
                 <div class="post-meta">
-                    👤 ${escapeHtml(post.author)} · ${new Date(post.createdAt).toLocaleString()}
+                    👤 ${escapeHtml(post.author)} · ${fmtDate(post.createdAt)}
                     ${post.allowReply === false ? ' · 🔒 禁止回复' : ''}
                 </div>
                 <div class="post-preview">${escapeHtml(post.content.substring(0, 150))}${post.content.length > 150 ? '...' : ''}</div>
@@ -370,7 +377,7 @@
                     </div>
                 </div>
                 <div style="font-size:12px;color:#888;margin:8px 0;">
-                    👤 ${escapeHtml(post.author)} · ${new Date(post.createdAt).toLocaleString()}
+                    👤 ${escapeHtml(post.author)} · ${fmtDate(post.createdAt)}
                     ${post.allowReply === false ? ' · 🔒 禁止回复' : ''}
                     ${post.allowReply !== false ? ' · 💬 回复数: ' + (post.replies ? post.replies.length : 0) : ''}
                 </div>
@@ -385,7 +392,7 @@
         if (post.replies && post.replies.length > 0) {
             repliesHtml = post.replies.map((reply, index) => `
                 <div class="reply-item">
-                    <div class="reply-meta">#${index + 1} · 👤 ${escapeHtml(reply.author)} · ${new Date(reply.createdAt).toLocaleString()}</div>
+                    <div class="reply-meta">#${index + 1} · 👤 ${escapeHtml(reply.author)} · ${fmtDate(reply.createdAt)}</div>
                     <div class="reply-content">${renderMarkdown(reply.content)}</div>
                     ${reply.author === currentUser.username ? `<button onclick="deleteReply('${post.id}', ${index})" style="background:transparent;border:none;color:#dc3545;cursor:pointer;font-size:11px;margin-top:4px;">删除</button>` : ''}
                 </div>
