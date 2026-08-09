@@ -401,7 +401,7 @@
                     <div class="notice-title">📢 ${escapeHtml(notice.title)}</div>
                     <div class="notice-meta">
                         发布于 ${new Date(notice.createdAt).toLocaleString()} by ${escapeHtml(notice.author || '管理员')}
-                        ${currentUser && currentUser.isAdmin ? `<button class="delete-notice-btn" onclick="deleteNotice(${notice.issueNumber})">删除公告</button>` : ''}
+                        ${currentUser && currentUser.isAdmin ? `<button class="delete-notice-btn" onclick="deleteNotice('${notice.issueNumber}')">删除公告</button>` : ''}
                     </div>
                     <div class="notice-content">${renderMarkdown(notice.content)}</div>
                 </div>
