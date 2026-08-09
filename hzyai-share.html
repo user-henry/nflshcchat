@@ -1411,7 +1411,7 @@
                     body: JSON.stringify({
                         title: `HZYAI公开对话: ${title}`,
                         body: issueBody,
-                        labels: ['hzyai_public_chat']
+                        labels: ['hzyai_share_chat']
                     })
                 });
 
@@ -1445,7 +1445,7 @@
             container.innerHTML = '<div class="empty-state"><span class="icon">⏳</span>加载中...</div>';
 
             try {
-                const url = `${WORKER_API}/api/legacy/issues?labels=hzyai_public_chat&state=open`;
+                const url = `${WORKER_API}/api/legacy/issues?labels=hzyai_share_chat&state=open`;
                 const res = await fetch(url, {
                     headers: {
                         'Accept': 'application/vnd.github.v3+json'
@@ -1468,7 +1468,8 @@
                     }
                 }
 
-                publicChats.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                const safeTime = (t) => { const d = new Date(t); return isNaN(d.getTime()) ? 0 : d.getTime(); };
+                publicChats.sort((a, b) => safeTime(b.createdAt) - safeTime(a.createdAt));
 
                 if (publicChats.length === 0) {
                     container.innerHTML = `
@@ -1491,7 +1492,7 @@
                                 </div>
                                 <div class="card-meta">👤 ${escapeHtml(chat.author)} · ${formatTime(chat.createdAt)}</div>
                                 <div class="card-preview">${escapeHtml(chat.messages?.[0]?.content?.substring(0, 80) || '')}${chat.messages?.[0]?.content?.length > 80 ? '...' : ''}</div>
-                                <div class="card-stats">📅 ${new Date(chat.createdAt).toLocaleDateString()}</div>
+                                <div class="card-stats">📅 ${(() => { const d = new Date(chat.createdAt); return isNaN(d.getTime()) ? '未知日期' : d.toLocaleDateString(); })()}</div>
                             </div>
                         `).join('')}
                     </div>
