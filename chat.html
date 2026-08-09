@@ -1664,6 +1664,15 @@
                         timestamp: messageData.timestamp
                     })
                 });
+                // 同步写入 legacy issues(chatmessage 标签)，供 admin 群聊统计使用
+                try {
+                    const issueBody = `聊天消息\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
+                    await fetch(`${WORKER_API}/api/legacy/issues`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: `Message: ${messageData.id}`, body: issueBody, labels: ['chatmessage'] })
+                    });
+                } catch (e) { console.warn('群聊统计同步失败(不影响发送):', e); }
                 for (const mentionedUser of mentionedUsers) {
                     if (mentionedUser === currentUser.username) continue;
                     const userExists = await checkUserExists(mentionedUser);
