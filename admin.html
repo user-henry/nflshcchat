@@ -369,15 +369,24 @@
 
             const allMsg = [];
             try {
-                const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open`;
-                const res = await fetch(url, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await res.json();
+                // 聊天消息存在专用 messages 表，不在 legacy chatmessage issues 里。
+                // 旧写法查 misc_issues，永远返回 0 条，导致"消息总数"恒为 0。
+                const url = `${WORKER_API}/api/messages?limit=50000`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const rows = await res.json();
 
-                for (const issue of (Array.isArray(issues) ? issues : [])) {
-                    const msgData = parseIssueJson(issue);
-                    if (msgData) allMsg.push(msgData);
+                for (const m of (Array.isArray(rows) ? rows : [])) {
+                    allMsg.push({
+                        id: m.id,
+                        roomId: m.room_id || m.roomId,
+                        sender: m.sender,
+                        content: m.content,
+                        timestamp: m.timestamp,
+                        isRecalled: !!(m.is_recalled || m.isRecalled),
+                        isPinned: !!(m.is_pinned || m.isPinned),
+                        number: m.id
+                    });
                 }
 
                 if (progressFill) progressFill.style.width = '100%';
@@ -698,13 +707,19 @@
             if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？`)) return;
             const user = allUsers.find(u => u.username === username);
             if (!user) return;
-            user.isBanned = shouldBan;
-            const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(user, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${user.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
+            try {
+                // users 表主键是 username；直接更新 is_banned 列
+                const res = await fetch(`${WORKER_API}/api/users/${encodeURIComponent(username)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_banned: shouldBan })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                user.isBanned = shouldBan;
+            } catch (error) {
+                alert('操作失败：' + (error && error.message ? error.message : error));
+                return;
+            }
             alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除封禁`);
             loadAllData();
         }
@@ -713,13 +728,18 @@
             if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}该群聊吗？`)) return;
             const room = allRooms.find(r => r.id === roomId);
             if (!room) return;
-            room.isBanned = shouldBan;
-            const updatedBody = `聊天室信息\n\`\`\`json\n${JSON.stringify(room, null, 2)}\n\`\`\``;
-            await fetch(`${WORKER_API}/api/legacy/issues/${room.issueNumber}`, {
-                method: 'PATCH',
-                headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                body: JSON.stringify({ body: updatedBody })
-            });
+            try {
+                const res = await fetch(`${WORKER_API}/api/rooms/${encodeURIComponent(roomId)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_banned: shouldBan })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                room.isBanned = shouldBan;
+            } catch (error) {
+                alert('操作失败：' + (error && error.message ? error.message : error));
+                return;
+            }
             alert(shouldBan ? `群聊已被封禁` : `群聊已解除封禁`);
             loadAllData();
         }
