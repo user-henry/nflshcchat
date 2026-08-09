@@ -506,13 +506,8 @@
         if (!article) { closeModal('deleteModal'); return; }
 
         try {
-            await fetch(`${WORKER_API}/api/legacy/issues/${article.issueNumber}`, {
-                method: 'PATCH',
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ state: 'closed' })
+            await fetch(`${WORKER_API}/api/legacy/issues/${article.issueNumber}?labels=${ARTICLE_LABEL}`, {
+                method: 'DELETE'
             });
 
             closeModal('deleteModal');
