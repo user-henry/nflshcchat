@@ -1,339 +1,325 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-<script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>GitHub's Infinite Possibilities | Tech Talk by HZY</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0a0c15;
-            color: #eef4ff;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-        /* START SCREEN */
-        .start-screen {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: radial-gradient(circle at 20% 30%, #0f172a, #020617);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-        }
-        .start-screen.hide { opacity: 0; pointer-events: none; }
-        /* 封面 Logo - 只在这里出现一次 */
-        .cover-logo {
-            width: 120px;
-            height: 120px;
-            background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            filter: drop-shadow(0 0 20px #ffd700);
-            margin-bottom: 2rem;
-            animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-12px); } 100% { transform: translateY(0px); } }
-        .talk-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #FFE6A3, #FFB347, #FFD966);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-align: center;
-        }
-        .sub { margin-top: 1rem; color: #94a3b8; font-size: 1.2rem; text-align: center; }
-        .start-btn {
-            margin-top: 3rem;
-            background: rgba(255, 215, 0, 0.15);
-            border: 2px solid #ffd700;
-            padding: 1rem 2.5rem;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--accent-color, #ffd700);
-            border-radius: 48px;
-            cursor: pointer;
-            transition: all 0.3s;
-            backdrop-filter: blur(12px);
-        }
-        .start-btn:hover { background: #ffd700; color: #0f172a; transform: scale(1.05); box-shadow: 0 0 30px gold; }
-        /* MAIN SLIDES */
-        .presentation-container { display: none; width: 100%; height: 100vh; position: relative; }
-        .slides-wrapper { width: 100%; height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
-        .slide {
-            scroll-snap-align: start;
-            min-height: 100vh;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem 4rem;
-            position: relative;
-            border-bottom: 1px solid rgba(255,215,0,0.2);
-        }
-        .slide-content {
-            max-width: 1400px;
-            width: 100%;
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(10px);
-            border-radius: 48px;
-            padding: 2rem;
-            border: 1px solid rgba(255,215,0,0.3);
-            box-shadow: 0 25px 40px -12px black;
-        }
-        h1 { font-size: 3rem; background: linear-gradient(to right, #FFD966, #FFB347); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 1rem; }
-        h2 { font-size: 2rem; color: #FFD966; margin-bottom: 0.75rem; border-left: 5px solid #ffd700; padding-left: 1rem; }
-        .flex-2col { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1rem; }
-        .col { flex: 1; min-width: 280px; }
-        /* 消息列表容器 */
-        .message-list-container {
-            background: #010409;
-            border-radius: 24px;
-            padding: 1rem;
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ffd70040;
-        }
-        .message-item {
-            border-bottom: 1px solid #1e293b;
-            padding: 0.8rem;
-            font-size: 0.85rem;
-        }
-        .message-sender { color: var(--accent-color, #ffd700); font-weight: bold; }
-        .search-box { margin-bottom: 1rem; display: flex; gap: 8px; }
-        .search-box input { flex: 1; background: #0f172a; border: 1px solid #334155; border-radius: 40px; padding: 0.5rem 1rem; color: white; }
-        /* 解决方案卡片 */
-        .solution-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1rem;
-        }
-        .solution-card {
-            background: #0f172a;
-            border-radius: 24px;
-            padding: 1.2rem;
-            border: 1px solid #334155;
-            transition: transform 0.2s, border-color 0.2s;
-            cursor: pointer;
-        }
-        .solution-card:hover { transform: translateY(-5px); border-color: var(--accent-color, #ffd700); }
-        .solution-title { font-size: 1.3rem; font-weight: bold; color: var(--accent-color, #ffd700); margin-bottom: 0.5rem; }
-        .solution-demo { margin-top: 1rem; font-size: 0.8rem; background: #010409; padding: 0.6rem; border-radius: 16px; }
-        .stat-number { font-size: 2.2rem; font-weight: bold; color: var(--accent-color, #ffd700); }
-        .nav-controls { position: fixed; bottom: 2rem; right: 2rem; z-index: 200; display: flex; gap: 12px; }
-        .nav-btn { background: #1e293b; border: 1px solid #ffd700; width: 48px; height: 48px; border-radius: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--accent-color, #ffd700); }
-        .slide-progress { position: fixed; bottom: 1.5rem; left: 2rem; background: #0f172a; padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.8rem; z-index: 200; }
-        .code-block { background: #010409; padding: 0.8rem; border-radius: 16px; font-family: monospace; font-size: 0.75rem; white-space: pre-wrap; }
-        @media (max-width: 800px) { .slide { padding: 1rem; } h1 { font-size: 2rem; } }
-        footer { margin-top: 2rem; text-align: center; font-size: 0.7rem; opacity: 0.7; }
-    </style>
-    <link rel="stylesheet" href="css/themes.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>用 Cloudflare D1 打造零后端聊天平台 — NFLSHC Chat 技术分享</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      overflow: hidden;
+    }
+    .deck {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .slides {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 6vh 8vw;
+      text-align: center;
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .slide h1 { font-size: clamp(28px, 5vw, 60px); margin-bottom: 0.4em; line-height: 1.2; }
+    .slide h2 { font-size: clamp(24px, 4vw, 48px); margin-bottom: 0.6em; color: #58a6ff; }
+    .slide h3 { font-size: clamp(18px, 3vw, 30px); margin: 0.4em 0; color: #7ee787; }
+    .slide p, .slide li { font-size: clamp(16px, 2.4vw, 26px); line-height: 1.7; max-width: 900px; }
+    .slide ul { text-align: left; max-width: 860px; margin: 0.4em auto; }
+    .slide li { margin: 0.3em 0; list-style: none; }
+    .slide li::before { content: "▸ "; color: #58a6ff; }
+    .muted { color: #8b949e; }
+    .accent { color: #58a6ff; }
+    .green { color: #7ee787; }
+    .card-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; margin-top: 1.2em; }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 14px;
+      padding: 20px 26px;
+      min-width: 220px;
+      text-align: left;
+    }
+    .card strong { color: #58a6ff; display: block; margin-bottom: 6px; }
+    .emoji { font-size: clamp(40px, 7vw, 80px); margin-bottom: 0.2em; }
+    .code {
+      background: #010409;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 16px 22px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: clamp(13px, 1.8vw, 19px);
+      color: #a5d6ff;
+      text-align: left;
+      max-width: 880px;
+      margin: 0.6em auto;
+      line-height: 1.6;
+    }
+    .marquee {
+      position: absolute;
+      bottom: 18px;
+      left: 0;
+      right: 0;
+      font-size: 13px;
+      color: #6e7681;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: #010409;
+      border-top: 1px solid #30363d;
+    }
+    nav .dots { display: flex; gap: 8px; }
+    nav .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #30363d; cursor: pointer; transition: background 0.2s;
+    }
+    nav .dot.active { background: #58a6ff; }
+    nav button {
+      background: #21262d; color: #e6edf3; border: 1px solid #30363d;
+      border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 14px;
+    }
+    nav button:hover { background: #30363d; }
+    nav .counter { color: #8b949e; font-size: 14px; }
+  </style>
 </head>
 <body>
-<!-- 封面：Logo 只在这里出现一次 -->
-<div class="start-screen" id="startScreen">
-    <div class="cover-logo"></div>
-    <div class="talk-title">GitHub's Infinite Possibilities</div>
-    <div class="sub">From static pages to intelligent chat platforms · by HZY</div>
-    <div class="start-btn" id="startBtn">✦ START PRESENTATION ✦</div>
+<div class="deck">
+  <div class="slides" id="slides">
+
+    <!-- 0 封面 -->
+    <section class="slide active" data-title="封面">
+      <div class="emoji">💬</div>
+      <h1>用 Cloudflare D1 打造<br/><span class="accent">零后端聊天平台</span></h1>
+      <p class="muted">一个纯前端 + 无服务器数据库的真实项目 —— NFLSHC Chat</p>
+      <p class="muted" style="margin-top:1em">技术分享 · 2026</p>
+    </section>
+
+    <!-- 1 开场 -->
+    <section class="slide" data-title="开场">
+      <h2>一个真实的故事</h2>
+      <p>南外淮安分校 202401 班的同学们，想要一个<b>属于自己的聊天平台</b>：</p>
+      <ul>
+        <li>多聊天室、消息实时收发、引用回复、置顶</li>
+        <li>用户等级、主题切换、数据仪表盘</li>
+        <li>内置 AI 助手（HZYAI）、全局搜索</li>
+      </ul>
+      <p class="muted" style="margin-top:1em">但问题来了 —— 没人想租一台服务器。</p>
+    </section>
+
+    <!-- 2 核心问题 -->
+    <section class="slide" data-title="核心问题">
+      <h2>核心问题</h2>
+      <div class="card-row">
+        <div class="card">
+          <strong>❌ 传统做法</strong>
+          买云服务器 + 装数据库 + 写后端 API + 运维监控。成本高、门槛高。
+        </div>
+        <div class="card">
+          <strong>✅ 我们的选择</strong>
+          浏览器直接读写云端数据库，<span class="green">零服务器、零运维</span>。
+        </div>
+      </div>
+      <p class="accent" style="margin-top:1.2em">答案：把数据库搬上 Cloudflare D1，用 Cloudflare Workers 做网关。</p>
+    </section>
+
+    <!-- 3 架构全景 -->
+    <section class="slide" data-title="架构全景">
+      <h2>架构全景</h2>
+      <div class="code">┌───────────────┐      HTTPS       ┌────────────────────┐
+│  浏览器前端   │ ───────────────▶ │ Cloudflare Workers │
+│ (纯 HTML/JS) │                   │   worker gateway    │
+└───────────────┘                   └─────────┬──────────┘
+                                              │ SQL
+                                              ▼
+                                     ┌────────────────────┐
+                                     │   Cloudflare D1     │
+                                     │  (Serverless SQLite)│
+                                     └────────────────────┘</div>
+      <p class="muted">前端零框架；网关托管在 Cloudflare 边缘节点；数据存在 D1 无服务器数据库。</p>
+    </section>
+
+    <!-- 4 D1 即数据库 -->
+    <section class="slide" data-title="D1 即数据库">
+      <h2>Cloudflare D1 即数据库</h2>
+      <ul>
+        <li>D1 是 Cloudflare 的<span class="accent">无服务器 SQLite</span>，按请求计费，几乎零成本</li>
+        <li>不同业务类型（label）对应不同的<b>数据表</b>：<code>chatmessage</code> / <code>user</code> / <code>room</code> / <code>role</code> …</li>
+        <li>每条数据是一行记录，业务字段以 <span class="green">JSON</span> 形式存储</li>
+      </ul>
+      <div class="code">// 一条聊天消息（D1 中 label: chatmessage 的记录）
+{
+  "id": "msg_abc123",
+  "roomId": "room_general",
+  "sender": "黄兴",
+  "content": "大家好！",
+  "timestamp": "2026-08-09T10:00:00Z"
+}</div>
+    </section>
+
+    <!-- 5 Workers 网关 -->
+    <section class="slide" data-title="Workers 网关">
+      <h2>Cloudflare Workers 网关</h2>
+      <ul>
+        <li>Worker 暴露 REST 风格接口（<code>/api/messages</code>、<code>/api/legacy/issues</code> 等）</li>
+        <li>天然<span class="accent">CORS 友好</span>，浏览器可直接调用，无需自建代理</li>
+        <li>在网关层隐藏数据库凭证，前端只持有一个访问令牌（Token）</li>
+        <li>兼容层让旧前端逻辑无需大改即可从 GitHub Issues 平滑迁移到 D1</li>
+      </ul>
+    </section>
+
+    <!-- 6 一条消息的生命周期 -->
+    <section class="slide" data-title="消息生命周期">
+      <h2>实战：一条聊天消息的生命周期</h2>
+      <div class="code">1. 用户在 chat.html 输入并点击发送
+2. 前端 POST /api/messages  →  Worker
+3. Worker 写入 D1 表 messages (raw_json 列)
+4. Worker 同步写入 legacy issues(chatmessage) 供统计
+5. 其他客户端轮询 / 拉取最新消息并渲染</div>
+      <p class="muted">发送与统计解耦：实时消息走 /api/messages，群聊统计从 legacy 层聚合。</p>
+    </section>
+
+    <!-- 7 用户认证 -->
+    <section class="slide" data-title="用户认证">
+      <h2>用户认证与权限</h2>
+      <ul>
+        <li>通过<span class="accent">访问令牌（Token）</span>识别用户，写入 D1 的 <code>user</code> 表</li>
+        <li>等级系统基于活跃度：<code>等级 = ⌊√(XP/10)⌋ + 1</code></li>
+        <li>四色等级样式：绿 → 蓝 → 紫 → 金，激励持续参与</li>
+      </ul>
+    </section>
+
+    <!-- 8 聊天室 / 角色 / AI -->
+    <section class="slide" data-title="功能实现">
+      <h2>聊天室 · 角色 · AI 助手</h2>
+      <div class="card-row">
+        <div class="card"><strong>💬 多聊天室</strong>每个房间一条 D1 记录，支持引用、置顶、@提醒、代码高亮。</div>
+        <div class="card"><strong>🎭 角色系统</strong>自定义人设，提示词存 D1，可配置 RAG 知识库。</div>
+        <div class="card"><strong>🤖 HZYAI</strong>接入多模型（含 Cloudflare Workers AI），复用角色知识库。</div>
+      </div>
+    </section>
+
+    <!-- 9 数据仪表盘 -->
+    <section class="slide" data-title="数据仪表盘">
+      <h2>数据仪表盘</h2>
+      <ul>
+        <li>30 天消息趋势、24 小时活跃分布、词云、Top10 发言排行</li>
+        <li>全部由 <span class="accent">Chart.js</span> 驱动，数据直接来自 D1 聚合查询</li>
+        <li>管理员后台 admin.html 实时读取群聊统计</li>
+      </ul>
+    </section>
+
+    <!-- 10 多端 -->
+    <section class="slide" data-title="多端支持">
+      <h2>多端支持</h2>
+      <div class="card-row">
+        <div class="card"><strong>🌐 Web</strong>任意浏览器，PWA 可安装到桌面/手机。</div>
+        <div class="card"><strong>🖥️ Windows</strong>NSIS 安装版 / 便携版（Electron 封装）。</div>
+        <div class="card"><strong>📱 Android</strong>APK（标准版 / Pro 版）。</div>
+        <div class="card"><strong>💬 微信小程序</strong>同一套后端，多端畅聊。</div>
+      </div>
+    </section>
+
+    <!-- 11 部署 -->
+    <section class="slide" data-title="部署">
+      <h2>部署：成本为零</h2>
+      <ul>
+        <li>前端托管在 <span class="accent">Cloudflare Pages</span>（或 Workers Assets），全球 CDN</li>
+        <li>网关部署为 <span class="accent">Cloudflare Worker</span>，一条 <code>wrangler deploy</code> 上线</li>
+        <li>数据库 <span class="accent">D1</span> 随用随付，小规模近乎免费</li>
+        <li>源码开源在 <span class="green">github.com/user-henry/nflshcchat</span>（MIT）</li>
+      </ul>
+    </section>
+
+    <!-- 12 踩坑 -->
+    <section class="slide" data-title="踩过的坑">
+      <h2>踩过的坑</h2>
+      <ul>
+        <li><b>CORS / 限流</b>：早期直连第三方 API 触发 Cloudflare 1010，移到 Worker 网关后解决</li>
+        <li><b>Schema 不一致</b>：部分表缺少 <code>raw_json</code> 列，写入被静默吞掉 → 按表分支处理</li>
+        <li><b>统计丢数据</b>：文本消息只写实时表、未写 legacy 层，导致群聊统计缺失 → 发送时双写</li>
+      </ul>
+    </section>
+
+    <!-- 13 未来 -->
+    <section class="slide" data-title="未来">
+      <h2>未来：更多 AI 能力</h2>
+      <ul>
+        <li>接入 <span class="accent">Cloudflare Workers AI</span>（Llama / Qwen / Gemma 等）做实时对话</li>
+        <li>多模态：文生图、文生视频、语音识别与合成</li>
+        <li>RAG 知识库持续扩充，让 HZYAI 更懂班级社区</li>
+      </ul>
+    </section>
+
+    <!-- 14 结语 -->
+    <section class="slide" data-title="结语">
+      <h2>结语</h2>
+      <p>用 <span class="accent">Cloudflare D1 + Workers</span>，一个学生项目也能拥有：</p>
+      <p class="green" style="margin-top:0.6em">零服务器 · 零数据库运维 · 近乎零成本 · 功能一应俱全</p>
+      <p class="muted" style="margin-top:1em">📎 源码：github.com/user-henry/nflshcchat　·　🌐 nflshcchat.cc.cd</p>
+    </section>
+
+  </div>
+
+  <nav>
+    <button id="prev">← 上一页</button>
+    <div class="dots" id="dots"></div>
+    <span class="counter" id="counter">1 / 15</span>
+    <button id="next">下一页 →</button>
+  </nav>
 </div>
-
-<div class="presentation-container" id="presentationContainer">
-    <div class="slides-wrapper" id="slidesWrapper">
-        <!-- SLIDE 1: Introduction -->
-        <section class="slide"><div class="slide-content">
-            <h1>🌍 GitHub is more than code hosting</h1>
-            <p style="font-size: 1.2rem; margin-top: 1rem;">Today we explore how Cloudflare D1 + Workers API can build a <span style="color:#ffd700;">FULLY FUNCTIONAL CHAT APP</span> — no backend server required.</p>
-            <div class="flex-2col"><div class="col"><div class="code-block">✅ Cloudflare D1 as Database<br>✅ Real‑time Messaging via REST<br>✅ Markdown + AI bot<br>✅ Live Demo from real data</div></div></div>
-            <footer>← scroll down / use arrows →</footer>
-        </div></section>
-
-        <!-- SLIDE 2: 真实历史消息展示（全部，带搜索） -->
-        <section class="slide"><div class="slide-content">
-            <h2>📜 Real messages from NFLSHC Chat</h2>
-            <p>Below are actual <strong>chatmessage</strong> issues fetched from GitHub. No fake data.</p>
-            <div class="search-box"><input type="text" id="msgSearch" placeholder="Filter by sender or content..."><button id="searchBtn" style="background:#ffd700; border:none; border-radius:40px; padding:0 20px;">🔍</button></div>
-            <div id="fullMessagesList" class="message-list-container"><div class="code-block">Loading real messages from Cloudflare D1 ...</div></div>
-            <footer>💡 Every message is stored in Cloudflare D1 — permanently stored, searchable, versioned.</footer>
-        </div></section>
-
-        <!-- SLIDE 3: NFLSHC Chat Architecture + Markdown Demo -->
-        <section class="slide"><div class="slide-content">
-            <h2>💬 Architecture: Pure Frontend + Cloudflare Workers API</h2>
-            <div class="flex-2col">
-                <div class="col"><div class="code-block">// sendMessage()<br>POST /repos/{owner}/{repo}/issues<br>Body: { content, roomId, sender }<br>Labels: ['chatmessage']</div></div>
-                <div class="col"><div class="demo-box"><i class="fab fa-markdown"></i> <strong>Markdown Preview</strong><br><input type="text" id="mdInput" placeholder="**bold** or `code`" style="width:100%; background:#1e293b; border-radius:24px; padding:8px; border:1px solid gold; color:white;"><div id="mdPreview" class="code-block" style="margin-top:8px;"></div></div></div>
-            </div>
-        </div></section>
-
-        <!-- SLIDE 4: HZYAI Live Demo -->
-        <section class="slide"><div class="slide-content">
-            <h2>🤖 HZYAI · Live AI Assistant</h2>
-            <p>Same AI that runs inside NFLSHC Chat groups. Ask anything!</p>
-            <div id="aiChatLog" class="message-list-container" style="height: 240px;"><div class="message-item"><span class="message-sender">🤖 AI:</span> Hello! I'm HZYAI. Try "What is GitHub?" or "Tell a joke".</div></div>
-            <div style="display:flex; gap:8px; margin-top:12px;"><input type="text" id="aiQuestion" placeholder="Ask HZYAI ..." style="flex:1; background:#0f172a; border:1px solid gold; border-radius:40px; padding:10px; color:white;"><button id="askAIButton" style="background:#ffd700; border:none; border-radius:40px; padding:0 20px;">Send</button></div>
-            <footer>Powered by 思知 AI · no login required</footer>
-        </div></section>
-
-        <!-- SLIDE 5: 可视化解决方案 + 真实统计 -->
-        <section class="slide"><div class="slide-content">
-            <h2>🛠️ Solving Real Problems (Interactive Demos)</h2>
-            <div class="solution-grid">
-                <div class="solution-card" id="corsCard"><div class="solution-title">🌐 CORS & Tokens</div><div>Cloudflare Workers API allows CORS + Personal Access Token. <span id="tokenStatus" style="color:#2ecc71;">✓ Configured</span></div><div class="solution-demo" id="corsDemo">Click card → test API</div></div>
-                <div class="solution-card" id="pollingCard"><div class="solution-title">⏱️ Real-time Polling</div><div>Short polling every 3s → instant message feeling.<br><span id="pollCounter">0</span> polls simulated</div><div class="solution-demo">Live counter ↑</div></div>
-                <div class="solution-card" id="mobileCard"><div class="solution-title">📱 Mobile Notification Fix</div><div>CSS media queries hide notification bell on mobile. Click to see how.</div><div class="solution-demo" id="mobileDemo">📱 Tap to preview fix</div></div>
-                <div class="solution-card"><div class="solution-title">📊 Total Messages Stored</div><div id="totalMsgStat" class="stat-number">--</div><div>Real messages in Cloudflare D1 (label: chatmessage)</div><div class="solution-demo">Auto-updated from API</div></div>
-            </div>
-            <footer>✨ Each fix is documented in about.html changelog — click cards for live demos</footer>
-        </div></section>
-
-        <!-- SLIDE 6: Thank you -->
-        <section class="slide"><div class="slide-content" style="text-align:center;">
-            <h1>🚀 The Future is Limitless</h1>
-            <div style="font-size:1.2rem; margin:1rem 0;">Cloudflare D1 → backendless apps, AI bots, internal tools, and more.</div>
-            <div class="code-block" style="display:inline-block;">Open Source · MIT · github.com/user-henry/nflshcchat</div>
-            <footer style="margin-top:2rem;">Thank you! — HZY, 2026</footer>
-        </div></section>
-    </div>
-    <div class="nav-controls"><div class="nav-btn" id="prevSlide"><i class="fas fa-arrow-up"></i></div><div class="nav-btn" id="nextSlide"><i class="fas fa-arrow-down"></i></div></div>
-    <div class="slide-progress" id="slideProgress">Slide 1 / 6</div>
-</div>
-
 
 <script>
-    (function() {
-        // ----- 幻灯片导航 -----
-        const slides = document.querySelectorAll('.slide');
-        let currentIdx = 0;
-        function updateProgress() { document.getElementById('slideProgress').innerText = `Slide ${currentIdx+1} / ${slides.length}`; }
-        function scrollToSlide(i) { if(i>=0 && i<slides.length) { currentIdx=i; slides[i].scrollIntoView({ behavior:'smooth', block:'start' }); updateProgress(); } }
-        document.getElementById('nextSlide').onclick = () => scrollToSlide(currentIdx+1);
-        document.getElementById('prevSlide').onclick = () => scrollToSlide(currentIdx-1);
-        document.getElementById('startBtn').onclick = () => {
-            document.getElementById('startScreen').classList.add('hide');
-            document.getElementById('presentationContainer').style.display = 'block';
-            scrollToSlide(0);
-            loadAllMessages(); loadTotalCount(); startPollingDemo();
-        };
+  const slides = [...document.querySelectorAll('.slide')];
+  const dotsWrap = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  let current = 0;
 
-        // ----- 幻灯片2：加载全部历史消息 -----
-        async function loadAllMessages() {
-            const container = document.getElementById('fullMessagesList');
-            if(!window.CONFIG) { container.innerHTML = '<div class="code-block">⚠️ Config missing, but you can imagine real data from GitHub.</div>'; return; }
-            try {
-                let allMsgs = [];
-                let page = 1;
-                while(true) {
-                    const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
-                    const res = await fetch(url, { headers: {}});
-                    const issues = await res.json();
-                    if(issues.length === 0) break;
-                    for(const issue of issues) {
-                        const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                        if(match) {
-                            try { allMsgs.push(JSON.parse(match[1])); } catch(e) {}
-                        }
-                    }
-                    if(issues.length < 100) break;
-                    page++;
-                }
-                renderMessageList(allMsgs);
-                window.allMessagesCache = allMsgs;
-                document.getElementById('searchBtn').onclick = () => filterMessages(allMsgs);
-                document.getElementById('msgSearch').addEventListener('keyup', () => filterMessages(allMsgs));
-            } catch(e) { container.innerHTML = '<div class="code-block">✅ Real data ready — API connected.</div>'; }
-        }
-        function renderMessageList(messages) {
-            const container = document.getElementById('fullMessagesList');
-            if(messages.length === 0) { container.innerHTML = '<div class="code-block">✨ No messages yet. Chat data will appear here.</div>'; return; }
-            container.innerHTML = messages.slice(0, 100).map(msg => `<div class="message-item"><span class="message-sender">${escapeHtml(msg.sender)}</span>: ${escapeHtml(msg.content.substring(0, 100))} <span style="color:#666; font-size:0.7rem;">${new Date(msg.timestamp).toLocaleString()}</span></div>`).join('');
-            if(messages.length > 100) container.innerHTML += `<div class="code-block">... and ${messages.length-100} more messages</div>`;
-        }
-        function filterMessages(allMsgs) {
-            const kw = document.getElementById('msgSearch').value.toLowerCase();
-            if(!kw) return renderMessageList(allMsgs);
-            const filtered = allMsgs.filter(m => m.sender.toLowerCase().includes(kw) || m.content.toLowerCase().includes(kw));
-            renderMessageList(filtered);
-        }
-        
-        // ----- 统计总数 -----
-        async function loadTotalCount() {
-            if(!window.CONFIG) return;
-            try {
-                let total = 0, page=1;
-                while(true) {
-                    const url = `${WORKER_API}/api/legacy/issues?labels=chatmessage&state=open&per_page=100&page=${page}`;
-                    const res = await fetch(url, { headers: {}});
-                    const issues = await res.json();
-                    total += issues.length;
-                    if(issues.length < 100) break;
-                    page++;
-                }
-                document.getElementById('totalMsgStat').innerHTML = total;
-            } catch(e) { document.getElementById('totalMsgStat').innerHTML = '🔗 Live'; }
-        }
-        
-        // ----- Markdown预览 -----
-        const mdInput = document.getElementById('mdInput');
-        const mdPreview = document.getElementById('mdPreview');
-        if(mdInput && mdPreview) {
-            mdInput.addEventListener('input', (e) => { let v = e.target.value; if(window.marked) mdPreview.innerHTML = window.marked.parse(v||'*example*'); else mdPreview.innerText = v; });
-            mdPreview.innerHTML = '**实时 Markdown** 支持';
-        }
-        
-        // ----- AI 演示 -----
-        const aiLog = document.getElementById('aiChatLog');
-        const aiQuestion = document.getElementById('aiQuestion');
-        const askBtn = document.getElementById('askAIButton');
-        async function callAI(q) {
-            const apiUrl = 'https://api.sizhi.com/chat';
-            const appid = 'd18408ec60b14c5f844d5004881808eb';
-            try {
-                const res = await fetch(`${apiUrl}?appid=${appid}&userid=demo_presentation&spoken=${encodeURIComponent(q)}&memory=true`);
-                const data = await res.json();
-                return data?.data?.info?.text || "AI is ready! (live response)";
-            } catch(e) { return "AI service connected."; }
-        }
-        function addAIMessage(role, text) {
-            const div = document.createElement('div'); div.className = 'message-item';
-            div.innerHTML = `<span class="message-sender">${role === 'user' ? '👤 You' : '🤖 AI'}:</span> ${escapeHtml(text)}`;
-            aiLog.appendChild(div); aiLog.scrollTop = aiLog.scrollHeight;
-        }
-        askBtn.onclick = async () => {
-            const q = aiQuestion.value.trim(); if(!q) return;
-            addAIMessage('user', q); aiQuestion.value = '';
-            addAIMessage('bot', '⏳ thinking...');
-            const reply = await callAI(q);
-            aiLog.removeChild(aiLog.lastChild);
-            addAIMessage('bot', reply);
-        };
-        
-        // ----- 交互卡片演示 -----
-        let pollCount = 0;
-        function startPollingDemo() {
-            setInterval(() => { pollCount++; document.getElementById('pollCounter').innerText = pollCount; }, 3000);
-        }
-        document.getElementById('corsCard').onclick = () => { alert('✅ Cloudflare Workers API supports CORS. We use a personal token stored in config.js. No proxy needed!'); };
-        document.getElementById('mobileCard').onclick = () => { alert('📱 Mobile fix: CSS @media hides the notification bell on phones. We also fixed the auto-expand issue.'); };
-        
-        function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-    })();
+  slides.forEach((_, i) => {
+    const d = document.createElement('span');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => go(i));
+    dotsWrap.appendChild(d);
+  });
+
+  function go(i) {
+    current = (i + slides.length) % slides.length;
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === current));
+    [...dotsWrap.children].forEach((d, idx) => d.classList.toggle('active', idx === current));
+    counter.textContent = (current + 1) + ' / ' + slides.length;
+  }
+
+  document.getElementById('prev').addEventListener('click', () => go(current - 1));
+  document.getElementById('next').addEventListener('click', () => go(current + 1));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') go(current + 1);
+    if (e.key === 'ArrowLeft') go(current - 1);
+  });
 </script>
-    <script src="js/theme.js"></script>
 </body>
 </html>
-
