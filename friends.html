@@ -291,10 +291,8 @@
             const friend = friends.find(f => f.id === friendId);
             if (!friend) return;
             try {
-                await fetch(`${WORKER_API}/api/legacy/issues/${friend.issueNumber}`, {
-                    method: 'PATCH',
-                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ state: 'closed' })
+                await fetch(`${WORKER_API}/api/legacy/issues/${friend.issueNumber}?labels=friend`, {
+                    method: 'DELETE'
                 });
                 await loadFriends();
             } catch (error) {
