@@ -3261,7 +3261,7 @@
             genHistory: 'hzyai_gen_'
         };
 
-        // 统一“生成历史”（代码/音频/搜索/绘图/视频），用于本地持久化 + 云端 D1 同步
+        // 统一"生成历史"（代码/音频/搜索/绘图/视频），用于本地持久化 + 云端 D1 同步
         let genHistory = [];
 
         function loadGenFromLocal() {
@@ -3578,7 +3578,7 @@
             document.getElementById('pushBtn').disabled = true;
 
             try {
-                // 以云端为唯一权威源：完全覆盖本地（刷新不保留，统一在“对话”选项卡渲染）
+                // 以云端为唯一权威源：完全覆盖本地（刷新不保留，统一在"对话"选项卡渲染）
                 const githubConvs = await loadFromGitHub();
                 conversations = githubConvs;
                 // 排序：最近更新在前
@@ -5669,8 +5669,8 @@
                     ${scene.imageUrl ? `<img src="${scene.imageUrl}" alt="参考图">` : '<div style="background:var(--bg-primary);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;">🖼️ 未生成</div>'}
                     ${scene.videoUrl ? `<video src="${scene.videoUrl}" controls></video>` : ''}
                     <div class="scene-actions">
-                        <button class="gen-img-btn" onclick="generateSceneImage(${index})">🎨 参考图</button>
-                        <button class="gen-vid-btn" onclick="generateSceneVideo(${index})" ${scene.videoUrl ? 'disabled' : ''}>🎬 生成视频</button>
+                        <button class="gen-img-btn" onclick="generateSceneImage('${index}')">🎨 参考图</button>
+                        <button class="gen-vid-btn" onclick="generateSceneVideo('${index}')" ${scene.videoUrl ? 'disabled' : ''}>🎬 生成视频</button>
                     </div>
                 </div>
             `).join('');
@@ -5993,7 +5993,7 @@
                         <span>🎬 ${index + 1}</span>
                         ${hasVideo ? '<span style="color:var(--success);">✅</span>' : '<span style="color:var(--text-muted);">⏳</span>'}
                         <span style="color:var(--text-muted); max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(scene.scene_name || '未命名')}</span>
-                        ${hasVideo ? `<button onclick="playSingleScene(${index})" style="background:transparent; border:none; color:var(--accent-color); cursor:pointer; font-size:12px;">▶️</button>` : ''}
+                        ${hasVideo ? `<button onclick="playSingleScene('${index}')" style="background:transparent; border:none; color:var(--accent-color); cursor:pointer; font-size:12px;">▶️</button>` : ''}
                     </div>
                 `;
             }).join('');
@@ -6510,7 +6510,7 @@
                     if (typeof pullFromGitHub === 'function') {
                         pullFromGitHub().catch(e => console.warn('自动拉取历史失败:', e));
                     }
-                    // 自动加载并同步“生成历史”（代码/音频/搜索/图像/视频）
+                    // 自动加载并同步"生成历史"（代码/音频/搜索/图像/视频）
                     loadGenFromLocal();
                     renderAllGenHistory();
                     if (typeof pullGenFromGitHub === 'function') {
@@ -6570,7 +6570,7 @@
                     if (typeof pullFromGitHub === 'function') {
                         pullFromGitHub().catch(e => console.warn('自动拉取历史失败:', e));
                     }
-                    // 自动加载并同步“生成历史”（代码/音频/搜索/图像/视频）
+                    // 自动加载并同步"生成历史"（代码/音频/搜索/图像/视频）
                     loadGenFromLocal();
                     renderAllGenHistory();
                     if (typeof pullGenFromGitHub === 'function') {
@@ -7047,7 +7047,7 @@ v1.0.0 (2026年3月)
                     if (typeof pullFromGitHub === 'function') {
                         pullFromGitHub().catch(e => console.warn('自动拉取历史失败:', e));
                     }
-                    // 自动加载并同步“生成历史”（代码/音频/搜索/图像/视频）
+                    // 自动加载并同步"生成历史"（代码/音频/搜索/图像/视频）
                     loadGenFromLocal();
                     renderAllGenHistory();
                     if (typeof pullGenFromGitHub === 'function') {
@@ -7081,7 +7081,7 @@ v1.0.0 (2026年3月)
                 }
             }
             // 以下界面初始化与渲染仅在已登录（恢复会话）时执行，
-            // 未登录访客不应被强制 switchMode('chat') 进入空白 app，否则表现为“白屏无变化”。
+            // 未登录访客不应被强制 switchMode('chat') 进入空白 app，否则表现为"白屏无变化"。
             if (savedUser) {
             document.getElementById('chatModelSelect').value = 'sizhi';
 
@@ -7123,7 +7123,7 @@ v1.0.0 (2026年3月)
             setLVPlayMode('loop');
             updateLVDuration();
             } else {
-                // 未登录：明确显示登录页，隐藏主应用（避免空白 app 造成“白屏”）
+                // 未登录：明确显示登录页，隐藏主应用（避免空白 app 造成"白屏"）
                 const _lp = document.getElementById('loginPage');
                 const _ap = document.getElementById('app');
                 if (_lp) _lp.style.display = 'flex';
