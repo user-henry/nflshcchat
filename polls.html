@@ -1044,13 +1044,8 @@
         if (!poll) return;
 
         try {
-            await fetch(`${WORKER_API}/api/legacy/issues/${poll.issueNumber}`, {
-                method: 'PATCH',
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ state: 'closed' })
+            await fetch(`${WORKER_API}/api/legacy/issues/${poll.issueNumber}?labels=${POLL_LABEL}`, {
+                method: 'DELETE'
             });
             showToast('✅ 投票已删除', 'success');
             loadPolls();
