@@ -479,13 +479,8 @@
         async function deleteNotice(issueNumber) {
             if (!confirm('确定要删除这条公告吗？此操作不可恢复！')) return;
             try {
-                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ state: 'closed' })
+                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}?labels=notice`, {
+                    method: 'DELETE'
                 });
                 alert('公告已删除');
                 await loadNotices();
