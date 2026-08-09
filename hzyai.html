@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
@@ -3033,7 +3033,7 @@
                 }
                 return githubConversations;
             } catch (error) {
-                console.error('从 GitHub 加载失败:', error);
+                console.error('从云端加载失败:', error);
                 return [];
             }
         }
@@ -3070,7 +3070,7 @@
                 conversation.synced = true;
                 return true;
             } catch (error) {
-                console.error('保存到 GitHub 失败:', error);
+                console.error('保存到云端失败:', error);
                 return false;
             }
         }
@@ -3078,7 +3078,7 @@
         async function pullFromGitHub() {
             if (isSyncing) return;
             isSyncing = true;
-            setSyncStatus('🔄 正在从 GitHub 爬取对话...', 'warning');
+            setSyncStatus('🔄 正在从云端爬取对话...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
 
@@ -3127,7 +3127,7 @@
         async function pushToGitHub() {
             if (isSyncing) return;
             isSyncing = true;
-            setSyncStatus('🔄 正在上传对话至 GitHub...', 'warning');
+            setSyncStatus('🔄 正在上传对话至云端...', 'warning');
             document.getElementById('pullBtn').disabled = true;
             document.getElementById('pushBtn').disabled = true;
 
@@ -3177,7 +3177,7 @@
                 }
                 return loadedChars;
             } catch (error) {
-                console.error('从 GitHub 加载角色失败:', error);
+                console.error('从云端加载角色失败:', error);
                 return [];
             }
         }
@@ -3216,14 +3216,14 @@
                 }
                 return true;
             } catch (error) {
-                console.error('保存角色到 GitHub 失败:', error);
+                console.error('保存角色到云端失败:', error);
                 return false;
             }
         }
 
         async function syncAllCharactersToGitHub() {
             if (!currentUser) return;
-            setSyncStatus('🔄 正在同步角色到 GitHub...', 'warning');
+            setSyncStatus('🔄 正在同步角色到云端...', 'warning');
             let successCount = 0;
             for (const char of characters) {
                 if (await saveCharacterToGitHub(char)) successCount++;
@@ -3234,7 +3234,7 @@
 
         async function pullCharactersFromGitHub() {
             if (!currentUser) return;
-            setSyncStatus('🔄 正在从 GitHub 拉取角色...', 'warning');
+            setSyncStatus('🔄 正在从云端拉取角色...', 'warning');
             try {
                 const githubChars = await loadCharactersFromGitHub();
                 let addedCount = 0,
@@ -3290,7 +3290,7 @@
                 }
                 return loadedTasks;
             } catch (error) {
-                console.error('从 GitHub 加载任务失败:', error);
+                console.error('从云端加载任务失败:', error);
                 return [];
             }
         }
@@ -3329,14 +3329,14 @@
                 }
                 return true;
             } catch (error) {
-                console.error('保存任务到 GitHub 失败:', error);
+                console.error('保存任务到云端失败:', error);
                 return false;
             }
         }
 
         async function syncAllTasksToGitHub() {
             if (!currentUser) return;
-            setSyncStatus('🔄 正在同步任务到 GitHub...', 'warning');
+            setSyncStatus('🔄 正在同步任务到云端...', 'warning');
             let successCount = 0;
             for (const task of tasks) {
                 if (await saveTaskToGitHub(task)) successCount++;
@@ -3347,7 +3347,7 @@
 
         async function pullTasksFromGitHub() {
             if (!currentUser) return;
-            setSyncStatus('🔄 正在从 GitHub 拉取任务...', 'warning');
+            setSyncStatus('🔄 正在从云端拉取任务...', 'warning');
             try {
                 const githubTasks = await loadTasksFromGitHub();
                 let addedCount = 0,
@@ -5874,13 +5874,13 @@
 📖 一、项目概述
 项目名称：NFLSHC Chat
 网站地址：https://user-henry.github.io/nflshcchat/
-项目简介：一款基于 GitHub Issues 构建的轻量级聊天平台，支持群聊、私聊、Markdown 消息、消息收藏、聊天记录导出、群聊统计、意见反馈、好友系统、用户等级、个人数据仪表盘等功能。
+项目简介：一款基于 Cloudflare D1 构建的轻量级聊天平台，支持群聊、私聊、Markdown 消息、消息收藏、聊天记录导出、群聊统计、意见反馈、好友系统、用户等级、个人数据仪表盘等功能。
 开发者：HZY
 项目贡献者：NFLSHC 202401 社区成员
 当前版本：v2.2.0
 更新日期：2026年4月
 管理员用户名：huangzhiyuan
-技术架构：纯前端 HTML/CSS/JavaScript + GitHub REST API + GitHub Issues 作为数据库
+技术架构：纯前端 HTML/CSS/JavaScript + Cloudflare Workers API + Cloudflare D1 作为数据库
 部署方式：GitHub Pages + GitHub Actions 自动部署
 
 👤 二、用户系统
@@ -5888,7 +5888,7 @@
 - 用户需要填写用户名、邮箱、密码（至少6位）进行注册
 - 可以填写个人简介（选填）
 - 注册成功后自动跳转到登录页面
-- 数据存储：GitHub Issues（label: user）
+- 数据存储：Cloudflare D1（label: user）
 
 2.2 登录
 - 输入用户名和密码登录
@@ -5946,7 +5946,7 @@
 - 鼠标悬停在消息上，点击右下角 ⭐ 按钮即可收藏
 - 收藏的消息在「我的收藏」页面查看
 - 支持删除收藏
-- 数据存储：GitHub Issues（label: favorite）
+- 数据存储：Cloudflare D1（label: favorite）
 
 3.7 消息搜索（search.html）
 - 支持按关键词搜索历史消息
@@ -6009,7 +6009,7 @@
 - 系统自动验证用户是否存在
 - 不可添加自己或 AI 小助手为好友
 - 不可重复添加已添加的好友
-- 数据存储：GitHub Issues（label: friend）
+- 数据存储：Cloudflare D1（label: friend）
 
 5.2 好友列表
 - 显示所有已添加的好友
@@ -6059,13 +6059,13 @@
 - 支持编写/预览双标签页
 - 删除公告
 - 公告按时间倒序排列
-- 数据存储：GitHub Issues（label: notice）
+- 数据存储：Cloudflare D1（label: notice）
 
 7.4 建议审核（admin-suggestions.html）
 - 查看用户提交的建议
 - 更新建议状态：待审核、处理中、已完成、已驳回
 - 添加备注说明
-- 数据存储：GitHub Issues（label: suggestion）
+- 数据存储：Cloudflare D1（label: suggestion）
 
 🤖 八、AI 小助手
 8.1 如何与 AI 对话
@@ -6113,7 +6113,7 @@
 - 建议状态：待审核、处理中、已完成、已驳回
 - 所有用户可查看已提交的建议及处理状态
 - 建议按提交时间倒序排列
-- 数据存储：GitHub Issues（label: suggestion）
+- 数据存储：Cloudflare D1（label: suggestion）
 
 🎨 十一、界面与体验
 11.1 通知系统
@@ -6182,13 +6182,13 @@ AI 相关
 - HZYAI 是什么？独立的 AI 对话工具，支持对话、绘图、视频生成。
 
 数据相关
-- 数据保存在哪里？所有数据保存在 GitHub Issues 中，完全透明。
+- 数据保存在哪里？所有数据保存在 Cloudflare D1 中，完全透明。
 - 导出聊天记录？点击导航栏「📤 导出」，选择导出范围和格式。
 
 技术相关
 - 免费吗？完全免费。
 - 支持移动端？支持响应式设计。
-- 为什么卡？基于 GitHub API，网络延迟或速率限制可能导致卡顿。
+- 为什么卡？基于 Cloudflare Workers API，网络延迟或速率限制可能导致卡顿。
 - 有桌面版？有 Windows 桌面版（v2.3.0）和 Android APK。
 
 🔄 十四、版本更新日志
@@ -6866,3 +6866,5 @@ v1.0.0 (2026年3月)
     <script src="js/theme.js"></script>
 </body>
 </html>
+
+
