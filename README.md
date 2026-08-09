@@ -10,7 +10,7 @@
 
 NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打造的在线聊天平台。项目最大的特点是**完全不依赖任何后端服务器**，而是巧妙地利用 Cloudflare D1 作为无服务器数据存储层——每个业务类型（label）对应一张"数据表"，每条数据是一条"记录"，以 JSON 形式存储业务数据。
 
-这种设计让项目部署成本为零（GitHub Pages 免费托管），同时通过 Cloudflare Workers API 实现了完整的聊天、用户管理、数据统计等功能。虽然受限于 GitHub API 的速率限制（认证后 5000 次/小时），但对于校园场景的小规模使用完全够用。
+这种设计让项目部署成本为零（GitHub Pages 免费托管前端，Cloudflare Workers + D1 免费提供后端能力），同时通过 Cloudflare Workers API 实现了完整的聊天、用户管理、数据统计等功能，且不再受 GitHub API 速率限制，对校园场景的小规模使用完全够用。
 
 ---
 
@@ -20,7 +20,7 @@ NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打�
 
 | 功能 | 说明 |
 |------|------|
-| **多聊天室** | 支持创建多个聊天室，每个聊天室对应一个 GitHub Issue（label: `chatroom`） |
+| **多聊天室** | 支持创建多个聊天室，每个聊天室对应 Cloudflare D1 中一张数据表（label: `chatroom`） |
 | **文字消息** | 基于 Cloudflare D1（label: `chatmessage`）实时发送和接收文字消息 |
 | **引用回复** | 消息支持引用回复功能，回复时显示被引用消息的预览栏 |
 | **消息置顶** | 管理员可置顶重要消息，置顶横幅始终显示在消息列表最顶部 |
@@ -142,6 +142,11 @@ nflshcchat/
 │   ├── 代码高亮（highlight.js）
 │   ├── 语音消息（MediaRecorder）
 │   └── 用户等级 / 头像缓存
+├── calendar.html           # 课程表 / 日历
+├── polls.html              # 投票系统
+├── posts.html              # 动态 / 帖子
+├── articles.html           # 文章发布
+├── theme.html              # 主题切换
 ├── profile.html            # 个人资料编辑
 ├── friends.html            # 好友系统
 ├── dashboard.html          # 数据仪表盘（Chart.js）
@@ -153,16 +158,32 @@ nflshcchat/
 ├── suggestions.html        # 建议反馈
 ├── showcase.html           # 动画展示页
 ├── stats.html              # 数据统计
-├── hzyai.html              # AI 天气查询
+├── report.html             # 举报管理
+├── hzyai.html              # AI 对话 / 天气查询（HZYAI）
+├── hzyai-share.html        # HZYAI 分享页
+├── hzyai-worker/           # HZYAI 专用 Cloudflare Worker
+├── music.html              # 音乐播放
+├── music-play.html         # 音乐播放器
+├── music-make.html         # 音乐创作
+├── word-game.html          # 文字游戏
 ├── admin.html              # 管理面板
 ├── admin-profile.html      # 管理员资料
 ├── admin-suggestions.html  # 建议管理
 ├── ai-profile.html         # AI 个人资料
 ├── presentation.html       # 演示页
+├── offline.html            # 离线 fallback
+├── 404.html                # 404 页面
+├── worker.js               # Cloudflare Worker（D1 读写 + 兼容层）
+├── wrangler.toml           # Worker / D1 部署配置
+├── backend/                # 后端辅助脚本
 ├── css/
 │   └── themes.css          # 5 套主题样式
+├── js/                     # 公共 JS 模块
+├── assets/                 # 图片 / 字体等静态资源
 ├── shortcuts.js            # 键盘快捷键
 ├── patches.css             # 样式补丁
+├── sw.js                   # Service Worker（PWA 离线缓存）
+├── manifest.json           # PWA 应用清单
 ├── LOGO.png                # 项目 Logo
 ├── HZYAI LOGO.png          # AI 功能 Logo
 ├── NFLSHC 校歌.mp3          # 校歌音频
@@ -204,7 +225,7 @@ python3 -m http.server 8080
 | 注意点 | 说明 |
 |--------|------|
 | **数据公开可见** | Cloudflare D1 数据由服务端托管，请勿在聊天中分享敏感个人信息 |
-| **API 速率限制** | 未认证 60 次/小时，认证后 5000 次/小时，多人同时使用可能触发限制 |
+| **数据访问** | 数据由 Cloudflare D1 服务端托管，多端实时同步，无需担心本地丢失 |
 | **语音消息大小** | base64 编码存储在 Issue Body 中，单条约 50KB 上限 |
 | **好友页主题** | `friends.html` 使用硬编码暗色主题，与 `themes.css` 的主题切换不联动（已知问题） |
 | **头像功能** | 当前仅支持 URL 输入方式，不支持本地上传（之前尝试了 Imgur/Catbox 等上传方案均不可靠） |
