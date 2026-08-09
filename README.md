@@ -1,6 +1,6 @@
-# NFLSHC Chat 🎓💬
+﻿# NFLSHC Chat 🎓💬
 
-> 南外淮安分校学生聊天平台 — 纯前端 + GitHub Issues 驱动，零服务器、零数据库
+> 南外淮安分校学生聊天平台 — 纯前端 + Cloudflare D1 驱动，零服务器、零数据库
 
 🌐 **在线体验**: [user-henry.github.io/nflshcchat](https://user-henry.github.io/nflshcchat)
 
@@ -8,9 +8,9 @@
 
 ## 📖 项目简介
 
-NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打造的在线聊天平台。项目最大的特点是**完全不依赖任何后端服务器和数据库**，而是巧妙地利用 GitHub Issues 作为数据存储层——每个 GitHub Label 相当于一张"数据表"，每条 Issue 相当于一条"记录"，Issue Body 中存储 JSON 格式的业务数据。
+NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打造的在线聊天平台。项目最大的特点是**完全不依赖任何后端服务器和数据库**，而是巧妙地利用 Cloudflare D1 作为数据存储层——每个 GitHub Label 相当于一张"数据表"，每条 Issue 相当于一条"记录"，Issue Body 中存储 JSON 格式的业务数据。
 
-这种设计让项目部署成本为零（GitHub Pages 免费托管），同时通过 GitHub REST API 实现了完整的聊天、用户管理、数据统计等功能。虽然受限于 GitHub API 的速率限制（认证后 5000 次/小时），但对于校园场景的小规模使用完全够用。
+这种设计让项目部署成本为零（GitHub Pages 免费托管），同时通过 Cloudflare Workers API 实现了完整的聊天、用户管理、数据统计等功能。虽然受限于 GitHub API 的速率限制（认证后 5000 次/小时），但对于校园场景的小规模使用完全够用。
 
 ---
 
@@ -21,7 +21,7 @@ NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打�
 | 功能 | 说明 |
 |------|------|
 | **多聊天室** | 支持创建多个聊天室，每个聊天室对应一个 GitHub Issue（label: `chatroom`） |
-| **文字消息** | 基于 GitHub Issues（label: `chatmessage`）实时发送和接收文字消息 |
+| **文字消息** | 基于 Cloudflare D1（label: `chatmessage`）实时发送和接收文字消息 |
 | **引用回复** | 消息支持引用回复功能，回复时显示被引用消息的预览栏 |
 | **消息置顶** | 管理员可置顶重要消息，置顶横幅始终显示在消息列表最顶部 |
 | **代码高亮** | 集成 highlight.js（atom-one-dark 主题），代码块支持一键复制 |
@@ -33,7 +33,7 @@ NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打�
 
 | 功能 | 说明 |
 |------|------|
-| **注册 / 登录** | 基于 GitHub Issues（label: `user`）的用户认证系统，无需第三方账号 |
+| **注册 / 登录** | 基于 Cloudflare D1（label: `user`）的用户认证系统，无需第三方账号 |
 | **个人资料** | 完整的个人资料页面（`profile.html`），可修改昵称、个性签名等 |
 | **自定义头像** | 支持 URL 输入自定义头像，头像通过 `loadUserAvatars()` 批量获取并缓存 |
 | **用户等级** | 基于消息活跃度的等级积分系统：`等级 = Math.floor(Math.sqrt(经验值/10)) + 1` |
@@ -80,10 +80,10 @@ NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打�
 │    纯 HTML / CSS / JavaScript（零框架）           │
 │         Chart.js · highlight.js · MediaRecorder  │
 └────────────────────┬────────────────────────────┘
-                     │ GitHub REST API
+                     │ Cloudflare Workers API
                      ▼
 ┌─────────────────────────────────────────────────┐
-│              GitHub Issues 数据层                 │
+│              Cloudflare D1 数据层                 │
 │                                                   │
 │  label: chatmessage  →  聊天消息（JSON body）     │
 │  label: chatroom     →  聊天室元数据              │
@@ -98,15 +98,15 @@ NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打�
 
 ### 核心设计理念
 
-1. **GitHub Issues 即数据库** — 每个 Label 是一张"表"，每条 Issue 是一条"记录"，Body 存 JSON
-2. **零后端成本** — GitHub Pages 免费托管 + GitHub API 免费额度
-3. **纯前端架构** — 无需 Node.js / Python 后端，浏览器直接调用 GitHub REST API
-4. **Token 认证** — 通过 Personal Access Token 实现用户认证和 API 写入
+1. **Cloudflare D1 即数据库** — 每个业务类型（label）对应一张"表"，每条数据是一条"记录"，以 JSON 形式存储
+2. **零后端成本** — Cloudflare Pages / Workers 免费托管 + Cloudflare D1 无服务器数据库
+3. **纯前端架构** — 无需 Node.js / Python 后端，浏览器直接调用 Cloudflare Workers API
+4. **Token 认证** — 通过访问令牌（Token）实现用户认证和 API 写入
 
 ### 数据存储格式示例
 
 ```json
-// 一条聊天消息（Issue with label: chatmessage）
+// 一条聊天消息（D1 中 label: chatmessage 的记录）
 {
   "username": "张三",
   "content": "大家好！",
@@ -116,7 +116,7 @@ NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打�
   "isPinned": false
 }
 
-// 一个用户（Issue with label: user）
+// 一个用户（D1 中 label: user 的记录）
 {
   "username": "张三",
   "password": "加密存储",
@@ -203,7 +203,7 @@ python3 -m http.server 8080
 
 | 注意点 | 说明 |
 |--------|------|
-| **数据公开可见** | GitHub Issues 是公开的，请勿在聊天中分享敏感个人信息 |
+| **数据公开可见** | Cloudflare D1 数据由服务端托管，请勿在聊天中分享敏感个人信息 |
 | **API 速率限制** | 未认证 60 次/小时，认证后 5000 次/小时，多人同时使用可能触发限制 |
 | **语音消息大小** | base64 编码存储在 Issue Body 中，单条约 50KB 上限 |
 | **好友页主题** | `friends.html` 使用硬编码暗色主题，与 `themes.css` 的主题切换不联动（已知问题） |
@@ -216,7 +216,7 @@ python3 -m http.server 8080
 | 技术 | 用途 |
 |------|------|
 | HTML / CSS / JavaScript | 前端（零框架，原生实现） |
-| GitHub REST API v3 | 数据存储与用户认证 |
+| Cloudflare Workers API | 数据存储与用户认证 |
 | Chart.js | 数据可视化（趋势图 / 分布图 / 词云） |
 | highlight.js | 代码语法高亮（atom-one-dark 主题） |
 | MediaRecorder API | 浏览器端录音 |
@@ -228,3 +228,4 @@ python3 -m http.server 8080
 ## 📄 开源协议
 
 MIT License — 欢迎学习和参考，但请注意本项目仅适用于教育和学习目的，不建议用于生产环境。
+
