@@ -204,6 +204,17 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+        .theme-select {
+            margin: 8px 0 4px;
+            padding: 6px 10px;
+            width: 100%;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
         .new-chat-btn {
             margin: 16px 20px;
             padding: 12px;
@@ -2386,6 +2397,13 @@
             <div class="sidebar-header">
                 <div class="sidebar-logo"></div>
                 <h2>HZYAI</h2>
+                <select id="themeSelect" class="theme-select" onchange="if(window.ThemeManager)ThemeManager.setTheme(this.value)" title="切换主题">
+                    <option value="dark">🌙 暗夜黑金</option>
+                    <option value="light">☀️ 晨曦白光</option>
+                    <option value="blue">🌊 深海蓝调</option>
+                    <option value="purple">🔮 紫罗兰夜</option>
+                    <option value="green">🌿 翡翠绿意</option>
+                </select>
             </div>
             <button class="new-chat-btn" onclick="createNewConversation()">+ 新对话</button>
             <div class="conversations-list" id="conversationsList"></div>
@@ -7086,6 +7104,12 @@ v1.0.0 (2026年3月)
             if (savedUser) {
              try {
             document.getElementById('chatModelSelect').value = 'sizhi';
+
+            // 同步主题下拉框到当前主题
+            try {
+                const _ts = document.getElementById('themeSelect');
+                if (_ts && window.ThemeManager) _ts.value = window.ThemeManager.getTheme();
+            } catch (e) {}
 
             document.getElementById('refreshQuoteBtn').addEventListener('click', fetchDailyQuote);
 
