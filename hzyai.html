@@ -7080,6 +7080,9 @@ v1.0.0 (2026年3月)
                     if (_ap) _ap.style.display = 'none';
                 }
             }
+            // 以下界面初始化与渲染仅在已登录（恢复会话）时执行，
+            // 未登录访客不应被强制 switchMode('chat') 进入空白 app，否则表现为“白屏无变化”。
+            if (savedUser) {
             document.getElementById('chatModelSelect').value = 'sizhi';
 
             document.getElementById('refreshQuoteBtn').addEventListener('click', fetchDailyQuote);
@@ -7119,6 +7122,13 @@ v1.0.0 (2026年3月)
             setLVFrameCount(32);
             setLVPlayMode('loop');
             updateLVDuration();
+            } else {
+                // 未登录：明确显示登录页，隐藏主应用（避免空白 app 造成“白屏”）
+                const _lp = document.getElementById('loginPage');
+                const _ap = document.getElementById('app');
+                if (_lp) _lp.style.display = 'flex';
+                if (_ap) _ap.style.display = 'none';
+            }
         }
 
         // 暴露全局函数
