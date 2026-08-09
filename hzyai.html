@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
@@ -3149,7 +3149,7 @@
         }
 
         // ============================================================
-        //  🎭 角色 GitHub 同步
+        //  🎭 角色云端同步
         // ============================================================
         function getCharacterLabel() {
             return `hzyai_character_${currentUser.username}`;
@@ -3262,7 +3262,7 @@
         }
 
         // ============================================================
-        //  ⏰ 任务 GitHub 同步
+        //  ⏰ 任务云端同步
         // ============================================================
         function getTaskLabel() {
             return `hzyai_task_${currentUser.username}`;
@@ -5888,7 +5888,7 @@
 - 用户需要填写用户名、邮箱、密码（至少6位）进行注册
 - 可以填写个人简介（选填）
 - 注册成功后自动跳转到登录页面
-- 数据存储：Cloudflare D1（label: user）
+- 数据存储：Cloudflare D1（表: user）
 
 2.2 登录
 - 输入用户名和密码登录
@@ -5946,7 +5946,7 @@
 - 鼠标悬停在消息上，点击右下角 ⭐ 按钮即可收藏
 - 收藏的消息在「我的收藏」页面查看
 - 支持删除收藏
-- 数据存储：Cloudflare D1（label: favorite）
+- 数据存储：Cloudflare D1（表: favorite）
 
 3.7 消息搜索（search.html）
 - 支持按关键词搜索历史消息
@@ -6009,7 +6009,7 @@
 - 系统自动验证用户是否存在
 - 不可添加自己或 AI 小助手为好友
 - 不可重复添加已添加的好友
-- 数据存储：Cloudflare D1（label: friend）
+- 数据存储：Cloudflare D1（表: friend）
 
 5.2 好友列表
 - 显示所有已添加的好友
@@ -6059,13 +6059,13 @@
 - 支持编写/预览双标签页
 - 删除公告
 - 公告按时间倒序排列
-- 数据存储：Cloudflare D1（label: notice）
+- 数据存储：Cloudflare D1（表: notice）
 
 7.4 建议审核（admin-suggestions.html）
 - 查看用户提交的建议
 - 更新建议状态：待审核、处理中、已完成、已驳回
 - 添加备注说明
-- 数据存储：Cloudflare D1（label: suggestion）
+- 数据存储：Cloudflare D1（表: suggestion）
 
 🤖 八、AI 小助手
 8.1 如何与 AI 对话
@@ -6113,7 +6113,7 @@
 - 建议状态：待审核、处理中、已完成、已驳回
 - 所有用户可查看已提交的建议及处理状态
 - 建议按提交时间倒序排列
-- 数据存储：Cloudflare D1（label: suggestion）
+- 数据存储：Cloudflare D1（表: suggestion）
 
 🎨 十一、界面与体验
 11.1 通知系统
@@ -6182,13 +6182,13 @@ AI 相关
 - HZYAI 是什么？独立的 AI 对话工具，支持对话、绘图、视频生成。
 
 数据相关
-- 数据保存在哪里？所有数据保存在 Cloudflare D1 中，完全透明。
+- 数据保存在哪里？所有数据保存在 Cloudflare D1 中，安全可控。
 - 导出聊天记录？点击导航栏「📤 导出」，选择导出范围和格式。
 
 技术相关
 - 免费吗？完全免费。
 - 支持移动端？支持响应式设计。
-- 为什么卡？基于 Cloudflare Workers API，网络延迟或速率限制可能导致卡顿。
+- 为什么卡？基于 Cloudflare Workers，网络延迟可能导致卡顿。
 - 有桌面版？有 Windows 桌面版（v2.3.0）和 Android APK。
 
 🔄 十四、版本更新日志
@@ -6866,5 +6866,3 @@ v1.0.0 (2026年3月)
     <script src="js/theme.js"></script>
 </body>
 </html>
-
-
