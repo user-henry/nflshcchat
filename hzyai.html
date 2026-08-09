@@ -1,7 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
+<script>const CF_WORKER_API='https://hzyai-worker.nflshcchat.cc.cd';</script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
@@ -2365,6 +2366,15 @@
                                 <option value="agnes">Agnes 2.0 Flash</option>
                                 <option value="glm-4.7-flash">智谱 GLM-4.7-Flash</option>
                                 <option value="glm-4-flash-250414">智谱 GLM-4-Flash</option>
+                                <optgroup label="Cloudflare Workers AI">
+                                    <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">Llama 3.3 70B</option>
+                                    <option value="@cf/qwen/qwen3-32b">Qwen3 32B</option>
+                                    <option value="@cf/google/gemma-3-12b-it">Gemma 3 12B</option>
+                                    <option value="@cf/meta/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</option>
+                                    <option value="@cf/mistralai/mistral-small-3.1-24b-instruct">Mistral Small 3.1 24B</option>
+                                    <option value="@cf/deepseek-ai/deepseek-r1-distill-qwen-32b">DeepSeek R1 Distill 32B</option>
+                                    <option value="@cf/openai/gpt-oss-120b">GPT-OSS 120B</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="chat-role-selector">
@@ -2434,6 +2444,9 @@
                             <option value="glm-4.6v-flash">智谱 GLM-4.6V-Flash</option>
                             <option value="glm-4.1v-thinking-flash">智谱 GLM-4.1V-Thinking-Flash</option>
                             <option value="glm-4v-flash">智谱 GLM-4V-Flash</option>
+                            <optgroup label="Cloudflare Workers AI">
+                                <option value="@cf/facebook/dinov2-base">DINOv2 (图像理解)</option>
+                            </optgroup>
                         </select>
                         <input type="text" id="visionPrompt" class="prompt-input" placeholder="输入你想问的问题，例如：这张图片里有什么？" onkeydown="if(event.key==='Enter') analyzeVision()">
                         <button class="draw-generate-btn" id="visionAnalyzeBtn" onclick="analyzeVision()">🔍 分析</button>
@@ -2483,6 +2496,10 @@
                             <option value="pollinations-flux">Pollinations AI (flux)</option>
                             <option value="pollinations-turbo">Pollinations AI (极速版)</option>
                             <option value="pollinations-flux-pro">Pollinations AI (专业版)</option>
+                            <optgroup label="Cloudflare Workers AI">
+                                <option value="@cf/black-forest-labs/flux-1-schnell">FLUX.1 Schnell</option>
+                                <option value="@cf/lykon/dreamshaper-8-lcm">DreamShaper 8 LCM</option>
+                            </optgroup>
                         </select>
                         <button class="draw-generate-btn" id="drawGenerateBtn" onclick="generateImage()">🎨 生成</button>
                     </div>
@@ -2533,6 +2550,9 @@
                         <select id="videoModelSelect" style="flex:0.8;min-width:120px;">
                             <option value="agnes-video-v2.0">Agnes Video V2.0</option>
                             <option value="cogvideox-flash">智谱 CogVideoX-Flash</option>
+                            <optgroup label="Cloudflare Workers AI">
+                                <option value="@cf/lightricks/ltx-video-2b">LTX-Video 2B</option>
+                            </optgroup>
                         </select>
                         <button class="draw-generate-btn" id="videoGenerateBtn" onclick="generateVideo()">🎬 生成</button>
                     </div>
@@ -2821,7 +2841,7 @@
             <div class="info-section">
                 <h3>🤖 关于 HZYAI</h3>
                 <p>基于思知 AI + Agnes AI + 智谱 GLM 的多模态对话助手，支持对话、视觉理解、绘图、视频生成、定时任务、虚拟角色。</p>
-                <p>对话记录<strong>本地存储</strong>，支持 GitHub Issues 云端同步。</p>
+                <p>对话记录<strong>本地存储</strong>，支持 Cloudflare D1 云端同步。</p>
             </div>
             <div class="info-section">
                 <h3>📺 产品介绍</h3>
@@ -2984,7 +3004,7 @@
         }
 
         // ============================================================
-        //  GitHub Issues 同步 (对话)
+        //  Cloudflare D1 同步 (对话)
         // ============================================================
         function getGitHubLabel() {
             return `hzyai_${currentUser.username}`;
@@ -3583,6 +3603,28 @@
                 fullMessages = [{ role: 'system', content: systemPrompt }, ...fullMessages];
             }
 
+            // 新增模型：Cloudflare Workers AI（经 hzyai-worker 代理）
+            // 复用已有的"角色"系统提示（含 RAG 角色的知识库）作为 system message，不改动角色功能
+            if (model && model.startsWith('@cf/')) {
+                try {
+                    const response = await fetch(`${CF_WORKER_API}/chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: model, messages: fullMessages, stream: false })
+                    });
+                    if (!response.ok) {
+                        const err = await response.text();
+                        throw new Error(`CF 模型调用失败 (${response.status}): ${err}`);
+                    }
+                    const data = await response.json();
+                    recordCall(model, 200);
+                    return data.response || '';
+                } catch (error) {
+                    console.error('Cloudflare Workers AI 调用错误:', error);
+                    throw error;
+                }
+            }
+
             if (model === 'sizhi') {
                 try {
                     const history = fullMessages.slice(-10);
@@ -4167,6 +4209,20 @@
                     }
                     recordCall('cogview-3-flash', 100);
 
+                } else if (model && model.startsWith('@cf/')) {
+                    const response = await fetch(`${CF_WORKER_API}/image`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: model, prompt: prompt, num_steps: 4 })
+                    });
+                    const idata = await response.json();
+                    if (idata && idata.image) {
+                        imageUrl = 'data:image/png;base64,' + idata.image;
+                    } else {
+                        throw new Error(idata.error || '图像生成失败');
+                    }
+                    recordCall(model, 100);
+
                 } else {
                     const payload = {
                         model: model,
@@ -4341,6 +4397,22 @@
                     if (!videoUrl) {
                         throw new Error('视频生成超时，请稍后重试');
                     }
+                } else if (model && model.startsWith('@cf/')) {
+                    const vresp = await fetch(`${CF_WORKER_API}/video`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: model,
+                            prompt: prompt,
+                            image: videoReferenceImages.length > 0 ? videoReferenceImages[0] : undefined
+                        })
+                    });
+                    const vdata = await vresp.json();
+                    if (vdata && vdata.video) {
+                        videoUrl = 'data:video/mp4;base64,' + vdata.video;
+                    } else {
+                        throw new Error(vdata.error || '视频生成失败');
+                    }
                 } else {
                     const payload = {
                         model: model,
@@ -4496,6 +4568,29 @@
                     }
                 }
                 content.push({ type: 'text', text: prompt });
+
+                // 新增模型：Cloudflare Workers AI 视觉
+                if (model && model.startsWith('@cf/')) {
+                    const imgData = visionFiles.find(f => f.startsWith('data:image'));
+                    if (!imgData) throw new Error('Cloudflare 视觉模型需要上传图片');
+                    const response = await fetch(`${CF_WORKER_API}/vision`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: model, image: imgData, prompt: prompt })
+                    });
+                    const vdata = await response.json();
+                    loading.classList.remove('active');
+                    if (vdata && vdata.response) {
+                        const result = vdata.response;
+                        output.textContent = result;
+                        output.style.display = 'block';
+                        addMessage('assistant', `👁️ 视觉分析结果：${result}`);
+                        recordCall(model, 150);
+                    } else {
+                        throw new Error(vdata.error || '视觉分析失败');
+                    }
+                    return;
+                }
 
                 const url = `${BIGMODEL_CONFIG.baseUrl}/chat/completions`;
                 const response = await fetch(url, {
@@ -6003,7 +6098,7 @@
 
 9.2 技术架构
 - 前端：纯原生 HTML/CSS/JavaScript，无第三方框架
-- 数据存储：浏览器 localStorage + GitHub Issues 云端同步
+- 数据存储：浏览器 localStorage + Cloudflare D1 云端同步
 - 语音输入：Web Speech API（Chrome/Edge 支持）
 - 角色记忆系统：对话结束后自动总结并写入角色记忆
 
