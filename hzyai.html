@@ -2258,6 +2258,55 @@
             .lv-controls { gap: 6px; }
             .lv-controls button { padding: 4px 10px; font-size: 11px; }
         }
+
+        /* ===== 新增模式：代码生成 / 语音合成 / 语义嵌入 / 模型市场 ===== */
+        .code-mode, .tts-mode, .embed-mode, .market-mode {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            padding: 0 16px 16px;
+        }
+        .tts-panel, .embed-panel {
+            background: var(--bg-secondary, #16213e);
+            border-radius: 10px;
+            padding: 18px;
+            color: var(--text-primary, #fff);
+        }
+        .tts-panel label, .embed-panel label { display:block; margin: 10px 0 6px; font-size: 13px; color:#bbb; }
+        .tts-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+        .tts-player { margin-top:14px; }
+        .embed-result { margin-top:14px; max-height:340px; overflow:auto; }
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 14px;
+            padding: 12px 0;
+            overflow: auto;
+        }
+        .market-card {
+            background: var(--bg-secondary, #16213e);
+            border: 1px solid var(--border-color, #2a2a3e);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .market-card-icon { font-size: 22px; }
+        .market-card-name { font-weight: 600; color: var(--text-primary, #fff); }
+        .market-card-id { font-size: 11px; color: #6fa8ff; word-break: break-all; }
+        .market-card-desc { font-size: 12px; color: #999; }
+        .market-chat-btn {
+            margin-top: 6px;
+            background: var(--accent-color, #ffd700);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
     </style>
     <link rel="stylesheet" href="css/themes.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -2325,6 +2374,10 @@
                 <button class="mode-tab" data-mode="film" onclick="switchMode('film')">🎬 AI 短片</button>
                 <button class="mode-tab" data-mode="longvideo" onclick="switchMode('longvideo')">🎬 长视频</button>
                 <button class="mode-tab" data-mode="stats" onclick="switchMode('stats')">📊 统计</button>
+                <button class="mode-tab" data-mode="code" onclick="switchMode('code')">💻 代码生成</button>
+                <button class="mode-tab" data-mode="tts" onclick="switchMode('tts')">🎤 语音合成</button>
+                <button class="mode-tab" data-mode="embed" onclick="switchMode('embed')">🧬 语义嵌入</button>
+                <button class="mode-tab" data-mode="market" onclick="switchMode('market')">🧠 模型市场</button>
             </div>
 
             <!-- ====== 每日一言 ====== -->
@@ -2366,14 +2419,18 @@
                                 <option value="agnes">Agnes 2.0 Flash</option>
                                 <option value="glm-4.7-flash">智谱 GLM-4.7-Flash</option>
                                 <option value="glm-4-flash-250414">智谱 GLM-4-Flash</option>
-                                <optgroup label="Cloudflare Workers AI">
-                                    <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">Llama 3.3 70B</option>
-                                    <option value="@cf/qwen/qwen3-32b">Qwen3 32B</option>
-                                    <option value="@cf/google/gemma-3-12b-it">Gemma 3 12B</option>
+                                <optgroup label="☁️ Cloudflare · 文本生成">
+                                    <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">Llama 3.3 70B (快速)</option>
                                     <option value="@cf/meta/llama-4-scout-17b-16e-instruct">Llama 4 Scout 17B</option>
-                                    <option value="@cf/mistralai/mistral-small-3.1-24b-instruct">Mistral Small 3.1 24B</option>
                                     <option value="@cf/deepseek-ai/deepseek-r1-distill-qwen-32b">DeepSeek R1 Distill 32B</option>
-                                    <option value="@cf/openai/gpt-oss-120b">GPT-OSS 120B</option>
+                                    <option value="@cf/qwen/qwq-32b">Qwen QwQ 32B (推理)</option>
+                                    <option value="@cf/hf/google/gemma-7b-it">Gemma 7B</option>
+                                    <option value="@cf/mistral/mistral-7b-instruct-v0.1">Mistral 7B</option>
+                                </optgroup>
+                                <optgroup label="☁️ Cloudflare · 代码生成">
+                                    <option value="@cf/qwen/qwen2.5-coder-32b-instruct">Qwen2.5-Coder 32B</option>
+                                    <option value="@cf/qwen/qwen2.5-coder-7b-instruct">Qwen2.5-Coder 7B</option>
+                                    <option value="@hf/codegemma/codegemma-7b-it">CodeGemma 7B</option>
                                 </optgroup>
                             </select>
                         </div>
@@ -2430,6 +2487,109 @@
                         <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
                     </div>
                 </div>
+            </div>
+
+            <!-- ====== 代码生成模式 ====== -->
+            <div class="code-mode" id="codeMode" style="display:none;">
+                <div class="chat-header">
+                    <div>
+                        <h1>💻 代码生成</h1>
+                        <p>基于 Cloudflare Workers AI 代码模型（Qwen2.5-Coder / CodeGemma 等）</p>
+                    </div>
+                    <div class="model-selector">
+                        <label for="codeModelSelect">🧠 模型：</label>
+                        <select id="codeModelSelect"></select>
+                    </div>
+                </div>
+                <div class="messages-area" id="codeMessagesArea">
+                    <div class="message assistant">
+                        <div class="message-avatar">💻</div>
+                        <div class="message-content">你好！我是代码生成助手。请描述你的编程需求（语言、功能、约束），我会生成完整可运行的代码。例如：「用 Python 写一个快速排序」。</div>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <div class="input-wrapper">
+                        <textarea id="codeInput" placeholder="描述代码需求... (Shift+Enter 换行，Enter 发送)" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCode();}"></textarea>
+                        <button class="send-btn" onclick="sendCode()">生成</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====== 语音合成模式 ====== -->
+            <div class="tts-mode" id="ttsMode" style="display:none;">
+                <div class="chat-header">
+                    <div>
+                        <h1>🎤 语音合成</h1>
+                        <p>将文字转换为语音（Cloudflare Workers AI TTS）</p>
+                    </div>
+                </div>
+                <div class="tts-panel">
+                    <label>输入要合成的文本：</label>
+                    <textarea id="ttsText" rows="4" placeholder="输入要转换为语音的文字..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;"></textarea>
+                    <div class="tts-row">
+                        <label>语言：
+                            <select id="ttsLang">
+                                <option value="zh-CN">中文</option>
+                                <option value="en-US">English</option>
+                                <option value="ja-JP">日本語</option>
+                                <option value="ko-KR">한국어</option>
+                                <option value="fr-FR">Français</option>
+                                <option value="de-DE">Deutsch</option>
+                                <option value="es-ES">Español</option>
+                            </select>
+                        </label>
+                        <button class="draw-generate-btn" onclick="startTTS()">🔊 合成语音</button>
+                        <button class="draw-generate-btn" onclick="stopTTS()" style="background:#e74c3c;">⏹ 停止</button>
+                    </div>
+                    <div id="ttsPlayer" class="tts-player" style="display:none;">
+                        <audio id="ttsAudio" controls style="width:100%;"></audio>
+                    </div>
+                    <div id="ttsStatus" class="sync-status"></div>
+                </div>
+            </div>
+
+            <!-- ====== 语义嵌入模式 ====== -->
+            <div class="embed-mode" id="embedMode" style="display:none;">
+                <div class="chat-header">
+                    <div>
+                        <h1>🧬 语义嵌入 / 向量</h1>
+                        <p>将文本转为向量，可进行语义相似度检索（Cloudflare Workers AI Embeddings）</p>
+                    </div>
+                    <div class="model-selector">
+                        <label for="embedModelSelect">🧠 模型：</label>
+                        <select id="embedModelSelect"></select>
+                    </div>
+                </div>
+                <div class="embed-panel">
+                    <label>文本（每行一条，或单段文本）：</label>
+                    <textarea id="embedText" rows="5" placeholder="例如：&#10;猫是一种可爱的宠物&#10;狗是人类忠实的伙伴" style="width:100%;padding:10px;border-radius:8px;border:1px solid #444;background:#1a1a2e;color:#fff;"></textarea>
+                    <button class="draw-generate-btn" onclick="generateEmbedding()">🧮 生成向量</button>
+                    <button class="draw-generate-btn" onclick="semanticSearch()" style="background:#9b59b6;">🔎 语义检索</button>
+                    <div id="embedResult" class="embed-result"></div>
+                </div>
+            </div>
+
+            <!-- ====== 模型市场模式 ====== -->
+            <div class="market-mode" id="marketMode" style="display:none;">
+                <div class="chat-header">
+                    <div>
+                        <h1>🧠 模型市场</h1>
+                        <p>Cloudflare Workers AI 全部免费模型 · 点击「对话」可直接体验文本/代码模型</p>
+                    </div>
+                    <div class="model-selector">
+                        <label for="marketFilter">分类：</label>
+                        <select id="marketFilter" onchange="renderMarket()">
+                            <option value="all">全部</option>
+                            <option value="text">文本生成</option>
+                            <option value="code">代码生成</option>
+                            <option value="image">图像生成</option>
+                            <option value="voice">语音 / 音频</option>
+                            <option value="embedding">语义嵌入</option>
+                            <option value="vision">视觉理解</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="market-grid" id="marketGrid"></div>
             </div>
 
             <!-- ====== 视觉模式 ====== -->
@@ -2840,7 +3000,7 @@
         <div class="info-sidebar">
             <div class="info-section">
                 <h3>🤖 关于 HZYAI</h3>
-                <p>基于思知 AI + Agnes AI + 智谱 GLM 的多模态对话助手，支持对话、视觉理解、绘图、视频生成、定时任务、虚拟角色。</p>
+                <p>基于 思知 AI + Agnes AI + 智谱 GLM + <strong>Cloudflare Workers AI</strong> 的多模态对话助手，支持对话、视觉理解、绘图、视频生成、定时任务、虚拟角色，以及代码生成、语音合成、语义嵌入与全量 CF 模型市场。</p>
                 <p>对话记录<strong>本地存储</strong>，支持 Cloudflare D1 云端同步。</p>
             </div>
             <div class="info-section">
@@ -2852,10 +3012,14 @@
             <div class="info-section">
                 <h3>✨ 功能列表</h3>
                 <ul class="feature-list">
-                    <li>💬 智能对话 (思知 AI / Agnes AI / 智谱 GLM)</li>
+                    <li>💬 智能对话 (思知 AI / Agnes AI / 智谱 GLM / Cloudflare)</li>
                     <li>👁️ 视觉理解</li>
                     <li>🎨 AI 绘图</li>
                     <li>🎬 AI 视频生成</li>
+                    <li>💻 代码生成 (Qwen2.5-Coder 等)</li>
+                    <li>🎤 语音合成 (Cloudflare TTS)</li>
+                    <li>🧬 语义嵌入 / 向量检索</li>
+                    <li>🧠 Cloudflare 模型市场</li>
                     <li>⏰ 定时任务</li>
                     <li>🎭 虚拟角色定制</li>
                 </ul>
@@ -2924,6 +3088,59 @@
             imageModel: 'cogview-3-flash',
             videoModel: 'cogvideox-flash'
         };
+
+        // ===== Cloudflare Workers AI（经 hzyai-worker 网关代理，集成所有免费模型）=====
+        const CF_WORKER_API = 'https://hzyai-worker.nflshcchat.cc.cd';
+        const CF_MODELS = {
+            // 文本生成类（对话 / 写作 / 推理）
+            text: [
+                { id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', name: 'Llama 3.3 70B (快速)' },
+                { id: '@cf/meta/llama-3.1-8b-instruct', name: 'Llama 3.1 8B' },
+                { id: '@cf/meta/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout 17B' },
+                { id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', name: 'DeepSeek R1 32B (推理)' },
+                { id: '@hf/google/gemma-7b-it', name: 'Gemma 7B' },
+                { id: '@cf/mistral/mistral-7b-instruct-v0.1', name: 'Mistral 7B' },
+                { id: '@cf/qwen/qwq-32b', name: 'Qwen QwQ 32B (推理)' },
+                { id: '@cf/microsoft/phi-4-multimodal', name: 'Phi-4 多模态' }
+            ],
+            // 代码生成类（编程 / 补全）
+            code: [
+                { id: '@cf/qwen/qwen2.5-coder-32b-instruct', name: 'Qwen2.5-Coder 32B' },
+                { id: '@cf/qwen/qwen2.5-coder-7b-instruct', name: 'Qwen2.5-Coder 7B' },
+                { id: '@hf/codegemma/codegemma-7b-it', name: 'CodeGemma 7B' },
+                { id: '@hf/thebloke/deepseek-coder-6.7b-base-awq', name: 'DeepSeek-Coder 6.7B' },
+                { id: '@cf/defog/sqlcoder-7b-2', name: 'SQLCoder 7B' }
+            ],
+            // 图像生成
+            image: [
+                { id: '@cf/black-forest-labs/flux-1-schnell', name: 'FLUX.1 Schnell' },
+                { id: '@cf/stabilityai/stable-diffusion-xl-base-1.0', name: 'SDXL Base 1.0' },
+                { id: '@cf/lykon/dreamshaper-8-lcm', name: 'DreamShaper LCM' }
+            ],
+            // 语音 / 音频合成（TTS）/ 语音识别（STT）
+            voice: [
+                { id: '@cf/myshell-ai/melotts', name: 'MeLo-TTS (语音合成)' },
+                { id: '@cf/openai/whisper', name: 'Whisper (语音识别)' },
+                { id: '@cf/meta/m2m100-118m', name: 'M2M100 (翻译)' }
+            ],
+            // 语义嵌入 / 向量
+            embedding: [
+                { id: '@cf/qwen/qwen3-embedding-0.6b', name: 'Qwen3-Embedding 0.6B' },
+                { id: '@cf/baai/bge-base-en-v1.5', name: 'BGE Base' },
+                { id: '@cf/baai/bge-large-en-v1.5', name: 'BGE Large' }
+            ],
+            // 视觉理解
+            vision: [
+                { id: '@cf/llava-hf/llava-13b-hf', name: 'LLaVA 13B' },
+                { id: '@cf/unumai/uform-gen2-qwen-500m', name: 'UForm-Qwen 500M' }
+            ]
+        };
+        function cfModelsFlat() {
+            const out = {};
+            Object.values(CF_MODELS).forEach(arr => arr.forEach(m => out[m.id] = m.name));
+            return out;
+        }
+        const CF_MODEL_NAMES = cfModelsFlat();
 
         // ============================================================
         //  全局状态
@@ -5556,7 +5773,7 @@
         // ============================================================
         function switchMode(mode) {
             currentMode = mode;
-            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'film', 'stats', 'longvideo'];
+            const modes = ['chat', 'vision', 'draw', 'video', 'task', 'character', 'film', 'stats', 'longvideo', 'code', 'tts', 'embed', 'market'];
             const elements = {
                 chat: document.getElementById('chatMode'),
                 vision: document.getElementById('visionMode'),
@@ -5566,7 +5783,11 @@
                 character: document.getElementById('characterMode'),
                 film: document.getElementById('filmMode'),
                 stats: document.getElementById('statsPanel'),
-                longvideo: document.getElementById('longvideoMode')
+                longvideo: document.getElementById('longvideoMode'),
+                code: document.getElementById('codeMode'),
+                tts: document.getElementById('ttsMode'),
+                embed: document.getElementById('embedMode'),
+                market: document.getElementById('marketMode')
             };
             const tabs = document.querySelectorAll('.mode-tab');
 
@@ -5582,6 +5803,13 @@
                     if (mode === 'stats') renderStats();
                 } else if (m === 'longvideo') {
                     elements[m].classList.toggle('active', mode === m);
+                } else if (m === 'code' || m === 'tts' || m === 'embed' || m === 'market') {
+                    elements[m].style.display = (mode === m) ? 'flex' : 'none';
+                    if (mode === m) {
+                        if (m === 'code') initCodeMode();
+                        else if (m === 'embed') initEmbedMode();
+                        else if (m === 'market') renderMarket();
+                    }
                 } else {
                     elements[m].classList.toggle('active', mode === m);
                 }
@@ -5594,6 +5822,218 @@
             else if (mode === 'task') document.getElementById('taskPrompt')?.focus();
             else if (mode === 'character') renderCharactersGrid();
             else if (mode === 'longvideo') document.getElementById('lvPrompt')?.focus();
+            else if (mode === 'code') document.getElementById('codeInput')?.focus();
+        }
+
+        // ============================================================
+        //  ☁️ Cloudflare Workers AI 文本/代码生成
+        // ============================================================
+        function fillCfSelect(selectEl, modelList, defaultId) {
+            selectEl.innerHTML = modelList.map(m =>
+                `<option value="${m.id}"${m.id === defaultId ? ' selected' : ''}>${m.name}</option>`).join('');
+        }
+
+        function initCodeMode() {
+            const sel = document.getElementById('codeModelSelect');
+            if (!sel.dataset.filled) {
+                fillCfSelect(sel, CF_MODELS.code, CF_MODELS.code[0].id);
+                sel.dataset.filled = '1';
+            }
+        }
+
+        function addCodeMessage(role, content) {
+            const area = document.getElementById('codeMessagesArea');
+            const div = document.createElement('div');
+            div.className = 'message ' + role;
+            const avatar = role === 'user' ? '👤' : '💻';
+            const html = role === 'assistant' ? renderMarkdown(content) : escapeHtml(content);
+            div.innerHTML = `<div class="message-avatar">${avatar}</div><div class="message-content">${html}</div>`;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+
+        async function sendCode() {
+            if (isWaiting) return;
+            const input = document.getElementById('codeInput');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            addCodeMessage('user', text);
+            isWaiting = true;
+            addCodeMessage('assistant', '⏳ 正在生成代码...');
+            try {
+                const model = document.getElementById('codeModelSelect').value;
+                const response = await fetch(`${CF_WORKER_API}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [{ role: 'system', content: '你是一位资深程序员，请直接给出完整、可运行、带必要注释的代码，不要废话。' }, { role: 'user', content: text }],
+                        stream: false
+                    })
+                });
+                if (!response.ok) throw new Error(`CF 调用失败 (${response.status})`);
+                const data = await response.json();
+                recordCall(model, 300);
+                const area = document.getElementById('codeMessagesArea');
+                area.lastChild.querySelector('.message-content').innerHTML = renderMarkdown(data.response || '（空响应）');
+                area.scrollTop = area.scrollHeight;
+            } catch (e) {
+                const area = document.getElementById('codeMessagesArea');
+                area.lastChild.querySelector('.message-content').textContent = '❌ 生成失败：' + e.message;
+            } finally {
+                isWaiting = false;
+            }
+        }
+
+        // ============================================================
+        //  🎤 语音合成 (TTS) —— Cloudflare Workers AI
+        // ============================================================
+        let ttsAudioUrl = null;
+        async function startTTS() {
+            const text = document.getElementById('ttsText').value.trim();
+            if (!text) { showToast('请输入要合成的文本', 'warning'); return; }
+            const lang = document.getElementById('ttsLang').value;
+            const status = document.getElementById('ttsStatus');
+            status.textContent = '⏳ 正在合成语音...';
+            try {
+                const response = await fetch(`${CF_WORKER_API}/tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: '@cf/myshell-ai/melotts', prompt: text, language: lang })
+                });
+                if (!response.ok) throw new Error(`TTS 调用失败 (${response.status})`);
+                const data = await response.json();
+                recordCall('@cf/myshell-ai/melotts', 100);
+                if (ttsAudioUrl) URL.revokeObjectURL(ttsAudioUrl);
+                ttsAudioUrl = 'data:audio/mpeg;base64,' + data.audio;
+                const audio = document.getElementById('ttsAudio');
+                audio.src = ttsAudioUrl;
+                document.getElementById('ttsPlayer').style.display = 'block';
+                audio.play();
+                status.textContent = '✅ 合成完成';
+            } catch (e) {
+                status.textContent = '❌ 合成失败：' + e.message;
+            }
+        }
+        function stopTTS() {
+            const audio = document.getElementById('ttsAudio');
+            if (audio) audio.pause();
+        }
+
+        // ============================================================
+        //  🧬 语义嵌入 / 语义检索 —— Cloudflare Workers AI
+        // ============================================================
+        function initEmbedMode() {
+            const sel = document.getElementById('embedModelSelect');
+            if (!sel.dataset.filled) {
+                fillCfSelect(sel, CF_MODELS.embedding, CF_MODELS.embedding[0].id);
+                sel.dataset.filled = '1';
+            }
+        }
+
+        let lastEmbeddings = [];
+        async function generateEmbedding() {
+            const text = document.getElementById('embedText').value.trim();
+            if (!text) { showToast('请输入文本', 'warning'); return; }
+            const model = document.getElementById('embedModelSelect').value;
+            const resultEl = document.getElementById('embedResult');
+            resultEl.innerHTML = '⏳ 正在生成向量...';
+            try {
+                const lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+                const promises = lines.map(t => fetch(`${CF_WORKER_API}/embedding`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: model, text: t })
+                }).then(r => r.json()));
+                const results = await Promise.all(promises);
+                lastEmbeddings = results.map((d, i) => ({ text: lines[i], vector: d.data || [] }));
+                recordCall(model, lines.length * 5);
+                resultEl.innerHTML = lastEmbeddings.map(e =>
+                    `<div style="margin:8px 0;padding:8px;background:#1a1a2e;border-radius:6px;">
+                        <div style="font-size:12px;color:#ffd700;">「${escapeHtml(e.text)}」</div>
+                        <div style="font-size:11px;color:#888;">维度：${e.vector.length} · 前3维：${e.vector.slice(0,3).map(n=>n.toFixed(4)).join(', ')}</div>
+                    </div>`).join('');
+            } catch (e) {
+                resultEl.innerHTML = '❌ 生成失败：' + e.message;
+            }
+        }
+
+        function cosineSim(a, b) {
+            let dot = 0, na = 0, nb = 0;
+            for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+            return dot / (Math.sqrt(na) * Math.sqrt(nb) || 1);
+        }
+
+        async function semanticSearch() {
+            if (!lastEmbeddings.length) { showToast('请先生成向量', 'warning'); return; }
+            const query = prompt('输入要检索的查询词：');
+            if (!query) return;
+            const model = document.getElementById('embedModelSelect').value;
+            const resultEl = document.getElementById('embedResult');
+            resultEl.innerHTML = '⏳ 检索中...';
+            try {
+                const r = await fetch(`${CF_WORKER_API}/embedding`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: model, text: query })
+                }).then(x => x.json());
+                const qv = r.data || [];
+                const ranked = lastEmbeddings.map(e => ({ text: e.text, score: cosineSim(qv, e.vector) }))
+                    .sort((a, b) => b.score - a.score);
+                recordCall(model, 5);
+                resultEl.innerHTML = '<div style="margin:6px 0;color:#2ecc71;">🔎 检索结果（按相似度）：</div>' +
+                    ranked.map(e => `<div style="padding:6px 10px;background:#1a1a2e;border-radius:6px;margin:4px 0;">
+                        <span style="color:#ffd700;">${e.score.toFixed(4)}</span> · ${escapeHtml(e.text)}</div>`).join('');
+            } catch (e) {
+                resultEl.innerHTML = '❌ 检索失败：' + e.message;
+            }
+        }
+
+        // ============================================================
+        //  🧠 模型市场 —— 浏览全部 Cloudflare 免费模型
+        // ============================================================
+        const CF_MARKET_META = {
+            text: { icon: '💬', desc: '文本生成 / 对话 / 写作 / 推理' },
+            code: { icon: '💻', desc: '代码补全与生成' },
+            image: { icon: '🎨', desc: '文生图' },
+            voice: { icon: '🎤', desc: '语音识别 / 翻译' },
+            embedding: { icon: '🧬', desc: '文本向量化' },
+            vision: { icon: '👁️', desc: '视觉理解' }
+        };
+        function renderMarket() {
+            const grid = document.getElementById('marketGrid');
+            const filter = document.getElementById('marketFilter').value;
+            const cats = filter === 'all' ? Object.keys(CF_MODELS) : [filter];
+            let html = '';
+            cats.forEach(cat => {
+                const meta = CF_MARKET_META[cat] || { icon: '☁️', desc: '' };
+                CF_MODELS[cat].forEach(m => {
+                    const canChat = (cat === 'text' || cat === 'code');
+                    html += `<div class="market-card">
+                        <div class="market-card-icon">${meta.icon}</div>
+                        <div class="market-card-name">${m.name}</div>
+                        <div class="market-card-id">${m.id}</div>
+                        <div class="market-card-desc">${meta.desc}</div>
+                        ${canChat ? `<button class="market-chat-btn" onclick="quickChat('${m.id}')">💬 对话</button>` : ''}
+                    </div>`;
+                });
+            });
+            grid.innerHTML = html;
+        }
+        function quickChat(modelId) {
+            // 跳转到对话模式并使用该模型
+            const sel = document.getElementById('chatModelSelect');
+            if ([...sel.options].some(o => o.value === modelId)) {
+                sel.value = modelId;
+            } else {
+                const opt = document.createElement('option');
+                opt.value = modelId; opt.textContent = CF_MODEL_NAMES[modelId] || modelId;
+                sel.appendChild(opt); sel.value = modelId;
+            }
+            switchMode('chat');
+            document.getElementById('messageInput')?.focus();
+            showToast('已切换到 ' + (CF_MODEL_NAMES[modelId] || modelId), 'success');
         }
 
         // ============================================================
