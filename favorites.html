@@ -168,7 +168,7 @@
                 <div class="favorite-item">
                     <div class="favorite-header">
                         <div class="favorite-room">📁 ${escapeHtml(getRoomName(fav.roomId))}</div>
-                        <button class="delete-favorite" onclick="deleteFavorite(${fav.issueNumber})">🗑️ 删除</button>
+                        <button class="delete-favorite" onclick="deleteFavorite('${fav.issueNumber}')">🗑️ 删除</button>
                     </div>
                     <div class="favorite-sender">${escapeHtml(fav.sender)}</div>
                     <div class="favorite-content">${escapeHtml(fav.content)}</div>
