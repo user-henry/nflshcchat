@@ -3586,7 +3586,7 @@
                 renderConversationsList();
                 if (currentConversationId) {
                     const currentConv = conversations.find(c => c.id === currentConversationId);
-                    if (currentConv) renderMessages(currentConv.messages);
+                    if (currentConv) renderMessages(currentConv.messages, currentConv.id);
                 }
                 setSyncStatus(`✅ 已从云端加载 ${conversations.length} 个对话`, 'success');
                 setTimeout(() => setSyncStatus('', ''), 3000);
@@ -3895,7 +3895,7 @@
                     document.getElementById('chatRoleSelect').value = '';
                     document.getElementById('currentRoleBadge').style.display = 'none';
                 }
-                renderMessages(conversation.messages);
+                renderMessages(conversation.messages, conversation.id);
             }
             renderConversationsList();
             if (window.innerWidth <= 768) {
@@ -3903,7 +3903,7 @@
             }
         }
 
-        function renderMessages(messages) {
+        function renderMessages(messages, conversationId) {
             const container = document.getElementById('messagesArea');
             if (!container) return;
             if (!messages || messages.length === 0) {
@@ -3922,7 +3922,7 @@
                 const ttsButton = msg.role === 'assistant'
                     ? `<button class="tts-btn" onclick="speakText('${escapeHtml(msg.content.replace(/"/g, '\\"'))}')" title="播报此消息">🔊</button>`
                     : '';
-                const delButton = `<button class="msg-del-btn" onclick="deleteMessage('${conversation.id}', '${msg.id}')" title="删除此消息">🗑️</button>`;
+                const delButton = `<button class="msg-del-btn" onclick="deleteMessage('${conversationId}', '${msg.id}')" title="删除此消息">🗑️</button>`;
                 return `
                     <div class="message ${msg.role}" data-msg-id="${msg.id}">
                         <div class="message-avatar">${msg.role === 'user' ? '👤' : '🤖'}</div>
@@ -3955,7 +3955,7 @@
                 document.getElementById('chatTitle').textContent = newTitle;
             }
             saveConversationsToLocal();
-            renderMessages(conversation.messages);
+            renderMessages(conversation.messages, conversation.id);
             renderConversationsList();
         }
 
@@ -3978,7 +3978,7 @@
             document.getElementById('currentRoleBadge').style.display = 'none';
             renderConversationsList();
             document.getElementById('chatTitle').textContent = newConv.title;
-            renderMessages(newConv.messages);
+            renderMessages(newConv.messages, newConv.id);
         }
 
         function deleteConversation(convId) {
@@ -3998,7 +3998,7 @@
                 if (currentConversationId) {
                     const conv = conversations.find(c => c.id === currentConversationId);
                     document.getElementById('chatTitle').textContent = conv.title;
-                    renderMessages(conv.messages);
+                    renderMessages(conv.messages, conv.id);
                 } else {
                     createNewConversation();
                 }
@@ -4015,7 +4015,7 @@
             if (!confirm('确定删除这条消息吗？')) return;
             conversation.messages = conversation.messages.filter(m => m.id !== msgId);
             saveConversationsToLocal();
-            renderMessages(conversation.messages);
+            renderMessages(conversation.messages, conversation.id);
             // 云端同步
             saveConversationToGitHub(conversation).catch(e => console.warn('删除消息云端同步失败:', e));
         }
@@ -6526,7 +6526,7 @@
                         document.getElementById('chatRoleSelect').value = conv.roleId;
                         document.getElementById('currentRoleBadge').style.display = 'inline';
                     }
-                    renderMessages(conv.messages);
+                    renderMessages(conv.messages, conv.id);
                 }
                 fetchDailyQuote();
                 startTaskScheduler();
@@ -6586,7 +6586,7 @@
                             document.getElementById('chatRoleSelect').value = conv.roleId;
                             document.getElementById('currentRoleBadge').style.display = 'inline';
                         }
-                        renderMessages(conv.messages);
+                        renderMessages(conv.messages, conv.id);
                     }
                     fetchDailyQuote();
                     startTaskScheduler();
@@ -7063,7 +7063,7 @@ v1.0.0 (2026年3月)
                             document.getElementById('chatRoleSelect').value = conv.roleId;
                             document.getElementById('currentRoleBadge').style.display = 'inline';
                         }
-                        renderMessages(conv.messages);
+                        renderMessages(conv.messages, conv.id);
                     }
                     fetchDailyQuote();
                     startTaskScheduler();
