@@ -180,13 +180,8 @@
         async function deleteFavorite(issueNumber) {
             if (!confirm('确定要删除这条收藏吗？')) return;
             try {
-                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ state: 'closed' })
+                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}?labels=favorite`, {
+                    method: 'DELETE'
                 });
                 alert('已删除');
                 loadFavorites();
