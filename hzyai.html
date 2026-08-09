@@ -6165,6 +6165,37 @@
             window.addEventListener('pointerup', onUp);
             window.addEventListener('pointercancel', onUp);
 
+            // 兼容旧浏览器：Pointer Events 不可用时的鼠标/触摸回退
+            const hasPointer = window.PointerEvent;
+            if (!hasPointer) {
+                thumb.addEventListener('mousedown', function(e) {
+                    if (verified) return;
+                    isDragging = true;
+                    startX = e.clientX - thumb.getBoundingClientRect().left;
+                    thumb.style.transition = 'none';
+                    progress.style.transition = 'none';
+                    e.preventDefault();
+                });
+                window.addEventListener('mousemove', function(e) {
+                    if (!isDragging || verified) return;
+                    moveTo(e.clientX);
+                });
+                window.addEventListener('mouseup', function() { onUp(); });
+                thumb.addEventListener('touchstart', function(e) {
+                    if (verified) return;
+                    isDragging = true;
+                    startX = e.touches[0].clientX - thumb.getBoundingClientRect().left;
+                    thumb.style.transition = 'none';
+                    progress.style.transition = 'none';
+                    e.preventDefault();
+                }, { passive: false });
+                window.addEventListener('touchmove', function(e) {
+                    if (!isDragging || verified) return;
+                    moveTo(e.touches[0].clientX);
+                }, { passive: false });
+                window.addEventListener('touchend', function() { onUp(); });
+            }
+
             window.resetLoginSlider = resetSlider;
         })();
 
