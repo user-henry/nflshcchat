@@ -363,7 +363,7 @@
             let html = '';
             
             // 上一页
-            html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← 上一页</button>`;
+            html += `<button class="page-btn" onclick="goToPage('${currentPage - 1}')" ${currentPage === 1 ? 'disabled' : ''}>← 上一页</button>`;
             
             // 页码
             let startPage = Math.max(1, currentPage - 2);
@@ -375,16 +375,16 @@
             }
             
             for (let i = startPage; i <= endPage; i++) {
-                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage('${i}')">${i}</button>`;
             }
             
             if (endPage < totalPages) {
                 if (endPage < totalPages - 1) html += `<span style="padding: 0 5px;">...</span>`;
-                html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+                html += `<button class="page-btn" onclick="goToPage('${totalPages}')">${totalPages}</button>`;
             }
             
             // 下一页
-            html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>下一页 →</button>`;
+            html += `<button class="page-btn" onclick="goToPage('${currentPage + 1}')" ${currentPage === totalPages ? 'disabled' : ''}>下一页 →</button>`;
             
             container.innerHTML = html;
         }
