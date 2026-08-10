@@ -2341,7 +2341,7 @@
         .gen-history-item pre { background:#0f0f1e; padding:6px; border-radius:6px; font-size:12px; }
     </style>
     <link rel="stylesheet" href="css/themes.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="js/marked.min.js"></script>
 </head>
 <body>
 <div id="fatalErrorBar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#dc3545;color:#fff;padding:10px 14px;font:13px/1.5 monospace;white-space:pre-wrap;max-height:40vh;overflow:auto;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>
@@ -3175,10 +3175,8 @@
                 { id: '@cf/mistral/mistral-7b-instruct-v0.2-lora', name: 'Mistral 7B' },
                 { id: '@cf/mistralai/mistral-small-3.1-24b-instruct', name: 'Mistral Small 3.1 24B' },
                 { id: '@cf/meta-llama/llama-2-7b-chat-hf-lora', name: 'Llama 2 7B Chat' },
-                { id: '@cf/moonshotai/kimi-k2.6', name: 'Kimi K2.6' },
                 { id: '@cf/openai/gpt-oss-20b', name: 'GPT-OSS 20B' },
                 { id: '@cf/openai/gpt-oss-120b', name: 'GPT-OSS 120B' },
-                { id: '@cf/zai-org/glm-5.2', name: 'GLM 5.2' },
                 { id: '@cf/aisingapore/gemma-sea-lion-v4-27b-it', name: 'Sea Lion v4 27B' },
                 { id: '@cf/ibm-granite/granite-4.0-h-micro', name: 'Granite 4.0 H Micro' },
                 { id: '@cf/ai4bharat/indictrans2-en-indic-1B', name: 'IndicTrans2 EN-Indic' },
@@ -3190,7 +3188,6 @@
             // 代码生成类（编程 / 补全）
             code: [
                 { id: '@cf/qwen/qwen2.5-coder-32b-instruct', name: 'Qwen2.5-Coder 32B' },
-                { id: '@cf/moonshotai/kimi-k2.7-code', name: 'Kimi K2.7 Code' },
                 { id: '@cf/qwen/qwen3-30b-a3b-fp8', name: 'Qwen3 30B (代码)' }
             ],
             // 图像生成
@@ -4127,8 +4124,14 @@
                         body: JSON.stringify({ model: model, messages: fullMessages, stream: false })
                     });
                     if (!response.ok) {
-                        const err = await response.text();
-                        throw new Error(`CF 模型调用失败 (${response.status}): ${err}`);
+                        let msg = `CF 模型调用失败 (${response.status})`;
+                        try {
+                            const ej = await response.json();
+                            msg = ej.error || ej.detail || JSON.stringify(ej);
+                        } catch (e) {
+                            msg = (await response.text()) || msg;
+                        }
+                        throw new Error(msg);
                     }
                     const data = await response.json();
                     recordCall(model, 200);
