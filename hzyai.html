@@ -3601,10 +3601,20 @@
                 // 排序：最近更新在前
                 conversations.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
                 renderConversationsList();
-                if (currentConversationId) {
-                    const currentConv = conversations.find(c => c.id === currentConversationId);
-                    if (currentConv) renderMessages(currentConv.messages, currentConv.id);
+                // 修复：拉取后若当前会话 ID 不匹配云端数据（本地 ID 与云端 ID 不同），
+                // 自动选中并渲染最新一条对话，避免"列表已加载但消息区空白"的问题。
+                let currentConv = currentConversationId ? conversations.find(c => c.id === currentConversationId) : null;
+                if (!currentConv && conversations.length > 0) {
+                    currentConv = conversations[0];
+                    currentConversationId = currentConv.id;
+                    const ct = document.getElementById('chatTitle');
+                    if (ct) ct.textContent = currentConv.title;
+                    const rs = document.getElementById('chatRoleSelect');
+                    if (rs) rs.value = currentConv.roleId || '';
+                    const badge = document.getElementById('currentRoleBadge');
+                    if (badge) badge.style.display = currentConv.roleId ? 'inline' : 'none';
                 }
+                if (currentConv) renderMessages(currentConv.messages, currentConv.id);
                 setSyncStatus(`✅ 已从云端加载 ${conversations.length} 个对话`, 'success');
                 setTimeout(() => setSyncStatus('', ''), 3000);
             } catch (error) {
