@@ -165,6 +165,74 @@
         .message.error { background: rgba(231,76,60,0.2); color: var(--danger); }
         .empty-state { text-align: center; padding: 60px; color: var(--text-muted); background: var(--bg-secondary); border-radius: 12px; }
         .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+
+        /* 公告操作按钮（仅管理员可见） */
+        .notice-meta .delete-notice-btn,
+        .notice-meta .edit-notice-btn {
+            margin-left: 10px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 3px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .notice-meta .delete-notice-btn:hover { border-color: var(--danger); color: var(--danger); }
+        .notice-meta .edit-notice-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+
+        /* 修改公告弹窗 */
+        .edit-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .edit-modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .edit-modal-content h3 { color: var(--accent-color); margin-bottom: 16px; }
+        .edit-modal-content label { display: block; margin: 12px 0 6px; color: var(--text-secondary); font-size: 13px; }
+        .edit-modal-content input,
+        .edit-modal-content textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary, #0f0f1a);
+            color: var(--text-primary);
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .edit-modal-content textarea { resize: vertical; min-height: 200px; }
+        .edit-modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+        .edit-modal-actions button {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .edit-modal-actions .cancel-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
         
         /* 预览区域 */
         .preview-area {
@@ -290,6 +358,23 @@
         </div>
     </div>
 
+    <!-- 修改公告弹窗（仅管理员可用） -->
+    <div id="editNoticeModal" class="edit-modal">
+        <div class="edit-modal-content">
+            <h3>✏️ 修改公告</h3>
+            <input type="hidden" id="editNoticeId">
+            <label for="editNoticeTitle">公告标题</label>
+            <input type="text" id="editNoticeTitle" placeholder="公告标题">
+            <label for="editNoticeContent">公告内容（支持 Markdown）</label>
+            <textarea id="editNoticeContent" placeholder="公告内容（支持 Markdown 格式）"></textarea>
+            <div id="editMessage" class="message" style="display: none;"></div>
+            <div class="edit-modal-actions">
+                <button class="cancel-btn" onclick="closeEditModal()">取消</button>
+                <button onclick="saveEditNotice()">保存修改</button>
+            </div>
+        </div>
+    </div>
+
     
     <script>
         let currentUser = null;
@@ -396,12 +481,16 @@
             if (noticeCurrentPage > totalPages) noticeCurrentPage = totalPages;
             const start = (noticeCurrentPage - 1) * NOTICES_PER_PAGE;
             const pageNotices = allNotices.slice(start, start + NOTICES_PER_PAGE);
+            const admin = isNoticeAdmin();
             let html = pageNotices.map(notice => `
                 <div class="notice-item">
                     <div class="notice-title">📢 ${escapeHtml(notice.title)}</div>
                     <div class="notice-meta">
                         发布于 ${new Date(notice.createdAt).toLocaleString()} by ${escapeHtml(notice.author || '管理员')}
-                        ${currentUser && currentUser.isAdmin ? `<button class="delete-notice-btn" onclick="deleteNotice('${notice.issueNumber}')">删除公告</button>` : ''}
+                        ${admin ? `
+                            <button class="delete-notice-btn" onclick="deleteNotice('${notice.issueNumber}')">删除公告</button>
+                            <button class="edit-notice-btn" onclick="editNotice('${notice.issueNumber}')">修改公告</button>
+                        ` : ''}
                     </div>
                     <div class="notice-content">${renderMarkdown(notice.content)}</div>
                 </div>
@@ -476,7 +565,13 @@
             }
         }
 
+        // 仅管理员（huangzhiyuan）可删除/修改公告
+        function isNoticeAdmin() {
+            return !!(currentUser && (currentUser.username === 'huangzhiyuan' || currentUser.isAdmin));
+        }
+
         async function deleteNotice(issueNumber) {
+            if (!isNoticeAdmin()) { alert('只有管理员可以删除公告'); return; }
             if (!confirm('确定要删除这条公告吗？此操作不可恢复！')) return;
             try {
                 await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}?labels=notice`, {
@@ -485,6 +580,67 @@
                 alert('公告已删除');
                 await loadNotices();
             } catch (error) { alert('删除失败：' + error.message); }
+        }
+
+        // 修改公告：打开编辑弹窗并预填当前标题/内容
+        function editNotice(issueNumber) {
+            if (!isNoticeAdmin()) { alert('只有管理员可以修改公告'); return; }
+            const notice = allNotices.find(n => n.issueNumber === issueNumber);
+            if (!notice) return;
+            document.getElementById('editNoticeId').value = issueNumber;
+            document.getElementById('editNoticeTitle').value = notice.title || '';
+            document.getElementById('editNoticeContent').value = notice.content || '';
+            document.getElementById('editMessage').style.display = 'none';
+            document.getElementById('editNoticeModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editNoticeModal').style.display = 'none';
+        }
+
+        async function saveEditNotice() {
+            const issueNumber = document.getElementById('editNoticeId').value;
+            const title = document.getElementById('editNoticeTitle').value.trim();
+            const content = document.getElementById('editNoticeContent').value.trim();
+            const msgDiv = document.getElementById('editMessage');
+            if (!title || !content) {
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.textContent = '请填写标题和内容';
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+                return;
+            }
+            const target = allNotices.find(n => n.issueNumber === issueNumber) || {};
+            // 保留原有 id/author/createdAt，按需求不更新/不展示修改日期
+            const noticeData = {
+                id: target.id || `notice_${issueNumber}`,
+                title: title,
+                content: content,
+                author: target.author || (currentUser && currentUser.username) || '管理员',
+                createdAt: target.createdAt || new Date().toISOString()
+            };
+            try {
+                const issueBody = `公告信息\n\`\`\`json\n${JSON.stringify(noticeData, null, 2)}\n\`\`\``;
+                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}?labels=notice`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title: `公告: ${title}`, body: issueBody, labels: ['notice'] })
+                });
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message success';
+                msgDiv.textContent = '✅ 公告修改成功！';
+                closeEditModal();
+                await loadNotices();
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+            } catch (error) {
+                msgDiv.style.display = 'block';
+                msgDiv.className = 'message error';
+                msgDiv.textContent = '修改失败：' + error.message;
+                setTimeout(() => msgDiv.style.display = 'none', 3000);
+            }
         }
 
         function escapeHtml(text) {
@@ -501,7 +657,7 @@
             document.getElementById('username').textContent = currentUser.username;
             
             await loadNotices();
-            if (currentUser.isAdmin) {
+            if (isNoticeAdmin()) {
                 document.getElementById('adminPanel').style.display = 'block';
                 const contentTextarea = document.getElementById('noticeContent');
                 if (contentTextarea) {
