@@ -6602,6 +6602,20 @@
                     const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
                     currentUser = { username: foundUser.username, isAdmin: isAdmin };
                     saveLoginState(currentUser);
+                    // 获取 Bearer Token（写操作鉴权）
+                    try {
+                        const tokenRes = await fetch(`${WORKER_API}/api/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: foundUser.username, password: hashedPassword })
+                        });
+                        const tokenData = await tokenRes.json();
+                        if (tokenData && tokenData.token) {
+                            if (window.AuthToken) window.AuthToken.set(tokenData.token);
+                        } else {
+                            console.warn('获取访问令牌失败:', tokenData);
+                        }
+                    } catch (e) { console.warn('获取访问令牌失败:', e); }
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('userName').textContent = foundUser.username;
@@ -6655,6 +6669,7 @@
             conversations = [];
             currentConversationId = null;
             clearLoginState();
+            if (window.AuthToken) window.AuthToken.clear();
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
             document.getElementById('loginUsername').value = '';
@@ -7078,6 +7093,15 @@ v1.0.0 (2026年3月)
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
+                    // Bearer Token 鉴权后：无 token 的旧会话无法写数据（自动同步会失败），强制重新登录一次
+                    if (!(window.AuthToken && window.AuthToken.get())) {
+                        localStorage.removeItem('nflshc_currentUser');
+                        const _lp = document.getElementById('loginPage');
+                        const _ap = document.getElementById('app');
+                        if (_lp) _lp.style.display = 'flex';
+                        if (_ap) _ap.style.display = 'none';
+                        return;
+                    }
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('userName').textContent = currentUser.username;
