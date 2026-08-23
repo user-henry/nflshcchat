@@ -290,8 +290,21 @@
             background: none;
             border: none;
         }
+        .rename-conv-btn {
+            position: absolute;
+            right: 52px;
+            top: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            background: none;
+            border: none;
+        }
         .conversation-item:hover .delete-conv,
-        .conversation-item:hover .export-conv-btn {
+        .conversation-item:hover .export-conv-btn,
+        .conversation-item:hover .rename-conv-btn {
             opacity: 1;
         }
         .delete-conv:hover {
@@ -299,6 +312,9 @@
         }
         .export-conv-btn:hover {
             color: var(--success);
+        }
+        .rename-conv-btn:hover {
+            color: var(--accent-color);
         }
 
         .user-info {
@@ -3917,6 +3933,7 @@
                     <div class="conversation-title">
                         ${tIcon} ${escapeHtml(conv.title)} ${roleTag ? `<span style="font-size:10px;color:var(--accent-color);">${escapeHtml(roleTag)}</span>` : ''} <span style="font-size:10px;color:var(--text-muted);">[${tTag}]</span>
                         <button class="export-conv-btn" onclick="event.stopPropagation(); exportSingleChatMD('${conv.id}')" title="导出为 Markdown">📝</button>
+                        <button class="rename-conv-btn" onclick="event.stopPropagation(); renameConversation('${conv.id}')" title="重命名对话">✏️</button>
                         <button class="delete-conv" onclick="event.stopPropagation(); deleteConversation('${conv.id}')">🗑️</button>
                     </div>
                     <div class="conversation-time">${formatTime(conv.updatedAt)}</div>
@@ -4023,6 +4040,24 @@
             renderConversationsList();
             document.getElementById('chatTitle').textContent = newConv.title;
             renderMessages(newConv.messages, newConv.id);
+        }
+
+        // 重命名对话：修改标题并同步到本地 + 云端 D1
+        function renameConversation(convId) {
+            const conv = conversations.find(c => c.id === convId);
+            if (!conv) return;
+            const newTitle = prompt('请输入新的对话名称：', conv.title || '');
+            if (newTitle === null) return;
+            const t = newTitle.trim();
+            if (!t) { alert('对话名称不能为空'); return; }
+            conv.title = t.slice(0, 60);
+            saveConversationsToLocal();
+            renderConversationsList();
+            if (currentConversationId === convId) {
+                const ct = document.getElementById('chatTitle');
+                if (ct) ct.textContent = conv.title;
+            }
+            saveConversationToGitHub(conv).catch(e => console.warn('重命名云端同步失败:', e));
         }
 
         function deleteConversation(convId) {
