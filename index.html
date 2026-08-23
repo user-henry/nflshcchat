@@ -577,7 +577,9 @@
                     // 管理员身份只按用户名判定（huangzhiyuan），不再依赖硬编码密码
                     const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
                     saveLoginState({ username: foundUser.username, isAdmin: isAdmin });
-                    // 获取 Bearer Token（写操作鉴权），失败则提示重新登录
+                    // 获取 Bearer Token（写操作鉴权）。拿不到 token 就不跳转，
+                    // 避免进入 chat.html 后因缺 token 被再次踢回登录页造成循环
+                    let tokenOk = false;
                     try {
                         const tokenRes = await fetch(WORKER_API + '/api/auth/login', {
                             method: 'POST',
@@ -587,11 +589,17 @@
                         const tokenData = await tokenRes.json();
                         if (tokenData && tokenData.token) {
                             window.AuthToken && window.AuthToken.set(tokenData.token);
+                            tokenOk = true;
                         } else {
                             throw new Error((tokenData && tokenData.error) || '获取令牌失败');
                         }
                     } catch (e) {
                         console.warn('获取访问令牌失败:', e);
+                    }
+                    if (!tokenOk) {
+                        messageDiv.innerHTML = '<span style="color: red;">登录成功，但获取访问令牌失败，请刷新页面重试</span>';
+                        if (window.resetSlider) window.resetSlider();
+                        return;
                     }
                     // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
                     const next = new URLSearchParams(window.location.search).get('next');
