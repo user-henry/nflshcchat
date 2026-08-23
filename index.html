@@ -442,6 +442,18 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
+        // 稳健解析 ```json 围栏：取第一个 ```json 之后、最后一个 ``` 之前的内容
+        function extractFencedJson(body) {
+            if (!body || typeof body !== 'string') return null;
+            const start = body.indexOf('```json');
+            if (start === -1) return null;
+            const afterOpen = body.indexOf('\n', start);
+            const contentStart = afterOpen === -1 ? start + 7 : afterOpen + 1;
+            const end = body.lastIndexOf('```');
+            if (end <= contentStart) return null;
+            return body.slice(contentStart, end).trim();
+        }
+
         // ============================================================
         //  统一存储 Key
         // ============================================================
@@ -460,6 +472,11 @@
                 try {
                     const user = JSON.parse(userStr);
                     if (user && user.username) {
+                        // Bearer Token 鉴权后：无 token 的旧会话无法写数据，强制重新登录一次
+                        if (!(window.AuthToken && window.AuthToken.get())) {
+                            window.clearLoginState && window.clearLoginState();
+                            return false;
+                        }
                         sessionStorage.setItem('currentUser', userStr);
                         // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
                         const next = new URLSearchParams(window.location.search).get('next');
@@ -489,6 +506,7 @@
             localStorage.removeItem(STORAGE_KEY);
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('nflshc_user');
+            if (window.AuthToken) window.AuthToken.clear();
         };
 
         // ============================================================
@@ -526,6 +544,7 @@
             // 统一走下方 users 表（D1）查询，密码以 SHA-256 哈希加密存储与校验。
 
             try {
+                const hashedPassword = await hashPassword(password);
                 const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
                 const response = await fetch(url, {
                     headers: { 'Accept': 'application/vnd.github.v3+json' }
@@ -533,13 +552,13 @@
                 const issues = await response.json();
                 let foundUser = null;
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
+                        const userData = JSON.parse(jsonStr);
                         // 支持新旧两种密码格式
                         let isMatch = false;
                         if (userData.passwordHashed) {
-                            isMatch = await hashPassword(password) === userData.password;
+                            isMatch = hashedPassword === userData.password;
                         } else {
                             isMatch = userData.password === password;
                         }
@@ -558,6 +577,22 @@
                     // 管理员身份只按用户名判定（huangzhiyuan），不再依赖硬编码密码
                     const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
                     saveLoginState({ username: foundUser.username, isAdmin: isAdmin });
+                    // 获取 Bearer Token（写操作鉴权），失败则提示重新登录
+                    try {
+                        const tokenRes = await fetch(WORKER_API + '/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: foundUser.username, password: hashedPassword })
+                        });
+                        const tokenData = await tokenRes.json();
+                        if (tokenData && tokenData.token) {
+                            window.AuthToken && window.AuthToken.set(tokenData.token);
+                        } else {
+                            throw new Error((tokenData && tokenData.error) || '获取令牌失败');
+                        }
+                    } catch (e) {
+                        console.warn('获取访问令牌失败:', e);
+                    }
                     // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
                     const next = new URLSearchParams(window.location.search).get('next');
                     if (next) {
@@ -691,7 +726,7 @@
                 foundUser.resetCode = verifyCode;
                 foundUser.resetCodeExpiry = codeExpiry;
                 const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(foundUser, null, 2)}\n\`\`\``;
-                await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
+                const patchRes = await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
                     method: 'PATCH',
                     headers: {
                         'Accept': 'application/vnd.github.v3+json',
@@ -699,6 +734,12 @@
                     },
                     body: JSON.stringify({ body: updatedBody })
                 });
+                if (!patchRes.ok) {
+                    // Bearer Token 鉴权后匿名 PATCH 用户表被拒绝（防止账号劫持），
+                    // 忘记密码需管理员协助重置
+                    msgDiv.innerHTML = '<span style="color: #dc3545;">出于安全原因，在线重置密码已关闭。请联系管理员 huangzhiyuan 协助重置。</span>';
+                    return;
+                }
 
                 // 发送验证码邮件
                 const templateParams = {
@@ -827,7 +868,7 @@
                 delete currentResetUser.resetCodeExpiry;
 
                 const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(currentResetUser, null, 2)}\n\`\`\``;
-                await fetch(`${WORKER_API}/api/legacy/issues/${currentResetUser.issueNumber}`, {
+                const patchRes = await fetch(`${WORKER_API}/api/legacy/issues/${currentResetUser.issueNumber}`, {
                     method: 'PATCH',
                     headers: {
                         'Accept': 'application/vnd.github.v3+json',
@@ -835,6 +876,10 @@
                     },
                     body: JSON.stringify({ body: updatedBody })
                 });
+                if (!patchRes.ok) {
+                    msgDiv.innerHTML = '<span style="color: #dc3545;">重置失败：出于安全原因，在线重置密码已关闭，请联系管理员 huangzhiyuan 协助重置。</span>';
+                    return;
+                }
 
                 msgDiv.innerHTML = '<span style="color: #28a745;">✅ 密码重置成功！正在跳转到登录页...</span>';
                 setTimeout(() => {
