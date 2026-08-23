@@ -1,12 +1,13 @@
 // sw.js - NFLSHC Chat Service Worker
 // 版本号：每次更新代码时修改此版本号，浏览器会自动更新缓存
+// v2.3.0: 修复 cache.addAll 因 404 文件（arena.html/config.js）失败导致 SW 无法更新、
+//         页面长期停留在旧缓存的问题；页面导航改为网络优先，保证部署后立即拿到新版本；
+//         API/跨域请求永不缓存，保证消息、表情回应等数据实时刷新。
 
-const CACHE_VERSION = 'v2.2.0';
+const CACHE_VERSION = 'v2.3.0';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
-// 需要缓存的资源列表
-// 注意：站点部署在根路径（nflshcchat.cc.cd），不是 /nflshcchat/ 子路径，
-// 因此所有资源一律用根路径 "/..."，否则 cache.addAll 会因 404 全部失败、SW 安装崩溃。
+// 需要预缓存的资源列表（只放确定存在的文件，任何 404 都会导致安装失败、SW 无法更新）
 const urlsToCache = [
   '/',
   '/index.html',
@@ -23,18 +24,17 @@ const urlsToCache = [
   '/suggestions.html',
   '/stats.html',
   '/hzyai.html',
-  '/arena.html',
+  '/hzyai-share.html',
+  '/posts.html',
+  '/articles.html',
   '/admin.html',
   '/admin-suggestions.html',
   '/ai-profile.html',
   '/showcase.html',
-  '/config.js',
   '/shortcuts.js',
   '/css/themes.css',
   '/manifest.json',
-  '/offline.html',
-  'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'
+  '/offline.html'
 ];
 
 // ===== 安装事件：缓存资源 =====
@@ -66,36 +66,49 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ===== 获取事件：拦截网络请求 =====
+// ===== 获取事件 =====
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // 如果缓存中有，直接返回缓存
-        if (response) {
+  const requestUrl = new URL(event.request.url);
+  const isSameOrigin = requestUrl.origin === self.location.origin;
+
+  // 1) API 请求（同源 /api/* 或任何跨域请求）：永不缓存，直连网络，
+  //    保证消息/表情回应/帖子等数据实时、不读到旧缓存
+  if (!isSameOrigin || requestUrl.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // 2) 页面导航（HTML 页面）：网络优先 → 失败回退缓存 → 再回退离线页
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
           return response;
-        }
-        // 否则从网络获取
-        return fetch(event.request)
-          .then(response => {
-            // 检查是否是有效响应
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            // 克隆响应并存入缓存
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-            return response;
-          })
-          .catch(() => {
-            // 离线时的备用页面
-            if (event.request.mode === 'navigate') {
-              return caches.match('/offline.html');
-            }
-          });
-      })
+        })
+        .catch(() =>
+          caches.match(event.request).then(cached => cached || caches.match('/offline.html'))
+        )
+    );
+    return;
+  }
+
+  // 3) 静态资源：缓存优先 + 后台刷新（stale-while-revalidate），
+  //    离线可用，同时后台更新保证下次访问拿到新版本
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      const network = fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached);
+      return cached || network;
+    })
   );
 });
