@@ -230,6 +230,7 @@
             localStorage.removeItem('nflshc_currentUser');
             sessionStorage.removeItem('currentUser');
             sessionStorage.removeItem('nflshc_user');
+            if (window.AuthToken) window.AuthToken.clear();
             if (window.clearLoginState) window.clearLoginState();
             window.location.href = 'index.html'; 
         }
