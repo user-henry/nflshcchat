@@ -963,6 +963,20 @@
 
         const STORAGE_KEY = 'nflshc_currentUser';
 
+        // 稳健解析 ```json 围栏：取第一个 ```json 之后、最后一个 ``` 之前的内容。
+        // 旧实现用 /```json\n([\s\S]*?)\n```/ 会在 JSON 字符串值里的代码块围栏（```）
+        // 处提前截断，导致含代码块的对话/角色解析失败或内容残缺。
+        function extractFencedJson(body) {
+            if (!body || typeof body !== 'string') return null;
+            const start = body.indexOf('```json');
+            if (start === -1) return null;
+            const afterOpen = body.indexOf('\n', start);
+            const contentStart = afterOpen === -1 ? start + 7 : afterOpen + 1;
+            const end = body.lastIndexOf('```');
+            if (end <= contentStart) return null;
+            return body.slice(contentStart, end).trim();
+        }
+
         // ============================================================
         //  登录 / 登出
         // ============================================================
@@ -1111,9 +1125,9 @@
                 const issues = await res.json();
                 let foundUser = null;
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
+                        const userData = JSON.parse(jsonStr);
                         const storedHash = userData.passwordHashed ? userData.password : await hashPassword(userData.password);
                         if (userData.username === username && storedHash === hashedPassword) {
                             foundUser = userData;
@@ -1193,10 +1207,10 @@
                 let totalMsgCount = 0;
 
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
                         try {
-                            const conv = JSON.parse(match[1]);
+                            const conv = JSON.parse(jsonStr);
                             if (conv.messages && conv.messages.length > 0) {
                                 myConversations.push({
                                     id: conv.id,
@@ -1455,10 +1469,10 @@
                 publicChats = [];
 
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
                         try {
-                            const data = JSON.parse(match[1]);
+                            const data = JSON.parse(jsonStr);
                             publicChats.push({
                                 ...data,
                                 issueNumber: issue.number,
@@ -1726,10 +1740,10 @@
                 publicCharacters = [];
 
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
                         try {
-                            const data = JSON.parse(match[1]);
+                            const data = JSON.parse(jsonStr);
                             publicCharacters.push({ ...data, issueNumber: issue.number });
                         } catch (e) {}
                     }
@@ -1787,7 +1801,7 @@
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ body: issueBody })
+                    body: JSON.stringify({ body: issueBody, labels: [PUBLIC_CHAR_LABEL] })
                 });
             } catch (error) { console.error('更新使用次数失败:', error); }
         }
@@ -1797,13 +1811,11 @@
             const char = publicCharacters.find(c => c.id === charId);
             if (!char) return;
             try {
-                await fetch(WORKER_API + '/api/legacy/issues/' + char.issueNumber, {
-                    method: 'PATCH',
+                await fetch(WORKER_API + '/api/legacy/issues/' + char.issueNumber + '?labels=' + encodeURIComponent(PUBLIC_CHAR_LABEL), {
+                    method: 'DELETE',
                     headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ state: 'closed' })
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
                 });
                 alert('✅ 已删除公开角色');
                 loadPublicCharactersFromGitHub();
