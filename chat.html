@@ -1515,7 +1515,7 @@
             document.getElementById('verifyCodeGroup').style.display = this.value === 'verify' ? 'block' : 'none';
         });
 
-        function checkAuth() {
+        async function checkAuth() {
             // 未登录跳转登录页时，把 ?join=... 邀请参数带给 index.html，
             // 登录成功后再带回 chat.html，保证通过邀请链接首次加入也能直接入群
             const redirectToLogin = function() {
@@ -1532,12 +1532,27 @@
                 redirectToLogin();
                 return null;
             }
-            // Bearer Token 鉴权后：无 token 的旧会话所有写操作（发消息/表情回应等）都会 401 静默失败，
-            // 强制回登录页重新登录一次以获取 token
+            // Bearer Token 鉴权：本地无 token 或服务端校验失败（失效/被作废/过期）都回登录页重新登录，
+            // 避免"登录了却进不了 chat / 写操作静默失败"的问题
             if (!(window.AuthToken && window.AuthToken.get())) {
                 console.warn('缺少访问令牌，请重新登录');
                 redirectToLogin();
                 return null;
+            }
+            try {
+                const meRes = await fetch(WORKER_API + '/api/auth/me', {
+                    headers: { 'Authorization': 'Bearer ' + window.AuthToken.get() }
+                });
+                if (!meRes.ok) {
+                    // token 无效（被管理员重置密码/被清除/过期）→ 清除并重新登录
+                    console.warn('访问令牌已失效，请重新登录');
+                    window.AuthToken.clear();
+                    redirectToLogin();
+                    return null;
+                }
+            } catch (e) {
+                // 网络异常（离线等）时放行，避免离线被锁在登录页
+                console.warn('令牌校验网络异常，放行:', e);
             }
             const un = document.getElementById('username');
             if (un) un.textContent = user.username;
@@ -2178,7 +2193,7 @@
         }
 
         window.onload = async function() {
-            currentUser = checkAuth();
+            currentUser = await checkAuth();
             if (!currentUser) return;
             await loadRooms();
             // 处理邀请链接（?join=<roomId>&token=<token>），校验通过后自动入群
