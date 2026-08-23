@@ -667,7 +667,7 @@
             document.getElementById('step3Label').className = 'step' + (step === 3 ? ' active' : '');
         }
 
-        // ===== 步骤1: 发送验证码 =====
+        // ===== 步骤1: 请求发送验证码（由 Worker 生成验证码、D1 临时保存并发送邮件） =====
         async function sendVerifyCode() {
             const username = document.getElementById('forgotUsername').value.trim();
             const email = document.getElementById('forgotEmail').value.trim();
@@ -684,92 +684,39 @@
                 return;
             }
 
-            msgDiv.innerHTML = '<span style="color: var(--accent-color, #ffd700);">⏳ 验证中...</span>';
+            msgDiv.innerHTML = '<span style="color: var(--accent-color, #ffd700);">⏳ 正在发送验证码...</span>';
 
             try {
-                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
-                const response = await fetch(url, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                // Worker 端校验用户名+邮箱、生成 6 位验证码、D1 保存 5 分钟、按原 EmailJS 逻辑发邮件
+                const res = await fetch(`${WORKER_API}/api/auth/forgot`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        serviceId: EMAILJS_SERVICE_ID,
+                        templateId: EMAILJS_VERIFY_TEMPLATE_ID,
+                        publicKey: EMAILJS_PUBLIC_KEY
+                    })
                 });
-                const issues = await response.json();
-                let foundUser = null;
-                let issueNumber = null;
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
-                        if (userData.username === username && userData.email === email) {
-                            foundUser = userData;
-                            issueNumber = issue.number;
-                            break;
-                        }
-                    }
-                }
-
-                if (!foundUser) {
-                    msgDiv.innerHTML = '<span style="color: #dc3545;">用户名或邮箱不匹配</span>';
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) {
+                    msgDiv.innerHTML = '<span style="color: #dc3545;">' + escapeHtml((data.error || '发送失败，请稍后重试')) + '</span>';
                     return;
                 }
 
-                if (!emailJSInitialized) {
-                    msgDiv.innerHTML = '<span style="color: #dc3545;">邮件服务初始化中，请稍后再试</span>';
-                    initEmailJS();
-                    setTimeout(() => sendVerifyCode(), 1000);
-                    return;
-                }
+                currentResetUser = { username: username };
+                document.getElementById('emailDisplay').textContent = email;
+                msgDiv.innerHTML = '<span style="color: #28a745;">✅ ' + escapeHtml(data.message || '验证码已发送到您的邮箱') + '</span>';
 
-                // 生成6位数字验证码
-                const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-                const codeExpiry = Date.now() + 5 * 60 * 1000; // 5分钟
+                // 进入步骤2
+                goToStep(2);
+                document.getElementById('verifyCodeInput').value = '';
+                document.getElementById('verifyCodeInput').focus();
+                document.getElementById('step2Message').innerHTML = '';
 
-                // 保存验证码到用户数据
-                foundUser.resetCode = verifyCode;
-                foundUser.resetCodeExpiry = codeExpiry;
-                const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(foundUser, null, 2)}\n\`\`\``;
-                const patchRes = await fetch(`${WORKER_API}/api/legacy/issues/${issueNumber}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ body: updatedBody })
-                });
-                if (!patchRes.ok) {
-                    // Bearer Token 鉴权后匿名 PATCH 用户表被拒绝（防止账号劫持），
-                    // 忘记密码需管理员协助重置
-                    msgDiv.innerHTML = '<span style="color: #dc3545;">出于安全原因，在线重置密码已关闭。请联系管理员 huangzhiyuan 协助重置。</span>';
-                    return;
-                }
-
-                // 发送验证码邮件
-                const templateParams = {
-                    username: username,
-                    verify_code: verifyCode,
-                    email: email
-                };
-
-                const mailResponse = await emailjs.send(
-                    EMAILJS_SERVICE_ID,
-                    EMAILJS_VERIFY_TEMPLATE_ID,
-                    templateParams
-                );
-
-                if (mailResponse.status === 200) {
-                    currentResetUser = { ...foundUser, issueNumber };
-                    document.getElementById('emailDisplay').textContent = email;
-                    msgDiv.innerHTML = '<span style="color: #28a745;">✅ 验证码已发送到您的邮箱</span>';
-                    
-                    // 进入步骤2
-                    goToStep(2);
-                    document.getElementById('verifyCodeInput').value = '';
-                    document.getElementById('verifyCodeInput').focus();
-                    document.getElementById('step2Message').innerHTML = '';
-                    
-                    // 开始重发倒计时（2分钟）
-                    startResendTimer();
-                } else {
-                    msgDiv.innerHTML = '<span style="color: #dc3545;">邮件发送失败，请稍后重试</span>';
-                }
+                // 开始重发倒计时（2分钟）
+                startResendTimer();
             } catch (error) {
                 console.error('发送失败:', error);
                 msgDiv.innerHTML = `<span style="color: #dc3545;">发送失败: ${error.message}</span>`;
@@ -797,7 +744,7 @@
             }, 1000);
         }
 
-        // ===== 步骤2: 验证验证码 =====
+        // ===== 步骤2: Worker 校验验证码，通过后签发 Bearer Token =====
         async function verifyCode() {
             const code = document.getElementById('verifyCodeInput').value.trim();
             const msgDiv = document.getElementById('step2Message');
@@ -807,29 +754,40 @@
                 return;
             }
 
-            if (!currentResetUser) {
+            if (!currentResetUser || !currentResetUser.username) {
                 msgDiv.innerHTML = '<span style="color: #dc3545;">会话已过期，请重新开始</span>';
                 return;
             }
 
-            // 检查验证码是否过期
-            if (Date.now() > currentResetUser.resetCodeExpiry) {
-                msgDiv.innerHTML = '<span style="color: #dc3545;">验证码已过期（5分钟有效），请重新发送</span>';
-                return;
-            }
+            msgDiv.innerHTML = '<span style="color: var(--accent-color, #ffd700);">⏳ 校验中...</span>';
 
-            if (code !== currentResetUser.resetCode) {
-                msgDiv.innerHTML = '<span style="color: #dc3545;">验证码错误，请重新输入</span>';
-                return;
-            }
+            try {
+                // Worker 校验 D1 中的验证码（5 分钟有效，取最新一条），成功后删除验证码并签发 token
+                const res = await fetch(`${WORKER_API}/api/auth/verify-reset`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentResetUser.username, code: code })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok || !data.token) {
+                    msgDiv.innerHTML = '<span style="color: #dc3545;">' + escapeHtml((data.error || '验证码校验失败')) + '</span>';
+                    return;
+                }
+                // 保存临时 token，供步骤3修改密码使用（改密成功后清除）
+                if (window.AuthToken) window.AuthToken.set(data.token);
+                currentResetUser.token = data.token;
 
-            // 验证通过，进入步骤3
-            msgDiv.innerHTML = '<span style="color: #28a745;">✅ 验证通过！请设置新密码</span>';
-            document.getElementById('resetUsernameDisplay').textContent = currentResetUser.username;
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-            document.getElementById('step3Message').innerHTML = '';
-            goToStep(3);
+                // 验证通过，进入步骤3
+                msgDiv.innerHTML = '<span style="color: #28a745;">✅ 验证通过！请设置新密码</span>';
+                document.getElementById('resetUsernameDisplay').textContent = currentResetUser.username;
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                document.getElementById('step3Message').innerHTML = '';
+                goToStep(3);
+            } catch (error) {
+                console.error('验证码校验失败:', error);
+                msgDiv.innerHTML = `<span style="color: #dc3545;">校验失败: ${error.message}</span>`;
+            }
         }
 
         // ===== 步骤3: 重置密码 =====
@@ -862,13 +820,15 @@
 
             try {
                 const hashedPassword = await hashPassword(newPassword);
-                currentResetUser.password = hashedPassword;
-                currentResetUser.passwordHashed = true;
-                delete currentResetUser.resetCode;
-                delete currentResetUser.resetCodeExpiry;
-
-                const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(currentResetUser, null, 2)}\n\`\`\``;
-                const patchRes = await fetch(`${WORKER_API}/api/legacy/issues/${currentResetUser.issueNumber}`, {
+                // 只提交密码字段；Worker PATCH 会与现有用户记录合并，其他字段不受影响
+                const resetPayload = {
+                    username: currentResetUser.username,
+                    password: hashedPassword,
+                    passwordHashed: true
+                };
+                const updatedBody = `用户信息\n\`\`\`json\n${JSON.stringify(resetPayload, null, 2)}\n\`\`\``;
+                // 使用 verify-reset 签发的临时 token（fetch 包装器会自动附加 Authorization）
+                const patchRes = await fetch(`${WORKER_API}/api/legacy/issues/${encodeURIComponent(currentResetUser.username)}?labels=user`, {
                     method: 'PATCH',
                     headers: {
                         'Accept': 'application/vnd.github.v3+json',
@@ -877,10 +837,14 @@
                     body: JSON.stringify({ body: updatedBody })
                 });
                 if (!patchRes.ok) {
-                    msgDiv.innerHTML = '<span style="color: #dc3545;">重置失败：出于安全原因，在线重置密码已关闭，请联系管理员 huangzhiyuan 协助重置。</span>';
+                    const j = await patchRes.json().catch(() => ({}));
+                    msgDiv.innerHTML = '<span style="color: #dc3545;">重置失败：' + escapeHtml(j.error || ('HTTP ' + patchRes.status)) + '</span>';
                     return;
                 }
 
+                // 改密成功：清除临时 token，回到登录页
+                if (window.AuthToken) window.AuthToken.clear();
+                currentResetUser = null;
                 msgDiv.innerHTML = '<span style="color: #28a745;">✅ 密码重置成功！正在跳转到登录页...</span>';
                 setTimeout(() => {
                     closeForgotModal();
