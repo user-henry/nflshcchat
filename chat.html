@@ -1313,6 +1313,7 @@
         async function toggleReaction(messageId, emoji) {
             const msg = allMessages.find(m => m.id === messageId);
             if (!msg) return;
+            const prevReactions = JSON.parse(JSON.stringify(msg.reactions || {}));
             if (!msg.reactions) msg.reactions = {};
             if (!Array.isArray(msg.reactions[emoji])) msg.reactions[emoji] = [];
             const idx = msg.reactions[emoji].indexOf(currentUser.username);
@@ -1324,12 +1325,26 @@
             }
             renderMessages();
             try {
-                await fetch(WORKER_API + '/api/messages/' + encodeURIComponent(messageId), {
+                const res = await fetch(WORKER_API + '/api/messages/' + encodeURIComponent(messageId), {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reactions: msg.reactions })
                 });
+                if (!res.ok) {
+                    // 401（token 失效）或保存失败：回滚本地显示并提示
+                    msg.reactions = prevReactions;
+                    renderMessages();
+                    const j = await res.json().catch(() => ({}));
+                    if (res.status === 401) {
+                        alert('登录状态已失效，请重新登录后再操作');
+                        setTimeout(() => window.location.href = 'index.html', 500);
+                    } else {
+                        alert('表情回应保存失败：' + (j.error || ('HTTP ' + res.status)));
+                    }
+                }
             } catch (e) {
+                msg.reactions = prevReactions;
+                renderMessages();
                 console.warn('表情回应保存失败:', e);
             }
         }
@@ -1514,6 +1529,13 @@
                 // 兼容旧存储 / 异常结构
                 console.warn('currentUser 结构异常:', user);
                 sessionStorage.removeItem('currentUser');
+                redirectToLogin();
+                return null;
+            }
+            // Bearer Token 鉴权后：无 token 的旧会话所有写操作（发消息/表情回应等）都会 401 静默失败，
+            // 强制回登录页重新登录一次以获取 token
+            if (!(window.AuthToken && window.AuthToken.get())) {
+                console.warn('缺少访问令牌，请重新登录');
                 redirectToLogin();
                 return null;
             }
