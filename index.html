@@ -462,7 +462,7 @@
         // ============================================================
         //  检查登录状态并自动跳转
         // ============================================================
-        function checkAndAutoRedirect() {
+        async function checkAndAutoRedirect() {
             let userStr = localStorage.getItem(STORAGE_KEY);
             if (!userStr) {
                 userStr = sessionStorage.getItem('currentUser');
@@ -472,11 +472,22 @@
                 try {
                     const user = JSON.parse(userStr);
                     if (user && user.username) {
-                        // Bearer Token 鉴权后：无 token 的旧会话无法写数据，强制重新登录一次
+                        // Bearer Token 鉴权：无 token 或 token 已失效（服务端校验）都强制重新登录，
+                        // 避免"本地有旧 token 但服务端已作废"导致进入页面后写操作 401、又被踢回登录页
                         if (!(window.AuthToken && window.AuthToken.get())) {
                             window.clearLoginState && window.clearLoginState();
                             return false;
                         }
+                        try {
+                            const _me = await fetch(WORKER_API + '/api/auth/me', {
+                                headers: { 'Authorization': 'Bearer ' + window.AuthToken.get() }
+                            });
+                            if (!_me.ok) {
+                                console.warn('访问令牌已失效，请重新登录');
+                                window.clearLoginState && window.clearLoginState();
+                                return false;
+                            }
+                        } catch (e) { /* 网络异常时放行（本地会话继续可用） */ }
                         sessionStorage.setItem('currentUser', userStr);
                         // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
                         const next = new URLSearchParams(window.location.search).get('next');
