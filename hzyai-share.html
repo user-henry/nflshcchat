@@ -1135,6 +1135,20 @@
                     const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
                     currentUser = { username: foundUser.username, isAdmin: isAdmin };
                     saveLoginState(currentUser);
+                    // 获取 Bearer Token（写操作鉴权）
+                    try {
+                        const tokenRes = await fetch(WORKER_API + '/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: foundUser.username, password: hashedPassword })
+                        });
+                        const tokenData = await tokenRes.json();
+                        if (tokenData && tokenData.token) {
+                            if (window.AuthToken) window.AuthToken.set(tokenData.token);
+                        } else {
+                            console.warn('获取访问令牌失败:', tokenData);
+                        }
+                    } catch (e) { console.warn('获取访问令牌失败:', e); }
                     enterApp();
                 } else if (foundUser && foundUser.isBanned) {
                     errorDiv.textContent = '账号已被封禁';
@@ -1159,6 +1173,7 @@
         function logout() {
             currentUser = null;
             clearLoginState();
+            if (window.AuthToken) window.AuthToken.clear();
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
             document.getElementById('loginUsername').value = '';
