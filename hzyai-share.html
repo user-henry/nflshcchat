@@ -1107,13 +1107,8 @@
 
             const hashedPassword = await hashPassword(password);
 
-            // 系统管理员
-            if (username === 'huangzhiyuan' && hashedPassword === await hashPassword('15240254891')) {
-                currentUser = { username: 'huangzhiyuan', isAdmin: true };
-                saveLoginState(currentUser);
-                enterApp();
-                return;
-            }
+            // 安全说明：管理员（huangzhiyuan）不再在此处硬编码密码判断，
+            // 统一走下方 users 表（D1）查询，密码以 SHA-256 哈希加密存储与校验。
 
             try {
                 const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
@@ -1136,7 +1131,9 @@
                     }
                 }
                 if (foundUser && !foundUser.isBanned) {
-                    currentUser = { username: foundUser.username, isAdmin: false };
+                    // 管理员身份只按用户名判定（huangzhiyuan），不再依赖硬编码密码
+                    const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
+                    currentUser = { username: foundUser.username, isAdmin: isAdmin };
                     saveLoginState(currentUser);
                     enterApp();
                 } else if (foundUser && foundUser.isBanned) {
