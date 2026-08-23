@@ -461,6 +461,12 @@
                     const user = JSON.parse(userStr);
                     if (user && user.username) {
                         sessionStorage.setItem('currentUser', userStr);
+                        // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
+                        const next = new URLSearchParams(window.location.search).get('next');
+                        if (next) {
+                            window.location.href = next;
+                            return true;
+                        }
                         if (user.isAdmin || user.username === 'huangzhiyuan') {
                             window.location.href = 'admin.html';
                         } else {
@@ -552,6 +558,13 @@
                     // 管理员身份只按用户名判定（huangzhiyuan），不再依赖硬编码密码
                     const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
                     saveLoginState({ username: foundUser.username, isAdmin: isAdmin });
+                    // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
+                    const next = new URLSearchParams(window.location.search).get('next');
+                    if (next) {
+                        messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
+                        setTimeout(() => window.location.href = next, 800);
+                        return;
+                    }
                     messageDiv.innerHTML = isAdmin
                         ? '<span style="color: green;">管理员登录成功，正在跳转...</span>'
                         : '<span style="color: green;">登录成功，正在跳转...</span>';
