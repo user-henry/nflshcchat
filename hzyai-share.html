@@ -1643,11 +1643,26 @@
         // ============================================================
         //  初始化
         // ============================================================
-        function init() {
+        async function init() {
             const savedUser = localStorage.getItem(STORAGE_KEY);
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
+                    // Bearer Token 鉴权：无 token 或 token 失效（发布/爬取等写操作会 401）→ 回登录页
+                    if (!(window.AuthToken && window.AuthToken.get())) {
+                        localStorage.removeItem(STORAGE_KEY);
+                        return;
+                    }
+                    try {
+                        const _me = await fetch(WORKER_API + '/api/auth/me', {
+                            headers: { 'Authorization': 'Bearer ' + window.AuthToken.get() }
+                        });
+                        if (!_me.ok) {
+                            window.AuthToken.clear();
+                            localStorage.removeItem(STORAGE_KEY);
+                            return;
+                        }
+                    } catch (e) { /* 网络异常放行 */ }
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'block';
                     document.getElementById('userName').textContent = currentUser.username;
