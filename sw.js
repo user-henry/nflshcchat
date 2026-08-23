@@ -1,10 +1,11 @@
 // sw.js - NFLSHC Chat Service Worker
 // 版本号：每次更新代码时修改此版本号，浏览器会自动更新缓存
+// v2.3.1: 修复 cache.put 不支持 POST 导致请求失败；非 GET 请求一律不拦截
 // v2.3.0: 修复 cache.addAll 因 404 文件（arena.html/config.js）失败导致 SW 无法更新、
 //         页面长期停留在旧缓存的问题；页面导航改为网络优先，保证部署后立即拿到新版本；
 //         API/跨域请求永不缓存，保证消息、表情回应等数据实时刷新。
 
-const CACHE_VERSION = 'v2.3.0';
+const CACHE_VERSION = 'v2.3.1';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
 // 需要预缓存的资源列表（只放确定存在的文件，任何 404 都会导致安装失败、SW 无法更新）
@@ -71,6 +72,12 @@ self.addEventListener('fetch', event => {
   const requestUrl = new URL(event.request.url);
   const isSameOrigin = requestUrl.origin === self.location.origin;
 
+  // 0) 非 GET 请求（POST/PATCH/DELETE 等）一律不拦截，直接走网络
+  //    （cache.put 不支持非 GET，拦截会导致请求失败并抛错）
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   // 1) API 请求（同源 /api/* 或任何跨域请求）：永不缓存，直连网络，
   //    保证消息/表情回应/帖子等数据实时、不读到旧缓存
   if (!isSameOrigin || requestUrl.pathname.startsWith('/api/')) {
@@ -95,7 +102,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // 3) 静态资源：缓存优先 + 后台刷新（stale-while-revalidate），
+  // 3) 静态资源（GET）：缓存优先 + 后台刷新（stale-while-revalidate），
   //    离线可用，同时后台更新保证下次访问拿到新版本
   event.respondWith(
     caches.match(event.request).then(cached => {
