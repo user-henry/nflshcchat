@@ -7088,7 +7088,7 @@ v1.0.0 (2026年3月)
         // ============================================================
         //  初始化
         // ============================================================
-        function init() {
+        async function init() {
             const savedUser = localStorage.getItem('nflshc_currentUser');
             if (savedUser) {
                 try {
@@ -7102,6 +7102,22 @@ v1.0.0 (2026年3月)
                         if (_ap) _ap.style.display = 'none';
                         return;
                     }
+                    // 服务端校验 token 有效性（被作废/过期/重置密码后失效则重新登录）
+                    try {
+                        const _me = await fetch(`${WORKER_API}/api/auth/me`, {
+                            headers: { 'Authorization': 'Bearer ' + window.AuthToken.get() }
+                        });
+                        if (!_me.ok) {
+                            console.warn('访问令牌已失效，请重新登录');
+                            window.AuthToken.clear();
+                            localStorage.removeItem('nflshc_currentUser');
+                            const _lp2 = document.getElementById('loginPage');
+                            const _ap2 = document.getElementById('app');
+                            if (_lp2) _lp2.style.display = 'flex';
+                            if (_ap2) _ap2.style.display = 'none';
+                            return;
+                        }
+                    } catch (e) { /* 网络异常放行 */ }
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('userName').textContent = currentUser.username;
