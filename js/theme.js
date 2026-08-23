@@ -148,4 +148,30 @@
             });
         };
     }
+
+    // 全局登出清理：任何页面移除登录态时，一并清除 Bearer Token。
+    // 覆盖所有页面的 logout（有的直接 removeItem、有的调用 clearLoginState）
+    if (!window.__storageAuthPatched) {
+        window.__storageAuthPatched = true;
+        var origRemoveItem = Storage.prototype.removeItem;
+        Storage.prototype.removeItem = function(key) {
+            origRemoveItem.call(this, key);
+            if (key === 'nflshc_currentUser' || key === 'currentUser' || key === 'nflshc_user') {
+                try {
+                    origRemoveItem.call(localStorage, TOKEN_KEY);
+                    origRemoveItem.call(sessionStorage, TOKEN_KEY);
+                } catch (e) {}
+            }
+        };
+    }
+    if (!window.clearLoginState) {
+        window.clearLoginState = function() {
+            try {
+                localStorage.removeItem('nflshc_currentUser');
+                sessionStorage.removeItem('currentUser');
+                sessionStorage.removeItem('nflshc_user');
+            } catch (e) {}
+            if (window.AuthToken) window.AuthToken.clear();
+        };
+    }
 })();
