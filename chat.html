@@ -1330,6 +1330,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reactions: msg.reactions })
                 });
+                console.log('[表情回应]', messageId, emoji, '->', res.status, '| reactions:', JSON.stringify(msg.reactions));
                 if (!res.ok) {
                     // 401（token 失效）或保存失败：回滚本地显示并提示
                     msg.reactions = prevReactions;
@@ -2452,7 +2453,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
             // 带版本号绕过 CDN 缓存，确保加载到最新 sw.js（修复旧缓存导致页面/数据过期）
-            navigator.serviceWorker.register('sw.js?v=2.3.0')
+            navigator.serviceWorker.register('sw.js?v=2.3.1')
                 .then(function(registration) {
                     console.log('[PWA] Service Worker 注册成功');
                 })
