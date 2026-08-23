@@ -681,6 +681,24 @@
             cursor: pointer; opacity: 0; transition: opacity 0.2s; z-index: 10;
         }
         .message-bubble-wrapper:hover .pin-btn { opacity: 1; }
+
+        /* === 表情回应 (👍/👎) === */
+        .reaction-bar {
+            display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
+        }
+        .message.own .reaction-bar { justify-content: flex-end; padding-right: 10px; }
+        .message:not(.own) .reaction-bar { padding-left: 10px; }
+        .reaction-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: var(--bg-tertiary, #1a1a2e); border: 1px solid var(--border-color, #2a2a3e);
+            color: var(--text-secondary, #aaa); border-radius: 14px;
+            padding: 2px 10px; font-size: 12px; cursor: pointer;
+            transition: all 0.2s; user-select: none;
+        }
+        .reaction-btn:hover { border-color: var(--accent-color, #ffd700); transform: scale(1.05); }
+        .reaction-btn.active { background: rgba(255, 215, 0, 0.14); border-color: var(--accent-color, #ffd700); color: var(--text-primary, #fff); }
+        .reaction-btn .reaction-count { font-size: 11px; color: var(--text-muted, #888); }
+        .reaction-btn.active .reaction-count { color: var(--accent-color, #ffd700); }
         .pinned-banner {
             background: linear-gradient(135deg, #9b59b6, #8e44ad);
             color: white; padding: 10px 16px; border-radius: 10px;
@@ -865,6 +883,16 @@
                         <input type="text" id="addAdminUser" placeholder="用户名" style="flex:1;">
                         <button onclick="addAdmin()" style="width: auto; padding: 8px 15px;">添加</button>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>🔗 邀请链接</label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <input type="text" id="inviteLinkInput" readonly placeholder="点击「生成邀请链接」创建" style="flex:1; min-width: 180px;">
+                        <button onclick="copyInviteLink()" style="width: auto; padding: 8px 14px;">📋 复制</button>
+                        <button onclick="generateInviteLink()" style="width: auto; padding: 8px 14px; background: var(--accent-color, #ffd700);">生成邀请链接</button>
+                        <button onclick="revokeInviteLink()" style="width: auto; padding: 8px 14px; background: #dc3545; color: white;">关闭邀请</button>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary, #aaa);">把链接分享给好友，对方打开后即可直接加入本群（无需验证码）。关闭邀请后原链接立即失效。</div>
                 </div>
                 <hr style="margin: 15px 0; border-color: #2a2a3e;">
                 <button onclick="leaveRoom()" style="background: #dc3545; color: white;">退出群聊</button>
@@ -1253,6 +1281,7 @@
                     (canPin ? '<button class="pin-btn" onclick="togglePin(\'' + msg.id + '\')">' + (msg.isPinned ? '📌' : '📍') + '</button>' : '') +
                     '</div>' +
                     '<div class="message-time">' + new Date(msg.timestamp).toLocaleString() + '</div>' +
+                    reactionBarHtml(msg) +
                     '</div>';
             }).join('');
 
@@ -1264,6 +1293,44 @@
             }
 
             smartScrollToBottom();
+        }
+
+        // 生成消息的 👍/👎 表情回应按钮（显示每个表情的人数）
+        function reactionBarHtml(msg) {
+            const reactions = msg.reactions || {};
+            const ups = Array.isArray(reactions['👍']) ? reactions['👍'] : [];
+            const downs = Array.isArray(reactions['👎']) ? reactions['👎'] : [];
+            const upActive = ups.includes(currentUser.username);
+            const downActive = downs.includes(currentUser.username);
+            return '<div class="reaction-bar">' +
+                '<button class="reaction-btn' + (upActive ? ' active' : '') + '" onclick="toggleReaction(\'' + msg.id + '\', \'👍\')" title="点赞">👍<span class="reaction-count">' + ups.length + '</span></button>' +
+                '<button class="reaction-btn' + (downActive ? ' active' : '') + '" onclick="toggleReaction(\'' + msg.id + '\', \'👎\')" title="点踩">👎<span class="reaction-count">' + downs.length + '</span></button>' +
+                '</div>';
+        }
+
+        // 切换当前用户对某条消息的表情回应（👍/👎），并增量同步到 D1
+        async function toggleReaction(messageId, emoji) {
+            const msg = allMessages.find(m => m.id === messageId);
+            if (!msg) return;
+            if (!msg.reactions) msg.reactions = {};
+            if (!Array.isArray(msg.reactions[emoji])) msg.reactions[emoji] = [];
+            const idx = msg.reactions[emoji].indexOf(currentUser.username);
+            if (idx >= 0) msg.reactions[emoji].splice(idx, 1);
+            else msg.reactions[emoji].push(currentUser.username);
+            // 清空无人的表情，保持数据整洁
+            for (const k of Object.keys(msg.reactions)) {
+                if (msg.reactions[k].length === 0) delete msg.reactions[k];
+            }
+            renderMessages();
+            try {
+                await fetch(WORKER_API + '/api/messages/' + encodeURIComponent(messageId), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reactions: msg.reactions })
+                });
+            } catch (e) {
+                console.warn('表情回应保存失败:', e);
+            }
         }
         
         function renderMarkdown(content) {
@@ -1433,15 +1500,20 @@
         });
 
         function checkAuth() {
+            // 未登录跳转登录页时，把 ?join=... 邀请参数带给 index.html，
+            // 登录成功后再带回 chat.html，保证通过邀请链接首次加入也能直接入群
+            const redirectToLogin = function() {
+                window.location.href = 'index.html' + (window.location.search ? '?next=' + encodeURIComponent('chat.html' + window.location.search) : '');
+            };
             const userStr = sessionStorage.getItem('currentUser');
-            if (!userStr) { window.location.href = 'index.html'; return null; }
+            if (!userStr) { redirectToLogin(); return null; }
             let user;
-            try { user = JSON.parse(userStr); } catch(e) { window.location.href = 'index.html'; return null; }
+            try { user = JSON.parse(userStr); } catch(e) { redirectToLogin(); return null; }
             if (!user || !user.username) {
                 // 兼容旧存储 / 异常结构
                 console.warn('currentUser 结构异常:', user);
                 sessionStorage.removeItem('currentUser');
-                window.location.href = 'index.html';
+                redirectToLogin();
                 return null;
             }
             const un = document.getElementById('username');
@@ -1828,7 +1900,75 @@
             document.getElementById('adminOnlySettings').style.display = canEdit ? 'block' : 'none';
             document.getElementById('normalUserSettings').style.display = canEdit ? 'none' : 'block';
             document.getElementById('saveSettingsBtn').style.display = canEdit ? 'block' : 'none';
+            const inviteInput = document.getElementById('inviteLinkInput');
+            if (inviteInput) inviteInput.value = (currentRoom.inviteToken && canEdit) ? buildInviteLink() : '';
             document.getElementById('roomSettingsModal').style.display = 'flex';
+        }
+
+        // ========== 邀请链接入群 ==========
+        function buildInviteLink() {
+            return window.location.origin + window.location.pathname +
+                '?join=' + encodeURIComponent(currentRoom.id) +
+                '&token=' + encodeURIComponent(currentRoom.inviteToken || '');
+        }
+        async function generateInviteLink() {
+            if (currentRoom.type !== 'group') { alert('只有群聊可以生成邀请链接'); return; }
+            currentRoom.inviteToken = 'inv_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
+            currentRoom.updatedAt = new Date().toISOString();
+            try {
+                await fetch(`${WORKER_API}/api/rooms/${currentRoom.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentRoom)
+                });
+                document.getElementById('inviteLinkInput').value = buildInviteLink();
+                alert('✅ 邀请链接已生成，复制后分享给好友即可');
+            } catch (e) { alert('生成失败: ' + e.message); }
+        }
+        function copyInviteLink() {
+            const input = document.getElementById('inviteLinkInput');
+            if (!input || !input.value) { alert('请先生成邀请链接'); return; }
+            input.select();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(input.value).then(() => alert('✅ 已复制邀请链接')).catch(() => { document.execCommand('copy'); alert('✅ 已复制邀请链接'); });
+            } else {
+                document.execCommand('copy');
+                alert('✅ 已复制邀请链接');
+            }
+        }
+        async function revokeInviteLink() {
+            if (!confirm('确定关闭邀请链接吗？关闭后原链接立即失效。')) return;
+            currentRoom.inviteToken = null;
+            currentRoom.updatedAt = new Date().toISOString();
+            try {
+                await fetch(`${WORKER_API}/api/rooms/${currentRoom.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentRoom)
+                });
+                document.getElementById('inviteLinkInput').value = '';
+                alert('已关闭邀请链接');
+            } catch (e) { alert('操作失败: ' + e.message); }
+        }
+        // 打开带 ?join=<roomId>&token=<token> 的链接时，校验邀请并自动入群
+        async function handleInviteParam() {
+            const params = new URLSearchParams(window.location.search);
+            const roomId = params.get('join');
+            const token = params.get('token');
+            if (!roomId || !token) return;
+            try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+            const room = allRooms.find(r => r.id === roomId);
+            if (!room) { alert('邀请的群聊不存在或已被删除'); return; }
+            if (room.type !== 'group') { alert('该链接不是群聊邀请链接'); return; }
+            if (room.isBanned) { alert('该群聊已被封禁，无法加入'); return; }
+            if (!room.inviteToken || room.inviteToken !== token) { alert('邀请链接无效或已失效，请联系群主重新生成'); return; }
+            if (room.members && room.members.includes(currentUser.username)) {
+                await selectRoom(room.id);
+                alert('你已在该群聊中，已为你打开');
+                return;
+            }
+            await doJoinRoom(room);
+            await selectRoom(room.id);
         }
 
         function closeRoomSettingsModal() { document.getElementById('roomSettingsModal').style.display = 'none'; }
@@ -2018,6 +2158,8 @@
             currentUser = checkAuth();
             if (!currentUser) return;
             await loadRooms();
+            // 处理邀请链接（?join=<roomId>&token=<token>），校验通过后自动入群
+            await handleInviteParam();
             // Load global message counts for level badges (background)
             loadGlobalMsgCounts();
             setupScrollDetection();
