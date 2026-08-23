@@ -129,6 +129,20 @@
         .reply-item .reply-meta { font-size: 12px; color: var(--text-muted, #888); margin-bottom: 4px; }
         .reply-item .reply-content { font-size: 14px; color: #ddd; }
 
+        /* 评论表情回应 (👍/👎) */
+        .reply-reaction-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .reply-reaction-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: var(--bg-tertiary, #12121f); border: 1px solid var(--border-color, #2a2a3e);
+            color: var(--text-secondary, #aaa); border-radius: 14px;
+            padding: 2px 10px; font-size: 12px; cursor: pointer;
+            transition: all 0.2s; user-select: none;
+        }
+        .reply-reaction-btn:hover { border-color: var(--accent-color, #ffd700); }
+        .reply-reaction-btn.active { background: rgba(255, 215, 0, 0.14); border-color: var(--accent-color, #ffd700); color: var(--text-primary, #fff); }
+        .reply-reaction-btn .reply-reaction-count { font-size: 11px; color: var(--text-muted, #888); }
+        .reply-reaction-btn.active .reply-reaction-count { color: var(--accent-color, #ffd700); }
+
         .reply-input-area { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
         .reply-input-area textarea {
             flex: 1;
@@ -394,6 +408,7 @@
                 <div class="reply-item">
                     <div class="reply-meta">#${index + 1} · 👤 ${escapeHtml(reply.author)} · ${fmtDate(reply.createdAt)}</div>
                     <div class="reply-content">${renderMarkdown(reply.content)}</div>
+                    ${replyReactionBar(post.id, index, reply)}
                     ${reply.author === currentUser.username ? `<button onclick="deleteReply('${post.id}', ${index})" style="background:transparent;border:none;color:#dc3545;cursor:pointer;font-size:11px;margin-top:4px;">删除</button>` : ''}
                 </div>
             `).join('');
@@ -476,6 +491,43 @@
     }
 
     // ============================================================
+    //  评论表情回应 (👍/👎)
+    // ============================================================
+    function replyReactionBar(postId, index, reply) {
+        const reactions = (reply && reply.reactions) || {};
+        const ups = Array.isArray(reactions['👍']) ? reactions['👍'] : [];
+        const downs = Array.isArray(reactions['👎']) ? reactions['👎'] : [];
+        const upActive = ups.includes(currentUser.username);
+        const downActive = downs.includes(currentUser.username);
+        return `<div class="reply-reaction-bar">` +
+            `<button class="reply-reaction-btn${upActive ? ' active' : ''}" onclick="toggleReplyReaction('${postId}', ${index}, '👍')" title="点赞">👍<span class="reply-reaction-count">${ups.length}</span></button>` +
+            `<button class="reply-reaction-btn${downActive ? ' active' : ''}" onclick="toggleReplyReaction('${postId}', ${index}, '👎')" title="点踩">👎<span class="reply-reaction-count">${downs.length}</span></button>` +
+            `</div>`;
+    }
+
+    async function toggleReplyReaction(postId, index, emoji) {
+        const post = allPosts.find(p => p.id === postId);
+        if (!post) return;
+        const reply = post.replies && post.replies[index];
+        if (!reply) return;
+        if (!reply.reactions) reply.reactions = {};
+        if (!Array.isArray(reply.reactions[emoji])) reply.reactions[emoji] = [];
+        const idx = reply.reactions[emoji].indexOf(currentUser.username);
+        if (idx >= 0) reply.reactions[emoji].splice(idx, 1);
+        else reply.reactions[emoji].push(currentUser.username);
+        for (const k of Object.keys(reply.reactions)) {
+            if (reply.reactions[k].length === 0) delete reply.reactions[k];
+        }
+        viewPost(postId);
+        try {
+            await updatePostOnGitHub(post);
+        } catch (e) {
+            console.warn('评论表情回应保存失败:', e);
+            viewPost(postId);
+        }
+    }
+
+    // ============================================================
     //  提交回复
     // ============================================================
     async function submitReply(postId) {
@@ -491,7 +543,8 @@
         post.replies.push({
             author: currentUser.username,
             content: content,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            reactions: {}
         });
 
         await updatePostOnGitHub(post);
