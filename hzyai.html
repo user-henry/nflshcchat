@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
@@ -3281,6 +3281,20 @@
         // 统一"生成历史"（代码/音频/搜索/绘图/视频），用于本地持久化 + 云端 D1 同步
         let genHistory = [];
 
+        // 稳健解析 ```json 围栏：取第一个 ```json 之后、最后一个 ``` 之前的内容。
+        // 旧实现用 /```json\n([\s\S]*?)\n```/ 会在 JSON 字符串值里的代码块围栏（```）
+        // 处提前截断，导致"代码模式"保存的历史代码块不完整、甚至整条记录解析失败。
+        function extractFencedJson(body) {
+            if (!body || typeof body !== 'string') return null;
+            const start = body.indexOf('```json');
+            if (start === -1) return null;
+            const afterOpen = body.indexOf('\n', start);
+            const contentStart = afterOpen === -1 ? start + 7 : afterOpen + 1;
+            const end = body.lastIndexOf('```');
+            if (end <= contentStart) return null;
+            return body.slice(contentStart, end).trim();
+        }
+
         function loadGenFromLocal() {
             if (!currentUser) return;
             const saved = localStorage.getItem(STORAGE_KEYS.genHistory + currentUser.username);
@@ -3308,10 +3322,10 @@
                 const issues = await response.json();
                 const list = [];
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
                         try {
-                            const data = JSON.parse(match[1]);
+                            const data = JSON.parse(jsonStr);
                             if (Array.isArray(data)) list.push(...data);
                             else if (data.items) list.push(...data.items);
                         } catch (e) {}
@@ -3337,7 +3351,7 @@
                     await fetch(`${WORKER_API}/api/legacy/issues/${allIssues[0].number}`, {
                         method: 'PATCH',
                         headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ body: issueBody })
+                        body: JSON.stringify({ body: issueBody, labels: [label] })
                     });
                 } else {
                     await fetch(`${WORKER_API}/api/legacy/issues`, {
@@ -3511,10 +3525,10 @@
                 const issues = await response.json();
                 const githubConversations = [];
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
                         try {
-                            const conv = JSON.parse(match[1]);
+                            const conv = JSON.parse(jsonStr);
                             // 优先用数据内 type，其次 worker 行 type
                             conv.type = conv.type || issue.type || currentMode || 'chat';
                             conv._issueNumber = issue.number;
@@ -3551,7 +3565,7 @@
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ body: issueBody })
+                            body: JSON.stringify({ body: issueBody, labels: [getGitHubLabel()] })
                         });
                 } else {
                     const res = await fetch(`${WORKER_API}/api/legacy/issues${q}`, {
@@ -3669,10 +3683,10 @@
                 const issues = await response.json();
                 const loadedChars = [];
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
                         try {
-                            const charData = JSON.parse(match[1]);
+                            const charData = JSON.parse(jsonStr);
                             loadedChars.push(charData);
                         } catch (e) {}
                     }
@@ -3700,7 +3714,7 @@
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ body: issueBody })
+                            body: JSON.stringify({ body: issueBody, labels: [getCharacterLabel()] })
                         });
                 } else {
                     await fetch(`${WORKER_API}/api/legacy/issues`, {
@@ -3782,10 +3796,10 @@
                 const issues = await response.json();
                 const loadedTasks = [];
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
                         try {
-                            const taskData = JSON.parse(match[1]);
+                            const taskData = JSON.parse(jsonStr);
                             loadedTasks.push(taskData);
                         } catch (e) {}
                     }
@@ -3813,7 +3827,7 @@
                                 'Accept': 'application/vnd.github.v3+json',
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ body: issueBody })
+                            body: JSON.stringify({ body: issueBody, labels: [getTaskLabel()] })
                         });
                 } else {
                     await fetch(`${WORKER_API}/api/legacy/issues`, {
@@ -3984,6 +3998,9 @@
             saveConversationsToLocal();
             renderMessages(conversation.messages, conversation.id);
             renderConversationsList();
+            // 所有对话历史统一通过 Cloudflare Worker 保存到 D1：
+            // 每条消息（含对话/视觉/绘图/视频/定时任务等 addMessage 入口）发出后自动增量同步云端
+            saveConversationToGitHub(conversation).catch(e => console.warn('消息云端同步失败:', e));
         }
 
         function createNewConversation() {
@@ -4131,7 +4148,8 @@
                     const response = await fetch(`${CF_WORKER_API}/chat`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ model: model, messages: fullMessages, stream: false })
+                        // max_tokens 尽量放大，避免长回答/长代码被截断（worker 对超上限模型会自动降级重试）
+                        body: JSON.stringify({ model: model, messages: fullMessages, stream: false, max_tokens: 16384 })
                     });
                     if (!response.ok) {
                         let msg = `CF 模型调用失败 (${response.status})`;
@@ -4188,7 +4206,7 @@
                             model: AGNES_CONFIG.chatModel,
                             messages: fullMessages.slice(-20).map(m => ({ role: m.role, content: m.content })),
                             temperature: 0.7,
-                            max_tokens: 4096,
+                            max_tokens: 8192,
                             chat_template_kwargs: {
                                 enable_thinking: true
                             }
@@ -4219,7 +4237,7 @@
                             model: model,
                             messages: fullMessages.slice(-20).map(m => ({ role: m.role, content: m.content })),
                             temperature: 0.8,
-                            max_tokens: 4096,
+                            max_tokens: 8192,
                             thinking: {
                                 type: 'enabled'
                             }
@@ -5607,7 +5625,7 @@
                         model: AGNES_CONFIG.chatModel,
                         messages: messages,
                         temperature: 0.8,
-                        max_tokens: 4096
+                        max_tokens: 8192
                     })
                 });
                 const data = await response.json();
@@ -6182,7 +6200,7 @@
                         model: model,
                         messages: [{ role: 'system', content: '你是一位资深程序员，请直接给出完整、可运行、带必要注释的代码，不要废话。' }, { role: 'user', content: text }],
                         stream: false,
-                        max_tokens: 8192
+                        max_tokens: 32768
                     })
                 });
                 if (!response.ok) throw new Error(`CF 调用失败 (${response.status})`);
@@ -6578,9 +6596,9 @@
                 const issues = await response.json();
                 let foundUser = null;
                 for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const userData = JSON.parse(match[1]);
+                    const jsonStr = extractFencedJson(issue.body);
+                    if (jsonStr) {
+                        const userData = JSON.parse(jsonStr);
                         const storedHash = userData.passwordHashed ? userData.password : await hashPassword(userData.password);
                         if (userData.username === username && storedHash === hashedPassword) { foundUser = userData; break; }
                     }
