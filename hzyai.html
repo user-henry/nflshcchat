@@ -6543,49 +6543,8 @@
 
             const hashedPassword = await hashPassword(password);
 
-            if (username === 'huangzhiyuan' && hashedPassword === await hashPassword('15240254891')) {
-                currentUser = { username: 'huangzhiyuan', isAdmin: true };
-                saveLoginState(currentUser);
-                document.getElementById('loginPage').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                document.getElementById('userName').textContent = 'huangzhiyuan';
-                document.getElementById('userRole').textContent = '管理员';
-                document.getElementById('userAvatar').textContent = '👑';
-                    loadConversationsFromLocal();
-                    loadCharactersFromLocal();
-                    ensureRAGCharacter();
-                    loadTasksFromLocal();
-                    populateRoleSelect();
-                    renderConversationsList();
-                    // 自动从云端 (worker.nflshcchat.cc.cd) 拉取历史对话，保证刷新后历史同步
-                    if (typeof pullFromGitHub === 'function') {
-                        pullFromGitHub().catch(e => console.warn('自动拉取历史失败:', e));
-                    }
-                    // 自动加载并同步"生成历史"（代码/音频/搜索/图像/视频）
-                    loadGenFromLocal();
-                    renderAllGenHistory();
-                    if (typeof pullGenFromGitHub === 'function') {
-                        pullGenFromGitHub().catch(e => console.warn('自动拉取生成历史失败:', e));
-                    }
-                    renderCharactersGrid();
-                    renderTasks();
-                    if (conversations.length > 0) {
-                        currentConversationId = conversations[0].id;
-                        const conv = conversations[0];
-                        document.getElementById('chatTitle').textContent = conv.title;
-                        if (conv.roleId) {
-                        document.getElementById('chatRoleSelect').value = conv.roleId;
-                        document.getElementById('currentRoleBadge').style.display = 'inline';
-                    }
-                    renderMessages(conv.messages, conv.id);
-                }
-                fetchDailyQuote();
-                startTaskScheduler();
-                if ('Notification' in window && Notification.permission === 'default') {
-                    Notification.requestPermission();
-                }
-                return;
-            }
+            // 安全说明：管理员（huangzhiyuan）不再在此处硬编码密码判断，
+            // 统一走下方 users 表（D1）查询，密码以 SHA-256 哈希加密存储与校验。
 
             try {
                 const url =
@@ -6604,13 +6563,15 @@
                     }
                 }
                 if (foundUser && !foundUser.isBanned) {
-                    currentUser = { username: foundUser.username, isAdmin: false };
+                    // 管理员身份只按用户名判定（huangzhiyuan），不再依赖硬编码密码
+                    const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
+                    currentUser = { username: foundUser.username, isAdmin: isAdmin };
                     saveLoginState(currentUser);
                     document.getElementById('loginPage').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('userName').textContent = foundUser.username;
-                    document.getElementById('userRole').textContent = '用户';
-                    document.getElementById('userAvatar').textContent = foundUser.username.charAt(0).toUpperCase();
+                    document.getElementById('userRole').textContent = isAdmin ? '管理员' : '用户';
+                    document.getElementById('userAvatar').textContent = isAdmin ? '👑' : foundUser.username.charAt(0).toUpperCase();
                     loadConversationsFromLocal();
                     loadCharactersFromLocal();
                     ensureRAGCharacter();
