@@ -1071,7 +1071,13 @@
                 // 语音消息字段：缺了这三个，渲染分支 msg.isVoice 永远为 false
                 isVoice: !!(m.is_voice || m.isVoice),
                 voiceData: m.voice_data || m.voiceData || null,
-                voiceDuration: m.voice_duration || m.voiceDuration || 0
+                voiceDuration: m.voice_duration || m.voiceDuration || 0,
+                // 表情回应（👍/👎）：缺了它，刷新后已保存的回应就显示不出来（"不持久"的根因）
+                reactions: m.reactions || {},
+                // 其余渲染依赖字段透传，避免刷新后丢失
+                scheduleData: m.scheduleData || m.schedule_data || null,
+                mediaUrl: m.mediaUrl || null,
+                mediaType: m.mediaType || null
             };
         }
 
@@ -1680,7 +1686,9 @@
                         verifyCode: r.verify_code,
                         announcement: r.announcement,
                         isBanned: !!r.is_banned,
-                        createdAt: r.created_at
+                        createdAt: r.created_at,
+                        // 邀请链接 token：缺了它，刷新后邀请链接就失效（"不持久"的根因）
+                        inviteToken: r.inviteToken || r.invite_token || null
                     };
                     if (roomData.type === 'private') {
                         if (roomData.members && (roomData.members.includes(currentUser.username) || roomData.creator === currentUser.username)) {
