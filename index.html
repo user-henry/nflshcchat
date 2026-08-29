@@ -562,82 +562,42 @@
                 return;
             }
 
-            // 安全说明：管理员（huangzhiyuan）不再在此处硬编码密码判断，
-            // 统一走下方 users 表（D1）查询，密码以 SHA-256 哈希加密存储与校验。
+            // 安全说明：密码校验全部在 Worker 端完成（/api/auth/login），
+            // 不再读取公开用户表；管理员身份由服务端按用户名判定（huangzhiyuan）。
 
             try {
                 const hashedPassword = await hashPassword(password);
-                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
-                const response = await fetch(url, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                // 服务端校验并签发 token（含登录限流/封禁逻辑）
+                const tokenRes = await fetch(WORKER_API + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: hashedPassword })
                 });
-                const issues = await response.json();
-                let foundUser = null;
-                for (const issue of issues) {
-                    const jsonStr = extractFencedJson(issue.body);
-                    if (jsonStr) {
-                        const userData = JSON.parse(jsonStr);
-                        // 支持新旧两种密码格式
-                        let isMatch = false;
-                        if (userData.passwordHashed) {
-                            isMatch = hashedPassword === userData.password;
-                        } else {
-                            isMatch = userData.password === password;
-                        }
-                        if (userData.username === username && isMatch) {
-                            foundUser = userData;
-                            break;
-                        }
-                    }
+                const tokenData = await tokenRes.json().catch(() => ({}));
+
+                if (!tokenRes.ok || !tokenData.token) {
+                    const errMsg = (tokenData && tokenData.error) || ('登录失败 (HTTP ' + tokenRes.status + ')');
+                    messageDiv.innerHTML = '<span style="color: red;">' + escapeHtml(errMsg) + '</span>';
+                    if (window.resetSlider) window.resetSlider();
+                    return;
                 }
 
-                if (foundUser) {
-                    if (foundUser.isBanned) {
-                        messageDiv.innerHTML = '<span style="color: red;">账号已被封禁，请联系管理员</span>';
-                        return;
-                    }
-                    // 管理员身份只按用户名判定（huangzhiyuan），不再依赖硬编码密码
-                    const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
-                    saveLoginState({ username: foundUser.username, isAdmin: isAdmin });
-                    // 获取 Bearer Token（写操作鉴权）。拿不到 token 就不跳转，
-                    // 避免进入 chat.html 后因缺 token 被再次踢回登录页造成循环
-                    let tokenOk = false;
-                    try {
-                        const tokenRes = await fetch(WORKER_API + '/api/auth/login', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ username: foundUser.username, password: hashedPassword })
-                        });
-                        const tokenData = await tokenRes.json();
-                        if (tokenData && tokenData.token) {
-                            window.AuthToken && window.AuthToken.set(tokenData.token);
-                            tokenOk = true;
-                        } else {
-                            throw new Error((tokenData && tokenData.error) || '获取令牌失败');
-                        }
-                    } catch (e) {
-                        console.warn('获取访问令牌失败:', e);
-                    }
-                    if (!tokenOk) {
-                        messageDiv.innerHTML = '<span style="color: red;">登录成功，但获取访问令牌失败，请刷新页面重试</span>';
-                        if (window.resetSlider) window.resetSlider();
-                        return;
-                    }
-                    // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
-                    const next = new URLSearchParams(window.location.search).get('next');
-                    if (next) {
-                        messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
-                        setTimeout(() => window.location.href = next, 800);
-                        return;
-                    }
-                    messageDiv.innerHTML = isAdmin
-                        ? '<span style="color: green;">管理员登录成功，正在跳转...</span>'
-                        : '<span style="color: green;">登录成功，正在跳转...</span>';
-                    setTimeout(() => window.location.href = isAdmin ? 'admin.html' : 'chat.html', 1000);
-                } else {
-                    messageDiv.innerHTML = '<span style="color: red;">用户名或密码错误</span>';
-                    if (window.resetSlider) window.resetSlider();
+                // 登录成功：保存登录态 + token
+                const isAdmin = !!tokenData.isAdmin || username === 'huangzhiyuan';
+                saveLoginState({ username: username, isAdmin: isAdmin });
+                window.AuthToken && window.AuthToken.set(tokenData.token);
+
+                // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
+                const next = new URLSearchParams(window.location.search).get('next');
+                if (next) {
+                    messageDiv.innerHTML = '<span style="color: green;">登录成功，正在跳转...</span>';
+                    setTimeout(() => window.location.href = next, 800);
+                    return;
                 }
+                messageDiv.innerHTML = isAdmin
+                    ? '<span style="color: green;">管理员登录成功，正在跳转...</span>'
+                    : '<span style="color: green;">登录成功，正在跳转...</span>';
+                setTimeout(() => window.location.href = isAdmin ? 'admin.html' : 'chat.html', 1000);
             } catch (error) {
                 messageDiv.innerHTML = `<span style="color: red;">登录失败: ${error.message}</span>`;
                 if (window.resetSlider) window.resetSlider();
