@@ -267,8 +267,23 @@
         </div>
 
         <button id="loginBtn" disabled>登录</button>
-        <p><a onclick="showForgotPassword()">忘记密码？</a> | <a onclick="showRegister()">立即注册</a> | <a href="theme.html">主题切换</a></p>
+        <p><a onclick="showForgotPassword()">忘记密码？</a> | <a onclick="showRegister()">立即注册</a> | <a href="theme.html">主题切换</a> | <a id="appealLink" onclick="showAppeal()" style="display:none;color:#f39c12;">🙋 账号被封？申诉</a></p>
         <div id="message" class="message"></div>
+    </div>
+
+    <!-- ===== 申诉模态框（冻结/封禁用户向管理员说明情况） ===== -->
+    <div id="appealModal" class="modal">
+        <div class="modal-content">
+            <h3>🙋 账号申诉</h3>
+            <p style="color: var(--text-secondary, #aaa); margin-bottom: 15px;">如果您的账号被冻结或封禁，请填写用户名和申诉说明，管理员会尽快处理。</p>
+            <input type="text" id="appealUsername" placeholder="用户名">
+            <textarea id="appealReason" rows="4" placeholder="申诉说明（500字以内）"></textarea>
+            <div id="appealMessage" style="margin-top: 10px; font-size: 12px;"></div>
+            <div class="modal-buttons">
+                <button onclick="closeAppeal()">取消</button>
+                <button onclick="submitAppeal()" style="background: #f39c12;">提交申诉</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== 密码找回模态框（两步流程） ===== -->
@@ -579,6 +594,13 @@
                 if (!tokenRes.ok || !tokenData.token) {
                     const errMsg = (tokenData && tokenData.error) || ('登录失败 (HTTP ' + tokenRes.status + ')');
                     messageDiv.innerHTML = '<span style="color: red;">' + escapeHtml(errMsg) + '</span>';
+                    // 冻结/封禁时显示申诉入口
+                    const appealLink = document.getElementById('appealLink');
+                    if (appealLink) {
+                        const bannedLike = /冻结|封禁|banned|frozen|ip_banned/i.test(errMsg);
+                        appealLink.style.display = bannedLike ? 'inline' : 'none';
+                        if (bannedLike) document.getElementById('appealUsername').value = username;
+                    }
                     if (window.resetSlider) window.resetSlider();
                     return;
                 }
@@ -612,6 +634,42 @@
 
         function showRegister() {
             window.location.href = 'register.html';
+        }
+
+        // ============================================================
+        //  账号申诉（冻结/封禁用户向管理员说明情况）
+        // ============================================================
+        function showAppeal() {
+            document.getElementById('appealModal').classList.add('active');
+            document.getElementById('appealMessage').innerHTML = '';
+        }
+        function closeAppeal() {
+            document.getElementById('appealModal').classList.remove('active');
+        }
+        async function submitAppeal() {
+            const username = document.getElementById('appealUsername').value.trim();
+            const reason = document.getElementById('appealReason').value.trim();
+            const msgDiv = document.getElementById('appealMessage');
+            if (!username || !reason) { msgDiv.innerHTML = '<span style="color: red;">请填写用户名和申诉说明</span>'; return; }
+            if (reason.length > 500) { msgDiv.innerHTML = '<span style="color: red;">申诉说明过长（500字以内）</span>'; return; }
+            msgDiv.innerHTML = '<span style="color: var(--accent-color, #ffd700);">⏳ 提交中...</span>';
+            try {
+                const res = await fetch(WORKER_API + '/api/auth/appeal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, reason: reason })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.ok) {
+                    msgDiv.innerHTML = '<span style="color: #28a745;">✅ ' + escapeHtml(data.message || '申诉已提交') + '</span>';
+                    document.getElementById('appealReason').value = '';
+                    setTimeout(closeAppeal, 2000);
+                } else {
+                    msgDiv.innerHTML = '<span style="color: red;">' + escapeHtml(data.error || '提交失败，请稍后重试') + '</span>';
+                }
+            } catch (e) {
+                msgDiv.innerHTML = '<span style="color: red;">提交失败：' + escapeHtml(e.message) + '</span>';
+            }
         }
 
         // ============================================================
