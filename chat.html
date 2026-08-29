@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <script src="js/theme.js"></script>
+
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
 
     <meta charset="UTF-8">
@@ -2034,9 +2036,12 @@
         function renderMemberManageList() {
             const container = document.getElementById('memberManageList');
             if (!container) return;
-            const members = currentRoom.members || [];
+            // 成员来源：房间 members + 从消息推导的活跃成员（群聊不强制入群，发言即算成员）
+            const memberSet = new Set((currentRoom.members || []));
+            (getGroupActiveMembers(currentRoom.id) || []).forEach(m => memberSet.add(m));
+            const members = [...memberSet].filter(Boolean);
             const muted = currentRoom.mutedMembers || [];
-            if (members.length === 0) { container.innerHTML = '<div style="padding:5px;color:var(--text-secondary,#aaa);">暂无成员</div>'; return; }
+            if (members.length === 0) { container.innerHTML = '<div style="padding:5px;color:var(--text-secondary,#aaa);">暂无成员（群内发言后自动显示）</div>'; return; }
             const canManage = currentRoom.creator === currentUser.username || currentUser.username === 'huangzhiyuan' || !!currentUser.isAdmin ||
                 (currentRoom.admins && currentRoom.admins.includes(currentUser.username));
             container.innerHTML = members.map(m => {
@@ -2061,13 +2066,15 @@
             if (!room.members) room.members = [];
             room.members = room.members.filter(m => m !== memberName);
             room.mutedMembers = (room.mutedMembers || []).filter(m => m !== memberName);
+            // 群聊不强制入群：踢人同时加入禁言名单，确保被踢者无法继续发言
+            if (room.type === 'group' && !room.mutedMembers.includes(memberName)) room.mutedMembers.push(memberName);
             room.updatedAt = new Date().toISOString();
             try {
                 const res = await fetch(`${WORKER_API}/api/rooms/${room.id}`, {
                     method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(room)
                 });
                 if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
-                alert(`✅ 已将 ${memberName} 移出群聊`);
+                alert(`✅ 已将 ${memberName} 移出群聊（并禁止其继续发言）`);
                 showRoomSettings();
             } catch (e) { alert('踢人失败：' + e.message); }
         }
@@ -2607,6 +2614,5 @@
         });
     }
 </script>
-    <script src="js/theme.js"></script>
-</body>
+    </body>
 </html>
