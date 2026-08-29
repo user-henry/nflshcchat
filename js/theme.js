@@ -120,16 +120,16 @@
         }
     };
 
-    // 包装 fetch：只对 worker.nflshcchat.cc.cd 的写请求附加 Authorization 头
-    // （不对第三方 API 附加，避免触发不必要的 CORS 预检）
+    // 包装 fetch：对所有 worker.nflshcchat.cc.cd 的请求（含 GET）附加 Authorization 头。
+    // GET 也已改为需要登录（用户表等敏感数据不再匿名公开），
+    // 但不对第三方 API（思知/智谱等）附加，避免触发不必要的 CORS 预检。
     if (!window.__authFetchPatched) {
         window.__authFetchPatched = true;
         var origFetch = window.fetch;
         window.fetch = function(url, opts) {
             opts = opts || {};
             var u = (typeof url === 'string') ? url : (url && url.url) || '';
-            var isWrite = !!opts.method && opts.method.toUpperCase() !== 'GET' && opts.method.toUpperCase() !== 'HEAD';
-            if (isWrite && u.indexOf(API_ORIGIN) === 0) {
+            if (u.indexOf(API_ORIGIN) === 0) {
                 var token = window.AuthToken ? window.AuthToken.get() : '';
                 if (token) {
                     try {
@@ -139,9 +139,10 @@
                     } catch (e) {}
                 }
             }
+            var isWrite = !!opts.method && opts.method.toUpperCase() !== 'GET' && opts.method.toUpperCase() !== 'HEAD';
             return origFetch.call(this, url, opts).then(function(resp) {
-                // Worker 写操作返回 401（token 无效/过期）时自动清除本地 token，提示重新登录
-                if (resp && resp.status === 401 && isWrite && u.indexOf(API_ORIGIN) === 0) {
+                // Worker 返回 401（token 无效/过期；登录接口的 401 是密码错误，不在此列）时自动清除本地 token
+                if (resp && resp.status === 401 && u.indexOf(API_ORIGIN) === 0 && u.indexOf('/api/auth/login') === -1) {
                     if (window.AuthToken) window.AuthToken.clear();
                 }
                 return resp;
