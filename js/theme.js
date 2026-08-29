@@ -141,9 +141,17 @@
             }
             var isWrite = !!opts.method && opts.method.toUpperCase() !== 'GET' && opts.method.toUpperCase() !== 'HEAD';
             return origFetch.call(this, url, opts).then(function(resp) {
-                // Worker 返回 401（token 无效/过期；登录接口的 401 是密码错误，不在此列）时自动清除本地 token
-                if (resp && resp.status === 401 && u.indexOf(API_ORIGIN) === 0 && u.indexOf('/api/auth/login') === -1) {
+                // Worker 返回 401（token 无效/过期；登录接口的 401 是密码错误，不在此列）时：
+                // 1) 清除本地 token；2) 跳转登录页（带 next 回跳），避免各页面继续报 401
+                if (resp && resp.status === 401 && u.indexOf(API_ORIGIN) === 0 && u.indexOf('/api/auth/') === -1) {
                     if (window.AuthToken) window.AuthToken.clear();
+                    try {
+                        var path = window.location.pathname || '';
+                        if (path.indexOf('index.html') === -1 && path !== '/') {
+                            var cur = path + window.location.search;
+                            window.location.href = 'index.html?next=' + encodeURIComponent(cur);
+                        }
+                    } catch (e) {}
                 }
                 return resp;
             });
