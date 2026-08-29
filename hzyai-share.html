@@ -1107,54 +1107,28 @@
 
             const hashedPassword = await hashPassword(password);
 
-            // 安全说明：管理员（huangzhiyuan）不再在此处硬编码密码判断，
-            // 统一走下方 users 表（D1）查询，密码以 SHA-256 哈希加密存储与校验。
+            // 安全说明：密码校验全部在 Worker 端完成（/api/auth/login），
+            // 不再读取公开用户表；管理员身份由服务端按用户名判定（huangzhiyuan）。
 
             try {
-                const url = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
-                const res = await fetch(url, {
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                // 服务端校验并签发 token（含登录限流/封禁逻辑）
+                const tokenRes = await fetch(WORKER_API + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: hashedPassword })
                 });
-                const issues = await res.json();
-                let foundUser = null;
-                for (const issue of issues) {
-                    const jsonStr = extractFencedJson(issue.body);
-                    if (jsonStr) {
-                        const userData = JSON.parse(jsonStr);
-                        const storedHash = userData.passwordHashed ? userData.password : await hashPassword(userData.password);
-                        if (userData.username === username && storedHash === hashedPassword) {
-                            foundUser = userData;
-                            break;
-                        }
-                    }
+                const tokenData = await tokenRes.json().catch(() => ({}));
+
+                if (!tokenRes.ok || !tokenData.token) {
+                    errorDiv.textContent = (tokenData && tokenData.error) || ('登录失败 (HTTP ' + tokenRes.status + ')');
+                    return;
                 }
-                if (foundUser && !foundUser.isBanned) {
-                    // 管理员身份只按用户名判定（huangzhiyuan），不再依赖硬编码密码
-                    const isAdmin = foundUser.username === 'huangzhiyuan' || !!foundUser.isAdmin;
-                    currentUser = { username: foundUser.username, isAdmin: isAdmin };
-                    saveLoginState(currentUser);
-                    // 获取 Bearer Token（写操作鉴权）
-                    try {
-                        const tokenRes = await fetch(WORKER_API + '/api/auth/login', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ username: foundUser.username, password: hashedPassword })
-                        });
-                        const tokenData = await tokenRes.json();
-                        if (tokenData && tokenData.token) {
-                            if (window.AuthToken) window.AuthToken.set(tokenData.token);
-                        } else {
-                            console.warn('获取访问令牌失败:', tokenData);
-                        }
-                    } catch (e) { console.warn('获取访问令牌失败:', e); }
-                    enterApp();
-                } else if (foundUser && foundUser.isBanned) {
-                    errorDiv.textContent = '账号已被封禁';
-                } else {
-                    errorDiv.textContent = '用户名或密码错误';
-                }
+
+                const isAdmin = !!tokenData.isAdmin || username === 'huangzhiyuan';
+                currentUser = { username: username, isAdmin: isAdmin };
+                saveLoginState(currentUser);
+                if (window.AuthToken) window.AuthToken.set(tokenData.token);
+                enterApp();
             } catch (error) {
                 errorDiv.textContent = '登录失败：' + error.message;
             }
