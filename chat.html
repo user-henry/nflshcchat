@@ -894,6 +894,24 @@
                     </div>
                     <div style="font-size: 12px; color: var(--text-secondary, #aaa);">把链接分享给好友，对方打开后即可直接加入本群（无需验证码）。关闭邀请后原链接立即失效。</div>
                 </div>
+                <div class="form-group">
+                    <label>👥 成员管理（踢人 / 禁言）</label>
+                    <div id="memberManageList" style="background: var(--bg-tertiary, #0f0f1a); border-radius: 8px; padding: 10px; max-height: 180px; overflow-y: auto;"></div>
+                    <div style="font-size: 12px; color: var(--text-secondary, #aaa); margin-top: 6px;">禁言后该成员将无法在群里发送消息</div>
+                </div>
+                <div class="form-group owner-only-setting">
+                    <label>👑 群主管理</label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="transferOwnerUser" placeholder="转让给的用户名" style="flex:1; min-width: 150px;">
+                        <button onclick="transferOwner()" style="width: auto; padding: 8px 14px;">转让群主</button>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary, #aaa); margin-top: 6px;">只有群主可以转让群主或解散群聊</div>
+                </div>
+                <div class="form-group owner-only-setting">
+                    <label>⚠️ 解散群聊</label>
+                    <div style="font-size: 12px; color: var(--text-secondary, #aaa); margin-bottom: 8px;">解散后群内无法再发送新消息，但历史消息仍然可见。</div>
+                    <button onclick="dissolveRoom()" style="background: #dc3545; color: white; width: 100%; padding: 10px;">💥 解散群聊</button>
+                </div>
                 <hr style="margin: 15px 0; border-color: #2a2a3e;">
                 <button onclick="leaveRoom()" style="background: #dc3545; color: white;">退出群聊</button>
             </div>
@@ -1688,7 +1706,10 @@
                         isBanned: !!r.is_banned,
                         createdAt: r.created_at,
                         // 邀请链接 token：缺了它，刷新后邀请链接就失效（"不持久"的根因）
-                        inviteToken: r.inviteToken || r.invite_token || null
+                        inviteToken: r.inviteToken || r.invite_token || null,
+                        // 解散标记 / 禁言名单
+                        isDissolved: !!(r.isDissolved || r.is_dissolved),
+                        mutedMembers: Array.isArray(r.mutedMembers) ? r.mutedMembers : (Array.isArray(r.muted_members) ? r.muted_members : [])
                     };
                     if (roomData.type === 'private') {
                         if (roomData.members && (roomData.members.includes(currentUser.username) || roomData.creator === currentUser.username)) {
@@ -1794,6 +1815,10 @@
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
             if (!content || !currentRoom) return;
+            // 群聊已解散：无法发送新消息（历史仍可见）
+            if (currentRoom.type === 'group' && currentRoom.isDissolved) { alert('该群聊已解散，仅可查看历史消息，无法发送新消息'); return; }
+            // 被群管理员禁言
+            if (currentRoom.type === 'group' && currentRoom.mutedMembers && currentRoom.mutedMembers.includes(currentUser.username)) { alert('你已被群管理员禁言，暂时无法发送消息'); return; }
             const isBanned = await checkUserBanned(currentUser.username);
             if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
             const hasMentionAll = content.includes('@所有人');
@@ -1923,7 +1948,8 @@
                         return;
                     }
                 }
-                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
+                const dissolvedBadge = currentRoom.isDissolved ? '<div class="announcement" style="border-left-color:#dc3545;color:#dc3545;">💥 该群聊已解散，仅可查看历史消息，无法发送新消息</div>' : '';
+                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${dissolvedBadge}${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
             }
             document.getElementById('inputContainer').style.display = 'block';
             await loadMessages(false);
@@ -1933,7 +1959,8 @@
         function showRoomSettings() {
             if (currentRoom.type !== 'group') { alert('只有群聊可以设置'); return; }
             const isOwner = currentRoom.creator === currentUser.username;
-            const isAdmin = currentRoom.admins && currentRoom.admins.includes(currentUser.username);
+            const isSystemAdmin = currentUser.username === 'huangzhiyuan' || !!currentUser.isAdmin;
+            const isAdmin = (currentRoom.admins && currentRoom.admins.includes(currentUser.username)) || isSystemAdmin;
             const canEdit = isOwner || isAdmin;
             document.getElementById('settingsRoomName').textContent = currentRoom.name;
             document.getElementById('roomAnnouncement').value = currentRoom.announcement || '';
@@ -1942,13 +1969,18 @@
             document.getElementById('editVerifyGroup').style.display = (currentRoom.joinType === 'verify') ? 'block' : 'none';
             const admins = currentRoom.admins || [];
             const adminListDiv = document.getElementById('adminList');
-            adminListDiv.innerHTML = admins.map(admin => `<div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>${escapeHtml(admin)}</span>${isOwner && admin !== currentRoom.creator ? `<button onclick="removeAdmin('${admin}')" style="background: #dc3545; padding: 2px 8px;">移除</button>` : ''}</div>`).join('');
+            adminListDiv.innerHTML = admins.map(admin => `<div style="display: flex; justify-content: space-between; padding: 5px 0;"><span>${escapeHtml(admin)}</span>${(isOwner || isSystemAdmin) && admin !== currentRoom.creator ? `<button onclick="removeAdmin('${admin}')" style="background: #dc3545; padding: 2px 8px;">移除</button>` : ''}</div>`).join('');
             if (admins.length === 0) adminListDiv.innerHTML = '<div style="padding: 5px; color: var(--text-secondary, #aaa);">暂无管理员</div>';
             document.getElementById('adminOnlySettings').style.display = canEdit ? 'block' : 'none';
             document.getElementById('normalUserSettings').style.display = canEdit ? 'none' : 'block';
             document.getElementById('saveSettingsBtn').style.display = canEdit ? 'block' : 'none';
             const inviteInput = document.getElementById('inviteLinkInput');
             if (inviteInput) inviteInput.value = (currentRoom.inviteToken && canEdit) ? buildInviteLink() : '';
+            // 成员管理列表
+            renderMemberManageList();
+            // 群主专属（转让/解散）：仅群主或系统管理员
+            const ownerOnlyEls = document.querySelectorAll('.owner-only-setting');
+            ownerOnlyEls.forEach(el => el.style.display = (isOwner || isSystemAdmin) ? '' : 'none');
             document.getElementById('roomSettingsModal').style.display = 'flex';
         }
 
@@ -1997,6 +2029,110 @@
                 alert('已关闭邀请链接');
             } catch (e) { alert('操作失败: ' + e.message); }
         }
+        // ========== 成员管理（踢人 / 禁言） ==========
+        function escapeAttr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+        function renderMemberManageList() {
+            const container = document.getElementById('memberManageList');
+            if (!container) return;
+            const members = currentRoom.members || [];
+            const muted = currentRoom.mutedMembers || [];
+            if (members.length === 0) { container.innerHTML = '<div style="padding:5px;color:var(--text-secondary,#aaa);">暂无成员</div>'; return; }
+            const canManage = currentRoom.creator === currentUser.username || currentUser.username === 'huangzhiyuan' || !!currentUser.isAdmin ||
+                (currentRoom.admins && currentRoom.admins.includes(currentUser.username));
+            container.innerHTML = members.map(m => {
+                const isMuted = muted.includes(m);
+                const isSelf = m === currentUser.username;
+                const isOwner = m === currentRoom.creator;
+                const isRoomAdmin = currentRoom.admins && currentRoom.admins.includes(m);
+                const role = isOwner ? '👑 群主' : (isRoomAdmin ? '🛡️ 管理员' : '');
+                const actions = canManage && !isSelf && !isOwner
+                    ? `<button onclick="kickMember('${escapeAttr(m)}')" style="background:#dc3545;color:white;padding:2px 8px;margin-left:6px;">踢出</button>
+                       <button onclick="toggleMuteMember('${escapeAttr(m)}')" style="background:${isMuted ? '#2ecc71' : '#f39c12'};color:white;padding:2px 8px;margin-left:4px;">${isMuted ? '解除禁言' : '禁言'}</button>`
+                    : '';
+                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a3e;">
+                    <span>${escapeHtml(m)} ${role} ${isMuted ? '<span style="color:#f39c12;font-size:11px;">🔇 已禁言</span>' : ''}</span>
+                    <span>${actions}</span></div>`;
+            }).join('');
+        }
+
+        async function kickMember(memberName) {
+            if (!confirm(`确定将 ${memberName} 踢出群聊吗？`)) return;
+            const room = currentRoom;
+            if (!room.members) room.members = [];
+            room.members = room.members.filter(m => m !== memberName);
+            room.mutedMembers = (room.mutedMembers || []).filter(m => m !== memberName);
+            room.updatedAt = new Date().toISOString();
+            try {
+                const res = await fetch(`${WORKER_API}/api/rooms/${room.id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(room)
+                });
+                if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
+                alert(`✅ 已将 ${memberName} 移出群聊`);
+                showRoomSettings();
+            } catch (e) { alert('踢人失败：' + e.message); }
+        }
+
+        async function toggleMuteMember(memberName) {
+            const room = currentRoom;
+            if (!room.mutedMembers) room.mutedMembers = [];
+            const isMuted = room.mutedMembers.includes(memberName);
+            if (isMuted) room.mutedMembers = room.mutedMembers.filter(m => m !== memberName);
+            else room.mutedMembers.push(memberName);
+            room.updatedAt = new Date().toISOString();
+            try {
+                const res = await fetch(`${WORKER_API}/api/rooms/${room.id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(room)
+                });
+                if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
+                alert(isMuted ? `已解除 ${memberName} 的禁言` : `已禁言 ${memberName}`);
+                showRoomSettings();
+            } catch (e) { alert('操作失败：' + e.message); }
+        }
+
+        // ========== 转让群主 / 解散群聊（仅群主或系统管理员） ==========
+        async function transferOwner() {
+            const input = document.getElementById('transferOwnerUser');
+            const newOwner = input.value.trim();
+            if (!newOwner) { alert('请输入要转让的用户名'); return; }
+            if (newOwner === currentRoom.creator) { alert('该用户已是群主'); return; }
+            if (!confirm(`确定将群主转让给 ${newOwner} 吗？转让后您将保留管理员权限。`)) return;
+            const room = currentRoom;
+            const oldOwner = room.creator;
+            try {
+                const users = await (await fetch(WORKER_API + '/api/users')).json();
+                if (!users.some(u => u.username === newOwner)) { alert('该用户不存在'); return; }
+            } catch (e) { /* 校验失败也放行，由服务端判定 */ }
+            room.creator = newOwner;
+            if (!room.admins) room.admins = [];
+            if (!room.admins.includes(oldOwner)) room.admins.push(oldOwner);
+            room.updatedAt = new Date().toISOString();
+            try {
+                const res = await fetch(`${WORKER_API}/api/rooms/${room.id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(room)
+                });
+                if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
+                alert(`✅ 群主已转让给 ${newOwner}`);
+                await loadRooms();
+                await selectRoom(room.id);
+            } catch (e) { alert('转让失败：' + e.message); }
+        }
+
+        async function dissolveRoom() {
+            if (!confirm('⚠️ 确定解散该群聊吗？解散后群内无法再发送新消息，但历史消息仍然可见。')) return;
+            const room = currentRoom;
+            room.isDissolved = true;
+            room.updatedAt = new Date().toISOString();
+            try {
+                const res = await fetch(`${WORKER_API}/api/rooms/${room.id}`, {
+                    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(room)
+                });
+                if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
+                alert('💥 群聊已解散，仅保留历史消息');
+                await loadRooms();
+                await selectRoom(room.id);
+            } catch (e) { alert('解散失败：' + e.message); }
+        }
+
         // 打开带 ?join=<roomId>&token=<token> 的链接时，校验邀请并自动入群
         async function handleInviteParam() {
             const params = new URLSearchParams(window.location.search);
@@ -2044,7 +2180,7 @@
         async function addAdmin() {
             const username = document.getElementById('addAdminUser').value.trim();
             if (!username) return;
-            if (isSystemAdmin(username)) { alert('系统管理员不能被添加为群管理员'); return; }
+            // 允许把系统管理员（huangzhiyuan）添加为群管理员
             if (!currentRoom.admins) currentRoom.admins = [];
             if (currentRoom.admins.includes(username)) { alert('已是管理员'); return; }
             currentRoom.admins.push(username);
