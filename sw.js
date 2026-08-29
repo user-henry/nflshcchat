@@ -1,11 +1,8 @@
 // sw.js - NFLSHC Chat Service Worker
 // 版本号：每次更新代码时修改此版本号，浏览器会自动更新缓存
-// v2.3.1: 修复 cache.put 不支持 POST 导致请求失败；非 GET 请求一律不拦截
-// v2.3.0: 修复 cache.addAll 因 404 文件（arena.html/config.js）失败导致 SW 无法更新、
-//         页面长期停留在旧缓存的问题；页面导航改为网络优先，保证部署后立即拿到新版本；
-//         API/跨域请求永不缓存，保证消息、表情回应等数据实时刷新。
+// v2.4.0: 主题/资源引用带版本号（theme.js?v=4），配合网络优先导航彻底解决旧缓存卡页面问题
 
-const CACHE_VERSION = 'v2.3.1';
+const CACHE_VERSION = 'v2.4.0';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
 // 需要预缓存的资源列表（只放确定存在的文件，任何 404 都会导致安装失败、SW 无法更新）
