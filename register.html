@@ -338,22 +338,6 @@
                 return;
             }
             try {
-                const checkUrl = `${WORKER_API}/api/legacy/issues?labels=user&state=open`;
-                const checkRes = await fetch(checkUrl, {
-                    headers: { 'Accept': 'application/vnd.github.v3+json' }
-                });
-                const issues = await checkRes.json();
-                for (const issue of issues) {
-                    const match = issue.body.match(/```json\n([\s\S]*?)\n```/);
-                    if (match) {
-                        const user = JSON.parse(match[1]);
-                        if (user.username === username) {
-                            msg.innerHTML = '<span style="color: red;">用户名已存在</span>';
-                            return;
-                        }
-                    }
-                }
-
                 const hashedPassword = await hashPassword(password);
                 const userData = {
                     username, email, password: hashedPassword, bio,
@@ -375,9 +359,14 @@
                 if (res.ok) {
                     msg.innerHTML = '<span style="color: green;">注册成功！正在跳转...</span>';
                     setTimeout(() => window.location.href = 'index.html', 1500);
+                } else if (res.status === 409) {
+                    msg.innerHTML = '<span style="color: red;">用户名已存在</span>';
+                } else if (res.status === 403) {
+                    const err = await res.json().catch(() => ({}));
+                    msg.innerHTML = `<span style="color: red;">注册失败: ${err.error || '您的 IP 已被封禁'}</span>`;
                 } else {
-                    const err = await res.json();
-                    msg.innerHTML = `<span style="color: red;">注册失败: ${err.message}</span>`;
+                    const err = await res.json().catch(() => ({}));
+                    msg.innerHTML = `<span style="color: red;">注册失败: ${err.error || err.message || ('HTTP ' + res.status)}</span>`;
                 }
             } catch (error) {
                 msg.innerHTML = `<span style="color: red;">注册失败: ${error.message}</span>`;
