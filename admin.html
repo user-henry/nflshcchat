@@ -314,11 +314,14 @@
         </div>
 
         <div id="bansTab" class="card" style="display: none;">
-            <h2>🔒 封禁管理</h2>
-            <h3 style="margin: 14px 0 8px; color: var(--accent-color, #ffd700);">🚫 被封禁 IP</h3>
-            <div id="bannedIpsList" class="user-list"><div class="loading">加载中...</div></div>
-            <h3 style="margin: 20px 0 8px; color: var(--accent-color, #ffd700);">🧊 已冻结用户（可在此解冻）</h3>
+            <h2>🔒 封禁与冻结管理</h2>
+            <p style="font-size: 12px; color: var(--text-secondary, #aaa); margin-bottom: 10px;">冻结（系统自动，连续登录失败达 50 次）与封禁（管理员手动）是两种状态，都可申诉、都需管理员处理。</p>
+            <h3 style="margin: 14px 0 8px; color: #f39c12;">🧊 已冻结用户（系统自动，可解冻）</h3>
             <div id="frozenUsersList" class="user-list"><div class="loading">加载中...</div></div>
+            <h3 style="margin: 20px 0 8px; color: #dc3545;">🚫 已封禁用户（管理员手动，可解封）</h3>
+            <div id="bannedUsersList" class="user-list"><div class="loading">加载中...</div></div>
+            <h3 style="margin: 20px 0 8px; color: #ffd700;">🚷 被封禁 IP</h3>
+            <div id="bannedIpsList" class="user-list"><div class="loading">加载中...</div></div>
         </div>
     </div>
 
@@ -569,15 +572,17 @@
             container.innerHTML = allUsers.map(user => `
                 <div class="user-item">
                     <div class="user-info">
-                        <div class="user-name">${escapeHtml(user.username)}${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}${user.isBanned ? '<span class="banned-badge">已封禁</span>' : ''}</div>
+                        <div class="user-name">${escapeHtml(user.username)}${user.username === 'huangzhiyuan' ? '<span class="admin-badge">管理员</span>' : ''}${user.isFrozen ? '<span class="banned-badge" style="background:#8e44ad;">已冻结</span>' : (user.isBanned ? '<span class="banned-badge">已封禁</span>' : '')}</div>
                         <div class="user-meta">注册时间: ${new Date(user.createdAt).toLocaleString()}<br>参与聊天室: ${userRoomCount[user.username]?.size || 0} 个<br>发送消息: ${allMessages.filter(m => m.sender === user.username).length} 条</div>
                     </div>
                     <div class="actions">
                         ${user.username !== 'huangzhiyuan' ? `
                             <button class="notify-user-btn" onclick="showNotifyModal('${user.username}')">📨 发通知</button>
-                            ${user.isBanned ? 
-                                `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
-                                `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`}
+                            ${user.isFrozen ? 
+                                `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解冻</button>` :
+                                (user.isBanned ? 
+                                    `<button class="unban-user-btn" onclick="toggleUserBan('${user.username}', false)">解除封禁</button>` :
+                                    `<button class="ban-user-btn" onclick="toggleUserBan('${user.username}', true)">封禁用户</button>`)}
                         ` : ''}
                     </div>
                 </div>
@@ -735,23 +740,24 @@
         function closeNotifyModal() { document.getElementById('notifyModal').style.display = 'none'; currentNotifyUser = null; }
 
         async function toggleUserBan(username, shouldBan) {
-            if (!confirm(`确定要${shouldBan ? '封禁' : '解除封禁'}用户 ${username} 吗？`)) return;
+            if (!confirm(`确定要${shouldBan ? '封禁' : '解除冻结/封禁'}用户 ${username} 吗？`)) return;
             const user = allUsers.find(u => u.username === username);
             if (!user) return;
             try {
-                // users 表主键是 username；直接更新 is_banned 列
+                // 解除时同时清除 is_banned 和 is_frozen；封禁时只置 is_banned（管理员手动封禁≠系统冻结）
                 const res = await fetch(`${WORKER_API}/api/users/${encodeURIComponent(username)}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ is_banned: shouldBan })
+                    body: JSON.stringify(shouldBan ? { is_banned: 1, is_frozen: 0 } : { is_banned: 0, is_frozen: 0 })
                 });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                user.isBanned = shouldBan;
+                user.isBanned = !!shouldBan;
+                if (!shouldBan) user.isFrozen = false;
             } catch (error) {
                 alert('操作失败：' + (error && error.message ? error.message : error));
                 return;
             }
-            alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除封禁`);
+            alert(shouldBan ? `用户 ${username} 已被封禁` : `用户 ${username} 已解除冻结/封禁`);
             loadAllData();
         }
 
@@ -916,12 +922,15 @@
             }
         }
 
-        // ========== 封禁管理 ==========
+        // ========== 封禁与冻结管理 ==========
+        // 冻结(isFrozen)=系统自动(登录失败达50次)；封禁(isBanned且非冻结)=管理员手动
         async function loadBanManagement() {
             const ipBox = document.getElementById('bannedIpsList');
-            const userBox = document.getElementById('frozenUsersList');
+            const frozenBox = document.getElementById('frozenUsersList');
+            const bannedBox = document.getElementById('bannedUsersList');
             ipBox.innerHTML = '<div class="loading">加载中...</div>';
-            userBox.innerHTML = '<div class="loading">加载中...</div>';
+            frozenBox.innerHTML = '<div class="loading">加载中...</div>';
+            bannedBox.innerHTML = '<div class="loading">加载中...</div>';
             try {
                 const res = await fetch(`${WORKER_API}/api/auth/banned-ips`);
                 const data = await res.json();
@@ -932,13 +941,21 @@
                         <div><div style="font-family:monospace;color:#ffd700;">${escapeHtml(b.ip)}</div><div style="font-size:11px;color:var(--text-muted,#888);">${escapeHtml(b.reason || '')} · ${b.banned_at ? new Date(b.banned_at).toLocaleString() : ''}</div></div>
                         <button onclick="unbanIp('${escapeAttr(b.ip)}')" style="background:#2ecc71;color:white;padding:4px 12px;">解封</button>
                     </div>`).join('');
-                // 冻结用户 = users.is_banned = 1
-                const frozen = (allUsers || []).filter(u => u.isBanned);
-                userBox.innerHTML = frozen.length === 0
+                // 冻结用户：isFrozen = true（系统自动，同时置了 isBanned）
+                const frozen = (allUsers || []).filter(u => u.isFrozen);
+                frozenBox.innerHTML = frozen.length === 0
                     ? '<div style="padding:10px;color:var(--text-secondary,#aaa);">暂无被冻结用户</div>'
                     : frozen.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-tertiary,#12121f);border-radius:6px;margin-bottom:4px;">
-                        <div>${escapeHtml(u.username)}</div>
+                        <div>${escapeHtml(u.username)}<span style="font-size:11px;color:#f39c12;">（登录失败达 50 次自动冻结）</span></div>
                         <button onclick="unfreezeUser('${escapeAttr(u.username)}')" style="background:#2ecc71;color:white;padding:4px 12px;">解冻</button>
+                    </div>`).join('');
+                // 封禁用户：管理员手动封禁（isBanned 且非 isFrozen）
+                const banned = (allUsers || []).filter(u => u.isBanned && !u.isFrozen);
+                bannedBox.innerHTML = banned.length === 0
+                    ? '<div style="padding:10px;color:var(--text-secondary,#aaa);">暂无被封禁用户</div>'
+                    : banned.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-tertiary,#12121f);border-radius:6px;margin-bottom:4px;">
+                        <div>${escapeHtml(u.username)}</div>
+                        <button onclick="unbanUser('${escapeAttr(u.username)}')" style="background:#2ecc71;color:white;padding:4px 12px;">解封</button>
                     </div>`).join('');
             } catch (e) { ipBox.innerHTML = `<div style="color:#dc3545;">加载失败：${escapeHtml(e.message)}</div>`; }
         }
@@ -952,8 +969,24 @@
                 loadBanManagement();
             } catch (e) { alert('解封失败：' + e.message); }
         }
+        // 解冻：清除 isFrozen 和 is_banned（冻结时两者都被置位）
         async function unfreezeUser(username) {
-            if (!confirm(`确定解冻用户 ${username} 吗？`)) return;
+            if (!confirm(`确定解冻用户 ${username} 吗？解冻后该账号可重新登录。`)) return;
+            try {
+                const res = await fetch(`${WORKER_API}/api/users/${encodeURIComponent(username)}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_banned: 0, is_frozen: 0 })
+                });
+                if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
+                alert('✅ 已解冻用户');
+                await loadAllData();
+                loadBanManagement();
+            } catch (e) { alert('解冻失败：' + e.message); }
+        }
+        // 解封：仅清除 is_banned（管理员手动封禁）
+        async function unbanUser(username) {
+            if (!confirm(`确定解封用户 ${username} 吗？`)) return;
             try {
                 const res = await fetch(`${WORKER_API}/api/users/${encodeURIComponent(username)}`, {
                     method: 'PATCH',
@@ -961,10 +994,10 @@
                     body: JSON.stringify({ is_banned: 0 })
                 });
                 if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
-                alert('✅ 已解冻用户');
+                alert('✅ 已解封用户');
                 await loadAllData();
                 loadBanManagement();
-            } catch (e) { alert('解冻失败：' + e.message); }
+            } catch (e) { alert('解封失败：' + e.message); }
         }
 
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
