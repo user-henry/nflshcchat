@@ -680,6 +680,176 @@
             30% { opacity: 1; }
         }
 
+        /* ===== HZYAI 等待动画（Generating 环形 loader） ===== */
+        .hzyai-loader {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            width: 150px;
+            height: 66px;
+            font-family: "Inter", "Segoe UI", sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: var(--text-primary);
+            user-select: none;
+        }
+        .hzyai-loader .loader-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 58px;
+            height: 58px;
+            margin: -29px 0 0 -29px;
+            border-radius: 50%;
+            background-color: transparent;
+            animation: hz-loader-rotate 1.8s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+        @keyframes hz-loader-rotate {
+            0% {
+                transform: rotate(90deg);
+                box-shadow:
+                    0 6px 14px 0 rgba(255,255,255,0.9) inset,
+                    0 14px 22px 0 var(--accent-color) inset,
+                    0 34px 40px 0 var(--accent-hover) inset;
+            }
+            50% {
+                transform: rotate(270deg);
+                box-shadow:
+                    0 6px 14px 0 rgba(255,255,255,0.9) inset,
+                    0 14px 10px 0 var(--accent-hover) inset,
+                    0 26px 40px 0 var(--accent-color) inset;
+            }
+            100% {
+                transform: rotate(450deg);
+                box-shadow:
+                    0 6px 14px 0 rgba(255,255,255,0.9) inset,
+                    0 14px 22px 0 var(--accent-color) inset,
+                    0 34px 40px 0 var(--accent-hover) inset;
+            }
+        }
+        .hzyai-loader .loader-letter {
+            display: inline-block;
+            opacity: 0.35;
+            transform: translateY(0);
+            animation: hz-letter-anim 2s infinite;
+            z-index: 1;
+            border-radius: 50ch;
+            border: none;
+        }
+        .hzyai-loader .loader-letter:nth-child(1) { animation-delay: 0s; }
+        .hzyai-loader .loader-letter:nth-child(2) { animation-delay: 0.1s; }
+        .hzyai-loader .loader-letter:nth-child(3) { animation-delay: 0.2s; }
+        .hzyai-loader .loader-letter:nth-child(4) { animation-delay: 0.3s; }
+        .hzyai-loader .loader-letter:nth-child(5) { animation-delay: 0.4s; }
+        .hzyai-loader .loader-letter:nth-child(6) { animation-delay: 0.5s; }
+        .hzyai-loader .loader-letter:nth-child(7) { animation-delay: 0.6s; }
+        .hzyai-loader .loader-letter:nth-child(8) { animation-delay: 0.7s; }
+        .hzyai-loader .loader-letter:nth-child(9) { animation-delay: 0.8s; }
+        .hzyai-loader .loader-letter:nth-child(10) { animation-delay: 0.9s; }
+        @keyframes hz-letter-anim {
+            0%, 100% { opacity: 0.35; transform: translateY(0); }
+            20% { opacity: 1; transform: scale(1.15); color: var(--accent-color); }
+            40% { opacity: 0.6; transform: translateY(0); }
+        }
+
+        /* ===== HZYAI 等待动画（Generate 发光按钮） ===== */
+        .hzyai-gen-btn {
+            --gen-border-radius: 24px;
+            --gen-padding: 4px;
+            --gen-transition: 0.4s;
+            --gen-button-color: var(--bg-tertiary);
+            --gen-highlight-hue: 45deg;
+            user-select: none;
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 0.5em 1em 0.5em 0.9em;
+            font-family: "Poppins", "Inter", "Segoe UI", sans-serif;
+            font-size: 1em;
+            font-weight: 500;
+            color: var(--text-primary);
+            background-color: var(--gen-button-color);
+            box-shadow:
+                inset 0px 1px 1px rgba(255,255,255,0.2),
+                inset 0px 2px 2px rgba(255,255,255,0.15),
+                inset 0px 4px 4px rgba(255,255,255,0.1),
+                inset 0px 8px 8px rgba(255,255,255,0.05),
+                0px -1px 1px rgba(0,0,0,0.02),
+                0px -2px 2px rgba(0,0,0,0.03),
+                0px -4px 4px rgba(0,0,0,0.05);
+            border: solid 1px #fff3;
+            border-radius: var(--gen-border-radius);
+            cursor: wait;
+            transition:
+                box-shadow var(--gen-transition),
+                border var(--gen-transition),
+                background-color var(--gen-transition);
+        }
+        .hzyai-gen-btn::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            pointer-events: none;
+            background-image: linear-gradient(
+                0deg,
+                #fff,
+                hsl(var(--gen-highlight-hue), 100%, 70%),
+                hsla(var(--gen-highlight-hue), 100%, 70%, 50%),
+                8%,
+                transparent
+            );
+            background-position: 0 0;
+            opacity: 0.6;
+            mask-image: linear-gradient(0deg, #fff, transparent);
+            filter: brightness(100%);
+        }
+        .hzyai-gen-btn .gen-letter {
+            position: relative;
+            display: inline-block;
+            color: #fff;
+            text-shadow: 0 0 3px #fff8;
+            animation: gen-letter-anim 1.2s ease-in-out infinite;
+            z-index: 1;
+        }
+        .hzyai-gen-btn .gen-letter:nth-child(1) { animation-delay: 0s; }
+        .hzyai-gen-btn .gen-letter:nth-child(2) { animation-delay: 0.08s; }
+        .hzyai-gen-btn .gen-letter:nth-child(3) { animation-delay: 0.16s; }
+        .hzyai-gen-btn .gen-letter:nth-child(4) { animation-delay: 0.24s; }
+        .hzyai-gen-btn .gen-letter:nth-child(5) { animation-delay: 0.32s; }
+        .hzyai-gen-btn .gen-letter:nth-child(6) { animation-delay: 0.4s; }
+        .hzyai-gen-btn .gen-letter:nth-child(7) { animation-delay: 0.48s; }
+        .hzyai-gen-btn .gen-letter:nth-child(8) { animation-delay: 0.56s; }
+        .hzyai-gen-btn .gen-letter:nth-child(9) { animation-delay: 0.64s; }
+        .hzyai-gen-btn .gen-letter:nth-child(10) { animation-delay: 0.72s; }
+        .hzyai-gen-btn .gen-letter:nth-child(11) { animation-delay: 0.8s; }
+        .hzyai-gen-btn .gen-letter:nth-child(12) { animation-delay: 0.88s; }
+        @keyframes gen-letter-anim {
+            0%, 100% { transform: scale(1); filter: blur(0px); }
+            50% { transform: scale(1.25); filter: blur(0.6px) brightness(150%); }
+        }
+        .hzyai-gen-btn .gen-svg {
+            height: 20px;
+            flex-shrink: 0;
+            fill: #fff;
+            filter: drop-shadow(0 0 3px hsl(var(--gen-highlight-hue), 100%, 70%));
+            animation: gen-flicker 1.2s linear infinite;
+            z-index: 1;
+        }
+        @keyframes gen-flicker {
+            50% { opacity: 0.4; }
+        }
+
         /* ===== 绘图模式 ===== */
         .draw-mode {
             display: none;
@@ -4328,6 +4498,27 @@
         }
 
         // ============================================================
+        //  等待动画 helper（Generate 发光按钮）
+        // ============================================================
+        function genBtnLoadingHTML(word) {
+            const letters = (word || 'Generating').split('').map(ch =>
+                `<span class="gen-letter">${ch}</span>`).join('');
+            return `<svg class="gen-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"/></svg>${letters}`;
+        }
+        function setGenBtnLoading(btn, on, word) {
+            if (!btn) return;
+            if (on) {
+                if (!btn.dataset.genOrig) btn.dataset.genOrig = btn.textContent || btn.innerHTML;
+                btn.classList.add('hzyai-gen-btn');
+                btn.innerHTML = genBtnLoadingHTML(word || 'Generating');
+            } else {
+                btn.classList.remove('hzyai-gen-btn');
+                btn.innerHTML = btn.dataset.genOrig || btn.textContent;
+                delete btn.dataset.genOrig;
+            }
+        }
+
+        // ============================================================
         //  发送消息
         // ============================================================
         async function sendMessage() {
@@ -4355,7 +4546,11 @@
             const thinkingDiv = document.createElement('div');
             thinkingDiv.className = 'message assistant';
             thinkingDiv.innerHTML =
-                `<div class="message-avatar">🤖</div><div class="thinking"><span></span><span></span><span></span></div>`;
+                `<div class="message-avatar">🤖</div>
+                 <div class="hzyai-loader">
+                    <div class="loader-ring"></div>
+                    <span class="loader-letter">G</span><span class="loader-letter">e</span><span class="loader-letter">n</span><span class="loader-letter">e</span><span class="loader-letter">r</span><span class="loader-letter">a</span><span class="loader-letter">t</span><span class="loader-letter">i</span><span class="loader-letter">n</span><span class="loader-letter">g</span>
+                 </div>`;
             container.appendChild(thinkingDiv);
             scrollToBottom();
             isWaiting = true;
@@ -4704,7 +4899,7 @@
             const downloadBtn = document.getElementById('drawDownloadBtn');
 
             generateBtn.disabled = true;
-            generateBtn.textContent = '⏳ 生成中...';
+            setGenBtnLoading(generateBtn, true, 'Generating');
             loading.classList.add('active');
             placeholder.style.display = 'none';
             output.style.display = 'none';
@@ -4855,7 +5050,7 @@
                     `<span class="icon">❌</span>生成失败：${error.message || '未知错误'}<br><span style="font-size:12px;color:var(--text-muted);">请检查网络或稍后重试</span>`;
             } finally {
                 generateBtn.disabled = false;
-                generateBtn.textContent = '🎨 生成';
+                setGenBtnLoading(generateBtn, false);
             }
         }
 
@@ -5683,7 +5878,7 @@
             const btn = document.getElementById('generateScriptBtn');
             const output = document.getElementById('scriptOutput');
             btn.disabled = true;
-            btn.textContent = '⏳ 生成中...';
+            setGenBtnLoading(btn, true, 'Generating');
             output.innerHTML = '<span class="loading-text">⏳ AI 正在构思剧本...</span>';
 
             try {
@@ -5704,7 +5899,7 @@
                 output.innerHTML = '<span style="color:var(--danger);">❌ 生成失败: ' + error.message + '</span>';
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🚀 生成剧本';
+                setGenBtnLoading(btn, false);
             }
         }
 
@@ -5771,7 +5966,7 @@
             const card = document.querySelector(`.film-scene-card[data-index="${index}"]`);
             const imgBtn = card.querySelector('.gen-img-btn');
             imgBtn.disabled = true;
-            imgBtn.textContent = '⏳ 生成中...';
+            setGenBtnLoading(imgBtn, true, 'Generating');
 
             try {
                 const response = await fetch(`${AGNES_CONFIG.baseUrl}/images/generations`, {
@@ -5800,7 +5995,7 @@
                 showToast(`❌ 参考图生成失败: ${error.message}`, 'error');
             } finally {
                 imgBtn.disabled = false;
-                imgBtn.textContent = '🎨 参考图';
+                setGenBtnLoading(imgBtn, false);
             }
         }
 
@@ -5811,7 +6006,7 @@
             const card = document.querySelector(`.film-scene-card[data-index="${index}"]`);
             const vidBtn = card.querySelector('.gen-vid-btn');
             vidBtn.disabled = true;
-            vidBtn.textContent = '⏳ 生成中...';
+            setGenBtnLoading(vidBtn, true, 'Generating');
 
             try {
                 const videoPrompt = `根据以下场景描述生成视频：${scene.scene_description}。${scene.image_prompt ? `视觉风格参考：${scene.image_prompt}` : ''}`;
@@ -5875,14 +6070,14 @@
                 showToast(`❌ 视频生成失败: ${error.message}`, 'error');
             } finally {
                 vidBtn.disabled = false;
-                vidBtn.textContent = '🎬 生成视频';
+                setGenBtnLoading(vidBtn, false);
             }
         }
 
         async function generateAllScenes() {
             const btn = document.getElementById('generateAllScenesBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ 批量生成中...';
+            setGenBtnLoading(btn, true, 'Generating');
             for (let i = 0; i < filmProject.scenes.length; i++) {
                 const scene = filmProject.scenes[i];
                 if (!scene.imageUrl) {
@@ -5895,7 +6090,7 @@
                 }
             }
             btn.disabled = false;
-            btn.textContent = '⚡ 生成全部场景';
+            setGenBtnLoading(btn, false);
             document.getElementById('step4').style.display = 'block';
             renderSceneClipList();
             showToast('✅ 全部场景处理完成！', 'success');
@@ -5930,7 +6125,7 @@
         async function generateAllImages() {
             const btn = document.getElementById('generateAllImagesBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ 生成中...';
+            setGenBtnLoading(btn, true, 'Generating');
             for (let i = 0; i < filmProject.scenes.length; i++) {
                 const scene = filmProject.scenes[i];
                 if (!scene.imageUrl) {
@@ -5939,7 +6134,7 @@
                 }
             }
             btn.disabled = false;
-            btn.textContent = '🖼️ 生成全部参考图';
+            setGenBtnLoading(btn, false);
             showToast('✅ 所有参考图已生成！', 'success');
         }
 
@@ -7423,7 +7618,7 @@ v1.0.0 (2026年3月)
             const detail = document.getElementById('lvProgressDetail');
 
             btn.disabled = true;
-            btn.textContent = '⏳ 生成中...';
+            setGenBtnLoading(btn, true, 'Generating');
             progressArea.style.display = 'block';
 
             lvFrames = [];
@@ -7478,7 +7673,7 @@ v1.0.0 (2026年3月)
             setTimeout(() => {
                 progressArea.style.display = 'none';
                 btn.disabled = false;
-                btn.textContent = '🔄 重新生成';
+                setGenBtnLoading(btn, false);
                 setupLVPlayer();
             }, 500);
         }
