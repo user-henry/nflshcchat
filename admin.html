@@ -1000,8 +1000,8 @@
                     rejected: '<span style="color:#dc3545;">❌ 已驳回</span>'
                 };
                 box.innerHTML = list.map(r => {
-                    const created = r.created_at ? new Date(r.created_at).toLocaleString() : '';
-                    const reviewed = r.reviewed_at ? new Date(r.reviewed_at).toLocaleString() : '';
+                    const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : '';
+                    const reviewed = r.reviewedAt ? new Date(r.reviewedAt).toLocaleString() : '';
                     const actions = r.status === 'pending'
                         ? `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
                              <input type="text" id="note_${escapeAttr(r.id)}" placeholder="审核备注（可选）" style="flex:1;min-width:180px;padding:6px 10px;">
@@ -1012,7 +1012,7 @@
                     return `<div style="padding:14px;background:var(--bg-tertiary,#12121f);border-radius:8px;margin-bottom:8px;border-left:3px solid ${r.status === 'pending' ? '#f39c12' : (r.status === 'approved' ? '#2ecc71' : '#dc3545')};">
                         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
                             <div><strong style="color:#ffd700;">${escapeHtml(r.username || '')}</strong>
-                                <span style="font-size:12px;color:var(--text-secondary,#aaa);">· 申请方：${escapeHtml(r.applicant || '')}（${escapeHtml(r.client_name || r.client_id || '')}）</span>
+                                <span style="font-size:12px;color:var(--text-secondary,#aaa);">· 申请方：${escapeHtml(r.applicant || '')}（${escapeHtml(r.clientName || r.clientId || '')}）</span>
                             </div>
                             <div style="font-size:12px;">${statusMap[r.status] || escapeHtml(r.status || '')}</div>
                         </div>
@@ -1020,7 +1020,7 @@
                         <div style="margin-top:8px;font-size:11px;color:var(--text-muted,#888);">
                             申请时间：${created} · 编号：${escapeHtml(r.id || '')}
                             ${reviewed ? ` · 审核：${escapeHtml(r.reviewer || '')} ${reviewed}` : ''}
-                            ${r.review_note ? ` · 备注：${escapeHtml(r.review_note)}` : ''}
+                            ${r.reviewNote ? ` · 备注：${escapeHtml(r.reviewNote)}` : ''}
                         </div>
                         ${actions}
                     </div>`;
