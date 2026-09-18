@@ -271,6 +271,7 @@
             <button class="tab-btn" onclick="switchTab('notifications')">📨 系统通知</button>
             <button class="tab-btn" onclick="switchTab('audit')">🛡️ 消息审计</button>
             <button class="tab-btn" onclick="switchTab('bans')">🔒 封禁管理</button>
+            <button class="tab-btn" onclick="switchTab('oauth')">🔌 开放平台申请</button>
         </div>
 
         <div id="roomsTab" class="card">
@@ -322,6 +323,18 @@
             <div id="bannedUsersList" class="user-list"><div class="loading">加载中...</div></div>
             <h3 style="margin: 20px 0 8px; color: #ffd700;">🚷 被封禁 IP</h3>
             <div id="bannedIpsList" class="user-list"><div class="loading">加载中...</div></div>
+        </div>
+
+        <div id="oauthTab" class="card" style="display: none;">
+            <h2>🔌 开放平台 · 全站封禁申请</h2>
+            <p style="font-size: 12px; color: var(--text-secondary, #aaa); margin-bottom: 12px;">
+                开发者平台的开发者只能在自己的项目内封禁用户（不影响主站账号）。如需全站封禁，须由开发者提交申请、说明理由，由你在此审核批准后才执行。
+            </p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                <button onclick="loadOAuthBanRequests()" style="padding:6px 14px;">🔄 刷新列表</button>
+                <span id="oauthBanStatus" style="color: var(--text-secondary, #aaa); font-size: 12px; align-self: center;"></span>
+            </div>
+            <div id="oauthBanRequests" class="user-list"><div class="loading">加载中...</div></div>
         </div>
     </div>
 
@@ -787,6 +800,7 @@
             const notificationsTab = document.getElementById('notificationsTab');
             const auditTab = document.getElementById('auditTab');
             const bansTab = document.getElementById('bansTab');
+            const oauthTab = document.getElementById('oauthTab');
             const btns = document.querySelectorAll('.tab-btn');
             btns.forEach(btn => btn.classList.remove('active'));
             roomsTab.style.display = 'none';
@@ -794,10 +808,12 @@
             notificationsTab.style.display = 'none';
             auditTab.style.display = 'none';
             bansTab.style.display = 'none';
+            if (oauthTab) oauthTab.style.display = 'none';
             if (tab === 'rooms') { roomsTab.style.display = 'block'; btns[0].classList.add('active'); }
             else if (tab === 'users') { usersTab.style.display = 'block'; btns[1].classList.add('active'); }
             else if (tab === 'audit') { auditTab.style.display = 'block'; btns[3].classList.add('active'); renderAudit(); }
             else if (tab === 'bans') { bansTab.style.display = 'block'; btns[4].classList.add('active'); loadBanManagement(); }
+            else if (tab === 'oauth') { if (oauthTab) oauthTab.style.display = 'block'; btns[5].classList.add('active'); loadOAuthBanRequests(); }
             else { notificationsTab.style.display = 'block'; btns[2].classList.add('active'); renderNotifications(); }
         }
 
@@ -960,6 +976,79 @@
             } catch (e) { ipBox.innerHTML = `<div style="color:#dc3545;">加载失败：${escapeHtml(e.message)}</div>`; }
         }
         function escapeAttr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+        // ========== 开放平台 · 全站封禁申请审批 ==========
+        async function loadOAuthBanRequests() {
+            const box = document.getElementById('oauthBanRequests');
+            const statusEl = document.getElementById('oauthBanStatus');
+            if (!box) return;
+            box.innerHTML = '<div class="loading">加载中...</div>';
+            try {
+                const res = await fetch(`${WORKER_API}/api/oauth/admin/ban-requests`);
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+                const list = data.requests || [];
+                const pendingCount = list.filter(r => r.status === 'pending').length;
+                if (statusEl) statusEl.textContent = `共 ${list.length} 条申请，其中 ${pendingCount} 条待处理`;
+                if (list.length === 0) {
+                    box.innerHTML = '<div style="padding:10px;color:var(--text-secondary,#aaa);">暂无全站封禁申请</div>';
+                    return;
+                }
+                const statusMap = {
+                    pending: '<span style="color:#f39c12;">⏳ 待审核</span>',
+                    approved: '<span style="color:#2ecc71;">✅ 已批准</span>',
+                    rejected: '<span style="color:#dc3545;">❌ 已驳回</span>'
+                };
+                box.innerHTML = list.map(r => {
+                    const created = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+                    const reviewed = r.reviewed_at ? new Date(r.reviewed_at).toLocaleString() : '';
+                    const actions = r.status === 'pending'
+                        ? `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                             <input type="text" id="note_${escapeAttr(r.id)}" placeholder="审核备注（可选）" style="flex:1;min-width:180px;padding:6px 10px;">
+                             <button onclick="reviewOAuthBanRequest('${escapeAttr(r.id)}','approve')" style="background:#dc3545;color:white;padding:6px 14px;">✅ 批准并全站封禁</button>
+                             <button onclick="reviewOAuthBanRequest('${escapeAttr(r.id)}','reject')" style="background:#555;color:white;padding:6px 14px;">❌ 驳回</button>
+                           </div>`
+                        : '';
+                    return `<div style="padding:14px;background:var(--bg-tertiary,#12121f);border-radius:8px;margin-bottom:8px;border-left:3px solid ${r.status === 'pending' ? '#f39c12' : (r.status === 'approved' ? '#2ecc71' : '#dc3545')};">
+                        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                            <div><strong style="color:#ffd700;">${escapeHtml(r.username || '')}</strong>
+                                <span style="font-size:12px;color:var(--text-secondary,#aaa);">· 申请方：${escapeHtml(r.applicant || '')}（${escapeHtml(r.client_name || r.client_id || '')}）</span>
+                            </div>
+                            <div style="font-size:12px;">${statusMap[r.status] || escapeHtml(r.status || '')}</div>
+                        </div>
+                        <div style="margin-top:8px;font-size:13px;white-space:pre-wrap;line-height:1.7;">${escapeHtml(r.reason || '')}</div>
+                        <div style="margin-top:8px;font-size:11px;color:var(--text-muted,#888);">
+                            申请时间：${created} · 编号：${escapeHtml(r.id || '')}
+                            ${reviewed ? ` · 审核：${escapeHtml(r.reviewer || '')} ${reviewed}` : ''}
+                            ${r.review_note ? ` · 备注：${escapeHtml(r.review_note)}` : ''}
+                        </div>
+                        ${actions}
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                box.innerHTML = `<div style="color:#dc3545;">加载失败：${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        async function reviewOAuthBanRequest(id, action) {
+            const noteEl = document.getElementById('note_' + id);
+            const note = noteEl ? noteEl.value.trim() : '';
+            const confirmText = action === 'approve'
+                ? '批准后将立即对该用户执行全站封禁（与管理员手动封禁一致），确定继续吗？'
+                : '确定驳回该封禁申请吗？';
+            if (!confirm(confirmText)) return;
+            try {
+                const res = await fetch(`${WORKER_API}/api/oauth/admin/ban-requests/${encodeURIComponent(id)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: action, note: note })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+                alert(action === 'approve' ? '✅ 已批准并执行全站封禁' : '✅ 已驳回该申请');
+                loadOAuthBanRequests();
+            } catch (e) { alert('操作失败：' + e.message); }
+        }
         async function unbanIp(ip) {
             if (!confirm(`确定解封 IP ${ip} 吗？`)) return;
             try {
