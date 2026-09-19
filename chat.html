@@ -215,6 +215,52 @@
             padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer;
             background: #dc3545; color: #fff; font-size: 13px;
         }
+
+        /* ===== 1对1 音视频通话 ===== */
+        .call-overlay {
+            position: fixed; inset: 0; z-index: 3200; display: none;
+            align-items: center; justify-content: center;
+            background: rgba(4, 6, 14, .92); backdrop-filter: blur(8px);
+        }
+        .call-overlay.show { display: flex; animation: callFade .24s ease; }
+        @keyframes callFade { from { opacity: 0; } to { opacity: 1; } }
+        .call-box {
+            position: relative; width: min(92vw, 640px); padding: 28px 24px 22px;
+            border-radius: 22px; text-align: center;
+            background: var(--bg-secondary, #16213e); border: 1px solid var(--border-color, #2a2a3e);
+            box-shadow: 0 28px 70px rgba(0, 0, 0, .6);
+        }
+        .call-peer {
+            width: 76px; height: 76px; margin: 0 auto 12px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 34px;
+            background: var(--bg-tertiary, #0f0f1a); border: 2px solid var(--accent-color, #ffd700);
+            animation: callPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes callPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, .32); }
+            50% { box-shadow: 0 0 0 14px rgba(255, 215, 0, 0); }
+        }
+        .call-peer-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .call-status { font-size: 13.5px; color: var(--text-secondary, #9aa0ae); margin-bottom: 16px; min-height: 20px; }
+        .call-videos { display: none; gap: 10px; margin-bottom: 16px; }
+        .call-videos.on { display: grid; grid-template-columns: 1fr 1fr; }
+        .call-videos video {
+            width: 100%; aspect-ratio: 4 / 3; border-radius: 14px; object-fit: cover;
+            background: #000; border: 1px solid var(--border-color, #2a2a3e);
+        }
+        #callLocalVideo { max-width: 100%; }
+        .call-actions { display: flex; gap: 14px; justify-content: center; }
+        .call-btn {
+            width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+            font-size: 22px; background: var(--bg-tertiary, #0f0f1a); color: #fff;
+            border: 1px solid var(--border-color, #2a2a3e);
+            transition: transform .16s, background .2s;
+        }
+        .call-btn:hover { transform: scale(1.06); }
+        .call-btn.off { background: #444; opacity: .6; }
+        .call-btn-end { background: #dc3545; }
+        .call-btn-accept { background: #2ecc71; }
+        #callLocalVideo { transform: scaleX(-1); }
         .markdown-hint {
             font-size: 11px;
             color: var(--text-muted, #888);
@@ -997,6 +1043,37 @@
         <div class="gallery-viewer-bar">
             <span id="galleryViewerInfo"></span>
             <button onclick="event.stopPropagation(); deleteCurrentGalleryPhoto()" class="gallery-viewer-del">🗑️ 删除</button>
+        </div>
+    </div>
+
+    <!-- ===== 1对1 音视频通话界面 ===== -->
+    <div id="callOverlay" class="call-overlay">
+        <div class="call-box">
+            <div class="call-peer" id="callPeerAvatar">👤</div>
+            <div class="call-peer-name" id="callPeerName">对方</div>
+            <div class="call-status" id="callStatus">正在连接…</div>
+            <div class="call-videos">
+                <video id="callRemoteVideo" autoplay playsinline></video>
+                <video id="callLocalVideo" autoplay playsinline muted></video>
+            </div>
+            <div class="call-actions">
+                <button class="call-btn" id="callMuteBtn" onclick="toggleCallMute()" title="静音">🎤</button>
+                <button class="call-btn call-btn-end" onclick="hangupCall()" title="挂断">📞</button>
+                <button class="call-btn" id="callCamBtn" onclick="toggleCallCamera()" title="摄像头">🎥</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 来电弹窗 ===== -->
+    <div id="incomingCallOverlay" class="call-overlay">
+        <div class="call-box">
+            <div class="call-peer">📞</div>
+            <div class="call-peer-name" id="incomingCaller">来电</div>
+            <div class="call-status" id="incomingType">邀请你进行语音通话</div>
+            <div class="call-actions">
+                <button class="call-btn call-btn-end" onclick="rejectIncomingCall()" title="拒绝">❌</button>
+                <button class="call-btn call-btn-accept" onclick="acceptIncomingCall()" title="接听">✅</button>
+            </div>
         </div>
     </div>
 
@@ -2026,7 +2103,10 @@
                     }
                 }
                 const dissolvedBadge = currentRoom.isDissolved ? '<div class="announcement" style="border-left-color:#dc3545;color:#dc3545;">💥 该群聊已解散，仅可查看历史消息，无法发送新消息</div>' : '';
-                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>${currentRoom.isPrivate ? '' : '<button class="settings-btn" onclick="openRoomGallery()">🖼️ 群相册</button>'}</h3>${dissolvedBadge}${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
+                const callBtns = currentRoom.isPrivate
+                    ? '<button class="settings-btn" onclick="startCall(\'audio\')">📞 语音</button><button class="settings-btn" onclick="startCall(\'video\')">🎥 视频</button>'
+                    : '<button class="settings-btn" onclick="openRoomGallery()">🖼️ 群相册</button>';
+                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>${callBtns}</h3>${dissolvedBadge}${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
             }
             document.getElementById('inputContainer').style.display = 'block';
             await loadMessages(false);
@@ -2315,6 +2395,262 @@
 
         function deleteCurrentGalleryPhoto() {
             if (currentGalleryPhoto) deleteGalleryPhoto(currentGalleryPhoto.issueNumber);
+        }
+
+        // ========== 1对1 音视频通话（WebRTC P2P + 免费 STUN，媒体不经服务器） ==========
+        const RTC_CONFIG = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' }
+            ]
+        };
+        let call = null;          // 当前通话
+        let incomingCall = null;  // 待接来电
+        let callPollTimer = null;
+        let incomingTimer = null;
+
+        function callElem(id) { return document.getElementById(id); }
+
+        // 私聊房间里的对方用户名
+        function callPeerOf(room) {
+            if (!room || !room.isPrivate) return null;
+            let members = [];
+            try { members = Array.isArray(room.members) ? room.members : JSON.parse(room.members || '[]'); } catch (e) { return null; }
+            return members.filter(m => m !== currentUser.username)[0] || null;
+        }
+
+        function callToast(text, isError) { galleryToast(text, isError); }
+
+        // ---------- 发起通话 ----------
+        async function startCall(type) {
+            if (call) { alert('当前已在通话中'); return; }
+            const peer = callPeerOf(currentRoom);
+            if (!peer) { alert('只能在私聊中发起语音/视频通话'); return; }
+            let r;
+            try {
+                r = await fetch(`${WORKER_API}/api/call/start`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callee: peer, type: type })
+                }).then(x => x.json());
+            } catch (e) { alert('发起通话失败：网络错误'); return; }
+            if (!r || !r.ok) { alert('发起通话失败：' + ((r && r.error) || '未知错误')); return; }
+
+            call = { callId: r.callId, role: 'caller', type: type, peer: peer, lastId: 0, muted: false, camOff: false };
+            callElem('callPeerName').textContent = peer;
+            callElem('callStatus').textContent = '正在呼叫…';
+            callElem('callOverlay').classList.add('show');
+            try {
+                await setupCallMedia(type);
+                const offer = await call.pc.createOffer();
+                await call.pc.setLocalDescription(offer);
+                await sendCallSignal('offer', { sdp: offer.sdp, type: offer.type });
+            } catch (e) {
+                callToast('无法获取麦克风/摄像头：' + (e.message || e), true);
+                await endCall(true);
+                return;
+            }
+            startCallPolling();
+        }
+
+        // ---------- 媒体与 PeerConnection ----------
+        async function setupCallMedia(type) {
+            const constraints = type === 'video'
+                ? { audio: true, video: { width: { ideal: 1280 }, height: { ideal: 720 } } }
+                : { audio: true, video: false };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            call.stream = stream;
+            const localVideo = callElem('callLocalVideo');
+            if (type === 'video') {
+                localVideo.srcObject = stream;
+                const vwrap = document.querySelector('.call-videos');
+                if (vwrap) vwrap.classList.add('on');
+            }
+            const pc = new RTCPeerConnection(RTC_CONFIG);
+            call.pc = pc;
+            stream.getTracks().forEach(t => pc.addTrack(t, stream));
+            pc.ontrack = function (ev) {
+                const rv = callElem('callRemoteVideo');
+                if (ev.streams && ev.streams[0]) rv.srcObject = ev.streams[0];
+                const vwrap = document.querySelector('.call-videos');
+                if (vwrap) vwrap.classList.add('on');
+            };
+            pc.onicecandidate = function (ev) {
+                if (ev.candidate) sendCallSignal('ice', ev.candidate.toJSON ? ev.candidate.toJSON() : { candidate: ev.candidate.candidate });
+            };
+            pc.onconnectionstatechange = function () {
+                if (!call) return;
+                const st = pc.connectionState;
+                if (st === 'connected') {
+                    callElem('callStatus').textContent = type === 'video' ? '通话中（视频）' : '通话中（语音）';
+                    call.connected = true;
+                } else if (st === 'failed' || st === 'disconnected' || st === 'closed') {
+                    callElem('callStatus').textContent = '连接已断开';
+                    setTimeout(function () { if (call && call.connected) endCall(false); }, 1500);
+                }
+            };
+        }
+
+        async function sendCallSignal(kind, payload) {
+            if (!call) return;
+            try {
+                await fetch(`${WORKER_API}/api/call/signal`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callId: call.callId, kind: kind, payload: payload })
+                });
+            } catch (e) { /* 信令失败由轮询补偿 */ }
+        }
+
+        // ---------- 轮询信令与状态 ----------
+        function startCallPolling() {
+            if (callPollTimer) clearInterval(callPollTimer);
+            callPollTimer = setInterval(pollCallSignals, 1200);
+            pollCallSignals();
+        }
+
+        async function pollCallSignals() {
+            if (!call) return;
+            try {
+                const r = await fetch(`${WORKER_API}/api/call/poll?callId=${encodeURIComponent(call.callId)}&since=${call.lastId}`).then(x => x.json()).catch(() => null);
+                if (!r || !r.ok) return;
+                if (r.call && (r.call.status === 'ended' || r.call.status === 'rejected')) {
+                    if (r.call.status === 'rejected') callToast('对方已拒绝通话', true);
+                    await endCall(true);
+                    return;
+                }
+                for (const s of (r.signals || [])) {
+                    call.lastId = Math.max(call.lastId, s.id);
+                    await handleCallSignal(s);
+                }
+                // 呼叫方：对方接听前提示
+                if (call.role === 'caller' && !call.connected && callElem('callStatus').textContent === '正在呼叫…') {
+                    callElem('callStatus').textContent = '等待对方接听…';
+                }
+                if (call.role === 'callee' && r.call.status === 'accepted' && !call.connected) {
+                    callElem('callStatus').textContent = '正在建立连接…';
+                }
+            } catch (e) { /* 忽略单次失败 */ }
+        }
+
+        async function handleCallSignal(s) {
+            if (!call || !call.pc) return;
+            try {
+                if (s.kind === 'offer' && s.payload) {
+                    // 被叫：接听后处理 offer
+                    if (call.role === 'callee') {
+                        await call.pc.setRemoteDescription(new RTCSessionDescription(s.payload));
+                        const answer = await call.pc.createAnswer();
+                        await call.pc.setLocalDescription(answer);
+                        await sendCallSignal('answer', { sdp: answer.sdp, type: answer.type });
+                    }
+                } else if (s.kind === 'answer' && s.payload) {
+                    if (call.role === 'caller' && call.pc.signalingState !== 'stable') {
+                        await call.pc.setRemoteDescription(new RTCSessionDescription(s.payload));
+                    }
+                } else if (s.kind === 'ice' && s.payload) {
+                    try { await call.pc.addIceCandidate(new RTCIceCandidate(s.payload)); } catch (e) { /* 忽略无效候选 */ }
+                }
+            } catch (e) { console.warn('处理信令失败', s.kind, e); }
+        }
+
+        // ---------- 来电检测（跟随轮询一起跑） ----------
+        async function checkIncomingCall() {
+            if (call || incomingCall) return;
+            try {
+                const r = await fetch(`${WORKER_API}/api/call/incoming`).then(x => x.json()).catch(() => null);
+                if (!r || !r.ok || !r.call) return;
+                incomingCall = r.call;
+                callElem('incomingCaller').textContent = r.call.caller;
+                callElem('incomingType').textContent = r.call.type === 'video' ? '邀请你进行视频通话' : '邀请你进行语音通话';
+                callElem('incomingCallOverlay').classList.add('show');
+            } catch (e) { /* 忽略 */ }
+        }
+
+        // ---------- 接听 / 拒绝 ----------
+        async function acceptIncomingCall() {
+            if (!incomingCall) return;
+            const inc = incomingCall;
+            callElem('incomingCallOverlay').classList.remove('show');
+            incomingCall = null;
+            call = { callId: inc.id, role: 'callee', type: inc.type, peer: inc.caller, lastId: 0, muted: false, camOff: false };
+            callElem('callPeerName').textContent = inc.caller;
+            callElem('callStatus').textContent = '正在接通…';
+            callElem('callOverlay').classList.add('show');
+            try {
+                await fetch(`${WORKER_API}/api/call/answer`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callId: inc.id, accept: true })
+                });
+                await setupCallMedia(inc.type);
+                startCallPolling(); // 通过轮询拿到 offer 并回 answer
+            } catch (e) {
+                callToast('接听失败：' + (e.message || e), true);
+                await endCall(true);
+            }
+        }
+
+        async function rejectIncomingCall() {
+            if (!incomingCall) return;
+            const id = incomingCall.id;
+            callElem('incomingCallOverlay').classList.remove('show');
+            incomingCall = null;
+            try {
+                await fetch(`${WORKER_API}/api/call/answer`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ callId: id, accept: false })
+                });
+            } catch (e) { /* 忽略 */ }
+        }
+
+        // ---------- 挂断 / 清理 ----------
+        async function hangupCall() { await endCall(false); }
+
+        async function endCall(silent) {
+            const cur = call;
+            call = null;
+            if (callPollTimer) { clearInterval(callPollTimer); callPollTimer = null; }
+            callElem('callOverlay').classList.remove('show');
+            const vwrap = document.querySelector('.call-videos');
+            if (vwrap) vwrap.classList.remove('on');
+            callElem('callRemoteVideo').srcObject = null;
+            callElem('callLocalVideo').srcObject = null;
+            if (cur) {
+                try { if (cur.stream) cur.stream.getTracks().forEach(t => t.stop()); } catch (e) { /* 忽略 */ }
+                try { if (cur.pc) cur.pc.close(); } catch (e) { /* 忽略 */ }
+                try {
+                    await fetch(`${WORKER_API}/api/call/end`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ callId: cur.callId })
+                    });
+                } catch (e) { /* 忽略 */ }
+                if (!silent) callToast('通话已结束');
+            }
+            // 恢复按钮状态
+            const mb = callElem('callMuteBtn'), cb = callElem('callCamBtn');
+            if (mb) mb.classList.remove('off');
+            if (cb) cb.classList.remove('off');
+        }
+
+        function toggleCallMute() {
+            if (!call || !call.stream) return;
+            call.muted = !call.muted;
+            call.stream.getAudioTracks().forEach(t => { t.enabled = !call.muted; });
+            callElem('callMuteBtn').classList.toggle('off', call.muted);
+        }
+
+        function toggleCallCamera() {
+            if (!call || !call.stream) return;
+            const tracks = call.stream.getVideoTracks();
+            if (tracks.length === 0) { callToast('当前是语音通话，没有摄像头轨道', true); return; }
+            call.camOff = !call.camOff;
+            tracks.forEach(t => { t.enabled = !call.camOff; });
+            callElem('callCamBtn').classList.toggle('off', call.camOff);
+        }
+
+        // 来电轮询（每 4 秒检查一次；通话中不检查）
+        function startIncomingWatcher() {
+            if (incomingTimer) clearInterval(incomingTimer);
+            incomingTimer = setInterval(checkIncomingCall, 4000);
         }
 
         // ========== 成员管理（踢人 / 禁言） ==========
@@ -2731,6 +3067,8 @@
                 });
             }
             console.log('AI 机器人已启用，触发词:', BOT_CONFIG.triggerWords);
+            // 启动来电监听（每 4 秒检查一次是否有来电）
+            startIncomingWatcher();
             
             if (window.innerWidth <= 768) {
                 document.getElementById('menuToggle').style.display = 'flex';
