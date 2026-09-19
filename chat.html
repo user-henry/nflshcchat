@@ -2088,7 +2088,8 @@
             if (room.isBanned) { alert('该群聊已被封禁'); return; }
             currentRoom = room;
             if (room.type === 'private') {
-                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}</h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
+                // 私聊：提供 1对1 语音 / 视频通话入口（WebRTC）
+                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="startCall('audio')">📞 语音通话</button><button class="settings-btn" onclick="startCall('video')">🎥 视频通话</button></h3><p>私聊 · 仅你们两人可见</p><div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览</div>`;
             } else {
                 if (room.joinType === 'verify') {
                     const isMember = room.members && room.members.includes(currentUser.username);
@@ -2103,9 +2104,7 @@
                     }
                 }
                 const dissolvedBadge = currentRoom.isDissolved ? '<div class="announcement" style="border-left-color:#dc3545;color:#dc3545;">💥 该群聊已解散，仅可查看历史消息，无法发送新消息</div>' : '';
-                const callBtns = currentRoom.type === 'private'
-                    ? '<button class="settings-btn" onclick="startCall(\'audio\')">📞 语音</button><button class="settings-btn" onclick="startCall(\'video\')">🎥 视频</button>'
-                    : '<button class="settings-btn" onclick="openRoomGallery()">🖼️ 群相册</button>';
+                const callBtns = '<button class="settings-btn" onclick="openRoomGallery()">🖼️ 群相册</button>';
                 document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>${callBtns}</h3>${dissolvedBadge}${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
             }
             document.getElementById('inputContainer').style.display = 'block';
