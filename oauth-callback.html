@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>授权结果 · NFLSHC Chat</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#ffd700">
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: radial-gradient(1200px 700px at 50% -10%, #221d0a 0%, #1a1a2e 45%, #0f0f1a 100%);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 24px;
+        }
+        .card {
+            width: 100%; max-width: 460px; text-align: center;
+            background: rgba(22, 33, 62, .82); border: 1px solid #2a2a3e;
+            border-radius: 22px; padding: 38px 32px 30px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, .5); backdrop-filter: blur(14px);
+            animation: pop .38s cubic-bezier(.2, .9, .3, 1.15);
+        }
+        @keyframes pop { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+        .logo {
+            width: 68px; height: 68px; margin: 0 auto 16px; border-radius: 20px;
+            display: flex; align-items: center; justify-content: center; font-size: 34px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            box-shadow: 0 10px 28px rgba(255, 200, 87, .28);
+        }
+        h1 {
+            font-size: 22px; font-weight: 700; margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .sub { font-size: 13.5px; color: #9aa0ae; line-height: 1.75; margin-bottom: 20px; }
+        .sub b { color: #ffd700; }
+        .kv {
+            text-align: left; font-size: 12.5px; color: #9aa0ae;
+            background: rgba(15, 15, 26, .7); border: 1px solid #2a2a3e;
+            border-radius: 12px; padding: 12px 14px; margin-bottom: 20px; display: none;
+        }
+        .kv.on { display: block; }
+        .kv div { margin-bottom: 6px; word-break: break-all; }
+        .kv div:last-child { margin-bottom: 0; }
+        .kv code { color: #ffd700; font-family: ui-monospace, Menlo, Consolas, monospace; }
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 12px 20px; border-radius: 13px;
+            font-size: 14.5px; font-weight: 600; text-decoration: none;
+            color: #10131a; background: linear-gradient(135deg, #ffd700, #ffb347);
+            box-shadow: 0 10px 26px rgba(255, 200, 87, .26);
+            transition: transform .16s, box-shadow .22s;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(255, 200, 87, .34); }
+        .btn.secondary {
+            background: #0f0f1a; color: #fff; border: 1px solid #2a2a3e;
+            box-shadow: none; margin-top: 10px;
+        }
+        .foot { margin-top: 16px; font-size: 12px; color: #6f7480; }
+        .foot a { color: #9aa0ae; text-decoration: none; border-bottom: 1px dashed #3a3a4e; }
+        .foot a:hover { color: #ffd700; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo" id="cbIcon">✅</div>
+        <h1 id="cbTitle">授权成功</h1>
+        <p class="sub" id="cbDesc">
+            你已授权 <b>NFLSHC Chat</b> 访问你的账号信息<br>
+            正在返回应用…
+        </p>
+
+        <div class="kv" id="cbDetail">
+            <div>应用：<code>NFLSHC Chat</code></div>
+            <div>授权码：<code id="cbCode">—</code></div>
+            <div>回调地址：<code>https://nflshcchat.cc.cd/oauth-callback.html</code></div>
+        </div>
+
+        <a class="btn" href="chat.html" id="cbBackBtn">返回 NFLSHC Chat →</a>
+        <a class="btn secondary" href="accounts-apps-link" id="cbManageBtn" target="_blank" rel="noopener">管理我的授权</a>
+
+        <p class="foot">
+            本页为 NFLSHC Chat 的 OAuth 回调页（对外展示用）。<br>
+            如有疑问请访问 <a href="https://nflshcchat.cc.cd" target="_blank" rel="noopener">nflshcchat.cc.cd</a>
+        </p>
+    </div>
+
+    <script>
+        (function () {
+            // OAuth 回调页：解析授权结果并给出友好提示
+            var params = new URLSearchParams(window.location.search);
+            var code = params.get('code');
+            var error = params.get('error');
+            var errorDesc = params.get('error_description');
+            var state = params.get('state');
+
+            document.getElementById('cbManageBtn').href = 'https://accounts.nflshcchat.cc.cd/apps.html';
+
+            if (error) {
+                document.getElementById('cbIcon').textContent = '🚫';
+                document.getElementById('cbTitle').textContent = '授权未完成';
+                document.getElementById('cbDesc').innerHTML =
+                    '你取消了授权，或授权过程中出现问题。<br><span style="color:#f7c46c;">' +
+                    (errorDesc || error) + '</span>';
+                document.getElementById('cbBackBtn').textContent = '返回 NFLSHC Chat →';
+                return;
+            }
+
+            if (code) {
+                document.getElementById('cbDetail').classList.add('on');
+                document.getElementById('cbCode').textContent = String(code).slice(0, 18) + '…';
+            }
+            if (state) {
+                var d = document.getElementById('cbDetail');
+                var row = document.createElement('div');
+                row.innerHTML = 'state：<code>' + String(state).replace(/[<>&"]/g, '') + '</code>';
+                d.appendChild(row);
+            }
+
+            // 对外展示：2.5 秒后自动回到聊天页
+            setTimeout(function () { window.location.href = 'chat.html'; }, 2500);
+        })();
+    </script>
+</body>
+</html>
