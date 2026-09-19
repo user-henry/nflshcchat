@@ -1068,6 +1068,9 @@
         }
 
         function logout() { 
+            // 关闭实时推送连接，避免退出后仍占用连接
+            if (typeof stopRealtime === 'function') stopRealtime();
+            if (typeof pollInterval !== 'undefined' && pollInterval) clearInterval(pollInterval);
             // 清除 localStorage 和 sessionStorage 中的登录状态
             localStorage.removeItem('nflshc_currentUser');
             sessionStorage.removeItem('currentUser');
@@ -2028,6 +2031,7 @@
             document.getElementById('inputContainer').style.display = 'block';
             await loadMessages(false);
             startPolling();
+            startRealtime(room.id);
         }
 
         function showRoomSettings() {
@@ -2611,7 +2615,8 @@
             }
         }
         
-        function startPolling() {
+        // ========== 轮询（SSE 不可用时的兜底） ==========
+        function setPollingInterval(ms) {
             if (pollInterval) clearInterval(pollInterval);
             pollInterval = setInterval(async () => {
                 if (currentRoom && !currentRoom.isBanned) {
@@ -2623,7 +2628,83 @@
                 if (notificationBtn && window.innerWidth > 768) {
                     await loadNotifications();
                 }
-            }, 3000);
+            }, ms);
+        }
+
+        function startPolling() {
+            setPollingInterval(3000);
+        }
+
+        // ========== 实时推送（SSE）：新消息 1~2 秒内到达，省掉大量轮询请求 ==========
+        let realtimeSource = null;
+        let realtimeRoomId = null;
+        let realtimeSince = null;
+        let realtimeFailures = 0;
+        let realtimeReconnectTimer = null;
+
+        function startRealtime(roomId) {
+            stopRealtime();
+            const token = window.AuthToken && window.AuthToken.get();
+            if (!token || !roomId) return; // 未登录或没有房间：继续用轮询
+            realtimeRoomId = roomId;
+            realtimeSince = new Date(Date.now() - 3000).toISOString();
+            realtimeFailures = 0;
+            connectRealtime();
+        }
+
+        function connectRealtime() {
+            const token = window.AuthToken && window.AuthToken.get();
+            if (!token || !realtimeRoomId || realtimeSource) return;
+            try {
+                const qs = 'room_id=' + encodeURIComponent(realtimeRoomId) +
+                    '&since=' + encodeURIComponent(realtimeSince) +
+                    '&access_token=' + encodeURIComponent(token);
+                realtimeSource = new EventSource(`${WORKER_API}/api/realtime/stream?${qs}`);
+
+                realtimeSource.addEventListener('hello', function () {
+                    realtimeFailures = 0;
+                    // SSE 正常：轮询降为 15 秒兜底，显著减少请求量
+                    setPollingInterval(15000);
+                    console.log('⚡ 实时推送已连接（SSE）');
+                });
+
+                realtimeSource.addEventListener('messages', function (e) {
+                    try {
+                        const d = JSON.parse(e.data);
+                        if (d && d.since) realtimeSince = d.since;
+                    } catch (err) { /* 忽略 */ }
+                    if (currentRoom && currentRoom.id === realtimeRoomId) pollNewMessages();
+                });
+
+                // 服务端每约 55 秒主动轮换连接：立即带 since 重连，避免重复消息
+                realtimeSource.addEventListener('bye', function (e) {
+                    try {
+                        const d = JSON.parse(e.data);
+                        if (d && d.since) realtimeSince = d.since;
+                    } catch (err) { /* 忽略 */ }
+                    if (realtimeSource) { try { realtimeSource.close(); } catch (err) {} realtimeSource = null; }
+                    clearTimeout(realtimeReconnectTimer);
+                    realtimeReconnectTimer = setTimeout(connectRealtime, 600);
+                });
+
+                realtimeSource.onerror = function () {
+                    realtimeFailures++;
+                    if (realtimeSource) { try { realtimeSource.close(); } catch (err) {} realtimeSource = null; }
+                    // 连续失败则回退到 3 秒轮询，保证消息不丢
+                    if (realtimeFailures >= 2) setPollingInterval(3000);
+                    clearTimeout(realtimeReconnectTimer);
+                    realtimeReconnectTimer = setTimeout(connectRealtime, Math.min(30000, 2000 * realtimeFailures));
+                };
+            } catch (e) {
+                console.warn('SSE 不可用，使用轮询兜底', e);
+                setPollingInterval(3000);
+            }
+        }
+
+        function stopRealtime() {
+            clearTimeout(realtimeReconnectTimer);
+            if (realtimeSource) { try { realtimeSource.close(); } catch (e) { /* 忽略 */ } realtimeSource = null; }
+            realtimeRoomId = null;
         }
 
         window.onload = async function() {
