@@ -171,6 +171,50 @@
         .settings-btn:hover { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); }
         .verify-code { font-size: 12px; background: var(--bg-tertiary, #2a2a3e); padding: 4px 12px; border-radius: 20px; color: var(--text-secondary, #aaa); display: inline-block; }
         .announcement { font-size: 12px; color: var(--text-secondary, #aaa); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color, #2a2a3e); word-break: break-word; }
+
+        /* ===== 群相册 ===== */
+        .gallery-upload-btn {
+            display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+            padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-color, #ffd700), var(--accent-hover, #ffb347));
+            color: #10131a; transition: transform .16s, filter .2s;
+        }
+        .gallery-upload-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+        .gallery-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+            gap: 10px; max-height: 60vh; overflow-y: auto; padding: 4px;
+        }
+        .gallery-item {
+            position: relative; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden;
+            background: var(--bg-tertiary, #0f0f1a); border: 1px solid var(--border-color, #2a2a3e);
+            cursor: pointer; transition: transform .18s, border-color .18s;
+        }
+        .gallery-item:hover { transform: translateY(-2px); border-color: var(--accent-color, #ffd700); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .gallery-item .gallery-meta {
+            position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 8px;
+            font-size: 11px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.78));
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .gallery-item .gallery-del {
+            position: absolute; top: 6px; right: 6px; width: 26px; height: 26px;
+            border-radius: 50%; border: none; cursor: pointer; font-size: 13px;
+            background: rgba(0,0,0,.6); color: #fff; opacity: 0; transition: opacity .18s;
+        }
+        .gallery-item:hover .gallery-del { opacity: 1; }
+        .gallery-item .gallery-del:hover { background: #dc3545; }
+        .gallery-viewer {
+            position: fixed; inset: 0; z-index: 3000; display: none;
+            align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+            background: rgba(0, 0, 0, .88); padding: 24px; backdrop-filter: blur(4px);
+        }
+        .gallery-viewer.show { display: flex; }
+        .gallery-viewer img { max-width: 92vw; max-height: 78vh; border-radius: 12px; object-fit: contain; }
+        .gallery-viewer-bar { display: flex; align-items: center; gap: 14px; color: #d8d8d8; font-size: 13px; }
+        .gallery-viewer-del {
+            padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer;
+            background: #dc3545; color: #fff; font-size: 13px;
+        }
         .markdown-hint {
             font-size: 11px;
             color: var(--text-muted, #888);
@@ -925,6 +969,34 @@
                 <button onclick="closeRoomSettingsModal()">关闭</button>
                 <button onclick="saveRoomSettings()" style="background: var(--accent-color, #ffd700);" id="saveSettingsBtn">保存</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== 群相册 ===== -->
+    <div id="roomGalleryModal" class="modal">
+        <div class="modal-content" style="max-width: 860px; width: 92%;">
+            <h3 id="galleryTitle">🖼️ 群相册</h3>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+                <label class="gallery-upload-btn" for="galleryFileInput">📤 上传图片
+                    <input type="file" id="galleryFileInput" accept="image/*" multiple style="display:none;" onchange="uploadGalleryPhotos(this.files)">
+                </label>
+                <span id="galleryStatus" style="font-size: 13px; color: var(--text-secondary, #aaa);"></span>
+                <span style="flex:1;"></span>
+                <button onclick="loadRoomGallery()" style="width:auto; padding:6px 14px;">🔄 刷新</button>
+            </div>
+            <div id="galleryGrid" class="gallery-grid"><div class="loading">加载中...</div></div>
+            <div class="modal-buttons">
+                <button onclick="closeRoomGallery()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 图片查看器 ===== -->
+    <div id="galleryViewer" class="gallery-viewer" onclick="closeGalleryViewer()">
+        <img id="galleryViewerImg" src="" alt="群相册图片" onclick="event.stopPropagation()">
+        <div class="gallery-viewer-bar">
+            <span id="galleryViewerInfo"></span>
+            <button onclick="event.stopPropagation(); deleteCurrentGalleryPhoto()" class="gallery-viewer-del">🗑️ 删除</button>
         </div>
     </div>
 
@@ -1951,7 +2023,7 @@
                     }
                 }
                 const dissolvedBadge = currentRoom.isDissolved ? '<div class="announcement" style="border-left-color:#dc3545;color:#dc3545;">💥 该群聊已解散，仅可查看历史消息，无法发送新消息</div>' : '';
-                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button></h3>${dissolvedBadge}${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
+                document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>${currentRoom.isPrivate ? '' : '<button class="settings-btn" onclick="openRoomGallery()">🖼️ 群相册</button>'}</h3>${dissolvedBadge}${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
             }
             document.getElementById('inputContainer').style.display = 'block';
             await loadMessages(false);
@@ -2031,6 +2103,216 @@
                 alert('已关闭邀请链接');
             } catch (e) { alert('操作失败: ' + e.message); }
         }
+        // ========== 群相册（复用图床 ImgURL + worker 的 roomgallery_ 标签） ==========
+        const GALLERY_IMGURL_TOKEN = 'sk-3MFTmxvC35FoUwJDVDcVRrBXNEvwZloqhQxeFBC4sha2DrzYZYT6p2e4D6NKh';
+        const GALLERY_IMGURL_BASE = 'https://www.imgurl.org';
+        let galleryPhotos = [];
+        let currentGalleryPhoto = null;
+
+        function galleryToast(text, isError) {
+            let el = document.getElementById('galleryToast');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'galleryToast';
+                el.style.cssText = 'position:fixed;left:50%;bottom:40px;transform:translate(-50%,16px);padding:11px 18px;' +
+                    'border-radius:10px;font-size:13.5px;z-index:3100;opacity:0;transition:all .25s ease;pointer-events:none;' +
+                    'max-width:80vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.45);' +
+                    'background:var(--bg-secondary,#16213e);color:var(--text-primary,#fff);border:1px solid var(--border-color,#2a2a3e);';
+                document.body.appendChild(el);
+            }
+            el.style.borderColor = isError ? '#dc3545' : 'var(--accent-color,#ffd700)';
+            el.textContent = text;
+            el.style.opacity = '1';
+            el.style.transform = 'translate(-50%,0)';
+            clearTimeout(el.__t);
+            el.__t = setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translate(-50%,16px)'; }, 2600);
+        }
+
+        function galleryLabel() {
+            return 'roomgallery_' + (currentRoom ? currentRoom.id : '');
+        }
+
+        function galleryRoomAdmins() {
+            if (!currentRoom) return [];
+            try {
+                return Array.isArray(currentRoom.admins) ? currentRoom.admins : JSON.parse(currentRoom.admins || '[]');
+            } catch (e) { return []; }
+        }
+
+        function canDeleteGalleryPhoto(p) {
+            if (!currentUser || !currentRoom) return false;
+            if (currentUser.isAdmin || currentUser.username === 'huangzhiyuan') return true;
+            if (p.uploader && p.uploader === currentUser.username) return true;
+            return currentRoom.creator === currentUser.username || galleryRoomAdmins().includes(currentUser.username);
+        }
+
+        function formatGalleryTime(iso) {
+            if (!iso) return '';
+            try {
+                const d = new Date(iso);
+                const now = Date.now();
+                const diff = now - d.getTime();
+                if (diff < 60000) return '刚刚';
+                if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前';
+                if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前';
+                return d.toLocaleDateString('zh-CN');
+            } catch (e) { return ''; }
+        }
+
+        function openRoomGallery() {
+            if (!currentRoom) return;
+            document.getElementById('galleryTitle').textContent = '🖼️ ' + currentRoom.name + ' · 群相册';
+            document.getElementById('roomGalleryModal').style.display = 'flex';
+            loadRoomGallery();
+        }
+
+        function closeRoomGallery() {
+            document.getElementById('roomGalleryModal').style.display = 'none';
+            closeGalleryViewer();
+        }
+
+        async function loadRoomGallery() {
+            const grid = document.getElementById('galleryGrid');
+            const status = document.getElementById('galleryStatus');
+            if (!grid) return;
+            grid.innerHTML = '<div class="loading">加载中...</div>';
+            status.textContent = '';
+            try {
+                const res = await fetch(`${WORKER_API}/api/legacy/issues?labels=${encodeURIComponent(galleryLabel())}&state=open`, {
+                    headers: { 'Accept': 'application/vnd.github.v3+json' }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const issues = await res.json();
+                galleryPhotos = [];
+                for (const issue of (issues || [])) {
+                    let parsed = issue.raw || null;
+                    if (!parsed) {
+                        const m = (issue.body || '').match(/```json\r?\n([\s\S]*?)\r?\n```/);
+                        if (!m) continue;
+                        try { parsed = JSON.parse(m[1]); } catch (e) { continue; }
+                    }
+                    if (!parsed || !parsed.url) continue;
+                    galleryPhotos.push(Object.assign({}, parsed, { issueNumber: issue.number }));
+                }
+                renderGalleryGrid();
+            } catch (e) {
+                grid.innerHTML = `<div style="color:#dc3545;padding:10px;">加载失败：${escapeHtml(e.message)}</div>`;
+            }
+        }
+
+        function renderGalleryGrid() {
+            const grid = document.getElementById('galleryGrid');
+            const status = document.getElementById('galleryStatus');
+            status.textContent = `共 ${galleryPhotos.length} 张照片`;
+            if (galleryPhotos.length === 0) {
+                grid.innerHTML = '<div class="loading">还没有照片，点击「📤 上传图片」分享第一张吧</div>';
+                return;
+            }
+            grid.innerHTML = galleryPhotos.map((p, i) => `
+                <div class="gallery-item" onclick="showGalleryViewer(${i})">
+                    <img src="${escapeHtml(p.thumbnail_url || p.url)}" alt="${escapeHtml(p.filename || '')}" loading="lazy">
+                    ${canDeleteGalleryPhoto(p) ? `<button class="gallery-del" title="删除" onclick="event.stopPropagation(); deleteGalleryPhoto(${p.issueNumber})">🗑️</button>` : ''}
+                    <div class="gallery-meta">${escapeHtml(p.uploader || '')} · ${formatGalleryTime(p.uploadedAt)}</div>
+                </div>`).join('');
+        }
+
+        async function uploadGalleryPhotos(files) {
+            if (!files || files.length === 0) return;
+            if (!currentRoom) { galleryToast('请先进入一个群聊', true); return; }
+            const status = document.getElementById('galleryStatus');
+            let ok = 0, fail = 0, lastErr = '';
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                status.textContent = `上传中 ${i + 1}/${files.length}…`;
+                try {
+                    if (!file.type.startsWith('image/')) throw new Error('不是图片文件');
+                    if (file.size > 5 * 1024 * 1024) throw new Error('超过 5MB 限制');
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    fd.append('params', JSON.stringify({ dedup: true, compress: false, watermark: false }));
+                    const upRes = await fetch(`${GALLERY_IMGURL_BASE}/api/v3/upload`, {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + GALLERY_IMGURL_TOKEN },
+                        body: fd
+                    });
+                    const upData = await upRes.json();
+                    if (upData.code !== 200 || !upData.data) throw new Error(upData.msg || '图床上传失败');
+                    const d = upData.data;
+                    const payload = {
+                        id: Date.now() + i,
+                        filename: d.filename || file.name,
+                        url: d.url,
+                        thumbnail_url: d.thumbnail_url || d.url,
+                        width: d.width || 0,
+                        height: d.height || 0,
+                        size: d.size || file.size,
+                        uploader: currentUser.username,
+                        uploadedAt: new Date().toISOString(),
+                        roomId: currentRoom.id
+                    };
+                    const body = '群相册图片\n```json\n' + JSON.stringify(payload, null, 2) + '\n```';
+                    const saveRes = await fetch(`${WORKER_API}/api/legacy/issues`, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: '相册照片: ' + payload.filename, body, labels: [galleryLabel()] })
+                    });
+                    if (!saveRes.ok) {
+                        const t = await saveRes.text();
+                        let msg = 'HTTP ' + saveRes.status;
+                        try { msg = JSON.parse(t).error || msg; } catch (e) { /* 保留 */ }
+                        throw new Error(msg);
+                    }
+                    ok++;
+                } catch (e) {
+                    console.error('群相册上传失败:', e);
+                    lastErr = e.message || String(e);
+                    fail++;
+                }
+            }
+            document.getElementById('galleryFileInput').value = '';
+            status.textContent = `完成：成功 ${ok} 张${fail ? '，失败 ' + fail + ' 张（' + lastErr + '）' : ''}`;
+            galleryToast(ok > 0 ? `已上传 ${ok} 张照片到群相册` : ('上传失败：' + lastErr), ok === 0);
+            await loadRoomGallery();
+        }
+
+        async function deleteGalleryPhoto(issueNumber) {
+            if (!confirm('确定从群相册删除这张照片吗？')) return;
+            try {
+                const res = await fetch(`${WORKER_API}/api/legacy/issues/${encodeURIComponent(issueNumber)}?labels=${encodeURIComponent(galleryLabel())}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' }
+                });
+                if (!res.ok) {
+                    const j = await res.json().catch(() => ({}));
+                    throw new Error(j.error || ('HTTP ' + res.status));
+                }
+                galleryToast('已从群相册删除');
+                closeGalleryViewer();
+                await loadRoomGallery();
+            } catch (e) {
+                alert('删除失败：' + (e.message || e));
+            }
+        }
+
+        function showGalleryViewer(index) {
+            const p = galleryPhotos[index];
+            if (!p) return;
+            currentGalleryPhoto = p;
+            document.getElementById('galleryViewerImg').src = p.url;
+            document.getElementById('galleryViewerInfo').textContent =
+                `${p.filename || ''} · ${p.uploader || ''} · ${formatGalleryTime(p.uploadedAt)}`;
+            document.getElementById('galleryViewer').classList.add('show');
+        }
+
+        function closeGalleryViewer() {
+            document.getElementById('galleryViewer').classList.remove('show');
+            currentGalleryPhoto = null;
+        }
+
+        function deleteCurrentGalleryPhoto() {
+            if (currentGalleryPhoto) deleteGalleryPhoto(currentGalleryPhoto.issueNumber);
+        }
+
         // ========== 成员管理（踢人 / 禁言） ==========
         function escapeAttr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
         function renderMemberManageList() {
