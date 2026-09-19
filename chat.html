@@ -2103,7 +2103,7 @@
                     }
                 }
                 const dissolvedBadge = currentRoom.isDissolved ? '<div class="announcement" style="border-left-color:#dc3545;color:#dc3545;">💥 该群聊已解散，仅可查看历史消息，无法发送新消息</div>' : '';
-                const callBtns = currentRoom.isPrivate
+                const callBtns = currentRoom.type === 'private'
                     ? '<button class="settings-btn" onclick="startCall(\'audio\')">📞 语音</button><button class="settings-btn" onclick="startCall(\'video\')">🎥 视频</button>'
                     : '<button class="settings-btn" onclick="openRoomGallery()">🖼️ 群相册</button>';
                 document.getElementById('chatHeader').innerHTML = `<h3>${escapeHtml(currentRoom.name)}<button class="settings-btn" onclick="showRoomSettings()">⚙️ 群设置</button>${callBtns}</h3>${dissolvedBadge}${currentRoom.joinType === 'verify' ? `<div class="verify-code">🔐 验证码: ${currentRoom.verifyCode || '无'}</div>` : ''}${currentRoom.announcement ? `<div class="announcement">📢 ${escapeHtml(currentRoom.announcement)}</div>` : ''}<div class="markdown-hint">💡 支持 Markdown 格式（**粗体**、*斜体*、[链接](url)、代码块等），输入时下方会显示实时预览，使用 @用户名 可以提到某人，@所有人 可以通知全体成员</div>`;
@@ -2414,7 +2414,7 @@
 
         // 私聊房间里的对方用户名
         function callPeerOf(room) {
-            if (!room || !room.isPrivate) return null;
+            if (!room || room.type !== 'private') return null;
             let members = [];
             try { members = Array.isArray(room.members) ? room.members : JSON.parse(room.members || '[]'); } catch (e) { return null; }
             return members.filter(m => m !== currentUser.username)[0] || null;
