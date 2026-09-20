@@ -1158,6 +1158,15 @@
             window.location.href = 'index.html'; 
         }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        // 账号被封禁时的提示：明确告知原因并提供申诉入口（此前只有 alert，用户无处申诉）
+        function showBanAppealNotice() {
+            var uname = (currentUser && currentUser.username) || '';
+            var go = confirm('您的账号已被封禁，无法发送消息。\n\n点击「确定」前往提交申诉，我们会尽快处理。');
+            if (go) {
+                window.location.href = 'index.html?appeal=1&username=' + encodeURIComponent(uname);
+            }
+        }
         function generateRandomCode() { return Math.random().toString(36).substring(2, 10).toUpperCase(); }
         function isSystemAdmin(username) { return username === 'huangzhiyuan'; }
         
@@ -1974,7 +1983,7 @@
             // 被群管理员禁言
             if (currentRoom.type === 'group' && currentRoom.mutedMembers && currentRoom.mutedMembers.includes(currentUser.username)) { alert('你已被群管理员禁言，暂时无法发送消息'); return; }
             const isBanned = await checkUserBanned(currentUser.username);
-            if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
+            if (isBanned) { showBanAppealNotice(); return; }
             const hasMentionAll = content.includes('@所有人');
             let mentionedUsers = [];
             const mentionPattern = /@([a-zA-Z0-9_\u4e00-\u9fa5]+)/g;
@@ -3173,7 +3182,7 @@
             }
             
             const isBanned = await checkUserBanned(currentUser.username);
-            if (isBanned) { alert('您的账号已被封禁，无法发送消息'); return; }
+            if (isBanned) { showBanAppealNotice(); return; }
             
             const durationStr = `${Math.floor(duration / 60)}:${(duration % 60).toString().padStart(2, '0')}`;
             const messageData = {
