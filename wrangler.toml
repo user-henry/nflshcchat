@@ -1,0 +1,25 @@
+name = "nflshcchat"
+main = "worker.js"
+compatibility_date = "2025-08-01"
+
+# EmailJS 私钥使用 `wrangler secret put EMAILJS_API_KEY` 注入（加密存储，不进仓库）
+#
+# Google 账号登录（主站 / HZYAI / accounts / platform 共用）：
+#   GOOGLE_CLIENT_ID      —— 可放在 [vars]（不算机密），也可用 secret
+#   GOOGLE_CLIENT_SECRET  —— 必须用 `wrangler secret put GOOGLE_CLIENT_SECRET` 注入
+#   GOOGLE_STATE_SECRET   —— 可选，用于给 OAuth state 签名（不设则复用 client secret）
+# 两个值缺任一个，「使用 Google 账号登录」按钮会在前端自动隐藏。
+# Google 控制台「已获授权的重定向 URI」填：
+#   https://worker.nflshcchat.cc.cd/api/auth/google/callback
+[vars]
+# Google OAuth 客户端 ID（公开信息，不算机密；对应的 Client Secret 用 wrangler secret 注入）
+GOOGLE_CLIENT_ID = "726604873910-mmragqfr45bj72m74hnudl5mu8v4565v.apps.googleusercontent.com"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nflshcchat"
+database_id = "434ab9f0-9562-4562-8459-67337bdfdc94"
+
+[[routes]]
+pattern = "worker.nflshcchat.cc.cd"
+custom_domain = true
