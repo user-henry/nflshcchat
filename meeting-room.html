@@ -20,7 +20,7 @@
         .btn.on { background: #28a745; border-color: #28a745; color: #fff; }
         .btn.danger { border-color: rgba(231,76,60,.6); color: var(--danger, #e74c3c); }
         .main { flex: 1; display: flex; min-height: 0; }
-        .stage { flex: 1; padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+        .stage { flex: 1; padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
         .tile { position: relative; background: #101018; border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; }
         .tile video { width: 100%; height: 100%; object-fit: cover; background: #101018; }
@@ -28,6 +28,11 @@
         .tile .badge { position: absolute; right: 10px; top: 8px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); border-radius: 999px; padding: 2px 9px; }
         .avatar { width: 66px; height: 66px; border-radius: 50%; background: var(--bg-secondary); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--accent-color); }
         .hint { color: var(--text-secondary); font-size: 13px; line-height: 1.8; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 12px; padding: 12px 14px; }
+        .hint b { color: var(--text-primary); }
+        .diag { font-size: 12.5px; line-height: 1.9; color: var(--text-secondary); background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 10px 14px; }
+        .diag .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot.ok { background: #28a745; } .dot.wait { background: #f39c12; } .dot.bad { background: #e74c3c; } .dot.idle { background: #888; }
         .side { width: 340px; border-left: 1px solid var(--border-color); background: var(--bg-secondary); display: flex; flex-direction: column; min-height: 0; }
         .side h4 { font-size: 13.5px; padding: 12px 16px 8px; color: var(--text-secondary); }
         .members { padding: 0 16px 10px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow: auto; }
@@ -45,7 +50,7 @@
         .composer input:focus { outline: none; border-color: var(--accent-color); }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
         .modal.active { display: flex; }
-        .modal .box { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; max-width: 420px; width: 100%; }
+        .modal .box { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; max-width: 440px; width: 100%; }
         .modal h3 { margin-bottom: 10px; font-size: 17px; }
         .modal p { color: var(--text-secondary); font-size: 13.5px; line-height: 1.7; margin-bottom: 12px; }
         .modal input { width: 100%; padding: 11px 13px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; margin-bottom: 12px; font-family: inherit; }
@@ -82,7 +87,15 @@
                 点「🎙️ 开启语音」或「🎥 开启视频」开始通话（浏览器会请求麦克风/摄像头权限）。<br>
                 音视频在参与者之间<strong>点对点传输</strong>，不经过服务器；会议结束后不保留任何录音录像。
             </div>
+            <div id="playBanner" style="display:none;">
+                <button class="btn" onclick="resumeAudio()" style="border-color:var(--accent-color);color:var(--accent-color);">🔊 点击开启对方声音（浏览器自动播放限制）</button>
+            </div>
             <div class="grid" id="grid"></div>
+            <div class="diag" id="diag">
+                <div class="row"><span class="dot idle" id="dotJoin"></span><span id="txtJoin">正在加入会议…</span></div>
+                <div class="row"><span class="dot idle" id="dotSignal"></span><span id="txtSignal">信令：等待中</span></div>
+                <div id="peerStates" style="margin-top:4px;"></div>
+            </div>
             <div class="msg" id="mediaMsg"></div>
         </div>
         <div class="side">
@@ -110,14 +123,29 @@
         </div>
     </div>
 
+    <div class="modal" id="pwdModal">
+        <div class="box">
+            <h3>🔒 该会议需要密码</h3>
+            <p>请输入主持人设置的会议密码后加入。</p>
+            <input type="text" id="pwdInput" placeholder="会议密码" maxlength="32">
+            <div class="btns">
+                <button class="btn" onclick="location.href='meeting.html'">返回</button>
+                <button class="btn" onclick="submitPwd()" style="background:var(--accent-color,#ffd700);color:#1a1a2e;border-color:transparent;font-weight:600;">加入</button>
+            </div>
+            <div class="msg" id="pwdMsg"></div>
+        </div>
+    </div>
+
     <script>
         const API = WORKER_API;
         const params = new URLSearchParams(window.location.search);
-        const meetingId = params.get('id') || '';
+        let meetingId = params.get('id') || '';
         let meetingCode = params.get('code') || '';
         let me = '';
         let isHost = false;
         let meeting = null;
+        let joined = false;
+        let meetingPassword = '';
 
         // ---------- 工具 ----------
         function escapeHtml(t) {
@@ -150,17 +178,75 @@
             msg.innerHTML = '<span class="ok">✅ 已复制会议编号 ' + escapeHtml(t) + '</span>';
             setTimeout(() => { msg.innerHTML = ''; }, 2500);
         }
+        function setDiag(which, state, text) {
+            const dot = document.getElementById('dot' + which);
+            const txt = document.getElementById('txt' + which);
+            if (dot) dot.className = 'dot ' + state;
+            if (txt && text !== undefined) txt.textContent = text;
+        }
 
         // ============================================================
-        //  聊天
+        //  一、入会（关键：必须先成为会议成员，否则聊天与信令都会被拒绝）
+        // ============================================================
+        async function joinMeeting() {
+            setDiag('Join', 'wait', '正在加入会议…');
+            const body = { code: meetingCode || meetingId };
+            if (meetingPassword) body.password = meetingPassword;
+            const r = await api('/api/meeting/join', { body: body });
+            if (r.ok && r.data.ok) {
+                joined = true;
+                meetingCode = r.data.code || meetingCode;
+                if (!meetingId && r.data.meeting && r.data.meeting.id) meetingId = r.data.meeting.id;
+                setDiag('Join', 'ok', '已入会（' + meetingCode + '）');
+                return true;
+            }
+            if (r.status === 403 && r.data.code === 'need_password') {
+                setDiag('Join', 'bad', '该会议需要密码');
+                document.getElementById('pwdModal').classList.add('active');
+                document.getElementById('pwdInput').focus();
+                return false;
+            }
+            if (r.status === 401) {
+                setDiag('Join', 'bad', '登录已过期');
+                window.location.href = 'index.html?next=' + encodeURIComponent('meeting-room.html' + window.location.search);
+                return false;
+            }
+            setDiag('Join', 'bad', '入会失败：' + (r.data.error || ('HTTP ' + r.status)));
+            sysMsg('入会失败：' + (r.data.error || ('HTTP ' + r.status)));
+            return false;
+        }
+
+        function submitPwd() {
+            const v = document.getElementById('pwdInput').value.trim();
+            const msg = document.getElementById('pwdMsg');
+            if (!v) { msg.innerHTML = '<span class="err">请输入会议密码。</span>'; return; }
+            msg.innerHTML = '验证中… <span class="spin"></span>';
+            meetingPassword = v;
+            joinMeeting().then(function (ok) {
+                if (ok) {
+                    document.getElementById('pwdModal').classList.remove('active');
+                    startPollers();
+                    loadDetail();
+                } else {
+                    msg.innerHTML = '<span class="err">密码不正确，请重试。</span>';
+                    meetingPassword = '';
+                }
+            });
+        }
+
+        // ============================================================
+        //  二、聊天
         // ============================================================
         let lastChatAt = '';
         async function loadChat() {
-            if (!meetingId) return;
+            if (!meetingId || !joined) return;
             try {
                 const q = '/api/meeting/chat?meetingId=' + encodeURIComponent(meetingId) + (lastChatAt ? '&since=' + encodeURIComponent(lastChatAt) : '');
                 const r = await api(q);
-                if (!r.ok || !r.data.ok) return;
+                if (!r.ok) {
+                    if (r.status === 403) { joined = false; joinMeeting().then(ok => { if (ok) loadChat(); }); }
+                    return;
+                }
                 const msgs = r.data.messages || [];
                 const box = document.getElementById('chat');
                 for (const m of msgs) {
@@ -187,7 +273,7 @@
         }
 
         // ============================================================
-        //  成员 / 会议状态
+        //  三、成员 / 会议状态
         // ============================================================
         let knownMembers = new Set();
         async function loadDetail() {
@@ -195,7 +281,7 @@
             try {
                 const r = await api('/api/meeting/detail?id=' + encodeURIComponent(meetingId));
                 if (!r.ok || !r.data.ok) {
-                    if (r.status === 404) { sysMsg('会议不存在或已被删除。'); }
+                    if (r.status === 404) setDiag('Join', 'bad', '会议不存在或已被删除');
                     return;
                 }
                 meeting = r.data.meeting;
@@ -219,13 +305,25 @@
                 // 成员变化 → 建立/清理点对点连接
                 const names = active.map(m => m.username);
                 for (const n of names) {
-                    if (n !== me && !knownMembers.has(n)) { knownMembers.add(n); maybeConnect(n, true); }
+                    if (n !== me && !knownMembers.has(n)) {
+                        knownMembers.add(n);
+                        sysMsg('👤 ' + n + ' 加入了会议');
+                        connectTo(n);
+                    }
                 }
                 for (const n of Array.from(knownMembers)) {
                     if (!names.includes(n)) { knownMembers.delete(n); closePeer(n); sysMsg(n + ' 离开了会议'); }
                 }
+                renderPeerStates();
                 if (meeting.status === 'ended') {
                     document.getElementById('hint').innerHTML = '⛔ 会议已结束。你可以继续查看聊天记录，或返回会议中心。';
+                } else if (active.length < 2) {
+                    document.getElementById('hint').innerHTML =
+                        '你已入会，当前只有你一个人。把会议编号 <b>' + escapeHtml(meetingCode) + '</b> 发给对方，' +
+                        '对方在<a href="meeting.html" style="color:var(--accent-color);">会议中心</a>输入编号即可加入。<br>' +
+                        '<span style="color:var(--text-secondary);font-size:12.5px;">注意：同一个账号在多个标签页打开无法互相通话（信令按用户名区分），请用另一账号或另一台设备测试。</span>';
+                } else {
+                    document.getElementById('hint').innerHTML = '已与 ' + (active.length - 1) + ' 位参与者建立连接中。双方都点「开启语音/视频」就能互相听到、看到。';
                 }
             } catch (e) { /* 下一轮重试 */ }
         }
@@ -246,7 +344,7 @@
         }
 
         // ============================================================
-        //  邀请
+        //  四、邀请
         // ============================================================
         function openInvite() { document.getElementById('inviteModal').classList.add('active'); }
         function closeInvite() { document.getElementById('inviteModal').classList.remove('active'); }
@@ -266,17 +364,25 @@
         }
 
         // ============================================================
-        //  WebRTC 点对点音视频（信令走 /api/meeting/signal 轮询）
+        //  五、WebRTC 点对点音视频
+        //  协商规则（避免 glare）：只有用户名较大的一方（initiator）负责发 offer；
+        //  另一方需要新增/变更媒体时，发一条 __renegotiate 请求让 initiator 重新发 offer。
         // ============================================================
-        const ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+        const ICE = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun.cloudflare.com:3478' },
+            ],
+            iceCandidatePoolSize: 2,
+        };
         let localStream = null;
         let micOn = false, camOn = false;
-        const peers = {};          // username -> { pc, stream, pending: [], initiator }
+        const peers = {};          // username -> { pc, stream, pending, initiator, answered, offerTimer }
         let lastSignalId = 0;
 
-        function myName() { return me; }
-        // 避免双方同时发起 offer（glare）：用户名较大的一方主动发起
-        function shouldInitiate(other) { return myName() > other; }
+        // 用户名较大的一方主动发起 offer（双方计算结果互补，不会同时发起）
+        function shouldInitiate(other) { return String(me) > String(other); }
 
         function ensureTile(name, isLocal) {
             let el = document.getElementById('tile-' + cssId(name));
@@ -308,13 +414,28 @@
             if (text) { b.textContent = text; b.style.display = ''; } else { b.style.display = 'none'; }
         }
 
-        async function getMedia(wantVideo) {
-            const constraints = { audio: true, video: wantVideo ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false };
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            return stream;
+        function renderPeerStates() {
+            const names = Object.keys(peers);
+            const box = document.getElementById('peerStates');
+            if (!box) return;
+            if (!names.length) { box.innerHTML = '<span class="muted">尚未与其他参与者建立连接（等待对方加入）。</span>'; return; }
+            box.innerHTML = names.map(n => {
+                const st = peers[n].pc.connectionState || 'new';
+                const map = { new: ['idle', '准备中'], connecting: ['wait', '连接中'], connected: ['ok', '已连接'], disconnected: ['bad', '连接断开'], failed: ['bad', '连接失败'], closed: ['idle', '已关闭'] };
+                const m = map[st] || ['idle', st];
+                return '<div class="row"><span class="dot ' + m[0] + '"></span>' + escapeHtml(n) + '：' + m[1] +
+                    (micOn || camOn ? '' : '（双方都需开启语音/视频）') + '</div>';
+            }).join('');
         }
 
-        // 按需打开麦克风 / 摄像头，并把新轨道推给已有的点对点连接
+        async function getMedia(wantVideo) {
+            return navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: wantVideo ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+            });
+        }
+
+        // 按需打开麦克风 / 摄像头，并把新轨道推给已有的连接
         async function ensureLocal(wantVideo) {
             const needAudio = !localStream || localStream.getAudioTracks().length === 0;
             const needVideo = wantVideo && (!localStream || localStream.getVideoTracks().length === 0);
@@ -322,11 +443,11 @@
 
             const s = await getMedia(needVideo);
             if (!localStream) localStream = new MediaStream();
-            // 保留已经在用的轨道，只补齐缺的部分
             s.getAudioTracks().forEach(t => { if (localStream.getAudioTracks().length === 0) localStream.addTrack(t); else t.stop(); });
             s.getVideoTracks().forEach(t => { if (localStream.getVideoTracks().length === 0) localStream.addTrack(t); else t.stop(); });
-            tileVideo(me).srcObject = localStream;
-            await attachLocalToAll();
+            const v = tileVideo(me);
+            v.srcObject = localStream;
+            v.play().catch(() => { /* 本地预览静音，通常不会被拦截 */ });
             return localStream;
         }
 
@@ -340,7 +461,8 @@
                     btn.classList.add('on');
                     btn.textContent = '🎙️ 静音';
                     setBadge(me, '');
-                    msg.innerHTML = '<span class="ok">✅ 语音已开启。</span>';
+                    msg.innerHTML = '<span class="ok">✅ 语音已开启，正在与对方协商媒体…</span>';
+                    await renegotiateAll();
                 } else {
                     micOn = !micOn;
                     localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
@@ -349,12 +471,10 @@
                     setBadge(me, micOn ? '' : '🔇');
                     msg.innerHTML = micOn ? '<span class="ok">🎙️ 已取消静音。</span>' : '<span class="muted">🔇 已静音（对方听不到你的声音）。</span>';
                 }
-                if (Object.keys(peers).length === 0) {
-                    document.getElementById('hint').innerHTML = '已开启语音。等待其他参与者加入后会自动建立点对点连接（对方也需要开启语音或视频）。';
-                }
             } catch (e) {
                 msg.innerHTML = '<span class="err">无法访问麦克风：' + escapeHtml(e.message) + '（请检查浏览器权限，并确认站点使用 HTTPS）</span>';
             }
+            renderPeerStates();
         }
 
         async function toggleCam() {
@@ -362,7 +482,6 @@
             const btn = document.getElementById('btnCam');
             try {
                 if (!localStream || localStream.getVideoTracks().length === 0) {
-                    const hadPeer = Object.keys(peers).length > 0;
                     await ensureLocal(true);
                     camOn = true;
                     btn.classList.add('on');
@@ -372,8 +491,8 @@
                         document.getElementById('btnMic').classList.add('on');
                         document.getElementById('btnMic').textContent = '🎙️ 静音';
                     }
-                    msg.innerHTML = '<span class="ok">✅ 摄像头已开启。</span>';
-                    if (hadPeer) broadcastRenegotiate();
+                    msg.innerHTML = '<span class="ok">✅ 摄像头已开启，正在与对方协商媒体…</span>';
+                    await renegotiateAll();
                 } else {
                     camOn = !camOn;
                     localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
@@ -384,10 +503,7 @@
             } catch (e) {
                 msg.innerHTML = '<span class="err">无法访问摄像头：' + escapeHtml(e.message) + '</span>';
             }
-        }
-
-        async function attachLocalToAll() {
-            for (const name of Object.keys(peers)) await attachLocal(name);
+            renderPeerStates();
         }
 
         async function attachLocal(name) {
@@ -400,60 +516,92 @@
                 else { try { p.pc.addTrack(track, localStream); } catch (e) { /* 忽略 */ } }
             }
         }
+        async function attachLocalToAll() {
+            for (const name of Object.keys(peers)) await attachLocal(name);
+        }
 
         function createPeer(name, initiator) {
             if (peers[name]) return peers[name];
             const pc = new RTCPeerConnection(ICE);
-            const p = { pc: pc, stream: null, pending: [], initiator: !!initiator };
+            const p = { pc: pc, stream: null, pending: [], initiator: !!initiator, answered: false, offerAt: 0 };
             peers[name] = p;
 
             pc.onicecandidate = (ev) => {
                 if (ev.candidate) sendSignal(name, 'ice', ev.candidate.toJSON());
             };
             pc.ontrack = (ev) => {
-                if (!p.stream) { p.stream = new MediaStream(); tileVideo(name).srcObject = p.stream; }
+                if (!p.stream) {
+                    p.stream = new MediaStream();
+                    const v = tileVideo(name);
+                    v.srcObject = p.stream;
+                    v.play().then(() => {
+                        document.getElementById('playBanner').style.display = 'none';
+                    }).catch(() => {
+                        // 浏览器自动播放策略拦截了带声音的播放：给一个手动恢复入口
+                        document.getElementById('playBanner').style.display = 'block';
+                    });
+                }
                 p.stream.addTrack(ev.track);
-                const msg = document.getElementById('mediaMsg');
-                msg.innerHTML = '<span class="ok">🔗 已与 ' + escapeHtml(name) + ' 建立点对点连接。</span>';
                 setBadge(name, '');
+                const msg = document.getElementById('mediaMsg');
+                msg.innerHTML = '<span class="ok">🔗 已收到 ' + escapeHtml(name) + ' 的音视频流。</span>';
             };
             pc.onconnectionstatechange = () => {
-                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                renderPeerStates();
+                const st = pc.connectionState;
+                if (st === 'connected') {
+                    setBadge(name, '');
+                    document.getElementById('mediaMsg').innerHTML = '<span class="ok">🔗 已与 ' + escapeHtml(name) + ' 建立点对点连接。</span>';
+                } else if (st === 'failed' || st === 'disconnected') {
                     setBadge(name, '⚠️ 连接不稳定');
+                    // 尝试用 ICE 重启恢复（只有发起方重新发 offer）
+                    if (shouldInitiate(name) && !p.renegotiating) {
+                        p.renegotiating = true;
+                        setTimeout(() => { p.renegotiating = false; makeOffer(name, true); }, 1200);
+                    }
                 }
             };
             return p;
         }
 
-        async function maybeConnect(name, isNew) {
-            if (!localStream) {
-                // 还没开麦/摄像：先建连接并发送 offer（只带 recvonly），对方开启后即可收流
-                const p = createPeer(name, shouldInitiate(name));
-                if (p.initiator && !p.offered) {
-                    p.offered = true;
-                    await makeOffer(name);
-                }
-                return;
-            }
-            if (isNew && shouldInitiate(name)) { await makeOffer(name); }
+        // 新成员出现时调用：发起方建连接并 offer，被动方只等 offer
+        async function connectTo(name) {
+            const p = createPeer(name, shouldInitiate(name));
+            if (p.initiator) await makeOffer(name);
+            renderPeerStates();
         }
 
-        async function makeOffer(name) {
-            const p = createPeer(name, true);
+        async function makeOffer(name, iceRestart) {
+            const p = createPeer(name, shouldInitiate(name));
             await attachLocal(name);
             try {
-                const offer = await p.pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+                const opts = { offerToReceiveAudio: true, offerToReceiveVideo: true };
+                if (iceRestart) opts.iceRestart = true;
+                const offer = await p.pc.createOffer(opts);
                 await p.pc.setLocalDescription(offer);
+                p.offerAt = Date.now();
+                p.answered = false;
                 sendSignal(name, 'offer', { type: offer.type, sdp: offer.sdp });
+                // 答案迟迟不来（例如对方页面刚从后台恢复）→ 重试一次
+                setTimeout(() => {
+                    if (!p.answered && p.pc && p.pc.signalingState === 'have-local-offer') { makeOffer(name, false); }
+                }, 6000);
             } catch (e) { console.warn('createOffer 失败', e); }
         }
 
-        async function broadcastRenegotiate() {
-            for (const name of Object.keys(peers)) {
-                const p = peers[name];
-                if (!p.renegotiating) {
-                    p.renegotiating = true;
-                    try { await makeOffer(name); } finally { setTimeout(() => { p.renegotiating = false; }, 1500); }
+        // 需要变更媒体时统一走这里：发起方直接 offer，被动方请求对方 offer
+        async function renegotiateAll() {
+            const names = Object.keys(peers);
+            if (!names.length) return;
+            for (const name of names) {
+                if (shouldInitiate(name)) {
+                    if (!peers[name].renegotiating) {
+                        peers[name].renegotiating = true;
+                        try { await makeOffer(name); } finally { setTimeout(() => { peers[name].renegotiating = false; }, 1500); }
+                    }
+                } else {
+                    await attachLocal(name);   // 先把轨道挂上，等对方发新 offer 时答案里就会带上
+                    sendSignal(name, 'ice', { __renegotiate: true });
                 }
             }
         }
@@ -471,15 +619,20 @@
                     await p.pc.setLocalDescription(answer);
                     sendSignal(from, 'answer', { type: answer.type, sdp: answer.sdp });
                 } else if (sig.kind === 'answer') {
-                    await p.pc.setRemoteDescription(new RTCSessionDescription(payload));
+                    p.answered = true;
+                    if (p.pc.signalingState === 'have-local-offer') {
+                        await p.pc.setRemoteDescription(new RTCSessionDescription(payload));
+                    }
                 } else if (sig.kind === 'ice') {
-                    if (p.pc.remoteDescription && p.pc.remoteDescription.type) {
+                    if (payload && payload.__renegotiate) {
+                        // 对方需要重新协商（例如刚开启麦克风）→ 由我们发新 offer
+                        await makeOffer(from);
+                    } else if (p.pc.remoteDescription && p.pc.remoteDescription.type) {
                         await p.pc.addIceCandidate(new RTCIceCandidate(payload));
                     } else {
                         p.pending.push(payload);
                     }
                 }
-                // 尝试冲刷暂存的 ICE
                 if (p.pc.remoteDescription && p.pc.remoteDescription.type && p.pending.length) {
                     for (const c of p.pending.splice(0)) {
                         try { await p.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { /* 忽略 */ }
@@ -490,15 +643,28 @@
 
         async function sendSignal(to, kind, payload) {
             try {
-                await api('/api/meeting/signal', { body: { meetingId: meetingId, to: to, kind: kind, payload: payload } });
-            } catch (e) { /* 信令丢失由下一轮 ICE 重试兜底 */ }
+                const r = await api('/api/meeting/signal', { body: { meetingId: meetingId, to: to, kind: kind, payload: payload } });
+                if (!r.ok) {
+                    setDiag('Signal', 'bad', '信令发送失败：' + (r.data.error || ('HTTP ' + r.status)));
+                    if (r.status === 403) { joined = false; joinMeeting(); }
+                    return false;
+                }
+                setDiag('Signal', 'ok', '信令：正常');
+                return true;
+            } catch (e) {
+                setDiag('Signal', 'bad', '信令网络错误：' + e.message);
+                return false;
+            }
         }
 
         async function pollSignals() {
-            if (!meetingId) return;
+            if (!meetingId || !joined) return;
             try {
                 const r = await api('/api/meeting/signal?meetingId=' + encodeURIComponent(meetingId) + '&since=' + lastSignalId);
-                if (!r.ok || !r.data.ok) return;
+                if (!r.ok) {
+                    if (r.status === 403) { joined = false; setDiag('Signal', 'bad', '信令：无权访问（正在重新入会）'); joinMeeting(); }
+                    return;
+                }
                 const list = r.data.signals || [];
                 for (const sig of list) {
                     if (sig.id > lastSignalId) lastSignalId = sig.id;
@@ -515,6 +681,7 @@
             delete peers[name];
             const el = document.getElementById('tile-' + cssId(name));
             if (el) el.remove();
+            renderPeerStates();
         }
 
         function cleanupMedia() {
@@ -522,36 +689,66 @@
             if (localStream) { localStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} }); localStream = null; }
         }
 
-        window.addEventListener('beforeunload', function () {
+        function resumeAudio() {
+            let ok = false;
+            document.querySelectorAll('#grid video').forEach(v => {
+                if (v.muted) return;
+                v.play().then(() => { ok = true; }).catch(() => {});
+            });
+            if (ok) document.getElementById('playBanner').style.display = 'none';
+        }
+        window.resumeAudio = resumeAudio;
+
+        // 离开页面时通知服务端（带 Authorization 头，sendBeacon 无法带鉴权头）
+        function notifyLeave() {
             try {
-                const url = API + '/api/meeting/leave';
-                const body = JSON.stringify({ meetingId: meetingId });
-                if (navigator.sendBeacon) {
-                    navigator.sendBeacon(url + '?t=' + encodeURIComponent(token()), new Blob([body], { type: 'application/json' }));
-                }
+                cleanupMedia();
+                fetch(API + '/api/meeting/leave', {
+                    method: 'POST',
+                    keepalive: true,
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token() },
+                    body: JSON.stringify({ meetingId: meetingId }),
+                }).catch(() => {});
             } catch (e) { /* 忽略 */ }
-            cleanupMedia();
-        });
+        }
+        window.addEventListener('pagehide', notifyLeave);
 
         // ============================================================
-        //  启动
+        //  六、启动
         // ============================================================
-        (function init() {
+        let pollTimers = [];
+        function startPollers() {
+            pollTimers.forEach(t => clearInterval(t));
+            pollTimers = [
+                setInterval(() => { if (!document.hidden) loadDetail(); }, 3000),
+                setInterval(() => { if (!document.hidden) pollSignals(); }, 1000),
+                setInterval(() => { if (!document.hidden) loadChat(); }, 2500),
+            ];
+        }
+
+        (async function init() {
             try {
                 const raw = localStorage.getItem('nflshc_currentUser') || sessionStorage.getItem('currentUser');
                 if (raw) me = (JSON.parse(raw) || {}).username || '';
             } catch (e) { /* 忽略 */ }
             if (!token()) { window.location.href = 'index.html?next=' + encodeURIComponent('meeting-room.html' + window.location.search); return; }
-            if (!meetingId) { window.location.href = 'meeting.html'; return; }
+            if (!meetingId && !meetingCode) { window.location.href = 'meeting.html'; return; }
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 document.getElementById('hint').innerHTML = '⚠️ 当前浏览器不支持音视频通话（需要 HTTPS 与较新的浏览器）。你仍然可以使用会议聊天。';
             }
+            if (!me) { window.location.href = 'index.html?next=' + encodeURIComponent('meeting-room.html' + window.location.search); return; }
+
             ensureTile(me, true);
-            loadDetail();
-            loadChat();
-            setInterval(loadDetail, 5000);
-            setInterval(pollSignals, 1500);
-            setInterval(loadChat, 2500);
+            document.getElementById('mtCode').textContent = meetingCode || '—';
+
+            // 关键：先入会，成为会议成员后再开始聊天与信令
+            const ok = await joinMeeting();
+            await loadDetail();
+            if (ok) {
+                startPollers();
+                await loadChat();
+                await pollSignals();
+            }
         })();
     </script>
     <script src="shortcuts.js"></script>
