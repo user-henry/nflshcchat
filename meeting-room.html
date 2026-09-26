@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="js/theme.js?v=4"></script>
+    <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 会议中</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        .top { background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .top .ttl { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .code { font-family: Consolas, Monaco, monospace; background: var(--bg-primary); border: 1px dashed var(--border-color); border-radius: 8px; padding: 2px 10px; color: var(--accent-color); font-weight: 700; letter-spacing: 1px; cursor: pointer; }
+        .top .right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; font-size: 13.5px; transition: .2s; }
+        .btn:hover:not(:disabled) { border-color: var(--accent-color); color: var(--accent-color); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+        .btn.on { background: #28a745; border-color: #28a745; color: #fff; }
+        .btn.danger { border-color: rgba(231,76,60,.6); color: var(--danger, #e74c3c); }
+        .main { flex: 1; display: flex; min-height: 0; }
+        .stage { flex: 1; padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+        .tile { position: relative; background: #101018; border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center; }
+        .tile video { width: 100%; height: 100%; object-fit: cover; background: #101018; }
+        .tile .nm { position: absolute; left: 10px; bottom: 8px; font-size: 12px; color: #fff; background: rgba(0,0,0,.55); border-radius: 999px; padding: 2px 10px; }
+        .tile .badge { position: absolute; right: 10px; top: 8px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); border-radius: 999px; padding: 2px 9px; }
+        .avatar { width: 66px; height: 66px; border-radius: 50%; background: var(--bg-secondary); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--accent-color); }
+        .hint { color: var(--text-secondary); font-size: 13px; line-height: 1.8; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 12px; padding: 12px 14px; }
+        .side { width: 340px; border-left: 1px solid var(--border-color); background: var(--bg-secondary); display: flex; flex-direction: column; min-height: 0; }
+        .side h4 { font-size: 13.5px; padding: 12px 16px 8px; color: var(--text-secondary); }
+        .members { padding: 0 16px 10px; display: flex; flex-wrap: wrap; gap: 6px; max-height: 120px; overflow: auto; }
+        .members .m { font-size: 12.5px; padding: 3px 10px; border: 1px solid var(--border-color); border-radius: 999px; background: var(--bg-primary); color: var(--text-secondary); }
+        .members .m.host { border-color: rgba(52,152,219,.6); color: #3498db; }
+        .members .m.me { border-color: var(--accent-color); color: var(--accent-color); }
+        .chat { flex: 1; overflow: auto; padding: 6px 16px; min-height: 0; }
+        .cmsg { margin-bottom: 10px; }
+        .cmsg .who { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 2px; }
+        .cmsg .txt { font-size: 13.5px; line-height: 1.6; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 10px; padding: 8px 11px; word-break: break-word; }
+        .cmsg.mine .txt { border-color: rgba(255,215,0,.45); }
+        .cmsg.sys .txt { background: transparent; border: none; color: var(--text-secondary); font-size: 12.5px; padding: 0 0 0 2px; }
+        .composer { border-top: 1px solid var(--border-color); padding: 10px 12px; display: flex; gap: 8px; }
+        .composer input { flex: 1; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-family: inherit; }
+        .composer input:focus { outline: none; border-color: var(--accent-color); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal .box { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; max-width: 420px; width: 100%; }
+        .modal h3 { margin-bottom: 10px; font-size: 17px; }
+        .modal p { color: var(--text-secondary); font-size: 13.5px; line-height: 1.7; margin-bottom: 12px; }
+        .modal input { width: 100%; padding: 11px 13px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; margin-bottom: 12px; font-family: inherit; }
+        .modal .btns { display: flex; gap: 10px; justify-content: flex-end; }
+        .msg { font-size: 12.5px; min-height: 16px; }
+        .ok { color: #28a745; } .err { color: #e74c3c; } .muted { color: var(--text-secondary); }
+        .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+        @media (max-width: 820px) {
+            .main { flex-direction: column; }
+            .side { width: 100%; border-left: none; border-top: 1px solid var(--border-color); max-height: 45vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <div class="ttl">
+            <span id="mtTitle">会议</span>
+            <span class="code" id="mtCode" onclick="copyCode()" title="点击复制会议编号">—</span>
+            <span class="muted" style="font-size:12.5px;" id="mtStatus"></span>
+        </div>
+        <div class="right">
+            <button class="btn" id="btnMic" onclick="toggleMic()">🎙️ 开启语音</button>
+            <button class="btn" id="btnCam" onclick="toggleCam()">🎥 开启视频</button>
+            <button class="btn" onclick="openInvite()">✉️ 邀请</button>
+            <button class="btn danger" onclick="leaveMeeting()">🚪 离开</button>
+            <button class="btn danger" id="btnEnd" style="display:none;" onclick="endMeeting()">⛔ 结束会议</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="stage">
+            <div class="hint" id="hint">
+                点「🎙️ 开启语音」或「🎥 开启视频」开始通话（浏览器会请求麦克风/摄像头权限）。<br>
+                音视频在参与者之间<strong>点对点传输</strong>，不经过服务器；会议结束后不保留任何录音录像。
+            </div>
+            <div class="grid" id="grid"></div>
+            <div class="msg" id="mediaMsg"></div>
+        </div>
+        <div class="side">
+            <h4>👥 参与者（<span id="memberCount">0</span>）</h4>
+            <div class="members" id="members"><span class="muted" style="font-size:12.5px;">加载中…</span></div>
+            <h4 style="border-top:1px solid var(--border-color);padding-top:10px;">💬 会议聊天</h4>
+            <div class="chat" id="chat"><div class="cmsg sys"><div class="txt">会议聊天记录对所有参与者可见。</div></div></div>
+            <div class="composer">
+                <input type="text" id="chatInput" placeholder="输入消息，回车发送" maxlength="2000" onkeydown="if(event.key==='Enter'){sendChat();}">
+                <button class="btn" onclick="sendChat()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="inviteModal">
+        <div class="box">
+            <h3>✉️ 邀请他人参会</h3>
+            <p>输入用户名（多个用逗号分隔），对方会收到站内会议邀请通知，通知里包含会议编号。</p>
+            <input type="text" id="inviteNames" placeholder="alice, bob">
+            <div class="btns">
+                <button class="btn" onclick="closeInvite()">取消</button>
+                <button class="btn" onclick="sendInvite()" style="background:var(--accent-color,#ffd700);color:#1a1a2e;border-color:transparent;font-weight:600;">发送邀请</button>
+            </div>
+            <div class="msg" id="inviteMsg"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = WORKER_API;
+        const params = new URLSearchParams(window.location.search);
+        const meetingId = params.get('id') || '';
+        let meetingCode = params.get('code') || '';
+        let me = '';
+        let isHost = false;
+        let meeting = null;
+
+        // ---------- 工具 ----------
+        function escapeHtml(t) {
+            if (t === null || t === undefined) return '';
+            const d = document.createElement('div'); d.textContent = String(t); return d.innerHTML;
+        }
+        function token() { return (window.AuthToken && window.AuthToken.get()) || ''; }
+        function fmt(t) { const d = new Date(t); return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('zh-CN', { hour12: false }); }
+        async function api(path, opts) {
+            const o = opts || {};
+            const headers = Object.assign({}, o.headers || {});
+            if (o.body) headers['Content-Type'] = 'application/json';
+            const res = await fetch(API + path, { method: o.method || (o.body ? 'POST' : 'GET'), headers, body: o.body ? JSON.stringify(o.body) : undefined });
+            const data = await res.json().catch(() => ({}));
+            return { status: res.status, ok: res.ok, data };
+        }
+        function sysMsg(text) {
+            const box = document.getElementById('chat');
+            const div = document.createElement('div');
+            div.className = 'cmsg sys';
+            div.innerHTML = '<div class="txt">' + escapeHtml(text) + '</div>';
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+        function copyCode() {
+            const t = meetingCode;
+            if (!t) return;
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t);
+            const msg = document.getElementById('mediaMsg');
+            msg.innerHTML = '<span class="ok">✅ 已复制会议编号 ' + escapeHtml(t) + '</span>';
+            setTimeout(() => { msg.innerHTML = ''; }, 2500);
+        }
+
+        // ============================================================
+        //  聊天
+        // ============================================================
+        let lastChatAt = '';
+        async function loadChat() {
+            if (!meetingId) return;
+            try {
+                const q = '/api/meeting/chat?meetingId=' + encodeURIComponent(meetingId) + (lastChatAt ? '&since=' + encodeURIComponent(lastChatAt) : '');
+                const r = await api(q);
+                if (!r.ok || !r.data.ok) return;
+                const msgs = r.data.messages || [];
+                const box = document.getElementById('chat');
+                for (const m of msgs) {
+                    if (m.created_at && m.created_at > lastChatAt) lastChatAt = m.created_at;
+                    const div = document.createElement('div');
+                    div.className = 'cmsg' + (m.sender === me ? ' mine' : '');
+                    div.innerHTML = '<div class="who">' + escapeHtml(m.sender) + ' · ' + fmt(m.created_at) + '</div>' +
+                        '<div class="txt">' + escapeHtml(m.content) + '</div>';
+                    box.appendChild(div);
+                }
+                if (msgs.length) box.scrollTop = box.scrollHeight;
+            } catch (e) { /* 下一轮重试 */ }
+        }
+        async function sendChat() {
+            const input = document.getElementById('chatInput');
+            const content = input.value.trim();
+            if (!content) return;
+            input.value = '';
+            try {
+                const r = await api('/api/meeting/chat', { body: { meetingId: meetingId, content: content } });
+                if (!r.ok || !r.data.ok) { sysMsg('发送失败：' + (r.data.error || ('HTTP ' + r.status))); return; }
+                loadChat();
+            } catch (e) { sysMsg('发送失败：' + e.message); }
+        }
+
+        // ============================================================
+        //  成员 / 会议状态
+        // ============================================================
+        let knownMembers = new Set();
+        async function loadDetail() {
+            if (!meetingId) return;
+            try {
+                const r = await api('/api/meeting/detail?id=' + encodeURIComponent(meetingId));
+                if (!r.ok || !r.data.ok) {
+                    if (r.status === 404) { sysMsg('会议不存在或已被删除。'); }
+                    return;
+                }
+                meeting = r.data.meeting;
+                meetingCode = meeting.code || meetingCode;
+                isHost = meeting.host === me;
+                document.getElementById('mtTitle').textContent = meeting.title || '会议';
+                document.getElementById('mtCode').textContent = meetingCode || '—';
+                document.getElementById('mtStatus').textContent =
+                    meeting.status === 'ended' ? '（已结束）' : (meeting.status === 'live' ? '（进行中）' : '（未开始）');
+                document.getElementById('btnEnd').style.display = (isHost && meeting.status !== 'ended') ? '' : 'none';
+
+                const members = r.data.members || [];
+                const active = members.filter(m => m.state === 'joined');
+                document.getElementById('memberCount').textContent = active.length;
+                document.getElementById('members').innerHTML = members.map(m => {
+                    const cls = 'm' + (m.role === 'host' ? ' host' : '') + (m.username === me ? ' me' : '');
+                    const state = m.state === 'joined' ? '' : (m.state === 'left' ? '（已离开）' : '（未加入）');
+                    return '<span class="' + cls + '">' + escapeHtml(m.username) + (m.role === 'host' ? ' 👑' : '') + state + '</span>';
+                }).join('') || '<span class="muted" style="font-size:12.5px;">暂无成员</span>';
+
+                // 成员变化 → 建立/清理点对点连接
+                const names = active.map(m => m.username);
+                for (const n of names) {
+                    if (n !== me && !knownMembers.has(n)) { knownMembers.add(n); maybeConnect(n, true); }
+                }
+                for (const n of Array.from(knownMembers)) {
+                    if (!names.includes(n)) { knownMembers.delete(n); closePeer(n); sysMsg(n + ' 离开了会议'); }
+                }
+                if (meeting.status === 'ended') {
+                    document.getElementById('hint').innerHTML = '⛔ 会议已结束。你可以继续查看聊天记录，或返回会议中心。';
+                }
+            } catch (e) { /* 下一轮重试 */ }
+        }
+
+        async function endMeeting() {
+            if (!confirm('确定结束这场会议？所有参与者都会退出。')) return;
+            const r = await api('/api/meeting/end', { body: { meetingId: meetingId } });
+            if (!r.ok || !r.data.ok) { sysMsg('结束失败：' + (r.data.error || ('HTTP ' + r.status))); return; }
+            sysMsg('会议已结束。');
+            cleanupMedia();
+            setTimeout(() => { window.location.href = 'meeting.html'; }, 1200);
+        }
+
+        async function leaveMeeting() {
+            try { await api('/api/meeting/leave', { body: { meetingId: meetingId } }); } catch (e) { /* 忽略 */ }
+            cleanupMedia();
+            window.location.href = 'meeting.html';
+        }
+
+        // ============================================================
+        //  邀请
+        // ============================================================
+        function openInvite() { document.getElementById('inviteModal').classList.add('active'); }
+        function closeInvite() { document.getElementById('inviteModal').classList.remove('active'); }
+        async function sendInvite() {
+            const msg = document.getElementById('inviteMsg');
+            const names = document.getElementById('inviteNames').value.split(/[,，;；\s]+/).map(s => s.trim()).filter(Boolean);
+            if (!names.length) { msg.innerHTML = '<span class="err">请输入至少一个用户名。</span>'; return; }
+            msg.innerHTML = '发送中… <span class="spin"></span>';
+            try {
+                const r = await api('/api/meeting/invite', { body: { meetingId: meetingId, usernames: names } });
+                if (!r.ok || !r.data.ok) { msg.innerHTML = '<span class="err">发送失败：' + escapeHtml(r.data.error || ('HTTP ' + r.status)) + '</span>'; return; }
+                const invited = r.data.invited || [];
+                msg.innerHTML = '<span class="ok">✅ 已邀请 ' + invited.length + ' 人' + (invited.length ? '：' + escapeHtml(invited.join('、')) : '（用户名不存在）') + '</span>';
+                document.getElementById('inviteNames').value = '';
+                setTimeout(closeInvite, 1500);
+            } catch (e) { msg.innerHTML = '<span class="err">网络错误：' + escapeHtml(e.message) + '</span>'; }
+        }
+
+        // ============================================================
+        //  WebRTC 点对点音视频（信令走 /api/meeting/signal 轮询）
+        // ============================================================
+        const ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
+        let localStream = null;
+        let micOn = false, camOn = false;
+        const peers = {};          // username -> { pc, stream, pending: [], initiator }
+        let lastSignalId = 0;
+
+        function myName() { return me; }
+        // 避免双方同时发起 offer（glare）：用户名较大的一方主动发起
+        function shouldInitiate(other) { return myName() > other; }
+
+        function ensureTile(name, isLocal) {
+            let el = document.getElementById('tile-' + cssId(name));
+            if (el) return el;
+            el = document.createElement('div');
+            el.className = 'tile';
+            el.id = 'tile-' + cssId(name);
+            el.innerHTML = '<div class="avatar">' + escapeHtml((name || '?').slice(0, 1).toUpperCase()) + '</div>' +
+                '<div class="nm">' + escapeHtml(name) + (isLocal ? '（我）' : '') + '</div>' +
+                '<div class="badge" style="display:none;"></div>';
+            document.getElementById('grid').appendChild(el);
+            return el;
+        }
+        function cssId(n) { return String(n).replace(/[^A-Za-z0-9_-]/g, '_'); }
+        function tileVideo(name) {
+            const el = ensureTile(name, name === me);
+            let v = el.querySelector('video');
+            if (!v) {
+                v = document.createElement('video');
+                v.autoplay = true; v.playsInline = true; v.muted = (name === me);
+                el.appendChild(v);
+            }
+            return v;
+        }
+        function setBadge(name, text) {
+            const el = ensureTile(name, name === me);
+            const b = el.querySelector('.badge');
+            if (!b) return;
+            if (text) { b.textContent = text; b.style.display = ''; } else { b.style.display = 'none'; }
+        }
+
+        async function getMedia(wantVideo) {
+            const constraints = { audio: true, video: wantVideo ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            return stream;
+        }
+
+        // 按需打开麦克风 / 摄像头，并把新轨道推给已有的点对点连接
+        async function ensureLocal(wantVideo) {
+            const needAudio = !localStream || localStream.getAudioTracks().length === 0;
+            const needVideo = wantVideo && (!localStream || localStream.getVideoTracks().length === 0);
+            if (!needAudio && !needVideo) return localStream;
+
+            const s = await getMedia(needVideo);
+            if (!localStream) localStream = new MediaStream();
+            // 保留已经在用的轨道，只补齐缺的部分
+            s.getAudioTracks().forEach(t => { if (localStream.getAudioTracks().length === 0) localStream.addTrack(t); else t.stop(); });
+            s.getVideoTracks().forEach(t => { if (localStream.getVideoTracks().length === 0) localStream.addTrack(t); else t.stop(); });
+            tileVideo(me).srcObject = localStream;
+            await attachLocalToAll();
+            return localStream;
+        }
+
+        async function toggleMic() {
+            const msg = document.getElementById('mediaMsg');
+            const btn = document.getElementById('btnMic');
+            try {
+                if (!localStream || localStream.getAudioTracks().length === 0) {
+                    await ensureLocal(false);
+                    micOn = true;
+                    btn.classList.add('on');
+                    btn.textContent = '🎙️ 静音';
+                    setBadge(me, '');
+                    msg.innerHTML = '<span class="ok">✅ 语音已开启。</span>';
+                } else {
+                    micOn = !micOn;
+                    localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
+                    btn.classList.toggle('on', micOn);
+                    btn.textContent = micOn ? '🎙️ 静音' : '🎙️ 开启语音';
+                    setBadge(me, micOn ? '' : '🔇');
+                    msg.innerHTML = micOn ? '<span class="ok">🎙️ 已取消静音。</span>' : '<span class="muted">🔇 已静音（对方听不到你的声音）。</span>';
+                }
+                if (Object.keys(peers).length === 0) {
+                    document.getElementById('hint').innerHTML = '已开启语音。等待其他参与者加入后会自动建立点对点连接（对方也需要开启语音或视频）。';
+                }
+            } catch (e) {
+                msg.innerHTML = '<span class="err">无法访问麦克风：' + escapeHtml(e.message) + '（请检查浏览器权限，并确认站点使用 HTTPS）</span>';
+            }
+        }
+
+        async function toggleCam() {
+            const msg = document.getElementById('mediaMsg');
+            const btn = document.getElementById('btnCam');
+            try {
+                if (!localStream || localStream.getVideoTracks().length === 0) {
+                    const hadPeer = Object.keys(peers).length > 0;
+                    await ensureLocal(true);
+                    camOn = true;
+                    btn.classList.add('on');
+                    btn.textContent = '🎥 关闭视频';
+                    if (localStream.getAudioTracks().length) {
+                        micOn = true;
+                        document.getElementById('btnMic').classList.add('on');
+                        document.getElementById('btnMic').textContent = '🎙️ 静音';
+                    }
+                    msg.innerHTML = '<span class="ok">✅ 摄像头已开启。</span>';
+                    if (hadPeer) broadcastRenegotiate();
+                } else {
+                    camOn = !camOn;
+                    localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
+                    btn.classList.toggle('on', camOn);
+                    btn.textContent = camOn ? '🎥 关闭视频' : '🎥 开启视频';
+                    msg.innerHTML = camOn ? '<span class="ok">🎥 视频已恢复。</span>' : '<span class="muted">🎥 视频已关闭（对方看不到画面）。</span>';
+                }
+            } catch (e) {
+                msg.innerHTML = '<span class="err">无法访问摄像头：' + escapeHtml(e.message) + '</span>';
+            }
+        }
+
+        async function attachLocalToAll() {
+            for (const name of Object.keys(peers)) await attachLocal(name);
+        }
+
+        async function attachLocal(name) {
+            const p = peers[name];
+            if (!p || !localStream) return;
+            const senders = p.pc.getSenders();
+            for (const track of localStream.getTracks()) {
+                const existing = senders.find(s => s.track && s.track.kind === track.kind);
+                if (existing) { try { await existing.replaceTrack(track); } catch (e) { /* 忽略 */ } }
+                else { try { p.pc.addTrack(track, localStream); } catch (e) { /* 忽略 */ } }
+            }
+        }
+
+        function createPeer(name, initiator) {
+            if (peers[name]) return peers[name];
+            const pc = new RTCPeerConnection(ICE);
+            const p = { pc: pc, stream: null, pending: [], initiator: !!initiator };
+            peers[name] = p;
+
+            pc.onicecandidate = (ev) => {
+                if (ev.candidate) sendSignal(name, 'ice', ev.candidate.toJSON());
+            };
+            pc.ontrack = (ev) => {
+                if (!p.stream) { p.stream = new MediaStream(); tileVideo(name).srcObject = p.stream; }
+                p.stream.addTrack(ev.track);
+                const msg = document.getElementById('mediaMsg');
+                msg.innerHTML = '<span class="ok">🔗 已与 ' + escapeHtml(name) + ' 建立点对点连接。</span>';
+                setBadge(name, '');
+            };
+            pc.onconnectionstatechange = () => {
+                if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+                    setBadge(name, '⚠️ 连接不稳定');
+                }
+            };
+            return p;
+        }
+
+        async function maybeConnect(name, isNew) {
+            if (!localStream) {
+                // 还没开麦/摄像：先建连接并发送 offer（只带 recvonly），对方开启后即可收流
+                const p = createPeer(name, shouldInitiate(name));
+                if (p.initiator && !p.offered) {
+                    p.offered = true;
+                    await makeOffer(name);
+                }
+                return;
+            }
+            if (isNew && shouldInitiate(name)) { await makeOffer(name); }
+        }
+
+        async function makeOffer(name) {
+            const p = createPeer(name, true);
+            await attachLocal(name);
+            try {
+                const offer = await p.pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+                await p.pc.setLocalDescription(offer);
+                sendSignal(name, 'offer', { type: offer.type, sdp: offer.sdp });
+            } catch (e) { console.warn('createOffer 失败', e); }
+        }
+
+        async function broadcastRenegotiate() {
+            for (const name of Object.keys(peers)) {
+                const p = peers[name];
+                if (!p.renegotiating) {
+                    p.renegotiating = true;
+                    try { await makeOffer(name); } finally { setTimeout(() => { p.renegotiating = false; }, 1500); }
+                }
+            }
+        }
+
+        async function handleSignal(sig) {
+            const from = sig.from_user;
+            if (!from || from === me) return;
+            const p = createPeer(from, false);
+            const payload = sig.payload;
+            try {
+                if (sig.kind === 'offer') {
+                    await p.pc.setRemoteDescription(new RTCSessionDescription(payload));
+                    if (localStream) await attachLocal(from);
+                    const answer = await p.pc.createAnswer();
+                    await p.pc.setLocalDescription(answer);
+                    sendSignal(from, 'answer', { type: answer.type, sdp: answer.sdp });
+                } else if (sig.kind === 'answer') {
+                    await p.pc.setRemoteDescription(new RTCSessionDescription(payload));
+                } else if (sig.kind === 'ice') {
+                    if (p.pc.remoteDescription && p.pc.remoteDescription.type) {
+                        await p.pc.addIceCandidate(new RTCIceCandidate(payload));
+                    } else {
+                        p.pending.push(payload);
+                    }
+                }
+                // 尝试冲刷暂存的 ICE
+                if (p.pc.remoteDescription && p.pc.remoteDescription.type && p.pending.length) {
+                    for (const c of p.pending.splice(0)) {
+                        try { await p.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { /* 忽略 */ }
+                    }
+                }
+            } catch (e) { console.warn('处理信令失败', sig.kind, e); }
+        }
+
+        async function sendSignal(to, kind, payload) {
+            try {
+                await api('/api/meeting/signal', { body: { meetingId: meetingId, to: to, kind: kind, payload: payload } });
+            } catch (e) { /* 信令丢失由下一轮 ICE 重试兜底 */ }
+        }
+
+        async function pollSignals() {
+            if (!meetingId) return;
+            try {
+                const r = await api('/api/meeting/signal?meetingId=' + encodeURIComponent(meetingId) + '&since=' + lastSignalId);
+                if (!r.ok || !r.data.ok) return;
+                const list = r.data.signals || [];
+                for (const sig of list) {
+                    if (sig.id > lastSignalId) lastSignalId = sig.id;
+                    await handleSignal(sig);
+                }
+                if (typeof r.data.lastId === 'number' && r.data.lastId > lastSignalId) lastSignalId = r.data.lastId;
+            } catch (e) { /* 下一轮重试 */ }
+        }
+
+        function closePeer(name) {
+            const p = peers[name];
+            if (!p) return;
+            try { p.pc.close(); } catch (e) { /* 忽略 */ }
+            delete peers[name];
+            const el = document.getElementById('tile-' + cssId(name));
+            if (el) el.remove();
+        }
+
+        function cleanupMedia() {
+            for (const n of Object.keys(peers)) closePeer(n);
+            if (localStream) { localStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} }); localStream = null; }
+        }
+
+        window.addEventListener('beforeunload', function () {
+            try {
+                const url = API + '/api/meeting/leave';
+                const body = JSON.stringify({ meetingId: meetingId });
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(url + '?t=' + encodeURIComponent(token()), new Blob([body], { type: 'application/json' }));
+                }
+            } catch (e) { /* 忽略 */ }
+            cleanupMedia();
+        });
+
+        // ============================================================
+        //  启动
+        // ============================================================
+        (function init() {
+            try {
+                const raw = localStorage.getItem('nflshc_currentUser') || sessionStorage.getItem('currentUser');
+                if (raw) me = (JSON.parse(raw) || {}).username || '';
+            } catch (e) { /* 忽略 */ }
+            if (!token()) { window.location.href = 'index.html?next=' + encodeURIComponent('meeting-room.html' + window.location.search); return; }
+            if (!meetingId) { window.location.href = 'meeting.html'; return; }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                document.getElementById('hint').innerHTML = '⚠️ 当前浏览器不支持音视频通话（需要 HTTPS 与较新的浏览器）。你仍然可以使用会议聊天。';
+            }
+            ensureTile(me, true);
+            loadDetail();
+            loadChat();
+            setInterval(loadDetail, 5000);
+            setInterval(pollSignals, 1500);
+            setInterval(loadChat, 2500);
+        })();
+    </script>
+    <script src="shortcuts.js"></script>
+</body>
+</html>
