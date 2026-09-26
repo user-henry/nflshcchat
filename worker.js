@@ -997,6 +997,11 @@ export default {
             method: 'POST',
             headers: {
               'X-Files-Ticket': ticket,
+              // 让文件站按「公开的 HTTPS 域名」生成分享/直链地址（否则会返回 http://nflshcfile.l.cd，
+              // 在 HTTPS 页面里属于混合内容，浏览器会直接拦截，图片无法显示）。
+              // 该域名在文件站 config.php 的 trusted_hosts 白名单里，未被信任时文件站会忽略。
+              'X-Media-Host': FILES_PUBLIC_HOST,
+              'X-Media-Proto': 'https',
               // 文件托管站前端有反爬，服务器间调用用爬虫 UA 绕过（该 UA 只用于这一条内部链路）
               'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
             },
@@ -1007,7 +1012,12 @@ export default {
           if (!up.ok || !j || !j.ok) {
             return json({ ok: false, error: (j && j.error) || ('文件托管返回异常 HTTP ' + up.status), raw: text.slice(0, 200) }, 502, cors);
           }
-          return json({ ok: true, ...j.file, host: 'nflshcfile' }, 200, cors);
+          // 兜底：万一文件站没按 X-Media-Host 生成（例如白名单未生效），这里统一把源站地址改写成公开 HTTPS 地址
+          const f = j.file || {};
+          for (const k of ['url', 'directUrl', 'viewUrl', 'thumb']) {
+            if (typeof f[k] === 'string' && f[k]) f[k] = toPublicFileUrl(f[k]);
+          }
+          return json({ ok: true, ...f, host: 'nflshcfile' }, 200, cors);
         } catch (e) {
           return json({ ok: false, error: '上传到文件托管失败：' + String(e.message || e).slice(0, 120) }, 502, cors);
         }
@@ -2921,6 +2931,25 @@ async function createSession(db, { token, username, expiresAt, via, userAgent, i
     }
   }
   return sessionId;
+}
+
+// ================= 文件托管的公开地址 =================
+// 文件站源站是 http://nflshcfile.l.cd（没有有效证书），在 HTTPS 页面里直接引用会被浏览器
+// 当作混合内容拦截（图片不显示）。对外统一使用 Cloudflare 上的 HTTPS 入口。
+const FILES_PUBLIC_HOST = 'file.nflshcchat.cc.cd';
+const FILES_ORIGIN_HOST = 'nflshcfile.l.cd';
+
+// 把文件站返回的任何源站地址改写成公开 HTTPS 地址
+function toPublicFileUrl(u) {
+  try {
+    const s = String(u || '');
+    if (!s) return s;
+    return s
+      .replace(new RegExp('https?://' + FILES_ORIGIN_HOST.replace(/\./g, '\\.'), 'gi'), 'https://' + FILES_PUBLIC_HOST)
+      .replace(new RegExp('^//' + FILES_ORIGIN_HOST.replace(/\./g, '\\.'), 'i'), 'https://' + FILES_PUBLIC_HOST);
+  } catch (e) {
+    return String(u || '');
+  }
 }
 
 // 更新会话活跃时间（5 分钟节流，避免每个请求都写库）
