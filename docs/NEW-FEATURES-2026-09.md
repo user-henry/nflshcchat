@@ -88,6 +88,13 @@
 - **重新协商**：协商由一方统一发起（用户名较大的那侧）。另一方开启麦克风/摄像头后，
   通过 `kind:'ice'` + `payload:{__renegotiate:true}` 请求对方重新发 offer，
   这样既能把新轨道送出去，又不会双方同时发 offer 造成 glare。
+- **媒体轨道用 replaceTrack 挂载（视频能通的关键）**：建立连接时就 `addTransceiver('audio'|'video', {direction:'sendrecv'})`，
+  之后开启麦克风/摄像头只对 transceiver 的 sender 做 `replaceTrack` —— **不需要重新协商**，媒体立刻开始发送。
+  早期实现用的是「先 offer 再 addTrack」，协商出来的 video m-line 是 recvonly/inactive，
+  对方无法把画面送过来，表现为「声音正常、视频一直卡在协商中」。
+  验证脚本：`node test-webrtc-negotiation.mjs`（用真实 WebRTC 实现跑一遍协商顺序，
+  断言 audio/video 两条 m-line 都是 sendrecv、replaceTrack 不产生信令、ICE 能到 connected）。
+- 诊断条里的「🔄 重新连接」按钮可手动触发 ICE 重启，用于连接卡住时恢复。
 - 页面内置连接诊断条：入会状态、信令状态、与每个对端 ICE 的 `connectionState`
   （准备中 / 连接中 / 已连接 / 连接失败），出现问题时可直接看出卡在哪一步。
 - 排查提示：**同一个账号在多个标签页打开无法互通**（对端按用户名区分），请用另一个账号或另一台设备测试。
