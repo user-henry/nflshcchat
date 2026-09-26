@@ -58,6 +58,10 @@
   - Worker 用 `FILES_SSO_SECRET` 以 HMAC-SHA256 签发 5 分钟票据：`base64(username)|exp|hmac(username|exp)`
   - 请求头 `X-Files-Ticket` 传给文件站 `api.php?a=sso_upload`
   - 文件站校验签名与有效期，首次调用自动建号（`users.sso_only = 1`，密码为随机不可用值），并沿用既有的**个人配额 / 站点总量**限制
+  - **返回地址统一为 HTTPS 公开入口**：Worker 用 `X-Media-Host: file.nflshcchat.cc.cd` + `X-Media-Proto: https`
+    让文件站按该域名生成链接，并额外做一次 `toPublicFileUrl()` 兜底改写。源站 `http://nflshcfile.l.cd`
+    在 HTTPS 页面里属于混合内容，浏览器会直接拦截导致图片不显示，因此**任何对外链接都不允许出现源站地址**。
+    `chat.html` 渲染历史消息时也会把旧地址改写为 HTTPS 入口。
 - 配额：新用户默认 1GB，站长账号 5GB，站点软上限 4.5GB；超限返回 413 与中文提示。
 - 更小的附件走此通道；更大文件引导到文件托管站分片上传（`https://file.nflshcchat.cc.cd/`）。
 
@@ -119,6 +123,7 @@ powershell -File byethost/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/config.php -
 ```bash
 node test-new-features.mjs     # 会话/扫码/导出注销/健康/会议/附件 全链路（29 项）
 node test-security-flows.mjs   # 安全回归：吊销是否真失效、扫码 token 是否可用、导出是否泄露（31 项）
+node test-attachment-url.mjs   # 附件地址是否为 HTTPS 公开入口、图片能否真正取到（12 项）
 node tools-check-html.mjs *.html   # 内联脚本语法检查
 node tools-check-links.mjs *.html  # 本地引用完整性检查
 node tools-qr-verify.mjs       # 二维码生成器与参考实现逐模块比对
