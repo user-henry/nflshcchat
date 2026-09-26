@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="js/theme.js?v=4"></script>
+    <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 健康看板（管理员）</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .nav { background: var(--bg-secondary); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 18px; }
+        .nav a:hover { color: var(--accent-color); }
+        .wrap { max-width: 1180px; margin: 0 auto; padding: 26px 20px 60px; }
+        .bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+        .bar .meta { color: var(--text-secondary); font-size: 13px; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; font-size: 13.5px; }
+        .btn:hover:not(:disabled) { border-color: var(--accent-color); color: var(--accent-color); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+        h3.sec { font-size: 16px; margin: 26px 0 12px; display: flex; align-items: center; gap: 8px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
+        .tile { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px; }
+        .tile .k { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 6px; }
+        .tile .v { font-size: 24px; font-weight: 700; color: var(--accent-color); }
+        .tile.warn { border-color: rgba(231,76,60,.55); }
+        .tile.warn .v { color: var(--danger, #e74c3c); }
+        .panel { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border-bottom: 1px solid var(--border-color); padding: 8px 10px; text-align: left; vertical-align: top; }
+        th { color: var(--text-secondary); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+        td { color: var(--text-secondary); word-break: break-all; }
+        .ok { color: #28a745; } .err { color: var(--danger, #e74c3c); } .muted { color: var(--text-secondary); }
+        .svc { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border-color); font-size: 13.5px; flex-wrap: wrap; }
+        .svc:last-child { border-bottom: none; }
+        .svc .nm { min-width: 190px; color: var(--text-primary); }
+        .svc .dt { color: var(--text-secondary); font-size: 12.5px; word-break: break-all; }
+        .chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; border: 1px solid var(--border-color); }
+        .chip.on { color: #28a745; border-color: rgba(40,167,69,.5); }
+        .chip.off { color: var(--danger, #e74c3c); border-color: rgba(231,76,60,.5); }
+        .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+        .filter { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filter button { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; font-size: 12.5px; }
+        .filter button.active { border-color: var(--accent-color); color: var(--accent-color); }
+        .deny { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 40px; text-align: center; }
+        .hide { display: none !important; }
+        @media (max-width: 640px) { .nav { padding: 12px 16px; } }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>🩺 健康看板</h2></div>
+        <div>
+            <span class="muted" style="font-size:13px;">管理员：<span id="whoami">…</span></span>
+            <a href="admin.html">🛠️ 管理后台</a>
+            <a href="chat.html">💬 聊天</a>
+            <a href="index.html" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="deny" class="deny hide">
+            <h3 style="margin-bottom:10px;">⛔ 仅管理员可访问</h3>
+            <p class="muted" style="margin-bottom:16px;">当前账号没有查看运行状态的权限。</p>
+            <a class="btn" href="index.html">返回登录</a>
+        </div>
+
+        <div id="board" class="hide">
+            <div class="bar">
+                <div class="meta">
+                    最近更新：<span id="updated">—</span>
+                    &nbsp;·&nbsp; Worker：<span id="wver">—</span>
+                    &nbsp;·&nbsp; Google 登录：<span id="glogin" class="chip">—</span>
+                </div>
+                <div>
+                    <button class="btn" id="btnRefresh" onclick="loadAll()">🔄 刷新</button>
+                    <button class="btn" onclick="loadErrors()">🧾 刷新错误明细</button>
+                </div>
+            </div>
+
+            <h3 class="sec">📊 关键指标</h3>
+            <div class="grid" id="tiles"><div class="muted">加载中… <span class="spin"></span></div></div>
+
+            <h3 class="sec">🔌 服务连通性</h3>
+            <div class="panel" id="services"><div class="muted">加载中… <span class="spin"></span></div></div>
+
+            <h3 class="sec">⚠️ 最近错误（最多 10 条）</h3>
+            <div class="panel" id="recentErrors"><div class="muted">加载中… <span class="spin"></span></div></div>
+
+            <h3 class="sec">🧾 错误与慢请求明细</h3>
+            <div class="filter" id="errFilter">
+                <button class="active" data-kind="all" onclick="setKind('all', this)">全部</button>
+                <button data-kind="error" onclick="setKind('error', this)">仅错误</button>
+                <button data-kind="slow" onclick="setKind('slow', this)">仅慢请求</button>
+            </div>
+            <div class="panel" id="errList"><div class="muted">加载中… <span class="spin"></span></div></div>
+        </div>
+    </div>
+
+    <script>
+        const API = WORKER_API;
+        let allEvents = [];
+        let kindFilter = 'all';
+
+        function escapeHtml(t) {
+            if (t === null || t === undefined) return '';
+            const d = document.createElement('div'); d.textContent = String(t); return d.innerHTML;
+        }
+        function token() { return (window.AuthToken && window.AuthToken.get()) || ''; }
+        function logout() {
+            if (window.clearLoginState) window.clearLoginState();
+            localStorage.removeItem('nflshc_currentUser');
+            sessionStorage.removeItem('currentUser');
+            if (window.AuthToken) window.AuthToken.clear();
+            window.location.href = 'index.html';
+        }
+        function n(v) { return (v === null || v === undefined) ? '—' : v; }
+        function fmt(t) {
+            if (!t) return '—';
+            const d = new Date(t);
+            return isNaN(d.getTime()) ? String(t) : d.toLocaleString('zh-CN', { hour12: false });
+        }
+        function readLocalUser() {
+            for (const k of ['nflshc_currentUser', 'currentUser']) {
+                try { const raw = localStorage.getItem(k) || sessionStorage.getItem(k); if (raw) return JSON.parse(raw); } catch (e) {}
+            }
+            return null;
+        }
+
+        // ---------- 指标卡片 ----------
+        const TILES = [
+            ['usersTotal', '总用户数'], ['users24h', '24 小时新增用户'],
+            ['sessionsActive', '活跃会话', true], ['sessionsExpired', '已过期会话'],
+            ['messagesTotal', '消息总数'], ['messages24h', '24 小时消息'],
+            ['convTotal', 'HZYAI 对话数'], ['grantsTotal', '开放平台授权'],
+            ['clientsTotal', '开放平台应用'], ['errors24h', '24 小时错误', true],
+            ['slow24h', '24 小时慢请求', true], ['qrPending', '待确认扫码'],
+            ['meetingsActive', '进行中/预定会议'], ['deletionsPending', '待处理注销申请'],
+        ];
+
+        function renderTiles(counts) {
+            counts = counts || {};
+            document.getElementById('tiles').innerHTML = TILES.map(([key, label, warnable]) => {
+                const val = counts[key];
+                const warn = warnable && typeof val === 'number' && val > 0;
+                return `<div class="tile${warn ? ' warn' : ''}"><div class="k">${label}</div><div class="v">${n(val)}</div></div>`;
+            }).join('');
+        }
+
+        // ---------- 服务连通性 ----------
+        function renderServices(list) {
+            const box = document.getElementById('services');
+            if (!list || !list.length) { box.innerHTML = '<div class="muted">没有探测结果。</div>'; return; }
+            box.innerHTML = list.map(s => `
+                <div class="svc">
+                    <span class="nm">${s.ok ? '✅' : '❌'} ${escapeHtml(s.name)}</span>
+                    <span class="chip ${s.ok ? 'on' : 'off'}">${s.ok ? '正常' : '异常'}</span>
+                    <span class="dt">HTTP ${escapeHtml(s.status)} · ${escapeHtml(s.ms)} ms</span>
+                    ${s.detail ? `<span class="dt">${escapeHtml(s.detail)}</span>` : ''}
+                </div>`).join('');
+        }
+
+        // ---------- 错误表格 ----------
+        function renderRecentErrors(list) {
+            const box = document.getElementById('recentErrors');
+            if (!list || !list.length) { box.innerHTML = '<div class="muted">🎉 暂无错误记录。</div>'; return; }
+            box.innerHTML = `<table><thead><tr><th>时间</th><th>接口</th><th>状态</th><th>耗时</th><th>详情</th></tr></thead><tbody>` +
+                list.map(e => `<tr>
+                    <td>${fmt(e.created_at)}</td>
+                    <td>${escapeHtml(e.name)}</td>
+                    <td class="err">${escapeHtml(e.status)}</td>
+                    <td>${escapeHtml(e.ms)} ms</td>
+                    <td>${escapeHtml(e.detail)}</td>
+                </tr>`).join('') + '</tbody></table>';
+        }
+
+        function renderEvents() {
+            const box = document.getElementById('errList');
+            const list = kindFilter === 'all' ? allEvents : allEvents.filter(e => e.kind === kindFilter);
+            if (!list.length) { box.innerHTML = '<div class="muted">没有符合条件的记录。</div>'; return; }
+            box.innerHTML = `<table><thead><tr><th>类型</th><th>时间</th><th>接口</th><th>状态</th><th>耗时</th><th>用户</th><th>IP</th><th>详情</th></tr></thead><tbody>` +
+                list.map(e => `<tr>
+                    <td><span class="chip ${e.kind === 'error' ? 'off' : ''}">${e.kind === 'error' ? '错误' : (e.kind === 'slow' ? '慢请求' : escapeHtml(e.kind))}</span></td>
+                    <td>${fmt(e.created_at)}</td>
+                    <td>${escapeHtml(e.name)}</td>
+                    <td>${escapeHtml(e.status)}</td>
+                    <td>${escapeHtml(e.ms)} ms</td>
+                    <td>${escapeHtml(e.username)}</td>
+                    <td>${escapeHtml(e.ip)}</td>
+                    <td>${escapeHtml(e.detail)}</td>
+                </tr>`).join('') + '</tbody></table>';
+        }
+
+        function setKind(kind, btn) {
+            kindFilter = kind;
+            const wrap = document.getElementById('errFilter');
+            wrap.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderEvents();
+        }
+
+        // ---------- 数据加载 ----------
+        async function loadErrors() {
+            const box = document.getElementById('errList');
+            try {
+                const res = await fetch(API + '/api/admin/health/errors?limit=80');
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) {
+                    box.innerHTML = '<div class="err">加载失败：' + escapeHtml(data.error || ('HTTP ' + res.status)) + '</div>';
+                    return;
+                }
+                allEvents = data.events || [];
+                renderEvents();
+            } catch (e) {
+                box.innerHTML = '<div class="err">网络错误：' + escapeHtml(e.message) + '</div>';
+            }
+        }
+
+        async function loadAll() {
+            const btn = document.getElementById('btnRefresh');
+            btn.disabled = true;
+            try {
+                const res = await fetch(API + '/api/admin/health');
+                const data = await res.json().catch(() => ({}));
+                if (res.status === 401) {
+                    document.getElementById('deny').classList.remove('hide');
+                    document.getElementById('deny').querySelector('h3').textContent = '🔑 请先登录';
+                    document.getElementById('deny').querySelector('p').textContent = '登录后如为管理员即可查看运行状态。';
+                    return;
+                }
+                if (res.status === 403 || !data.ok) {
+                    document.getElementById('deny').classList.remove('hide');
+                    document.getElementById('deny').querySelector('h3').textContent = '⛔ 仅管理员可访问';
+                    document.getElementById('deny').querySelector('p').textContent = data.error || '当前账号没有查看运行状态的权限。';
+                    return;
+                }
+                document.getElementById('deny').classList.add('hide');
+                document.getElementById('board').classList.remove('hide');
+                document.getElementById('updated').textContent = fmt(data.now || new Date().toISOString());
+                document.getElementById('wver').textContent = data.workerVersion || '—';
+                const gl = document.getElementById('glogin');
+                gl.textContent = data.googleLogin ? '已启用' : '未启用';
+                gl.className = 'chip ' + (data.googleLogin ? 'on' : 'off');
+                renderTiles(data.counts);
+                renderServices(data.services);
+                renderRecentErrors(data.recentErrors);
+                await loadErrors();
+            } catch (e) {
+                document.getElementById('board').classList.remove('hide');
+                document.getElementById('tiles').innerHTML = '<div class="err">加载失败：' + escapeHtml(e.message) + '，请点击刷新重试。</div>';
+            } finally { btn.disabled = false; }
+        }
+
+        (function init() {
+            const u = readLocalUser();
+            document.getElementById('whoami').textContent = (u && u.username) || '…';
+            if (!token()) {
+                document.getElementById('deny').classList.remove('hide');
+                document.getElementById('deny').querySelector('h3').textContent = '🔑 请先登录';
+                document.getElementById('deny').querySelector('p').textContent = '登录后如为管理员即可查看运行状态。';
+                return;
+            }
+            if (u && u.isAdmin) document.getElementById('board').classList.remove('hide');
+            loadAll();
+        })();
+    </script>
+    <script src="shortcuts.js"></script>
+</body>
+</html>
