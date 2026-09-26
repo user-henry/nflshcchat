@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="js/theme.js?v=4"></script>
+    <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 会议中心</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .nav { background: var(--bg-secondary); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 18px; }
+        .nav a:hover { color: var(--accent-color); }
+        .wrap { max-width: 1080px; margin: 0 auto; padding: 26px 20px 60px; }
+        .cols { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; align-items: start; }
+        @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
+        .card h3 { font-size: 17px; margin-bottom: 6px; }
+        .card .desc { color: var(--text-secondary); font-size: 13px; line-height: 1.7; margin-bottom: 14px; }
+        label.fld { display: block; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-family: inherit; margin-bottom: 12px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-color); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 18px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; font-size: 14px; transition: .2s; }
+        .btn:hover:not(:disabled) { border-color: var(--accent-color); color: var(--accent-color); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+        .btn-primary { background: var(--accent-color, #ffd700); color: #1a1a2e; border-color: transparent; font-weight: 600; }
+        .btn-primary:hover:not(:disabled) { color: #1a1a2e; opacity: .9; }
+        .btn-sm { padding: 6px 12px; font-size: 12.5px; border-radius: 8px; }
+        .btn-danger { border-color: rgba(231,76,60,.6); color: var(--danger, #e74c3c); }
+        .row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .row > div { flex: 1; min-width: 150px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .tabs button { padding: 7px 15px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+        .tabs button.active { border-color: var(--accent-color); color: var(--accent-color); }
+        .mtg { border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; background: var(--bg-primary); }
+        .mtg .t { font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .mtg .m { font-size: 12.5px; color: var(--text-secondary); line-height: 1.8; word-break: break-all; }
+        .mtg .acts { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .code { font-family: Consolas, Monaco, monospace; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 8px; padding: 2px 8px; color: var(--accent-color); font-weight: 700; letter-spacing: 1px; }
+        .tag { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .tag.live { color: #28a745; border-color: rgba(40,167,69,.5); }
+        .tag.sched { color: var(--accent-color); border-color: rgba(255,215,0,.5); }
+        .tag.ended { color: var(--text-secondary); }
+        .tag.host { color: #3498db; border-color: rgba(52,152,219,.5); }
+        .msg { margin-top: 10px; font-size: 13px; min-height: 18px; }
+        .ok { color: #28a745; } .err { color: #e74c3c; } .muted { color: var(--text-secondary); }
+        .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+        .friends { max-height: 132px; overflow: auto; border: 1px solid var(--border-color); border-radius: 10px; padding: 8px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .friends .f { padding: 4px 10px; border: 1px solid var(--border-color); border-radius: 999px; font-size: 12.5px; cursor: pointer; background: var(--bg-secondary); }
+        .friends .f.on { border-color: var(--accent-color); color: var(--accent-color); }
+        @media (max-width: 640px) { .nav { padding: 12px 16px; } }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>📅 会议中心</h2></div>
+        <div>
+            <span class="muted" style="font-size:13px;"><span id="whoami">…</span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="security.html">🔐 账号与安全</a>
+            <a href="index.html" onclick="logout()">🚪 退出</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="cols">
+            <div>
+                <!-- 快速会议 -->
+                <div class="card">
+                    <h3>⚡ 快速会议</h3>
+                    <div class="desc">立即创建一个会议，生成会议编号后把编号或邀请链接发给对方即可加入。</div>
+                    <label class="fld">会议主题</label>
+                    <input type="text" id="quickTitle" placeholder="例如：周会 / 需求讨论" maxlength="80">
+                    <label class="fld">邀请（可选，多个用户名用逗号分隔）</label>
+                    <input type="text" id="quickInvitees" placeholder="例如：alice, bob">
+                    <div class="row">
+                        <button class="btn btn-primary" id="btnQuick" onclick="createInstant()">🚀 立即开会</button>
+                    </div>
+                    <div class="msg" id="quickMsg"></div>
+                </div>
+
+                <!-- 预定会议 -->
+                <div class="card">
+                    <h3>🗓️ 预定会议</h3>
+                    <div class="desc">预先安排一场会议，被邀请人会收到站内通知，会议编号在预定后即生效。</div>
+                    <label class="fld">会议主题</label>
+                    <input type="text" id="schTitle" placeholder="例如：项目评审" maxlength="80">
+                    <div class="row">
+                        <div>
+                            <label class="fld">开始时间</label>
+                            <input type="datetime-local" id="schTime">
+                        </div>
+                        <div>
+                            <label class="fld">时长（分钟）</label>
+                            <input type="number" id="schDuration" value="60" min="10" max="600" step="10">
+                        </div>
+                    </div>
+                    <label class="fld">会议密码（可选）</label>
+                    <input type="text" id="schPassword" placeholder="留空表示无需密码" maxlength="32">
+                    <label class="fld">邀请（可选，多个用户名用逗号分隔）</label>
+                    <input type="text" id="schInvitees" placeholder="例如：alice, bob">
+                    <label class="fld">从好友中快速选择</label>
+                    <div class="friends" id="friendList"><span class="muted" style="font-size:12.5px;">加载中…</span></div>
+                    <button class="btn btn-primary" id="btnSchedule" onclick="createScheduled()">🗓️ 预定会议</button>
+                    <div class="msg" id="schMsg"></div>
+                </div>
+            </div>
+
+            <div>
+                <!-- 加入会议 -->
+                <div class="card">
+                    <h3>🔢 加入会议</h3>
+                    <div class="desc">输入对方给你的会议编号（形如 ABC-123-XYZ）即可加入。</div>
+                    <label class="fld">会议编号</label>
+                    <input type="text" id="joinCode" placeholder="ABC-123-XYZ" maxlength="20" style="text-transform:uppercase;letter-spacing:1px;">
+                    <label class="fld">会议密码（如需）</label>
+                    <input type="text" id="joinPassword" placeholder="没有密码可留空" maxlength="32">
+                    <button class="btn btn-primary" id="btnJoin" onclick="joinByCode()">➡️ 加入会议</button>
+                    <div class="msg" id="joinMsg"></div>
+                </div>
+
+                <!-- 我的会议 -->
+                <div class="card">
+                    <h3>📋 我的会议</h3>
+                    <div class="tabs" id="tabs">
+                        <button class="active" data-f="all" onclick="setFilter('all', this)">全部</button>
+                        <button data-f="upcoming" onclick="setFilter('upcoming', this)">即将开始</button>
+                        <button data-f="live" onclick="setFilter('live', this)">进行中</button>
+                        <button data-f="ended" onclick="setFilter('ended', this)">已结束</button>
+                    </div>
+                    <div id="mtgList"><span class="muted">加载中… <span class="spin"></span></span></div>
+                    <div class="msg" id="listMsg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = WORKER_API;
+        let me = '';
+        let meetings = [];
+        let filter = 'all';
+        let picked = new Set();
+
+        function escapeHtml(t) {
+            if (t === null || t === undefined) return '';
+            const d = document.createElement('div'); d.textContent = String(t); return d.innerHTML;
+        }
+        function token() { return (window.AuthToken && window.AuthToken.get()) || ''; }
+        function logout() {
+            if (window.clearLoginState) window.clearLoginState();
+            localStorage.removeItem('nflshc_currentUser');
+            sessionStorage.removeItem('currentUser');
+            if (window.AuthToken) window.AuthToken.clear();
+            window.location.href = 'index.html';
+        }
+        function fmt(t) {
+            if (!t) return '—';
+            const d = new Date(t);
+            return isNaN(d.getTime()) ? String(t) : d.toLocaleString('zh-CN', { hour12: false });
+        }
+        function parseNames(v) {
+            return String(v || '').split(/[,，;；\s]+/).map(s => s.trim()).filter(Boolean);
+        }
+        async function api(path, opts) {
+            const o = opts || {};
+            const headers = Object.assign({}, o.headers || {});
+            if (o.body) headers['Content-Type'] = 'application/json';
+            const res = await fetch(API + path, { method: o.method || (o.body ? 'POST' : 'GET'), headers, body: o.body ? JSON.stringify(o.body) : undefined });
+            const data = await res.json().catch(() => ({}));
+            return { status: res.status, ok: res.ok, data };
+        }
+        function statusTag(m) {
+            if (m.status === 'ended') return '<span class="tag ended">已结束</span>';
+            if (m.status === 'live') return '<span class="tag live">进行中</span>';
+            return '<span class="tag sched">已预定</span>';
+        }
+
+        // ---------- 创建 ----------
+        async function createInstant() {
+            const btn = document.getElementById('btnQuick');
+            const msg = document.getElementById('quickMsg');
+            btn.disabled = true;
+            msg.innerHTML = '创建中… <span class="spin"></span>';
+            try {
+                const r = await api('/api/meeting/create', { body: {
+                    title: document.getElementById('quickTitle').value.trim(),
+                    kind: 'instant',
+                    invitees: parseNames(document.getElementById('quickInvitees').value),
+                }});
+                if (!r.ok || !r.data.ok) { msg.innerHTML = '<span class="err">创建失败：' + escapeHtml(r.data.error || ('HTTP ' + r.status)) + '</span>'; return; }
+                const m = r.data.meeting;
+                msg.innerHTML = '<span class="ok">✅ 会议已创建，编号 ' + escapeHtml(m.code) + '，正在进入…</span>';
+                setTimeout(() => { window.location.href = 'meeting-room.html?id=' + encodeURIComponent(m.id) + '&code=' + encodeURIComponent(m.code); }, 600);
+            } catch (e) { msg.innerHTML = '<span class="err">网络错误：' + escapeHtml(e.message) + '</span>'; }
+            finally { btn.disabled = false; }
+        }
+
+        async function createScheduled() {
+            const btn = document.getElementById('btnSchedule');
+            const msg = document.getElementById('schMsg');
+            const t = document.getElementById('schTime').value;
+            if (!t) { msg.innerHTML = '<span class="err">请选择开始时间。</span>'; return; }
+            const when = new Date(t);
+            if (isNaN(when.getTime())) { msg.innerHTML = '<span class="err">开始时间格式不正确。</span>'; return; }
+            const invitees = Array.from(new Set(parseNames(document.getElementById('schInvitees').value).concat(Array.from(picked))));
+            btn.disabled = true;
+            msg.innerHTML = '提交中… <span class="spin"></span>';
+            try {
+                const r = await api('/api/meeting/create', { body: {
+                    title: document.getElementById('schTitle').value.trim(),
+                    kind: 'scheduled',
+                    scheduledAt: when.toISOString(),
+                    durationMin: Number(document.getElementById('schDuration').value) || 60,
+                    password: document.getElementById('schPassword').value.trim(),
+                    invitees: invitees,
+                }});
+                if (!r.ok || !r.data.ok) { msg.innerHTML = '<span class="err">预定失败：' + escapeHtml(r.data.error || ('HTTP ' + r.status)) + '</span>'; return; }
+                const m = r.data.meeting;
+                const invited = r.data.invited || [];
+                msg.innerHTML = '<span class="ok">✅ 已预定：' + escapeHtml(m.title) + '，编号 ' + escapeHtml(m.code) +
+                    (invited.length ? '，已通知 ' + invited.length + ' 人' : '') + '</span>';
+                document.getElementById('schTitle').value = '';
+                picked.clear(); renderFriends();
+                loadMeetings();
+            } catch (e) { msg.innerHTML = '<span class="err">网络错误：' + escapeHtml(e.message) + '</span>'; }
+            finally { btn.disabled = false; }
+        }
+
+        // ---------- 加入 ----------
+        async function joinByCode() {
+            const btn = document.getElementById('btnJoin');
+            const msg = document.getElementById('joinMsg');
+            const code = document.getElementById('joinCode').value.trim();
+            if (!code) { msg.innerHTML = '<span class="err">请输入会议编号。</span>'; return; }
+            btn.disabled = true;
+            msg.innerHTML = '加入中… <span class="spin"></span>';
+            try {
+                const r = await api('/api/meeting/join', { body: { code: code, password: document.getElementById('joinPassword').value } });
+                if (!r.ok || !r.data.ok) {
+                    const hint = r.data.code === 'need_password' ? '该会议需要密码，请填写会议密码。' : (r.data.error || ('HTTP ' + r.status));
+                    msg.innerHTML = '<span class="err">' + escapeHtml(hint) + '</span>';
+                    return;
+                }
+                msg.innerHTML = '<span class="ok">✅ 已加入，正在进入会议…</span>';
+                setTimeout(() => { window.location.href = 'meeting-room.html?id=' + encodeURIComponent(r.data.meeting.id) + '&code=' + encodeURIComponent(r.data.code || code); }, 500);
+            } catch (e) { msg.innerHTML = '<span class="err">网络错误：' + escapeHtml(e.message) + '</span>'; }
+            finally { btn.disabled = false; }
+        }
+
+        // ---------- 列表 ----------
+        function setFilter(f, btn) {
+            filter = f;
+            document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            renderMeetings();
+        }
+
+        function renderMeetings() {
+            const box = document.getElementById('mtgList');
+            let list = meetings;
+            if (filter === 'live') list = meetings.filter(m => m.status === 'live');
+            else if (filter === 'ended') list = meetings.filter(m => m.status === 'ended');
+            else if (filter === 'upcoming') list = meetings.filter(m => m.status === 'scheduled');
+            if (!list.length) { box.innerHTML = '<span class="muted">还没有会议记录。创建一场快速会议试试吧。</span>'; return; }
+            box.innerHTML = list.map(m => {
+                const isHost = m.role === 'host' || m.host === me;
+                const link = window.location.origin + window.location.pathname.replace(/meeting\.html$/, '') + 'meeting.html?code=' + encodeURIComponent(m.code);
+                return `<div class="mtg">
+                    <div class="t">${escapeHtml(m.title || '未命名会议')} ${statusTag(m)} ${isHost ? '<span class="tag host">我是主持人</span>' : ''}</div>
+                    <div class="m">
+                        编号：<span class="code">${escapeHtml(m.code)}</span>
+                        ${m.password ? ' · 🔒 需要密码' : ''}<br>
+                        ${m.kind === 'scheduled' ? ('预定开始：' + fmt(m.scheduled_at) + ' · 时长 ' + (m.duration_min || 60) + ' 分钟<br>') : ('创建于：' + fmt(m.created_at) + '<br>')}
+                        主持人：${escapeHtml(m.host)}${m.joined_at ? ' · 我加入于 ' + fmt(m.joined_at) : ''}
+                    </div>
+                    <div class="acts">
+                        ${m.status !== 'ended' ? `<button class="btn btn-sm btn-primary" onclick="enter('${escapeHtml(m.id)}','${escapeHtml(m.code)}')">➡️ 进入会议</button>` : ''}
+                        <button class="btn btn-sm" onclick="copyText('${escapeHtml(m.code)}')">📋 复制编号</button>
+                        <button class="btn btn-sm" onclick="copyText('${escapeHtml(link)}')">🔗 复制邀请链接</button>
+                        ${isHost && m.status !== 'ended' ? `<button class="btn btn-sm btn-danger" onclick="endMeeting('${escapeHtml(m.id)}')">⛔ 结束会议</button>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function enter(id, code) {
+            window.location.href = 'meeting-room.html?id=' + encodeURIComponent(id) + '&code=' + encodeURIComponent(code);
+        }
+
+        async function copyText(t) {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(t); }
+                else {
+                    const ta = document.createElement('textarea');
+                    ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+                }
+                const msg = document.getElementById('listMsg');
+                msg.innerHTML = '<span class="ok">✅ 已复制：' + escapeHtml(t) + '</span>';
+                setTimeout(() => { msg.innerHTML = ''; }, 2500);
+            } catch (e) {
+                prompt('复制下面的内容：', t);
+            }
+        }
+
+        async function endMeeting(id) {
+            if (!confirm('确定结束这场会议？所有参与者都会退出。')) return;
+            const msg = document.getElementById('listMsg');
+            const r = await api('/api/meeting/end', { body: { meetingId: id } });
+            if (!r.ok || !r.data.ok) { msg.innerHTML = '<span class="err">结束失败：' + escapeHtml(r.data.error || ('HTTP ' + r.status)) + '</span>'; return; }
+            msg.innerHTML = '<span class="ok">✅ 会议已结束。</span>';
+            loadMeetings();
+        }
+
+        async function loadMeetings() {
+            const box = document.getElementById('mtgList');
+            try {
+                const r = await api('/api/meeting/list');
+                if (r.status === 401) { window.location.href = 'index.html?next=meeting.html'; return; }
+                if (!r.ok || !r.data.ok) { box.innerHTML = '<span class="err">加载失败：' + escapeHtml(r.data.error || ('HTTP ' + r.status)) + '</span>'; return; }
+                meetings = r.data.meetings || [];
+                renderMeetings();
+            } catch (e) { box.innerHTML = '<span class="err">网络错误：' + escapeHtml(e.message) + '</span>'; }
+        }
+
+        // ---------- 好友快捷选择 ----------
+        function renderFriends() {
+            const box = document.getElementById('friendList');
+            if (!box.dataset.loaded) return;
+            const names = JSON.parse(box.dataset.names || '[]');
+            if (!names.length) { box.innerHTML = '<span class="muted" style="font-size:12.5px;">暂无好友，可直接在输入框里填写用户名。</span>'; return; }
+            box.innerHTML = names.map(n => `<span class="f${picked.has(n) ? ' on' : ''}" onclick="toggleFriend('${escapeHtml(n)}')">${escapeHtml(n)}</span>`).join('');
+        }
+        function toggleFriend(n) {
+            if (picked.has(n)) picked.delete(n); else picked.add(n);
+            renderFriends();
+        }
+        async function loadFriends() {
+            const box = document.getElementById('friendList');
+            try {
+                const r = await fetch(API + '/api/friends');
+                const data = await r.json().catch(() => []);
+                const rows = Array.isArray(data) ? data : (data.rows || data.friends || []);
+                const names = [];
+                for (const row of rows) {
+                    const a = row.user1 || row.owner, b = row.user2 || row.friend;
+                    if (!a || !b) continue;
+                    const other = (a === me) ? b : (b === me ? a : null);
+                    if (other && !names.includes(other)) names.push(other);
+                }
+                box.dataset.loaded = '1';
+                box.dataset.names = JSON.stringify(names);
+                renderFriends();
+            } catch (e) {
+                box.innerHTML = '<span class="muted" style="font-size:12.5px;">好友列表加载失败，可直接在输入框里填写用户名。</span>';
+            }
+        }
+
+        // ---------- 初始化 ----------
+        (function init() {
+            try {
+                const raw = localStorage.getItem('nflshc_currentUser') || sessionStorage.getItem('currentUser');
+                if (raw) me = (JSON.parse(raw) || {}).username || '';
+            } catch (e) { /* 忽略 */ }
+            document.getElementById('whoami').textContent = me || '已登录';
+            if (!token()) { window.location.href = 'index.html?next=meeting.html'; return; }
+
+            // 从会议链接进入：meeting.html?code=XXX
+            const code = new URLSearchParams(window.location.search).get('code');
+            if (code) {
+                document.getElementById('joinCode').value = code;
+                const msg = document.getElementById('joinMsg');
+                msg.innerHTML = '<span class="muted">检测到邀请链接，正在加入会议 ' + escapeHtml(code) + '…</span>';
+                joinByCode();
+            }
+
+            // 预约时间默认：下一个整点
+            const d = new Date(Date.now() + 3600e3);
+            d.setMinutes(0, 0, 0);
+            const pad = v => String(v).padStart(2, '0');
+            document.getElementById('schTime').value = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':00';
+
+            loadMeetings();
+            loadFriends();
+        })();
+    </script>
+    <script src="shortcuts.js"></script>
+</body>
+</html>
