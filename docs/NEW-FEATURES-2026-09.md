@@ -83,6 +83,16 @@
   - **语音 / 视频**：WebRTC 网状（mesh）点对点连接，信令通过 `meeting_signals` 表轮询中转；使用公共 STUN；媒体流不经服务器、不录制
   - 主持人可结束会议；离开会议会更新成员状态
 - 技术细节：用户名较大的一方主动发起 offer（避免 glare）；ICE candidate 在远端描述未就绪时排队，随后冲刷；双方镜像：谁先开麦/摄像都会补轨道并重新协商。
+- **入会即成员**：`meeting-room.html` 打开时必须先调 `/api/meeting/join`（用 `?id=` 或 `?code=` 都可以）。
+  未入会直接进房间会导致聊天与信令全部 403，表现为「成员列表看不到人、完全没声音画面」。
+- **重新协商**：协商由一方统一发起（用户名较大的那侧）。另一方开启麦克风/摄像头后，
+  通过 `kind:'ice'` + `payload:{__renegotiate:true}` 请求对方重新发 offer，
+  这样既能把新轨道送出去，又不会双方同时发 offer 造成 glare。
+- 页面内置连接诊断条：入会状态、信令状态、与每个对端 ICE 的 `connectionState`
+  （准备中 / 连接中 / 已连接 / 连接失败），出现问题时可直接看出卡在哪一步。
+- 排查提示：**同一个账号在多个标签页打开无法互通**（对端按用户名区分），请用另一个账号或另一台设备测试。
+- 离开页面用 `fetch(..., {keepalive:true})` 携带鉴权头通知服务端（`sendBeacon` 无法带 `Authorization`，
+  会造成「幽灵成员」一直显示在线）。
 
 ---
 
@@ -124,6 +134,7 @@ powershell -File byethost/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/config.php -
 node test-new-features.mjs     # 会话/扫码/导出注销/健康/会议/附件 全链路（29 项）
 node test-security-flows.mjs   # 安全回归：吊销是否真失效、扫码 token 是否可用、导出是否泄露（31 项）
 node test-attachment-url.mjs   # 附件地址是否为 HTTPS 公开入口、图片能否真正取到（12 项）
+node test-meeting-signaling.mjs # 会议入会与信令链路：成员可见性、offer/answer/ICE 双向可达（29 项）
 node tools-check-html.mjs *.html   # 内联脚本语法检查
 node tools-check-links.mjs *.html  # 本地引用完整性检查
 node tools-qr-verify.mjs       # 二维码生成器与参考实现逐模块比对
