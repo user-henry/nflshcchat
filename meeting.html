@@ -271,7 +271,7 @@
             if (!list.length) { box.innerHTML = '<span class="muted">还没有会议记录。创建一场快速会议试试吧。</span>'; return; }
             box.innerHTML = list.map(m => {
                 const isHost = m.role === 'host' || m.host === me;
-                const link = window.location.origin + window.location.pathname.replace(/meeting\.html$/, '') + 'meeting.html?code=' + encodeURIComponent(m.code);
+                const link = window.location.origin + window.location.pathname.replace(/meeting\.html$/, '') + 'meeting-room.html?code=' + encodeURIComponent(m.code);
                 return `<div class="mtg">
                     <div class="t">${escapeHtml(m.title || '未命名会议')} ${statusTag(m)} ${isHost ? '<span class="tag host">我是主持人</span>' : ''}</div>
                     <div class="m">
