@@ -718,6 +718,29 @@
         }
         .voice-btn:hover { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); }
         .voice-btn.recording { background: #dc3545; color: white; animation: pulse 1s infinite; }
+        /* ===== 附件按钮（统一上传到文件托管） ===== */
+        .attach-btn {
+            background: var(--bg-tertiary, #2a2a3e);
+            border: none;
+            color: var(--text-primary, #fff);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .attach-btn:hover { background: var(--accent-color, #ffd700); color: var(--bg-primary, #1a1a2e); }
+        .attach-btn.busy { opacity: .6; cursor: progress; }
+        .attach-progress {
+            font-size: 13px;
+            color: var(--text-secondary, #aaa);
+            padding: 4px 12px;
+            background: rgba(255,215,0,0.12);
+            border: 1px solid rgba(255,215,0,0.35);
+            border-radius: 20px;
+            margin-bottom: 8px;
+        }
+        .input-container.dragover { outline: 2px dashed var(--accent-color, #ffd700); outline-offset: -4px; }
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
@@ -842,6 +865,8 @@
             <span>欢迎，<span id="username"></span><span id="adminBadge" class="admin-badge-nav" style="display: none;">👑 管理员</span></span>
             <a href="profile.html">👤 个人资料</a>
             <a href="friends.html">👥 好友</a>
+            <a href="meeting.html">📅 会议</a>
+            <a href="security.html">🔐 账号与安全</a>
             <a href="stats.html">📊 统计</a>
             <a href="dashboard.html">📋 仪表盘</a>
             <a href="export.html">📤 导出</a>
@@ -883,10 +908,13 @@
             </div>
             <div class="input-container" id="inputContainer" style="display: none;">
                 <div class="input-area">
-                    <textarea class="chat-input" id="messageInput" placeholder="输入文字…" rows="2"></textarea>
+                    <textarea class="chat-input" id="messageInput" placeholder="输入文字…（支持粘贴图片，或用 📎 发送附件）" rows="2"></textarea>
                     <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceRecording()" title="语音消息">🎤</button>
+                    <button class="attach-btn" id="attachBtn" onclick="pickAttachment()" title="发送文件 / 图片（最大 20MB）">📎</button>
                     <button class="send-btn" onclick="sendMessage()">发送</button>
                 </div>
+                <input type="file" id="attachInput" style="display:none;" onchange="onAttachmentPicked(this)">
+                <div class="attach-progress" id="attachProgress" style="display:none;"></div>
                 <div class="reply-preview-bar" id="replyPreviewBar">
                     <span class="reply-preview-text" id="replyPreviewText">回复：</span>
                     <button class="reply-cancel-btn" onclick="cancelReply()">✕</button>
@@ -1537,6 +1565,139 @@
             }
         }
         
+        // ============================================================
+        //  消息附件：统一上传到文件托管（经 Worker 中转，无需二次登录）
+        //  返回 { ok, id, name, title, kind, size, sizeText, url, directUrl }
+        // ============================================================
+        const ATTACH_MAX_BYTES = 20 * 1024 * 1024;
+
+        function pickAttachment() {
+            const el = document.getElementById('attachInput');
+            if (el) { el.value = ''; el.click(); }
+        }
+
+        function onAttachmentPicked(input) {
+            const f = input.files && input.files[0];
+            if (f) uploadAttachment(f);
+        }
+
+        function attachProgress(text) {
+            const box = document.getElementById('attachProgress');
+            if (!box) return;
+            if (!text) { box.style.display = 'none'; box.textContent = ''; return; }
+            box.style.display = 'block';
+            box.textContent = text;
+        }
+
+        function humanSize(bytes) {
+            const b = Number(bytes) || 0;
+            if (b < 1024) return b + ' B';
+            if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+            if (b < 1024 * 1024 * 1024) return (b / 1024 / 1024).toFixed(2) + ' MB';
+            return (b / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+        }
+
+        // 把附件信息拼成一条消息内容（Markdown，图片内嵌、其它给下载链接）
+        function buildAttachmentContent(file) {
+            const title = String(file.title || file.name || '附件').replace(/[\[\]()]/g, '');
+            const size = file.sizeText || humanSize(file.size);
+            const url = file.url || file.viewUrl || '';
+            const direct = file.directUrl || url;
+            let out = '';
+            if (file.kind === 'image' && direct) {
+                out = '![' + title + '](' + direct + ')\n';
+            } else if (file.kind === 'video' && direct) {
+                out = '🎬 [' + title + '](' + direct + ')\n';
+            } else if (file.kind === 'audio' && direct) {
+                out = '🎵 [' + title + '](' + direct + ')\n';
+            }
+            out += '📎 [' + title + '](' + url + ') · ' + size;
+            if (file.visibility === 'private') out += ' · 🔒 仅自己可见';
+            return out;
+        }
+
+        async function uploadAttachment(file, opts) {
+            opts = opts || {};
+            if (!currentRoom && !opts.silent) { alert('请先选择一个聊天室'); return null; }
+            if (!file) return null;
+            if (file.size > ATTACH_MAX_BYTES) {
+                alert('单个附件最大 ' + humanSize(ATTACH_MAX_BYTES) + '，当前文件 ' + humanSize(file.size) +
+                    '。更大的文件请到文件托管站分片上传：https://file.nflshcchat.cc.cd/');
+                return null;
+            }
+            if (!window.AuthToken || !window.AuthToken.get()) { alert('登录已过期，请重新登录后再上传'); return null; }
+
+            const btn = document.getElementById('attachBtn');
+            if (btn) btn.classList.add('busy');
+            attachProgress('⏫ 正在上传 ' + file.name + '（' + humanSize(file.size) + '）…');
+            try {
+                const fd = new FormData();
+                fd.append('file', file, file.name || 'attachment');
+                fd.append('title', file.name || '附件');
+                fd.append('visibility', 'public');
+                const res = await fetch(WORKER_API + '/api/files/upload', { method: 'POST', body: fd });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) {
+                    attachProgress('');
+                    alert('上传失败：' + ((data && data.error) || ('HTTP ' + res.status)));
+                    return null;
+                }
+                attachProgress('✅ 上传完成：' + (data.title || data.name) + ' · ' + (data.sizeText || humanSize(data.size)));
+                setTimeout(() => attachProgress(''), 2500);
+                return data;
+            } catch (e) {
+                attachProgress('');
+                alert('上传失败：' + (e.message || e));
+                return null;
+            } finally {
+                if (btn) btn.classList.remove('busy');
+            }
+        }
+
+        // 上传后立刻作为一条消息发出
+        async function sendAttachment(file) {
+            const info = await uploadAttachment(file);
+            if (!info) return;
+            const input = document.getElementById('messageInput');
+            if (!input) return;
+            const text = buildAttachmentContent(info);
+            input.value = input.value.trim() ? (input.value.trim() + '\n' + text) : text;
+            updatePreview();
+            await sendMessage();
+        }
+
+        // 从剪贴板粘贴图片 / 拖拽文件
+        function initAttachmentDropzone() {
+            const input = document.getElementById('messageInput');
+            const box = document.getElementById('inputContainer');
+            if (input && !input.dataset.attachBound) {
+                input.dataset.attachBound = '1';
+                input.addEventListener('paste', function (e) {
+                    const items = (e.clipboardData && e.clipboardData.items) || [];
+                    for (const it of items) {
+                        if (it.kind === 'file') {
+                            const f = it.getAsFile();
+                            if (f) {
+                                e.preventDefault();
+                                sendAttachment(f);
+                                return;
+                            }
+                        }
+                    }
+                });
+            }
+            if (box && !box.dataset.dropBound) {
+                box.dataset.dropBound = '1';
+                box.addEventListener('dragover', function (e) { e.preventDefault(); box.classList.add('dragover'); });
+                box.addEventListener('dragleave', function () { box.classList.remove('dragover'); });
+                box.addEventListener('drop', function (e) {
+                    box.classList.remove('dragover');
+                    const files = e.dataTransfer && e.dataTransfer.files;
+                    if (files && files.length) { e.preventDefault(); sendAttachment(files[0]); }
+                });
+            }
+        }
+
         function renderMarkdown(content) {
             if (!content) return '';
             const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
@@ -3074,6 +3235,8 @@
                     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
                 });
             }
+            // 附件：📎 按钮已在 HTML 绑定，这里补上粘贴图片与拖拽上传
+            initAttachmentDropzone();
             console.log('AI 机器人已启用，触发词:', BOT_CONFIG.triggerWords);
             // 启动来电监听（每 4 秒检查一次是否有来电）
             startIncomingWatcher();
