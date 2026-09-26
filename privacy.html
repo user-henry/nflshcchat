@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="js/theme.js?v=4"></script>
+    <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 隐私政策</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .nav { background: var(--bg-secondary); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 40px; height: 40px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .nav h2 { font-size: 20px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 20px; transition: color .3s; }
+        .nav a:hover { color: var(--accent-color); }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
+        .doc { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 34px 34px 28px; }
+        .doc h1 { font-size: 26px; margin-bottom: 6px; }
+        .meta { color: var(--text-secondary); font-size: 13px; margin-bottom: 22px; }
+        .toc { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px 20px; margin-bottom: 26px; }
+        .toc b { display: block; margin-bottom: 8px; font-size: 14px; }
+        .toc a { color: var(--accent-color); text-decoration: none; font-size: 13px; margin-right: 14px; line-height: 2; }
+        .toc a:hover { text-decoration: underline; }
+        h2.sec { font-size: 18px; margin: 28px 0 10px; padding-left: 10px; border-left: 4px solid var(--accent-color); }
+        h3.sub { font-size: 15px; margin: 16px 0 6px; color: var(--accent-color); }
+        p, li { line-height: 1.85; color: var(--text-secondary); font-size: 14.5px; }
+        ul, ol { margin: 8px 0 8px 22px; }
+        li { margin-bottom: 4px; }
+        strong { color: var(--text-primary); }
+        .callout { background: rgba(255,215,0,.08); border: 1px solid rgba(255,215,0,.35); border-radius: 10px; padding: 14px 16px; margin: 14px 0; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+        th, td { border: 1px solid var(--border-color); padding: 9px 12px; text-align: left; vertical-align: top; }
+        th { background: var(--bg-primary); color: var(--text-primary); font-weight: 600; }
+        td { color: var(--text-secondary); }
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+        .actions a, .actions button { display: inline-block; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); text-decoration: none; cursor: pointer; font-size: 14px; transition: .2s; }
+        .actions a:hover, .actions button:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .actions .primary { background: var(--accent-color, #ffd700); color: #1a1a2e; border-color: transparent; font-weight: 600; }
+        footer { text-align: center; color: var(--text-secondary); font-size: 12.5px; padding: 26px 20px 40px; }
+        footer a { color: var(--text-secondary); text-decoration: none; margin: 0 8px; }
+        footer a:hover { color: var(--accent-color); }
+        @media (max-width: 640px) { .doc { padding: 22px 18px; } .nav { padding: 12px 16px; } }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>🔒 隐私政策</h2></div>
+        <div>
+            <a href="index.html">登录</a>
+            <a href="chat.html">聊天</a>
+            <a href="terms.html">用户协议</a>
+            <a href="security.html">账号与安全</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="doc">
+            <h1>NFLSHC Chat 隐私政策</h1>
+            <div class="meta">生效日期：2026 年 9 月 26 日 &nbsp;·&nbsp; 版本 v1.0 &nbsp;·&nbsp; 适用于 nflshcchat.cc.cd 及其子域名（含账号中心、开放平台、HZYAI、文件托管）</div>
+
+            <div class="toc">
+                <b>目录</b>
+                <a href="#s1">1. 我们收集哪些信息</a>
+                <a href="#s2">2. 信息如何使用</a>
+                <a href="#s3">3. Cookie 与本地存储</a>
+                <a href="#s4">4. 信息的存储与安全</a>
+                <a href="#s5">5. 第三方服务</a>
+                <a href="#s6">6. 信息共享</a>
+                <a href="#s7">7. 你的权利</a>
+                <a href="#s8">8. 数据保留期限</a>
+                <a href="#s9">9. 未成年人</a>
+                <a href="#s10">10. 政策更新</a>
+                <a href="#s11">11. 联系我们</a>
+            </div>
+
+            <div class="callout">
+                <strong>一句话总结：</strong>我们只收集提供服务所必需的信息；你的消息、文件与个人数据默认只服务于你自己的使用；
+                你随时可以在<a href="security.html" style="color:var(--accent-color);">账号与安全</a>页导出全部数据，或申请注销账号并删除数据。
+            </div>
+
+            <h2 class="sec" id="s1">1. 我们收集哪些信息</h2>
+            <table>
+                <tr><th>类别</th><th>具体内容</th><th>是否必需</th></tr>
+                <tr><td>账号信息</td><td>用户名、密码的 SHA-256 哈希（我们<strong>从不存储明文密码</strong>）、注册邮箱、昵称与头像等个人资料</td><td>必需</td></tr>
+                <tr><td>登录与安全信息</td><td>登录时间、登录方式（密码 / Google / 扫码）、IP 地址、浏览器与设备标识（User-Agent）、登录失败次数、令牌有效期</td><td>必需（安全风控）</td></tr>
+                <tr><td>服务内容</td><td>你发送的消息、聊天室与好友关系、收藏、举报、日历与图床记录、HZYAI 对话记录与会议记录</td><td>必需</td></tr>
+                <tr><td>上传文件</td><td>你上传到文件托管的文件名、标题、大小、类型、可见性（公开 / 私有）与存储路径</td><td>在你使用上传功能时</td></tr>
+                <tr><td>运行指标</td><td>接口错误与慢请求记录、请求路径与响应状态，用于稳定性排查</td><td>必需（系统运维）</td></tr>
+            </table>
+            <p>我们<strong>不会</strong>收集你的通讯录、短信、相册、精确地理位置（GPS）、麦克风或摄像头内容——除非你在语音/视频通话或会议中主动开启，且这些媒体流默认点对点传输、不落盘存储。</p>
+
+            <h2 class="sec" id="s2">2. 信息如何使用</h2>
+            <ul>
+                <li>提供与维护聊天、好友、文件托管、HZYAI、会议与开放平台等核心功能；</li>
+                <li>账号鉴权、多设备会话管理与"一键下线"等安全能力；</li>
+                <li>识别并处置垃圾注册、暴力破解、恶意刷量与违规内容；</li>
+                <li>统计服务的可用性与错误率，改进产品体验；</li>
+                <li>在法律法规要求时配合有权机关的合法要求。</li>
+            </ul>
+            <p>我们<strong>不会</strong>将你的个人信息用于广告定向投放，也不会出售、出租你的个人信息。</p>
+
+            <h2 class="sec" id="s3">3. Cookie 与本地存储</h2>
+            <ul>
+                <li><strong>localStorage / sessionStorage</strong>：保存登录令牌（<code>nflshc_token</code>）、当前用户信息与主题偏好。清除浏览器数据即可登出。</li>
+                <li><strong>Cookie</strong>：文件托管的源站使用一个反爬校验 Cookie（<code>__test</code>），仅用于区分正常浏览器与自动化扫描，不含个人信息。</li>
+                <li>我们<strong>不使用</strong>第三方广告 Cookie 或跨站跟踪像素。</li>
+            </ul>
+
+            <h2 class="sec" id="s4">4. 信息的存储与安全</h2>
+            <ul>
+                <li>业务数据存储于 Cloudflare D1（SQLite）与 Cloudflare 边缘网络；上传的文件存储于自建文件托管主机。</li>
+                <li>所有站点强制 HTTPS 传输；接口调用使用 Bearer 令牌鉴权，令牌默认 30 天有效，可按设备单独吊销。</li>
+                <li>密码在浏览器端完成 SHA-256 哈希后再传输，服务端只保存哈希值，无法还原明文。</li>
+                <li>数据库访问受凭据隔离，配置文件不纳入公开代码仓库。</li>
+                <li>会话列表与登录记录可供你在<a href="security.html" style="color:var(--accent-color);">账号与安全</a>页随时查看并下线可疑设备。</li>
+            </ul>
+
+            <h2 class="sec" id="s5">5. 第三方服务</h2>
+            <ul>
+                <li><strong>Google 登录（OAuth 2.0）</strong>：在你选择"使用 Google 账号登录"时，Google 会向我们返回你的账号标识、邮箱与头像；我们仅保存其中的账号标识与邮箱用于建立绑定关系。你可在 <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener" style="color:var(--accent-color);">Google 账号权限页</a>随时撤销授权。</li>
+                <li><strong>Cloudflare</strong>：提供 CDN、DNS、Workers 运行时与数据库托管，会处理请求级日志（含 IP）。</li>
+                <li><strong>EmailJS</strong>：仅用于向你的注册邮箱发送密码重置验证码，邮件内容不包含密码。</li>
+                <li><strong>WebRTC / STUN</strong>：语音视频通话使用公共 STUN 服务器协助建立点对点连接，媒体流不经过我们的服务器。</li>
+                <li><strong>AI 模型服务</strong>：HZYAI 的对话内容会在生成回复时传输给所选的模型服务商，请勿在其中输入敏感个人信息。</li>
+            </ul>
+
+            <h2 class="sec" id="s6">6. 信息共享</h2>
+            <p>除以下情形外，我们不会向第三方提供你的个人信息：</p>
+            <ul>
+                <li>你主动公开的内容（如公开聊天室消息、设为"公开"的文件、公开会议）；</li>
+                <li>你通过开放平台（OAuth 授权）授权给第三方应用的数据——授权范围与时间由你决定，可随时在开放平台撤销；</li>
+                <li>法律法规要求或司法机关依法定程序调取。</li>
+            </ul>
+
+            <h2 class="sec" id="s7">7. 你的权利</h2>
+            <p>参照 GDPR 与《个人信息保护法》的精神，你对自己的数据拥有以下权利，且都可在站内自助完成：</p>
+            <ul>
+                <li><strong>访问与导出</strong>：在<a href="security.html" style="color:var(--accent-color);">账号与安全</a>页一键导出账号、消息、好友、收藏、授权记录、登录设备与会议记录（JSON 文件）。</li>
+                <li><strong>更正</strong>：在个人资料页修改昵称、头像、简介等信息。</li>
+                <li><strong>删除</strong>：删除单条消息、单个收藏、单个文件；或使用账号注销功能整体删除。</li>
+                <li><strong>注销账号</strong>：提交注销申请后进入 <strong>7 天冷静期</strong>，期间可随时撤销；冷静期结束后账号与关联数据将被清除（为满足安全与合规要求保留的登录风控日志除外）。</li>
+                <li><strong>撤回授权</strong>：在开放平台撤销对第三方应用的授权，在 Google 账号设置中解除 Google 登录绑定。</li>
+                <li><strong>反对与投诉</strong>：通过下方邮箱提出异议或投诉。</li>
+            </ul>
+            <div class="actions">
+                <a class="primary" href="security.html">前往账号与安全 · 导出 / 注销</a>
+                <a href="terms.html">阅读用户协议</a>
+            </div>
+
+            <h2 class="sec" id="s8">8. 数据保留期限</h2>
+            <ul>
+                <li>账号数据：保留至你注销账号且冷静期结束；</li>
+                <li>登录会话：令牌到期（30 天）或你主动下线后失效，过期记录会被自动清理；</li>
+                <li>消息与文件：保留至你主动删除或注销账号；公开内容删除后即从列表移除；</li>
+                <li>风控与运行指标：错误与慢请求记录保留约 90 天，用于安全审计。</li>
+            </ul>
+
+            <h2 class="sec" id="s9">9. 未成年人</h2>
+            <p>本服务不面向 14 周岁以下儿童。若你是未成年人，请在监护人指导下使用，并由监护人阅读同意本政策。若我们发现无意中收集了儿童个人信息，将尽快删除。</p>
+
+            <h2 class="sec" id="s10">10. 政策更新</h2>
+            <p>本政策可能随功能调整而更新。重大变更会在站内以公告形式提示，并更新本页顶部的生效日期与版本号。继续使用服务即视为接受更新后的政策。</p>
+
+            <h2 class="sec" id="s11">11. 联系我们</h2>
+            <p>如对本政策有疑问，或需要行使上述权利：</p>
+            <ul>
+                <li>在站内<a href="suggestions.html" style="color:var(--accent-color);">意见反馈</a>提交工单；</li>
+                <li>发送邮件至 <strong>huangzhiyuan@nflshcchat.cc.cd</strong>（我们通常在 7 个工作日内回复）。</li>
+            </ul>
+
+            <footer>
+                <div>© 2026 NFLSHC Chat</div>
+                <div style="margin-top:8px;">
+                    <a href="privacy.html">隐私政策</a>·<a href="terms.html">用户协议</a>·<a href="security.html">账号与安全</a>·<a href="about.html">关于我们</a>
+                </div>
+            </footer>
+        </div>
+    </div>
+    <script src="shortcuts.js"></script>
+</body>
+</html>
