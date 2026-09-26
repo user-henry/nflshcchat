@@ -1597,12 +1597,26 @@
             return (b / 1024 / 1024 / 1024).toFixed(2) + ' GB';
         }
 
+        // ============================================================
+        //  文件地址统一走公开的 HTTPS 入口
+        //  文件站源站是 http://nflshcfile.l.cd（无有效证书），在 HTTPS 页面里引用属于
+        //  混合内容，浏览器会拦截导致图片/音视频无法显示，因此这里统一改写为
+        //  https://file.nflshcchat.cc.cd（Cloudflare 入口）。历史消息里的旧地址同样会被改写。
+        // ============================================================
+        const FILE_PUBLIC_BASE = 'https://file.nflshcchat.cc.cd';
+        const FILE_ORIGIN_RE = /^https?:\/\/nflshcfile\.l\.cd/i;
+
+        function toPublicFileUrl(u) {
+            if (!u) return '';
+            return String(u).replace(FILE_ORIGIN_RE, FILE_PUBLIC_BASE);
+        }
+
         // 把附件信息拼成一条消息内容（Markdown，图片内嵌、其它给下载链接）
         function buildAttachmentContent(file) {
             const title = String(file.title || file.name || '附件').replace(/[\[\]()]/g, '');
             const size = file.sizeText || humanSize(file.size);
-            const url = file.url || file.viewUrl || '';
-            const direct = file.directUrl || url;
+            const url = toPublicFileUrl(file.url || file.viewUrl || '');
+            const direct = toPublicFileUrl(file.directUrl || url);
             let out = '';
             if (file.kind === 'image' && direct) {
                 out = '![' + title + '](' + direct + ')\n';
@@ -1700,6 +1714,8 @@
 
         function renderMarkdown(content) {
             if (!content) return '';
+            // 历史消息里可能存的是文件站源站地址（http，HTTPS 页面下会被浏览器拦截），统一改写为公开 HTTPS 入口
+            content = toPublicFileUrl(content);
             const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
             const mentions = [];
             let tempContent = content.replace(mentionPattern, (match) => {
