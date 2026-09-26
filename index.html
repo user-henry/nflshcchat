@@ -182,6 +182,28 @@
         .google-login-btn:hover { border-color: #4285F4; box-shadow: 0 2px 10px rgba(66,133,244,0.18); }
         .google-login-btn:active { transform: translateY(1px); }
 
+        /* ===== 扫码登录按钮 ===== */
+        .qr-login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            background: #2a2a3e;
+            color: #ffffff;
+            border: 2px solid #2a2a3e;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .qr-login-btn:hover { background: #35354f; border-color: var(--accent-color, #ffd700); }
+        .qr-login-btn:active { transform: translateY(1px); }
+        #qrBox canvas { display: block; }
+
         /* ===== 模态框样式 ===== */
         .modal {
             display: none;
@@ -265,6 +287,7 @@
         }
     </style>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="js/qrcode.js?v=1"></script>
 </head>
 <body>
     <div class="login-container">
@@ -300,9 +323,62 @@
             使用 Google 账号登录
         </button>
 
+        <!-- ===== 扫码登录（手机扫码确认，免输密码） ===== -->
+        <button id="qrLoginBtn" type="button" class="qr-login-btn" onclick="showQrLogin()">
+            📱 使用手机扫码登录
+        </button>
+
         <p><a onclick="showForgotPassword()">忘记密码？</a> | <a onclick="showRegister()">立即注册</a> | <a href="theme.html">主题切换</a> | <a id="appealLink" onclick="showAppeal()" style="display:none;color:#f39c12;">🙋 账号被封？申诉</a></p>
         <p style="margin-top:10px;"><a href="https://file.nflshcchat.cc.cd/" target="_blank" rel="noopener" title="上传图片/音频/视频，可选公开分享或仅自己可见（HTTPS 入口）">📦 文件托管（图片 · 音视频外链）</a></p>
+        <p style="margin-top:6px;"><a href="meeting.html" title="创建快速会议或用会议编号加入">📅 会议中心（快速会议 · 预定会议 · 扫码入会）</a></p>
         <div id="message" class="message"></div>
+        <p style="margin-top:16px;font-size:12px;color:#888;">
+            <a href="privacy.html" style="color:#888;">隐私政策</a> · <a href="terms.html" style="color:#888;">用户协议</a> · <a href="security.html" style="color:#888;">账号与安全</a>
+        </p>
+    </div>
+
+    <!-- ===== 扫码登录模态框 ===== -->
+    <div id="qrModal" class="modal">
+        <div class="modal-content" style="text-align:center;">
+            <h3>📱 扫码登录</h3>
+            <p style="color:#888;font-size:13px;margin-bottom:14px;">
+                用手机相机或微信扫一扫，在手机上确认后本机将自动登录。<br>二维码 <strong id="qrCountdown">180</strong> 秒内有效。
+            </p>
+            <div id="qrBox" style="display:inline-block;padding:10px;background:#fff;border-radius:12px;min-height:120px;min-width:120px;"></div>
+            <div id="qrStatus" style="margin-top:12px;font-size:13px;color:#666;min-height:20px;">正在生成二维码…</div>
+            <div class="modal-buttons">
+                <button onclick="refreshQrLogin()">🔄 刷新二维码</button>
+                <button onclick="closeQrLogin()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 手机端确认扫码登录（?qr=<id>） ===== -->
+    <div id="qrConfirmModal" class="modal">
+        <div class="modal-content">
+            <h3>✅ 确认登录</h3>
+            <div id="qrConfirmInfo" style="color:#666;font-size:13.5px;line-height:1.8;margin-bottom:14px;">正在读取登录请求…</div>
+            <div id="qrConfirmMsg" style="font-size:13px;min-height:18px;margin-bottom:8px;"></div>
+            <div class="modal-buttons">
+                <button onclick="rejectQrLogin()">不是我，取消</button>
+                <button onclick="approveQrLogin()" style="background:#ffd700;color:#1a1a2e;">确认登录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 申诉模态框（冻结/封禁用户向管理员说明情况） ===== -->
+    <div id="appealModal" class="modal">
+        <div class="modal-content">
+            <h3>🙋 账号申诉</h3>
+            <p style="color: var(--text-secondary, #aaa); margin-bottom: 15px;">如果您的账号被冻结或封禁，请填写用户名和申诉说明，管理员会尽快处理。</p>
+            <input type="text" id="appealUsername" placeholder="用户名">
+            <textarea id="appealReason" rows="4" placeholder="申诉说明（500字以内）"></textarea>
+            <div id="appealMessage" style="margin-top: 10px; font-size: 12px;"></div>
+            <div class="modal-buttons">
+                <button onclick="closeAppeal()">取消</button>
+                <button onclick="submitAppeal()" style="background: #f39c12;">提交申诉</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== 申诉模态框（冻结/封禁用户向管理员说明情况） ===== -->
@@ -643,6 +719,13 @@
                 const isAdmin = !!tokenData.isAdmin || username === 'huangzhiyuan';
                 saveLoginState({ username: username, isAdmin: isAdmin });
                 window.AuthToken && window.AuthToken.set(tokenData.token);
+
+                // 手机扫码登录：本机刚登录成功，先完成扫码确认
+                if (typeof qrConfirmId !== 'undefined' && qrConfirmId) {
+                    messageDiv.innerHTML = '<span style="color: green;">登录成功，正在读取扫码请求…</span>';
+                    showQrConfirm();
+                    return;
+                }
 
                 // 支持 ?next= 回跳（如 chat.html?join=xxx&token=yyy 的邀请链接）
                 const next = new URLSearchParams(window.location.search).get('next');
@@ -1006,11 +1089,183 @@
         }
 
         // ============================================================
+        //  扫码登录（PC 出码 → 手机确认 → PC 自动登录）
+        //  PC：POST /api/auth/qr/create → {id, secret}，把 <origin>/index.html?qr=<id> 渲染成二维码，
+        //      然后每 2 秒 POST /api/auth/qr/poll {id, secret} 换取 token。
+        //  手机：扫码打开本页 ?qr=<id>，若已登录则确认；未登录则先登录后自动回到确认流程。
+        // ============================================================
+        var qrState = { id: '', secret: '', timer: null, countdown: null, left: 180 };
+
+        function showQrLogin() {
+            document.getElementById('qrModal').classList.add('active');
+            startQrLogin();
+        }
+        function closeQrLogin() {
+            stopQrTimers();
+            document.getElementById('qrModal').classList.remove('active');
+            if (qrState.id && qrState.secret) {
+                fetch(WORKER_API + '/api/auth/qr/cancel', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: qrState.id, secret: qrState.secret })
+                }).catch(function () {});
+            }
+        }
+        function stopQrTimers() {
+            if (qrState.timer) { clearInterval(qrState.timer); qrState.timer = null; }
+            if (qrState.countdown) { clearInterval(qrState.countdown); qrState.countdown = null; }
+        }
+        function refreshQrLogin() { startQrLogin(); }
+
+        async function startQrLogin() {
+            stopQrTimers();
+            var box = document.getElementById('qrBox');
+            var status = document.getElementById('qrStatus');
+            status.innerHTML = '正在生成二维码…';
+            box.innerHTML = '';
+            try {
+                var res = await fetch(WORKER_API + '/api/auth/qr/create', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}'
+                });
+                var data = await res.json().catch(function () { return {}; });
+                if (!res.ok || !data.id || !data.secret) {
+                    status.innerHTML = '<span style="color:#dc3545;">二维码生成失败：' + escapeHtml(data.error || ('HTTP ' + res.status)) + '</span>';
+                    return;
+                }
+                qrState.id = data.id;
+                qrState.secret = data.secret;
+                qrState.left = 180;
+
+                var url = window.location.origin + window.location.pathname + '?qr=' + encodeURIComponent(data.id);
+                if (window.NFLSHCQR) {
+                    window.NFLSHCQR.render(box, url, { size: 220, margin: 2 });
+                } else {
+                    // 兜底：二维码库未加载时，至少把链接显示出来
+                    box.innerHTML = '<div style="color:#000;font-size:11px;word-break:break-all;max-width:220px;">' + escapeHtml(url) + '</div>';
+                }
+                status.innerHTML = '等待手机确认…';
+                document.getElementById('qrCountdown').textContent = qrState.left;
+
+                qrState.countdown = setInterval(function () {
+                    qrState.left--;
+                    var el = document.getElementById('qrCountdown');
+                    if (el) el.textContent = Math.max(0, qrState.left);
+                    if (qrState.left <= 0) {
+                        stopQrTimers();
+                        status.innerHTML = '<span style="color:#f39c12;">二维码已过期，请点击「刷新二维码」。</span>';
+                    }
+                }, 1000);
+
+                qrState.timer = setInterval(pollQrLogin, 2000);
+            } catch (e) {
+                status.innerHTML = '<span style="color:#dc3545;">网络错误：' + escapeHtml(e.message) + '</span>';
+            }
+        }
+
+        async function pollQrLogin() {
+            if (!qrState.id || !qrState.secret) return;
+            var status = document.getElementById('qrStatus');
+            try {
+                var res = await fetch(WORKER_API + '/api/auth/qr/poll', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: qrState.id, secret: qrState.secret })
+                });
+                var data = await res.json().catch(function () { return {}; });
+                if (res.status === 410) {
+                    stopQrTimers();
+                    status.innerHTML = '<span style="color:#f39c12;">' + escapeHtml(data.error || '二维码已过期') + '</span>';
+                    return;
+                }
+                if (res.status === 401) {
+                    stopQrTimers();
+                    status.innerHTML = '<span style="color:#dc3545;">登录会话已失效，请刷新二维码。</span>';
+                    return;
+                }
+                if (data && data.status === 'confirmed' && data.token) {
+                    stopQrTimers();
+                    status.innerHTML = '<span style="color:#28a745;">✅ 手机已确认，正在登录…</span>';
+                    if (window.AuthToken) window.AuthToken.set(data.token);
+                    saveLoginState({ username: data.username, isAdmin: !!data.isAdmin });
+                    var next = new URLSearchParams(window.location.search).get('next');
+                    setTimeout(function () {
+                        window.location.href = next || (data.isAdmin ? 'admin.html' : 'chat.html');
+                    }, 600);
+                }
+            } catch (e) { /* 轮询失败下一轮继续 */ }
+        }
+
+        // ---- 手机端：处理 ?qr=<id> ----
+        var qrConfirmId = new URLSearchParams(window.location.search).get('qr') || '';
+
+        async function showQrConfirm() {
+            var modal = document.getElementById('qrConfirmModal');
+            var info = document.getElementById('qrConfirmInfo');
+            var msg = document.getElementById('qrConfirmMsg');
+            modal.classList.add('active');
+            msg.innerHTML = '';
+            try {
+                var res = await fetch(WORKER_API + '/api/auth/qr/info?id=' + encodeURIComponent(qrConfirmId));
+                var data = await res.json().catch(function () { return {}; });
+                if (!res.ok || !data.ok) {
+                    info.innerHTML = '<span style="color:#dc3545;">' + escapeHtml(data.error || '二维码不存在或已过期') + '</span>';
+                    return;
+                }
+                if (data.status === 'confirmed') {
+                    info.innerHTML = '该二维码已被确认使用；如果你刚才已经确认，可忽略本提示。';
+                    return;
+                }
+                info.innerHTML = '有一台设备请求登录：<br><strong>' + escapeHtml(data.device || '未知设备') + '</strong><br>' +
+                    'IP：' + escapeHtml(data.ip || '未知') + '<br>' +
+                    '请求时间：' + new Date(data.createdAt).toLocaleString() + '<br>' +
+                    '<span style="color:#888;font-size:12.5px;">如果这不是你本人的操作，请点击「不是我，取消」。</span>';
+            } catch (e) {
+                info.innerHTML = '<span style="color:#dc3545;">网络错误：' + escapeHtml(e.message) + '</span>';
+            }
+        }
+
+        async function approveQrLogin() {
+            var msg = document.getElementById('qrConfirmMsg');
+            msg.innerHTML = '<span style="color:#666;">正在确认…</span>';
+            try {
+                var res = await fetch(WORKER_API + '/api/auth/qr/confirm', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: qrConfirmId })
+                });
+                var data = await res.json().catch(function () { return {}; });
+                if (!res.ok || !data.ok) {
+                    msg.innerHTML = '<span style="color:#dc3545;">' + escapeHtml(data.error || '确认失败') + '</span>';
+                    return;
+                }
+                msg.innerHTML = '<span style="color:#28a745;">✅ 已确认，电脑端会自动登录。</span>';
+                setTimeout(function () { window.location.href = 'chat.html'; }, 1200);
+            } catch (e) {
+                msg.innerHTML = '<span style="color:#dc3545;">网络错误：' + escapeHtml(e.message) + '</span>';
+            }
+        }
+
+        async function rejectQrLogin() {
+            var msg = document.getElementById('qrConfirmMsg');
+            try {
+                await fetch(WORKER_API + '/api/auth/qr/cancel', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: qrConfirmId })
+                });
+            } catch (e) { /* 忽略 */ }
+            msg.innerHTML = '<span style="color:#f39c12;">已取消该登录请求。</span>';
+            setTimeout(function () { window.location.href = 'index.html'; }, 1000);
+        }
+
+        // ============================================================
         //  页面启动时检查自动登录
         // ============================================================
         initGoogleLogin();
         handleGoogleCallback().then(function (handled) {
-            if (!handled) setTimeout(function () { checkAndAutoRedirect(); }, 10);
+            if (handled) return;
+            // 手机扫码场景：本机已登录 → 直接弹确认框；未登录 → 登录后再确认
+            if (qrConfirmId && window.AuthToken && window.AuthToken.get()) {
+                showQrConfirm();
+                return;
+            }
+            setTimeout(function () { checkAndAutoRedirect(); }, 10);
         });
 
         // ============================================================
