@@ -118,10 +118,15 @@ powershell -File byethost/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/config.php -
 
 ```bash
 node test-new-features.mjs     # 会话/扫码/导出注销/健康/会议/附件 全链路（29 项）
+node test-security-flows.mjs   # 安全回归：吊销是否真失效、扫码 token 是否可用、导出是否泄露（31 项）
 node tools-check-html.mjs *.html   # 内联脚本语法检查
 node tools-check-links.mjs *.html  # 本地引用完整性检查
 node tools-qr-verify.mjs       # 二维码生成器与参考实现逐模块比对
 ```
+
+> 网络受限时（`github.com:443` 不可达但 `api.github.com` 可用）可用 `tools-gh-batch.mjs`
+> 通过 Contents API 上传文件：先 `$env:GH_TOKEN='<token>'`，再
+> `node tools-gh-batch.mjs put user-henry/nflshcchat main "提交说明" list.json`。
 
 ## 安全注意
 
