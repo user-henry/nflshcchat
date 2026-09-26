@@ -56,7 +56,7 @@
         .modal input { width: 100%; padding: 11px 13px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; margin-bottom: 12px; font-family: inherit; }
         .modal .btns { display: flex; gap: 10px; justify-content: flex-end; }
         .msg { font-size: 12.5px; min-height: 16px; }
-        .ok { color: #28a745; } .err { color: #e74c3c; } .muted { color: var(--text-secondary); }
+        .ok { color: #28a745; } .err { color: #e74c3c; } .muted { color: var(--text-secondary); } .warn { color: #f39c12; }
         .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; }
         @keyframes sp { to { transform: rotate(360deg); } }
         @media (max-width: 820px) {
@@ -95,6 +95,10 @@
                 <div class="row"><span class="dot idle" id="dotJoin"></span><span id="txtJoin">正在加入会议…</span></div>
                 <div class="row"><span class="dot idle" id="dotSignal"></span><span id="txtSignal">信令：等待中</span></div>
                 <div id="peerStates" style="margin-top:4px;"></div>
+                <div class="row" style="margin-top:6px;">
+                    <button class="btn" onclick="restartConnections()" style="padding:5px 12px;font-size:12.5px;">🔄 重新连接</button>
+                    <span class="muted" style="font-size:12px;">连接卡住时点一下（双方都会重连）</span>
+                </div>
             </div>
             <div class="msg" id="mediaMsg"></div>
         </div>
@@ -420,11 +424,16 @@
             if (!box) return;
             if (!names.length) { box.innerHTML = '<span class="muted">尚未与其他参与者建立连接（等待对方加入）。</span>'; return; }
             box.innerHTML = names.map(n => {
-                const st = peers[n].pc.connectionState || 'new';
+                const p = peers[n];
+                const st = p.pc.connectionState || 'new';
                 const map = { new: ['idle', '准备中'], connecting: ['wait', '连接中'], connected: ['ok', '已连接'], disconnected: ['bad', '连接断开'], failed: ['bad', '连接失败'], closed: ['idle', '已关闭'] };
                 const m = map[st] || ['idle', st];
+                const kinds = [];
+                if (p.recvAudio) kinds.push('🔊 已收到声音');
+                if (p.recvVideo) kinds.push('🎬 已收到画面');
                 return '<div class="row"><span class="dot ' + m[0] + '"></span>' + escapeHtml(n) + '：' + m[1] +
-                    (micOn || camOn ? '' : '（双方都需开启语音/视频）') + '</div>';
+                    (kinds.length ? '（' + kinds.join(' · ') + '）' : (st === 'connected' ? '（我方已发送，等待对方开启语音/视频）' : '')) +
+                    '</div>';
             }).join('');
         }
 
@@ -435,11 +444,12 @@
             });
         }
 
-        // 按需打开麦克风 / 摄像头，并把新轨道推给已有的连接
+        // 按需打开麦克风 / 摄像头。轨道统一通过 replaceTrack 挂到已协商好的 transceiver 上，
+        // 因此开启媒体不需要重新协商，立刻就能发送（这是视频之前一直不通的关键）。
         async function ensureLocal(wantVideo) {
             const needAudio = !localStream || localStream.getAudioTracks().length === 0;
             const needVideo = wantVideo && (!localStream || localStream.getVideoTracks().length === 0);
-            if (!needAudio && !needVideo) return localStream;
+            if (!needAudio && !needVideo) { await pushLocalToPeers(); return localStream; }
 
             const s = await getMedia(needVideo);
             if (!localStream) localStream = new MediaStream();
@@ -447,7 +457,9 @@
             s.getVideoTracks().forEach(t => { if (localStream.getVideoTracks().length === 0) localStream.addTrack(t); else t.stop(); });
             const v = tileVideo(me);
             v.srcObject = localStream;
+            v.muted = true;
             v.play().catch(() => { /* 本地预览静音，通常不会被拦截 */ });
+            await pushLocalToPeers();
             return localStream;
         }
 
@@ -461,8 +473,7 @@
                     btn.classList.add('on');
                     btn.textContent = '🎙️ 静音';
                     setBadge(me, '');
-                    msg.innerHTML = '<span class="ok">✅ 语音已开启，正在与对方协商媒体…</span>';
-                    await renegotiateAll();
+                    msg.innerHTML = '<span class="ok">✅ 语音已开启并开始发送。</span>';
                 } else {
                     micOn = !micOn;
                     localStream.getAudioTracks().forEach(t => { t.enabled = micOn; });
@@ -482,6 +493,7 @@
             const btn = document.getElementById('btnCam');
             try {
                 if (!localStream || localStream.getVideoTracks().length === 0) {
+                    msg.innerHTML = '正在请求摄像头权限…';
                     await ensureLocal(true);
                     camOn = true;
                     btn.classList.add('on');
@@ -491,8 +503,7 @@
                         document.getElementById('btnMic').classList.add('on');
                         document.getElementById('btnMic').textContent = '🎙️ 静音';
                     }
-                    msg.innerHTML = '<span class="ok">✅ 摄像头已开启，正在与对方协商媒体…</span>';
-                    await renegotiateAll();
+                    msg.innerHTML = '<span class="ok">✅ 摄像头已开启并开始发送画面。</span>';
                 } else {
                     camOn = !camOn;
                     localStream.getVideoTracks().forEach(t => { t.enabled = camOn; });
@@ -501,30 +512,47 @@
                     msg.innerHTML = camOn ? '<span class="ok">🎥 视频已恢复。</span>' : '<span class="muted">🎥 视频已关闭（对方看不到画面）。</span>';
                 }
             } catch (e) {
-                msg.innerHTML = '<span class="err">无法访问摄像头：' + escapeHtml(e.message) + '</span>';
+                msg.innerHTML = '<span class="err">无法访问摄像头：' + escapeHtml(e.message) + '（请检查浏览器权限，并确认没有其它程序占用摄像头）</span>';
             }
             renderPeerStates();
         }
 
+        // 把本地音视频轨道挂到每条连接的 transceiver 上（replaceTrack 不需要重新协商）
         async function attachLocal(name) {
             const p = peers[name];
             if (!p || !localStream) return;
-            const senders = p.pc.getSenders();
-            for (const track of localStream.getTracks()) {
-                const existing = senders.find(s => s.track && s.track.kind === track.kind);
-                if (existing) { try { await existing.replaceTrack(track); } catch (e) { /* 忽略 */ } }
-                else { try { p.pc.addTrack(track, localStream); } catch (e) { /* 忽略 */ } }
-            }
+            const a = localStream.getAudioTracks()[0];
+            const v = localStream.getVideoTracks()[0];
+            try {
+                if (p.txAudio && a && (!p.txAudio.sender.track || p.txAudio.sender.track !== a)) {
+                    await p.txAudio.sender.replaceTrack(a);
+                    p.txAudio.direction = 'sendrecv';
+                }
+                if (p.txVideo && v && (!p.txVideo.sender.track || p.txVideo.sender.track !== v)) {
+                    await p.txVideo.sender.replaceTrack(v);
+                    p.txVideo.direction = 'sendrecv';
+                }
+            } catch (e) { console.warn('挂载本地轨道失败', name, e); }
         }
-        async function attachLocalToAll() {
+        async function pushLocalToPeers() {
             for (const name of Object.keys(peers)) await attachLocal(name);
         }
 
         function createPeer(name, initiator) {
             if (peers[name]) return peers[name];
             const pc = new RTCPeerConnection(ICE);
-            const p = { pc: pc, stream: null, pending: [], initiator: !!initiator, answered: false, offerAt: 0 };
+            const p = { pc: pc, stream: null, pending: [], initiator: !!initiator, answered: false, offerAt: 0, recvAudio: false, recvVideo: false, negotiating: false };
             peers[name] = p;
+
+            // 关键：一开始就把 audio / video 两条 transceiver 建好并声明为 sendrecv。
+            // 这样无论谁先开麦/开摄像，都只是 replaceTrack 换轨道，不需要重新协商；
+            // 反过来，双方协商出来的 m-line 也一定是 sendrecv，不会再出现「视频 m-line 被协商成 inactive」的情况。
+            try {
+                p.txAudio = pc.addTransceiver('audio', { direction: 'sendrecv' });
+                p.txVideo = pc.addTransceiver('video', { direction: 'sendrecv' });
+            } catch (e) { console.warn('addTransceiver 失败', e); }
+
+            pc.onnegotiationneeded = () => { scheduleNegotiation(name); };
 
             pc.onicecandidate = (ev) => {
                 if (ev.candidate) sendSignal(name, 'ice', ev.candidate.toJSON());
@@ -542,15 +570,26 @@
                     });
                 }
                 p.stream.addTrack(ev.track);
-                setBadge(name, '');
-                const msg = document.getElementById('mediaMsg');
-                msg.innerHTML = '<span class="ok">🔗 已收到 ' + escapeHtml(name) + ' 的音视频流。</span>';
+                const kind = ev.track.kind;
+                if (kind === 'audio') p.recvAudio = true;
+                if (kind === 'video') p.recvVideo = true;
+                ev.track.onunmute = () => {
+                    if (kind === 'audio') p.recvAudio = true;
+                    if (kind === 'video') p.recvVideo = true;
+                    setBadge(name, '');
+                    renderPeerStates();
+                };
+                ev.track.onmute = () => {
+                    if (kind === 'audio') p.recvAudio = false;
+                    if (kind === 'video') p.recvVideo = false;
+                    renderPeerStates();
+                };
+                renderPeerStates();
             };
             pc.onconnectionstatechange = () => {
                 renderPeerStates();
                 const st = pc.connectionState;
                 if (st === 'connected') {
-                    setBadge(name, '');
                     document.getElementById('mediaMsg').innerHTML = '<span class="ok">🔗 已与 ' + escapeHtml(name) + ' 建立点对点连接。</span>';
                 } else if (st === 'failed' || st === 'disconnected') {
                     setBadge(name, '⚠️ 连接不稳定');
@@ -575,36 +614,64 @@
             const p = createPeer(name, shouldInitiate(name));
             await attachLocal(name);
             try {
-                const opts = { offerToReceiveAudio: true, offerToReceiveVideo: true };
-                if (iceRestart) opts.iceRestart = true;
+                // 不用 offerToReceive*：transceiver 已经建好且是 sendrecv，直接按当前状态生成 offer
+                const opts = iceRestart ? { iceRestart: true } : {};
                 const offer = await p.pc.createOffer(opts);
                 await p.pc.setLocalDescription(offer);
                 p.offerAt = Date.now();
                 p.answered = false;
-                sendSignal(name, 'offer', { type: offer.type, sdp: offer.sdp });
+                const sent = await sendSignal(name, 'offer', { type: offer.type, sdp: offer.sdp });
                 // 答案迟迟不来（例如对方页面刚从后台恢复）→ 重试一次
-                setTimeout(() => {
-                    if (!p.answered && p.pc && p.pc.signalingState === 'have-local-offer') { makeOffer(name, false); }
-                }, 6000);
+                if (sent) {
+                    setTimeout(() => {
+                        if (!p.answered && p.pc && p.pc.signalingState === 'have-local-offer') { makeOffer(name, false); }
+                    }, 6000);
+                }
             } catch (e) { console.warn('createOffer 失败', e); }
         }
 
-        // 需要变更媒体时统一走这里：发起方直接 offer，被动方请求对方 offer
-        async function renegotiateAll() {
-            const names = Object.keys(peers);
-            if (!names.length) return;
-            for (const name of names) {
+        // 需要重新协商时统一走这里：发起方直接 offer，被动方请求对方 offer（避免双方同时发 offer）
+        async function scheduleNegotiation(name) {
+            const p = peers[name];
+            if (!p || p.negotiating) return;
+            p.negotiating = true;
+            setTimeout(async () => {
+                p.negotiating = false;
+                if (p.pc.signalingState !== 'stable') return;   // 正在协商中，交给当前这一轮
                 if (shouldInitiate(name)) {
-                    if (!peers[name].renegotiating) {
-                        peers[name].renegotiating = true;
-                        try { await makeOffer(name); } finally { setTimeout(() => { peers[name].renegotiating = false; }, 1500); }
+                    if (!p.renegotiating) {
+                        p.renegotiating = true;
+                        try { await makeOffer(name); } finally { setTimeout(() => { p.renegotiating = false; }, 1500); }
                     }
                 } else {
-                    await attachLocal(name);   // 先把轨道挂上，等对方发新 offer 时答案里就会带上
+                    await attachLocal(name);
                     sendSignal(name, 'ice', { __renegotiate: true });
                 }
-            }
+            }, 120);
         }
+
+        async function renegotiateAll() {
+            for (const name of Object.keys(peers)) await scheduleNegotiation(name);
+        }
+
+        // 手动「重新连接」：发起方直接做 ICE 重启，被动方请求对方重启
+        async function restartConnections() {
+            const msg = document.getElementById('mediaMsg');
+            const names = Object.keys(peers);
+            if (!names.length) { msg.innerHTML = '<span class="muted">还没有可重连的对端（等待对方加入会议）。</span>'; return; }
+            msg.innerHTML = '正在重新建立连接… <span class="spin"></span>';
+            for (const name of names) {
+                setBadge(name, '🔄 重连中');
+                if (shouldInitiate(name)) {
+                    await makeOffer(name, true);
+                } else {
+                    await attachLocal(name);
+                    await sendSignal(name, 'ice', { __renegotiate: true, iceRestart: true });
+                }
+            }
+            msg.innerHTML = '<span class="warn">已发起重连，请让对方的诊断条也变成「已连接」。</span>';
+        }
+        window.restartConnections = restartConnections;
 
         async function handleSignal(sig) {
             const from = sig.from_user;
@@ -613,8 +680,9 @@
             const payload = sig.payload;
             try {
                 if (sig.kind === 'offer') {
+                    // 正在等对方的 answer 时又收到新 offer（对端重试）→ 用新 offer 覆盖，直接应答
                     await p.pc.setRemoteDescription(new RTCSessionDescription(payload));
-                    if (localStream) await attachLocal(from);
+                    await attachLocal(from);
                     const answer = await p.pc.createAnswer();
                     await p.pc.setLocalDescription(answer);
                     sendSignal(from, 'answer', { type: answer.type, sdp: answer.sdp });
@@ -625,8 +693,8 @@
                     }
                 } else if (sig.kind === 'ice') {
                     if (payload && payload.__renegotiate) {
-                        // 对方需要重新协商（例如刚开启麦克风）→ 由我们发新 offer
-                        await makeOffer(from);
+                        // 对方需要重新协商（例如刚开启摄像头）→ 由我们发新 offer；带 iceRestart 时顺便重启 ICE
+                        await makeOffer(from, !!payload.iceRestart);
                     } else if (p.pc.remoteDescription && p.pc.remoteDescription.type) {
                         await p.pc.addIceCandidate(new RTCIceCandidate(payload));
                     } else {
