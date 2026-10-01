@@ -182,20 +182,30 @@
 - 讨论区消息可用「📥 导入讨论区」一次性写入「## 讨论区记录」小节。
 - 逐字稿、讨论区记录、纪要**全部保存在同一篇会议笔记**中，会后可在 `notes.html` 查看、修改、共享。
 
-## 11. 会议 / 通话的网络穿透（只用 STUN）
+## 11. 会议 / 通话的网络穿透（STUN 为主，TURN 可选）
 
-- `GET /api/rtc/ice` 下发 ICE 配置，**只含公共 STUN**（`stun.l.google.com:19302`、
-  `stun1.l.google.com:19302`、`stun.cloudflare.com:3478`），返回 `source: "stun-only"`；
-  不再下发 TURN，也不需要 `TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL` 之类的配置。
-- 会议页（`meeting-room.html`）与 1 对 1 通话（`chat.html`）使用同一套策略：
-  把内置的 STUN 列表直接交给 `RTCPeerConnection`，双方发现各自公网地址后点对点直连，
-  媒体不经服务器；会议页启动时仍会取一次 `/api/rtc/ice`，仅用于诊断条展示，
-  取不到就用内置列表，保证会议一定能开始。
-- 为什么不再用 TURN：此前在未配置自有 TURN 时会回退到公共中继（Open Relay），
-  公共中继不稳定/凭据失效时 ICE 会长时间收集不到可用的 relay 候选甚至卡住协商，
-  表现为「能进会议但连不上、没有声音画面」，而 STUN 直连路径简单、延迟最低。
-- 代价：双方都处于对称 NAT 时点对点可能打不通（此时会显示「连接不稳定」并自动做 ICE 重启）。
-  若将来需要覆盖这种网络，建议接入自建 TURN 并在 `createPeer()` 的 `RTC_CONFIG` 里按需增加。
+- `GET /api/rtc/ice` 下发 ICE 配置：
+  - **默认只含公共 STUN**（`stun.l.google.com:19302`、`stun1.l.google.com:19302`、
+    `stun.cloudflare.com:3478`），返回 `source: "stun-only"`：双方发现各自公网地址后点对点直连，
+    媒体不经服务器、延迟最低；
+  - **配置了 TURN 就自动带上**（会议页用服务端下发的 `iceServers` 覆盖内置列表，
+    诊断条显示「STUN + TURN 中继」）：
+
+    | 方式 | Worker secret | 说明 |
+    | --- | --- | --- |
+    | Cloudflare Realtime TURN（推荐） | `TURN_KEY_ID` + `TURN_KEY_SECRET` | 服务端用 secret 现算**短时效凭据**（`username = 过期时间戳`，`credential = base64(HMAC-SHA1(secret, username))`），1 小时失效、不落库；`source: "cloudflare-realtime"`，下发的地址含 `turn:turn.cloudflare.com:3478`（udp/tcp）、`turns:…:5349`、`turn:…:53` |
+    | 自建 coturn | `TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL` | `TURN_URLS` 逗号分隔，如 `turn:turn.example.com:3478?transport=udp,turns:turn.example.com:5349?transport=tcp`；`source: "static-turn"` |
+
+- 为什么默认不用公共 TURN：此前未配置自有 TURN 时会回退到公共中继（Open Relay），
+  公共中继不稳定/凭据失效时 ICE 会长时间收集不到可用 relay 候选甚至卡住协商，
+  表现为「能进会议但连不上、没有声音画面」。对称 NAT 下点对点确实打不通 —— 那才需要 TURN，
+  请按上表注入**自己的**凭据。
+- 协商时机（与 `chat.html` 的 1 对 1 通话同一套模型）：**双方都开启音视频后再 offer/answer**。
+  一端开启媒体后先发 `__ready`；发起方（用户名较大的一方）在收到 `__ready` 或 3 秒宽限后发 offer，
+  这样一轮就能把双向 m-line 都协商成 `sendrecv`。之后开麦/开摄像头只做 `replaceTrack`（无需重协商），
+  仅在与协商结果不一致时做**节流过的**补救协商（每次协商都有自愈检查，避免反复重协商把信令打满）。
+- 代价：双方都在对称 NAT 且未配置 TURN 时点对点会失败（诊断条显示「连接失败/连接不稳定」，
+  可点「🔄 重新连接」做 ICE 重启）。
 
 ## 12. 会议屏幕共享与共享白板
 
