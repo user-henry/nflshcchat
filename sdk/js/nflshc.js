@@ -113,7 +113,7 @@ class NFLSHC {
   meetingChat(meetingId, since) { return this.get('/api/meeting/chat', { meetingId, since }); }
   sendMeetingChat(meetingId, content) { return this.post('/api/meeting/chat', { meetingId, content }); }
   endMeeting(meetingId) { return this.post('/api/meeting/end', { meetingId }); }
-  /** WebRTC ICE 配置（含 TURN） */
+  /** WebRTC ICE 配置（只含公共 STUN，不含 TURN） */
   iceServers() { return this.get('/api/rtc/ice'); }
 
   // ---------- 笔记 ----------
