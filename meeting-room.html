@@ -48,6 +48,14 @@
         .composer { border-top: 1px solid var(--border-color); padding: 10px 12px; display: flex; gap: 8px; }
         .composer input { flex: 1; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-family: inherit; }
         .composer input:focus { outline: none; border-color: var(--accent-color); }
+
+        /* ===== 会议笔记面板 ===== */
+        .note-panel { border-bottom: 1px solid var(--border-color); padding: 10px 12px; background: var(--bg-primary); }
+        .note-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13.5px; }
+        .note-panel textarea { width: 100%; height: 168px; resize: vertical; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); font-size: 13.5px; line-height: 1.7; font-family: Consolas, Monaco, 'Courier New', monospace; }
+        .note-panel textarea:focus { outline: none; border-color: var(--accent-color); }
+        .note-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+        .btn.sm { padding: 5px 10px; font-size: 12.5px; }
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
         .modal.active { display: flex; }
         .modal .box { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; max-width: 440px; width: 100%; }
@@ -59,6 +67,15 @@
         .ok { color: #28a745; } .err { color: #e74c3c; } .muted { color: var(--text-secondary); } .warn { color: #f39c12; }
         .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; }
         @keyframes sp { to { transform: rotate(360deg); } }
+
+        /* ===== 共享白板 ===== */
+        .board-wrap { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: #ffffff; }
+        .board-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
+        .board-tools .palette { display: inline-flex; gap: 6px; }
+        .board-tools .sw { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); cursor: pointer; }
+        .board-tools .sw.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(255,215,0,.35); }
+        #board { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; background: #ffffff; }
+
         @media (max-width: 820px) {
             .main { flex-direction: column; }
             .side { width: 100%; border-left: none; border-top: 1px solid var(--border-color); max-height: 45vh; }
@@ -75,6 +92,9 @@
         <div class="right">
             <button class="btn" id="btnMic" onclick="toggleMic()">🎙️ 开启语音</button>
             <button class="btn" id="btnCam" onclick="toggleCam()">🎥 开启视频</button>
+            <button class="btn" id="btnShare" onclick="toggleScreenShare()">🖥️ 共享屏幕</button>
+            <button class="btn" id="btnBoard" onclick="toggleBoard()">✏️ 白板</button>
+            <button class="btn" id="btnNotes" onclick="toggleNotes()">📝 笔记</button>
             <button class="btn" onclick="openInvite()">✉️ 邀请</button>
             <button class="btn danger" onclick="leaveMeeting()">🚪 离开</button>
             <button class="btn danger" id="btnEnd" style="display:none;" onclick="endMeeting()">⛔ 结束会议</button>
@@ -85,15 +105,33 @@
         <div class="stage">
             <div class="hint" id="hint">
                 点「🎙️ 开启语音」或「🎥 开启视频」开始通话（浏览器会请求麦克风/摄像头权限）。<br>
-                音视频在参与者之间<strong>点对点传输</strong>，不经过服务器；会议结束后不保留任何录音录像。
+                音视频在参与者之间<strong>点对点传输</strong>（打不通时经 TURN 中继）；会议结束后不保留任何录音录像。
             </div>
             <div id="playBanner" style="display:none;">
                 <button class="btn" onclick="resumeAudio()" style="border-color:var(--accent-color);color:var(--accent-color);">🔊 点击开启对方声音（浏览器自动播放限制）</button>
             </div>
+
+            <!-- ===== 共享白板（固定虚拟画布 1600×900，各端按容器缩放） ===== -->
+            <div class="board-wrap" id="boardWrap" style="display:none;">
+                <div class="board-tools">
+                    <span class="muted" style="font-size:12.5px;">共享白板 · 所有参与者实时可见</span>
+                    <span class="palette" id="boardPalette"></span>
+                    <label class="muted" style="font-size:12.5px;">粗细
+                        <input type="range" id="boardWidth" min="1" max="16" value="3" style="vertical-align:middle;width:80px;">
+                    </label>
+                    <button class="btn" id="btnEraser" onclick="toggleEraser()" style="padding:5px 12px;font-size:12.5px;">🩹 橡皮</button>
+                    <button class="btn" onclick="clearBoard()" style="padding:5px 12px;font-size:12.5px;">🧽 清空</button>
+                    <button class="btn" onclick="downloadBoard()" style="padding:5px 12px;font-size:12.5px;">💾 保存图片</button>
+                    <button class="btn" onclick="toggleBoard()" style="padding:5px 12px;font-size:12.5px;">✖ 收起</button>
+                </div>
+                <canvas id="board" width="1600" height="900"></canvas>
+            </div>
+
             <div class="grid" id="grid"></div>
             <div class="diag" id="diag">
                 <div class="row"><span class="dot idle" id="dotJoin"></span><span id="txtJoin">正在加入会议…</span></div>
                 <div class="row"><span class="dot idle" id="dotSignal"></span><span id="txtSignal">信令：等待中</span></div>
+                <div class="row"><span class="dot idle" id="dotIce"></span><span id="iceHint">网络穿透：检测中…</span></div>
                 <div id="peerStates" style="margin-top:4px;"></div>
                 <div class="row" style="margin-top:6px;">
                     <button class="btn" onclick="restartConnections()" style="padding:5px 12px;font-size:12.5px;">🔄 重新连接</button>
@@ -103,6 +141,21 @@
             <div class="msg" id="mediaMsg"></div>
         </div>
         <div class="side">
+            <!-- ===== 会议笔记（随时记录，会上/会后都能看；逐字稿与讨论区都进这里） ===== -->
+            <div class="note-panel" id="notePanel" style="display:none;">
+                <div class="note-head">
+                    <b>📝 会议笔记</b>
+                    <span class="muted" id="noteStatus" style="font-size:11.5px;"></span>
+                </div>
+                <textarea id="noteArea" placeholder="在这里记录会议要点…（自动保存）"></textarea>
+                <div class="note-tools">
+                    <button class="btn sm" id="btnStt" onclick="toggleStt()">🎤 语音转文字</button>
+                    <button class="btn sm" onclick="importChat()">📥 导入讨论区</button>
+                    <button class="btn sm" onclick="generateMinutes()">🤖 生成纪要</button>
+                    <button class="btn sm" onclick="openNotePage()">↗ 笔记页</button>
+                </div>
+            </div>
+
             <h4>👥 参与者（<span id="memberCount">0</span>）</h4>
             <div class="members" id="members"><span class="muted" style="font-size:12.5px;">加载中…</span></div>
             <h4 style="border-top:1px solid var(--border-color);padding-top:10px;">💬 会议聊天</h4>
@@ -372,7 +425,9 @@
         //  协商规则（避免 glare）：只有用户名较大的一方（initiator）负责发 offer；
         //  另一方需要新增/变更媒体时，发一条 __renegotiate 请求让 initiator 重新发 offer。
         // ============================================================
-        const ICE = {
+        // ICE 配置：优先用服务端下发（含 TURN，可穿透对称 NAT / 跨运营商），
+        // 拉取失败时回退到内置的公共 STUN（仅同网段大概率可用）。
+        let ICE = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
@@ -380,8 +435,30 @@
             ],
             iceCandidatePoolSize: 2,
         };
+        let iceSource = 'builtin';
+
+        async function loadIceConfig() {
+            try {
+                const r = await api('/api/rtc/ice');
+                if (r.ok && r.data && Array.isArray(r.data.iceServers) && r.data.iceServers.length) {
+                    ICE = { iceServers: r.data.iceServers, iceCandidatePoolSize: 2 };
+                    iceSource = r.data.source || 'server';
+                    const hasTurn = r.data.iceServers.some(s => JSON.stringify(s.urls).indexOf('turn') !== -1);
+                    updateIceHint(hasTurn ? ('TURN 已启用（' + iceSource + '）') : '仅 STUN（TURN 未配置）');
+                }
+            } catch (e) { /* 用内置回退配置 */ }
+        }
+        function updateIceHint(text) {
+            const box = document.getElementById('iceHint');
+            if (box) box.textContent = text;
+            const dot = document.getElementById('dotIce');
+            if (dot) dot.className = 'dot ' + (text.indexOf('TURN 已启用') === 0 ? 'ok' : 'wait');
+        }
+
         let localStream = null;
-        let micOn = false, camOn = false;
+        let cameraTrack = null;      // 摄像头轨道（共享屏幕时临时替换，结束后恢复）
+        let screenTrack = null;      // 屏幕共享轨道
+        let micOn = false, camOn = false, sharing = false;
         const peers = {};          // username -> { pc, stream, pending, initiator, answered, offerTimer }
         let lastSignalId = 0;
 
@@ -742,6 +819,221 @@
             } catch (e) { /* 下一轮重试 */ }
         }
 
+        // ============================================================
+        //  会议笔记：会上随时记录，逐字稿 / 讨论区 / AI 纪要都写进同一篇笔记
+        //  笔记存于笔记系统（notes 表，kind='meeting'），会后可在 notes.html 查看/修改/共享
+        // ============================================================
+        let meetingNote = null;      // { id, content, canEdit, role }
+        let noteDirty = false;
+        let noteTimer = null;
+        let sttOn = false, sttRec = null;
+
+        async function loadMeetingNote(create) {
+            try {
+                const q = '/api/notes/meeting?meetingId=' + encodeURIComponent(meetingId) + (create ? '&create=1' : '');
+                const r = await api(q);
+                if (!r.ok || !r.data.ok) { setNoteStatus('笔记不可用：' + ((r.data && r.data.error) || ('HTTP ' + r.status)), 'err'); return null; }
+                if (!r.data.note) { meetingNote = null; setNoteStatus('还没有会议笔记', 'muted'); return null; }
+                meetingNote = r.data.note;
+                meetingNote.canEdit = r.data.canEdit;
+                meetingNote.role = r.data.role;
+                const area = document.getElementById('noteArea');
+                if (area && document.activeElement !== area) area.value = meetingNote.content || '';
+                if (area) {
+                    area.readOnly = !meetingNote.canEdit;
+                    area.placeholder = meetingNote.canEdit ? '在这里记录会议要点…（自动保存）' : '（只读：你对这篇笔记没有修改权限，主持人可在笔记页共享给你编辑权）';
+                }
+                setNoteStatus((meetingNote.canEdit ? '' : '只读 · ') + '最后修改 ' + fmt(meetingNote.updatedAt) + (meetingNote.updatedBy ? '（' + meetingNote.updatedBy + '）' : ''), 'muted');
+                return meetingNote;
+            } catch (e) { setNoteStatus('笔记加载失败：' + e.message, 'err'); return null; }
+        }
+
+        function setNoteStatus(text, cls) {
+            const el = document.getElementById('noteStatus');
+            if (!el) return;
+            el.className = 'muted ' + (cls || '');
+            el.textContent = text || '';
+        }
+
+        async function toggleNotes() {
+            const panel = document.getElementById('notePanel');
+            const show = panel.style.display === 'none';
+            panel.style.display = show ? '' : 'none';
+            document.getElementById('btnNotes').classList.toggle('on', show);
+            if (show) {
+                if (!meetingNote) await loadMeetingNote(true);
+                const a = document.getElementById('noteArea');
+                if (a && meetingNote && a !== document.activeElement) a.value = meetingNote.content || '';
+            }
+        }
+
+        function noteChanged() {
+            if (!meetingNote || !meetingNote.canEdit) return;
+            noteDirty = true;
+            setNoteStatus('有未保存的修改…', 'warn');
+            if (noteTimer) clearTimeout(noteTimer);
+            noteTimer = setTimeout(saveMeetingNote, 2000);
+        }
+
+        async function saveMeetingNote(silent) {
+            if (!meetingNote || !meetingNote.canEdit) return;
+            const area = document.getElementById('noteArea');
+            const content = area ? area.value : '';
+            if (!noteDirty && silent) return;
+            const r = await api('/api/notes/update', { body: { id: meetingNote.id, content } });
+            if (!r.ok || !r.data.ok) { setNoteStatus('保存失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status)), 'err'); return; }
+            meetingNote.content = content;
+            meetingNote.updatedAt = r.data.updatedAt;
+            meetingNote.updatedBy = r.data.updatedBy;
+            noteDirty = false;
+            setNoteStatus('已保存 · ' + fmt(r.data.updatedAt), 'ok');
+        }
+
+        // 往笔记里追加一段（带小标题，已存在则不重复建标题）
+        async function appendToNote(sectionTitle, text) {
+            if (!meetingNote) await loadMeetingNote(true);
+            if (!meetingNote) { sysMsg('笔记不可用，无法写入'); return false; }
+            if (!meetingNote.canEdit) {
+                // 只读时：把内容附加到本地视图并提示（不写库）
+                const area = document.getElementById('noteArea');
+                if (area) area.value += '\n\n' + sectionTitle + '\n' + text;
+                setNoteStatus('你没有修改权限，内容只显示在本地；可让主持人在笔记页给你编辑权', 'warn');
+                return false;
+            }
+            const cur = meetingNote.content || '';
+            let next;
+            if (cur.indexOf(sectionTitle) === -1) {
+                next = cur.replace(/\s*$/, '') + (cur.trim() ? '\n\n' : '') + sectionTitle + '\n\n' + text;
+            } else {
+                next = cur.replace(/\s*$/, '') + '\n' + text;
+            }
+            const r = await api('/api/notes/update', { body: { id: meetingNote.id, content: next } });
+            if (!r.ok || !r.data.ok) { setNoteStatus('写入失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status)), 'err'); return false; }
+            meetingNote.content = next;
+            meetingNote.updatedAt = r.data.updatedAt;
+            const area = document.getElementById('noteArea');
+            if (area && document.activeElement !== area) area.value = next;
+            setNoteStatus('已写入笔记 · ' + fmt(r.data.updatedAt), 'ok');
+            return true;
+        }
+
+        // 导入本次会议的讨论区消息
+        async function importChat() {
+            const btn = event && event.target;
+            if (btn) btn.disabled = true;
+            try {
+                const r = await api('/api/meeting/chat?meetingId=' + encodeURIComponent(meetingId));
+                const msgs = (r.data && r.data.messages) || [];
+                if (!msgs.length) { sysMsg('本次会议还没有讨论区消息'); return; }
+                const stamp = new Date().toLocaleString('zh-CN', { hour12: false });
+                const lines = msgs.map(m => '- [' + fmt(m.created_at) + '] **' + m.sender + '**：' + String(m.content || '').replace(/\n/g, ' ')).join('\n');
+                const ok = await appendToNote('## 讨论区记录（导入于 ' + stamp + '）', lines);
+                sysMsg(ok ? ('已把 ' + msgs.length + ' 条讨论区消息导入会议笔记') : '讨论区消息已显示在笔记面板（无写入权限）');
+            } finally { if (btn) btn.disabled = false; }
+        }
+
+        function openNotePage() {
+            if (!meetingNote) { window.location.href = 'notes.html'; return; }
+            window.open('notes.html?id=' + encodeURIComponent(meetingNote.id), '_blank');
+        }
+
+        // ---------- 语音转文字（浏览器实时识别，逐字稿写入笔记） ----------
+        function toggleStt() {
+            const btn = document.getElementById('btnStt');
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!sttOn) {
+                if (!SR) { sysMsg('当前浏览器不支持实时语音识别（请用桌面版 Chrome / Edge）'); return; }
+                sttRec = new SR();
+                sttRec.lang = 'zh-CN';
+                sttRec.continuous = true;
+                sttRec.interimResults = false;
+                sttRec.onresult = async (ev) => {
+                    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+                        if (!ev.results[i].isFinal) continue;
+                        const text = String(ev.results[i][0].transcript || '').trim();
+                        if (!text) continue;
+                        sysMsg('🎤 ' + text);
+                        await appendToNote('## 语音逐字稿', '- [' + fmt(new Date().toISOString()) + '] **' + me + '**：' + text);
+                    }
+                };
+                sttRec.onerror = (e) => { sysMsg('语音识别出错：' + (e.error || '未知错误')); };
+                sttRec.onend = () => { if (sttOn) { try { sttRec.start(); } catch (e) { /* 忽略 */ } } };
+                try { sttRec.start(); } catch (e) { sysMsg('无法启动语音识别：' + e.message); return; }
+                sttOn = true;
+                btn.classList.add('on');
+                btn.textContent = '🎤 停止转写';
+                sysMsg('已开启语音转文字：你说的话会被转成文字写入会议笔记（逐字稿）');
+            } else {
+                sttOn = false;
+                try { sttRec && sttRec.stop(); } catch (e) { /* 忽略 */ }
+                btn.classList.remove('on');
+                btn.textContent = '🎤 语音转文字';
+                sysMsg('已停止语音转文字');
+            }
+        }
+
+        // ---------- AI 会议托管：基于逐字稿 + 讨论区生成纪要 ----------
+        async function generateMinutes() {
+            const btn = event && event.target;
+            if (btn) { btn.disabled = true; btn.textContent = '🤖 生成中…'; }
+            try {
+                if (!meetingNote) await loadMeetingNote(true);
+                if (!meetingNote) { sysMsg('笔记不可用'); return; }
+                const noteText = (document.getElementById('noteArea') || {}).value || meetingNote.content || '';
+                const cr = await api('/api/meeting/chat?meetingId=' + encodeURIComponent(meetingId));
+                const msgs = (cr.data && cr.data.messages) || [];
+                const chatText = msgs.map(m => m.sender + '：' + String(m.content || '').replace(/\n/g, ' ')).join('\n');
+                if (!noteText.trim() && !chatText.trim()) { sysMsg('还没有逐字稿或讨论区内容，无法生成纪要'); return; }
+                sysMsg('正在生成会议纪要，请稍候…');
+                const summary = await callHzyaiSummary(noteText, chatText, (meeting && meeting.title) || '会议');
+                if (!summary) { sysMsg('生成失败：AI 服务暂时不可用（可稍后重试）'); return; }
+                const stamp = new Date().toLocaleString('zh-CN', { hour12: false });
+                const ok = await appendToNote('## 会议纪要（AI 生成于 ' + stamp + '）', summary);
+                sysMsg(ok ? '会议纪要已写入笔记' : '纪要已显示在笔记面板（无写入权限）');
+            } catch (e) {
+                sysMsg('生成失败：' + e.message);
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '🤖 生成纪要'; }
+            }
+        }
+
+        async function callHzyaiSummary(noteText, chatText, title) {
+            const prompt = '你是会议记录助手。请根据下面的会议材料输出中文会议纪要，格式：\n' +
+                '### 会议主题\n（一句话）\n### 关键讨论\n（3-6 条要点）\n### 结论与决定\n（如有）\n### 待办事项\n（负责人 + 事项，如无则写"无"）\n' +
+                '要求：只依据材料，不要编造；材料不足时明确说明。\n\n' +
+                '会议标题：' + title + '\n\n【会议笔记/逐字稿】\n' + String(noteText).slice(0, 6000) +
+                '\n\n【讨论区消息】\n' + String(chatText).slice(0, 4000);
+            // HZYAI 网关：POST /chat，body { messages:[{role,content}], model, max_tokens }，返回 { response }
+            const endpoints = [
+                { url: 'https://hzyai-worker.nflshcchat.cc.cd/chat', body: { messages: [{ role: 'user', content: prompt }], max_tokens: 2048 } },
+                { url: 'https://hzyai-worker.nflshcchat.cc.cd/chat', body: { messages: [{ role: 'user', content: prompt }], model: '@cf/meta/llama-3.1-8b-instruct', max_tokens: 2048 } },
+            ];
+            for (const ep of endpoints) {
+                try {
+                    const res = await fetch(ep.url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(ep.body),
+                    });
+                    if (!res.ok) continue;
+                    const data = await res.json().catch(() => null);
+                    if (!data) continue;
+                    const text = data.response || data.reply || data.content || data.text || data.answer ||
+                        (data.choices && data.choices[0] && (data.choices[0].message ? data.choices[0].message.content : data.choices[0].text)) ||
+                        (data.result && data.result.response) || (data.data && data.data.content);
+                    if (text && String(text).trim().length > 10) return String(text).trim();
+                } catch (e) { /* 试下一个入口 */ }
+            }
+            return null;
+        }
+
+        window.toggleNotes = toggleNotes;
+        window.saveMeetingNote = saveMeetingNote;
+        window.importChat = importChat;
+        window.openNotePage = openNotePage;
+        window.toggleStt = toggleStt;
+        window.generateMinutes = generateMinutes;
+
         function closePeer(name) {
             const p = peers[name];
             if (!p) return;
@@ -755,7 +1047,242 @@
         function cleanupMedia() {
             for (const n of Object.keys(peers)) closePeer(n);
             if (localStream) { localStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} }); localStream = null; }
+            if (screenTrack) { try { screenTrack.stop(); } catch (e) {} screenTrack = null; }
         }
+
+        // ============================================================
+        //  屏幕共享：把显示器/窗口的轨道替换到 video transceiver 上（无需重新协商）
+        // ============================================================
+        async function toggleScreenShare() {
+            const msg = document.getElementById('mediaMsg');
+            const btn = document.getElementById('btnShare');
+            try {
+                if (sharing) {
+                    // 结束共享：恢复摄像头（若之前开着），否则置空
+                    if (screenTrack) { try { screenTrack.stop(); } catch (e) {} screenTrack = null; }
+                    sharing = false;
+                    btn.classList.remove('on');
+                    btn.textContent = '🖥️ 共享屏幕';
+                    setBadge(me, '');
+                    const restore = (cameraTrack && cameraTrack.readyState === 'live') ? cameraTrack : null;
+                    for (const name of Object.keys(peers)) {
+                        const p = peers[name];
+                        if (p.txVideo) { try { await p.txVideo.sender.replaceTrack(restore); } catch (e) { /* 忽略 */ } }
+                    }
+                    const v = tileVideo(me);
+                    if (localStream) { localStream.getVideoTracks().forEach(t => localStream.removeTrack(t)); if (restore) localStream.addTrack(restore); }
+                    v.srcObject = localStream && localStream.getVideoTracks().length ? localStream : null;
+                    msg.innerHTML = '<span class="muted">已停止屏幕共享。</span>';
+                    return;
+                }
+
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                    msg.innerHTML = '<span class="err">当前浏览器不支持屏幕共享（请用桌面版 Chrome / Edge）。</span>';
+                    return;
+                }
+                msg.innerHTML = '正在等待选择共享内容…';
+                const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 15 }, audio: false });
+                screenTrack = s.getVideoTracks()[0];
+                sharing = true;
+                btn.classList.add('on');
+                btn.textContent = '🖥️ 停止共享';
+
+                // 记住当前摄像头轨道，便于结束后恢复
+                if (localStream && localStream.getVideoTracks().length) cameraTrack = localStream.getVideoTracks()[0];
+
+                for (const name of Object.keys(peers)) {
+                    const p = peers[name];
+                    if (p.txVideo) { try { await p.txVideo.sender.replaceTrack(screenTrack); } catch (e) { /* 忽略 */ } }
+                }
+                // 本地预览切换到屏幕画面
+                const v = tileVideo(me);
+                v.srcObject = new MediaStream([screenTrack]);
+                v.play().catch(() => {});
+
+                screenTrack.onended = () => { if (sharing) toggleScreenShare(); };
+                setBadge(me, '🖥️ 共享中');
+                msg.innerHTML = '<span class="ok">✅ 正在共享屏幕（对方会看到你的画面）。</span>';
+            } catch (e) {
+                msg.innerHTML = '<span class="muted">已取消或无法共享屏幕：' + escapeHtml(e.message) + '</span>';
+            }
+        }
+
+        // ============================================================
+        //  共享白板：固定虚拟画布 1600×900，笔画经 /api/meeting/board 同步
+        // ============================================================
+        const BOARD_W = 1600, BOARD_H = 900;
+        const BOARD_COLORS = ['#111111', '#e74c3c', '#f39c12', '#28a745', '#3498db', '#9b59b6', '#ffd700'];
+        let boardOpen = false, boardTimer = null, boardLastId = 0;
+        let boardTool = 'pen', boardColor = '#111111';
+        let drawing = false, curPoints = [];
+        let ctx = null;
+
+        function boardCtx() {
+            const cv = document.getElementById('board');
+            if (!cv) return null;
+            if (!ctx) ctx = cv.getContext('2d');
+            return ctx;
+        }
+
+        function initBoardPalette() {
+            const box = document.getElementById('boardPalette');
+            if (!box || box.dataset.ready) return;
+            box.dataset.ready = '1';
+            box.innerHTML = BOARD_COLORS.map((c, i) =>
+                '<span class="sw' + (i === 0 ? ' on' : '') + '" data-color="' + c + '" style="background:' + c + '"></span>').join('');
+            box.querySelectorAll('.sw').forEach(el => {
+                el.onclick = () => {
+                    boardColor = el.dataset.color;
+                    boardTool = 'pen';
+                    document.getElementById('btnEraser').classList.remove('on');
+                    box.querySelectorAll('.sw').forEach(x => x.classList.remove('on'));
+                    el.classList.add('on');
+                };
+            });
+        }
+
+        function toggleEraser() {
+            boardTool = (boardTool === 'eraser') ? 'pen' : 'eraser';
+            document.getElementById('btnEraser').classList.toggle('on', boardTool === 'eraser');
+        }
+
+        function drawStroke(stroke) {
+            const c = boardCtx();
+            if (!c || !stroke || !Array.isArray(stroke.points) || stroke.points.length === 0) return;
+            c.save();
+            c.lineCap = 'round';
+            c.lineJoin = 'round';
+            c.lineWidth = stroke.width || 3;
+            c.strokeStyle = stroke.tool === 'eraser' ? '#ffffff' : (stroke.color || '#111111');
+            const pts = stroke.points;
+            if (pts.length === 1) {
+                c.beginPath();
+                c.arc(pts[0][0], pts[0][1], (stroke.width || 3) / 2, 0, Math.PI * 2);
+                c.fillStyle = c.strokeStyle;
+                c.fill();
+            } else {
+                c.beginPath();
+                c.moveTo(pts[0][0], pts[0][1]);
+                for (let i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]);
+                c.stroke();
+            }
+            c.restore();
+        }
+
+        function boardPoint(ev) {
+            const cv = document.getElementById('board');
+            const rect = cv.getBoundingClientRect();
+            const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
+            const cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - rect.top;
+            return [
+                Math.max(0, Math.min(BOARD_W, Math.round(cx * BOARD_W / rect.width))),
+                Math.max(0, Math.min(BOARD_H, Math.round(cy * BOARD_H / rect.height))),
+            ];
+        }
+
+        function bindBoardEvents() {
+            const cv = document.getElementById('board');
+            if (!cv || cv.dataset.bound) return;
+            cv.dataset.bound = '1';
+            const start = (e) => { e.preventDefault(); drawing = true; curPoints = [boardPoint(e)]; };
+            const move = (e) => {
+                if (!drawing) return;
+                e.preventDefault();
+                curPoints.push(boardPoint(e));
+                // 本地即时绘制（只画最后一段，避免整笔重绘）
+                const c = boardCtx();
+                const width = Number(document.getElementById('boardWidth').value) || 3;
+                drawStroke({ tool: boardTool, color: boardColor, width, points: curPoints.slice(-2) });
+            };
+            const end = async (e) => {
+                if (!drawing) return;
+                drawing = false;
+                const width = Number(document.getElementById('boardWidth').value) || 3;
+                const stroke = { tool: boardTool, color: boardColor, width, points: curPoints };
+                curPoints = [];
+                if (stroke.points.length === 1) {
+                    // 单击也留一个点（橡皮点用于擦除小区域）
+                    drawStroke(stroke);
+                }
+                try {
+                    const r = await api('/api/meeting/board', { body: { meetingId: meetingId, stroke } });
+                    if (r.ok && r.data && r.data.id) boardLastId = Math.max(boardLastId, r.data.id);
+                } catch (err) { /* 忽略 */ }
+            };
+            cv.addEventListener('mousedown', start);
+            cv.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', end);
+            cv.addEventListener('touchstart', start, { passive: false });
+            cv.addEventListener('touchmove', move, { passive: false });
+            cv.addEventListener('touchend', end);
+        }
+
+        async function pollBoard() {
+            if (!boardOpen || !meetingId) return;
+            try {
+                const r = await api('/api/meeting/board?meetingId=' + encodeURIComponent(meetingId) + '&since=' + boardLastId);
+                if (!r.ok || !r.data.ok) return;
+                for (const s of (r.data.strokes || [])) {
+                    if (s.user === me) { boardLastId = Math.max(boardLastId, s.id); continue; }
+                    drawStroke(s.stroke);
+                    boardLastId = Math.max(boardLastId, s.id);
+                }
+                if (typeof r.data.lastId === 'number') boardLastId = Math.max(boardLastId, r.data.lastId);
+            } catch (e) { /* 下一轮重试 */ }
+        }
+
+        async function loadBoard() {
+            const c = boardCtx();
+            if (!c) return;
+            c.clearRect(0, 0, BOARD_W, BOARD_H);
+            boardLastId = 0;
+            try {
+                const r = await api('/api/meeting/board?meetingId=' + encodeURIComponent(meetingId) + '&since=0');
+                if (r.ok && r.data.ok) {
+                    for (const s of (r.data.strokes || [])) { drawStroke(s.stroke); boardLastId = Math.max(boardLastId, s.id); }
+                }
+            } catch (e) { /* 忽略 */ }
+        }
+
+        function toggleBoard() {
+            const wrap = document.getElementById('boardWrap');
+            boardOpen = !boardOpen;
+            wrap.style.display = boardOpen ? '' : 'none';
+            document.getElementById('btnBoard').classList.toggle('on', boardOpen);
+            if (boardOpen) {
+                initBoardPalette();
+                bindBoardEvents();
+                loadBoard();
+                if (boardTimer) clearInterval(boardTimer);
+                boardTimer = setInterval(pollBoard, 700);
+            } else if (boardTimer) {
+                clearInterval(boardTimer); boardTimer = null;
+            }
+        }
+
+        async function clearBoard() {
+            if (!confirm('清空白板？所有参与者看到的内容都会被清空。')) return;
+            const r = await api('/api/meeting/board/clear', { body: { meetingId: meetingId } });
+            if (!r.ok || !r.data.ok) { alert('清空失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status))); return; }
+            const c = boardCtx();
+            if (c) c.clearRect(0, 0, BOARD_W, BOARD_H);
+            boardLastId = 0;
+        }
+
+        function downloadBoard() {
+            const cv = document.getElementById('board');
+            if (!cv) return;
+            const a = document.createElement('a');
+            a.download = 'whiteboard-' + Date.now() + '.png';
+            a.href = cv.toDataURL('image/png');
+            a.click();
+        }
+
+        window.toggleScreenShare = toggleScreenShare;
+        window.toggleBoard = toggleBoard;
+        window.toggleEraser = toggleEraser;
+        window.clearBoard = clearBoard;
+        window.downloadBoard = downloadBoard;
 
         function resumeAudio() {
             let ok = false;
@@ -809,9 +1336,13 @@
             ensureTile(me, true);
             document.getElementById('mtCode').textContent = meetingCode || '—';
 
+            // 先取 ICE 配置（含 TURN），再入会/建连接，避免用回退配置错过中继
+            await loadIceConfig();
+
             // 关键：先入会，成为会议成员后再开始聊天与信令
             const ok = await joinMeeting();
             await loadDetail();
+            await loadMeetingNote(true);   // 会议笔记（逐字稿/讨论区/纪要都写这里）
             if (ok) {
                 startPollers();
                 await loadChat();
