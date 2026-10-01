@@ -15,7 +15,10 @@
 | 4 | 隐私政策 / 用户协议 / 数据导出 / 注销 | `privacy.html`、`terms.html`、`security.html` | `/api/account/{export,status,delete,delete/cancel}` |
 | 5 | 消息附件（统一到文件托管） | `chat.html`（📎 按钮 / 粘贴 / 拖拽） | `/api/files/upload`（Worker 中转）→ 文件站 `api.php?a=sso_upload` |
 | 6 | 扫码登录（手机端扫） | `index.html`（二维码弹窗 + `?qr=<id>` 确认页） | `/api/auth/qr/{create,info,confirm,poll,cancel}` |
-| 7 | 会议（快速/预定/编号/邀请/会中聊天/音视频） | `meeting.html`、`meeting-room.html` | `/api/meeting/*` |
+| 7 | 会议（快速/预定/编号/邀请/会中聊天/音视频/屏幕共享/共享白板） | `meeting.html`、`meeting-room.html` | `/api/meeting/*`、`/api/rtc/ice` |
+| 8 | 笔记（独立笔记 + 会议笔记：逐字稿 / 讨论区 / 纪要） | `notes.html`、`meeting-room.html` 笔记面板 | `/api/notes/*` |
+| 9 | 离线通知（Web Push）与日程到期提醒 | `security.html`（开启通知）、`sw.js` | `/api/push/*`、Cron 定时任务 |
+| 10 | 会议语音转文字 + AI 会议纪要 | `meeting-room.html` 笔记面板 | 浏览器语音识别 + HZYAI 网关 `POST /chat` |
 
 所有需要登录的接口统一使用 `Authorization: Bearer <token>`；令牌 30 天有效，可按设备吊销。
 
@@ -129,6 +132,68 @@
 
 ---
 
+
+## 8. 笔记（独立笔记 + 会议笔记）
+
+- 数据：`notes`（`owner` / `title` / `content` / `kind` / `meeting_id`）+ `note_shares`（`can_edit`）。
+- 权限模型：`owner`（可改可删可共享）> `edit`（可改）> `view`（只读）；
+  `kind='meeting'` 的笔记额外对该会议**所有成员**开放只读。
+- 接口：
+  - `POST /api/notes/create {title?, content?, kind?, meetingId?}`
+  - `GET  /api/notes/list`（我的 + 共享给我的 + 我所在会议的会议笔记）
+  - `GET  /api/notes/get?id=` → `{ note, shares, role, canEdit }`
+  - `POST /api/notes/update {id, title?, content?}`（需 owner/edit）
+  - `POST /api/notes/delete {id}`（仅 owner）
+  - `POST /api/notes/share {id, username, canEdit}` / `POST /api/notes/unshare {id, username}`（仅 owner，
+    共享时会给对方写一条站内通知）
+  - `GET  /api/notes/meeting?meetingId=&create=1`（会议成员可读；会议笔记由主持人拥有）
+- 页面：`notes.html`（列表 + 搜索 + Markdown 编辑/预览 + 自动保存 + 共享管理），
+  支持 `notes.html?id=<noteId>` 直达某篇。
+
+## 9. 离线通知（Web Push）与日程提醒
+
+- 订阅：`GET /api/push/key` 取 VAPID 公钥 → `POST /api/push/subscribe {subscription}`；
+  `POST /api/push/unsubscribe`、`POST /api/push/test` 分别为退订与自测。
+- 发送端：Worker 用 VAPID（ES256 JWT）+ RFC 8291 `aes128gcm` 加密推给各浏览器订阅；
+  订阅失效（404/410）时自动清理。前端 `sw.js` 负责 `push` 与 `notificationclick`。
+- 定时任务：`wrangler.toml` 的 `[triggers] crons = ["*/5 * * * *"]`，
+  `scheduled()` 扫描 `misc_issues` 中 `calendar_<用户名>` 的事件（字段 `start` / `remindMinutes`），
+  到点写站内通知并推送，已发送的记入 `calendar_reminders`（不重复提醒）。
+  时间按**北京时间（UTC+8）**解释。
+- 用户侧入口：`security.html` → 「🔔 离线通知」卡片（开启 / 测试 / 关闭）。
+
+## 10. 会议语音转文字与 AI 会议纪要
+
+- 语音转文字用浏览器 `SpeechRecognition`（zh-CN，连续识别），每段最终结果以
+  `- [时间] **发言人**：内容` 追加到会议笔记的「## 语音逐字稿」小节。
+- 生成纪要：把笔记内容 + 讨论区消息拼成提示词，调用 HZYAI 网关
+  `POST https://hzyai-worker.nflshcchat.cc.cd/chat`（`{messages, max_tokens}` → `{response}`），
+  结果以「## 会议纪要（AI 生成于 …）」写入同一篇笔记。
+- 讨论区消息可用「📥 导入讨论区」一次性写入「## 讨论区记录」小节。
+- 逐字稿、讨论区记录、纪要**全部保存在同一篇会议笔记**中，会后可在 `notes.html` 查看、修改、共享。
+
+## 11. 会议网络穿透（TURN）
+
+- `GET /api/rtc/ice` 下发 ICE 配置：内置 STUN + TURN。会议页与通话页启动时先取该配置，
+  取不到时回退到内置 STUN。
+- TURN 凭据通过环境变量注入（`TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL`）；
+  未配置时回退公共 TURN（Open Relay），仅适合小规模使用。
+- 为什么必须有 TURN：STUN 只能协助发现公网地址，遇到对称 NAT / 不同运营商时点对点打不通，
+  必须由 TURN 中继媒体。会议页诊断条会显示「TURN 已启用 / 仅 STUN」。
+
+## 12. 会议屏幕共享与共享白板
+
+- 屏幕共享：`getDisplayMedia()` 取屏幕轨道后，对已协商好的 video transceiver 做 `replaceTrack`
+  ——无需重新协商；停止共享时恢复原摄像头轨道。对方画面自动切换，本地预览也会切到共享内容。
+- 共享白板：固定虚拟画布 1600×900，各端按容器缩放，坐标一致。
+  - `POST /api/meeting/board {meetingId, stroke:{tool,color,width,points}}` 提交一笔
+  - `GET  /api/meeting/board?meetingId=&since=` 增量拉取（会议页每 700ms 轮询）
+  - `POST /api/meeting/board/clear {meetingId}` 清空（仅主持人）
+  - 坐标在服务端裁剪到 0..1600 / 0..900，单笔最多 800 点、序列化后不超过 20KB
+  - 支持画笔/橡皮/颜色/粗细、保存为 PNG 图片
+
+---
+
 ## 数据库对象
 
 ```
@@ -141,6 +206,11 @@ meetings              会议（id, code, title, host, kind, status, scheduled_at
 meeting_members       会议成员（role: host/guest；state: invited/joined/left）
 meeting_messages      会中聊天
 meeting_signals       WebRTC 信令（from_user, to_user, kind: offer/answer/ice, payload）
+meeting_board         会议共享白板笔画（meeting_id, username, stroke, created_at）
+notes                 笔记（owner, title, content, kind: note/meeting, meeting_id）
+note_shares           笔记共享（note_id, username, can_edit）
+calendar_reminders    日程提醒发送记录（event_id, username, notified_at）
+push_subscriptions    Web Push 订阅（endpoint, username, p256dh, auth）
 auth_tokens 新增列    session_id, device_label, user_agent, ip, last_seen_at, via
 users（文件站）新增列  sso_only
 ```
