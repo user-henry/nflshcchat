@@ -219,7 +219,6 @@
   - 支持画笔/橡皮/颜色/粗细、保存为 PNG 图片
 
 ## 13. HZYAI 学习：AI 讲题与错题本
-
 - 页面：`study.html`（入口：`hzyai.html` 与 HZYAI 侧边栏「📚 学习」）。
 - AI 讲题：`POST /api/study/solve { question?, imageUrl?, subject?, save? }`
   - 传图片时走 HZYAI 网关 `POST /vision`（识别图片中的题目），传文字时走 `POST /chat`；
@@ -256,6 +255,16 @@
 - 完整接口清单与接入说明见 [`API.md`](./API.md)。
 - SDK：[`../sdk/js/nflshc.js`](../sdk/js/nflshc.js)（`NFLSHC` 客户端 + `NFLSHCOAuth` 授权码流程）、
   [`../sdk/python/nflshc.py`](../sdk/python/nflshc.py)（同等能力，仅标准库）。
+
+## 16. 数据备份与镜像节点
+
+- 主站数据在 Cloudflare D1，另有**加密离线备份**落到自建镜像节点
+  （免费主机 + Cloudflare HTTPS 入口，见 [`MIRROR-NODE.md`](./MIRROR-NODE.md)）。
+- 定时任务每天自动备份一次（20 小时内已有则跳过）：核心表快照 → gzip → AES-GCM 加密 → 上传，
+  镜像节点保留最近 14 份；备份文件即使被下载也无法解密，`backups/` 目录直接请求也需密钥。
+- 管理接口（仅管理员）：
+  - `POST /api/admin/backup-now` → 立即备份，返回各表行数、明文/压缩/密文体积；
+  - `GET  /api/admin/mirror` → 镜像节点健康状态 + 最近备份列表。
 - 覆盖能力：账号与会话、消息、好友收藏、会议（含信令/白板）、笔记、学习、文件上传、OAuth、机器人。
 
 ## 16. 全站功能导航页
