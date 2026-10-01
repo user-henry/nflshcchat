@@ -1,164 +1,168 @@
-# NFLSHC 新功能说明（2026-09-26）
+# NFLSHC 功能更新与接入说明（2026-09）
 
-本轮为**主站 `nflshcchat`** 新增 7 项能力，全部已部署并跑通端到端自测（`node test-new-features.mjs`，29/29 通过）。
+面向开发者：本文件描述**主站 `nflshcchat`** 的 7 项新功能、对应接口契约与接入要点。
+部署步骤见文末「部署与运维」。
 
-| # | 功能 | 页面/入口 | 后端接口 |
+| # | 功能 | 前端入口 | 后端接口 |
 |---|------|-----------|----------|
 | 1 | Google 账号登录 | `index.html`、`chatai/index.html`、`chatai/share.html` | `/api/auth/google/{config,start,callback,exchange}` |
 | 2 | 管理员健康看板 | `health.html`（`admin.html` 导航入口） | `/api/admin/health`、`/api/admin/health/errors` |
 | 3 | 登录设备列表 + 一键下线 | `security.html` | `/api/auth/sessions`、`/api/auth/sessions/<id>`、`/api/auth/sessions/revoke-others` |
-| 4 | 隐私政策 / 用户协议 / 数据导出 / 注销 | `privacy.html`、`terms.html`、`security.html` | `/api/account/{export,delete,delete/cancel,status}` |
-| 5 | 消息附件（统一到文件托管） | `chat.html`（📎 / 粘贴 / 拖拽） | `/api/files/upload`（Worker 中转）+ 文件站 `api.php?a=sso_upload` |
+| 4 | 隐私政策 / 用户协议 / 数据导出 / 注销 | `privacy.html`、`terms.html`、`security.html` | `/api/account/{export,status,delete,delete/cancel}` |
+| 5 | 消息附件（统一到文件托管） | `chat.html`（📎 按钮 / 粘贴 / 拖拽） | `/api/files/upload`（Worker 中转）→ 文件站 `api.php?a=sso_upload` |
 | 6 | 扫码登录（手机端扫） | `index.html`（二维码弹窗 + `?qr=<id>` 确认页） | `/api/auth/qr/{create,info,confirm,poll,cancel}` |
 | 7 | 会议（快速/预定/编号/邀请/会中聊天/音视频） | `meeting.html`、`meeting-room.html` | `/api/meeting/*` |
+
+所有需要登录的接口统一使用 `Authorization: Bearer <token>`；令牌 30 天有效，可按设备吊销。
 
 ---
 
 ## 1. Google 账号登录
 
-- Worker 用 `GOOGLE_CLIENT_ID`（`wrangler.toml` 的 `[vars]`）+ `GOOGLE_CLIENT_SECRET`（`wrangler secret put`）实现完整的 OAuth 2.0 授权码流程。
-- 免 DNS 校验的回跳方案：`start → Google → Worker 回调 → 一次性 ticket → 前端 #google_login=<ticket> → exchange`。
-- 前端按钮自动探测：`GET /api/auth/google/config` 返回 `enabled:false` 时按钮隐藏，配置缺失不会报错。
+- Worker 通过 `GOOGLE_CLIENT_ID`（`wrangler.toml` 的 `[vars]`）与 `GOOGLE_CLIENT_SECRET`（`wrangler secret put`）实现标准 OAuth 2.0 授权码流程。
+- 免 DNS 校验的回跳方案：`start → Google → Worker 回调 → 一次性 ticket → 前端 #google_login=<ticket> → exchange`，
+  长期令牌不出现在 URL 中。
+- 前端按钮自动探测：`GET /api/auth/google/config` 返回 `enabled:false` 时按钮保持隐藏，配置缺失不会报错。
 - `redirect` 参数受 `GOOGLE_REDIRECT_HOSTS` 白名单限制，防止开放重定向。
-- 详细配置步骤见 `docs/GOOGLE-LOGIN.md`。
+- 完整配置步骤与账号关联规则见 [`GOOGLE-LOGIN.md`](./GOOGLE-LOGIN.md)。
 
-## 2. 管理员健康看板（限管理员）
+## 2. 管理员健康看板
 
-- 页面：`health.html`。非管理员访问后端返回 403，前端显示「仅管理员可访问」。
-- 指标：总用户数、24h 新增用户、活跃/过期会话、消息总数与 24h 消息、HZYAI 对话数、开放平台授权/应用数、24h 错误与慢请求、待确认扫码、进行中/预定会议、待处理注销申请。
-- 服务连通性探测：AI 网关、文件托管（源站 + HTTPS 入口）、Google 公钥、BigModel（智谱），逐项显示 HTTP 状态与耗时。
-- 错误明细：`/api/admin/health/errors?limit=80`，支持按 `error` / `slow` 前端过滤。
-- 数据来源为 `metrics_events` 表，由 `recordMetric()` 异步写入（写入失败静默，不影响主流程）；当前已接入：登录成功、Worker 未捕获异常。后续可在任意位置加一行 `await recordMetric(env, {...})` 扩展。
+- 页面：`health.html`，仅管理员可用。权限以接口返回为准：`403` → 弹窗提示「无权访问」，`401` → 弹窗提示先登录；
+  弹窗可跳转登录页或聊天页。
+- 指标（`counts`）：总用户数、24h 新增用户、活跃/过期会话、消息总数与 24h 消息、HZYAI 对话数、
+  开放平台授权数与应用数、24h 错误数与慢请求数、待确认扫码、进行中/预定会议、待处理注销申请。
+- 服务连通性探测（`services`）：AI 网关（hzyai-worker）、文件托管源站、文件托管 HTTPS 入口、
+  Google 公钥。每项返回 `{name, ok, status, ms, detail}`。
+- 错误明细：`GET /api/admin/health/errors?limit=80` → `{events:[{kind,name,detail,status,ms,username,ip,created_at}]}`，
+  `kind` 为 `error`（5xx/异常）或 `slow`（慢请求）。
+- 数据来源为 `metrics_events` 表，由 `recordMetric(env, {...})` 异步写入（写失败静默，不影响主流程）。
+  已接入：登录成功、Worker 未捕获异常；扩展只需在目标位置加一行 `await recordMetric(env, {...})`。
 
-## 3. 登录设备（会话）列表 + 一键下线
+## 3. 登录设备（会话）管理
 
-- 行为变更：**登录不再作废其他设备的令牌**，改为登记独立会话（`auth_tokens.session_id`）。
-- 每账号最多保留 `MAX_SESSIONS_PER_USER = 10` 个有效会话，超出的最旧会话被清理；过期会话自动删除。
-- `last_seen_at` 由 `touchSession()` 维护，5 分钟节流，避免每个请求都写库。
-- 页面可查看设备标签（浏览器 · 系统）、IP、登录方式（`password` / `google` / `qr` / `reset`）、首次登录、最近活跃、到期时间，并支持：
-  - 单个下线：`DELETE /api/auth/sessions/<session_id>`
-  - 下线其他所有设备：`POST /api/auth/sessions/revoke-others`
-  - 退出本机（下线的若是当前会话，前端自动清 token 并跳登录页）
-- 重置密码仍会作废该账号全部旧会话，只保留本次登录设备（安全敏感操作）。
+- 会话模型：一次登录登记一条独立会话，**不再作废其他设备的令牌**。
+  会话信息落在 `auth_tokens`（`session_id` / `device_label` / `user_agent` / `ip` / `last_seen_at` / `via`）。
+- 每账号最多保留 `MAX_SESSIONS_PER_USER = 10` 个有效会话，超出时清理最久未活跃的；过期会话自动删除。
+- `touchSession()` 维护最近活跃时间，5 分钟节流，避免每个请求都写库。
+- `GET /api/auth/sessions` → `{sessions:[{id, device, ip, via, createdAt, lastSeenAt, expiresAt, current}]}`；
+  `via` ∈ `password` / `google` / `qr` / `reset`。
+- `DELETE /api/auth/sessions/<session_id>` 下线指定设备；`POST /api/auth/sessions/revoke-others` 下线其他所有设备。
+- 重置密码属于敏感操作：作废该账号全部旧会话，只保留本次登录设备。
 
-## 4. 隐私政策 / 用户协议 / 数据导出 / 注销（GDPR 风格）
+## 4. 隐私合规：政策页面 / 数据导出 / 注销
 
-- `privacy.html`：收集范围、用途、Cookie 与本地存储、存储与安全、第三方服务（Google/Cloudflare/EmailJS/WebRTC-STUN/AI 模型）、共享、用户权利、保留期限、未成年人、更新与联系方式。
-- `terms.html`：服务内容、账号安全、行为规范（违法内容清单）、知识产权、**文件托管额度**、会议与音视频、开放平台、违规处理与申诉、变更终止、免责与责任限制、争议解决。
-- 数据导出：`GET /api/account/export` → 直接下载 JSON（账号资料、消息、好友、收藏、HZYAI 对话、开放平台授权、登录设备、会议记录；**不含** token 与密码哈希）。
-- 注销：`POST /api/account/delete {confirm:<用户名>, reason?}` → 7 天冷静期（`account_deletions` 表），期间可 `POST /api/account/delete/cancel` 撤销；`GET /api/account/status` 查询状态。前端要求用户手动输入自己的用户名做二次确认。
+- `privacy.html`：收集范围、用途、Cookie 与本地存储、存储与安全、第三方服务
+  （Google / Cloudflare / EmailJS / WebRTC-STUN / AI 模型）、信息共享、用户权利、保留期限、未成年人、联系方式。
+- `terms.html`：服务内容、账号安全、行为规范、知识产权、文件托管额度、会议与实时音视频、
+  开放平台、违规处理与申诉、变更终止、免责与责任限制、争议解决。
+- 数据导出：`GET /api/account/export` 直接下载 JSON（账号资料、消息、好友、收藏、HZYAI 对话、
+  开放平台授权、登录设备、会议记录）。**不含**可用令牌与密码哈希。
+- 注销：`POST /api/account/delete {confirm:"<用户名>", reason?}` 进入 **7 天冷静期**（`account_deletions`），
+  期间可 `POST /api/account/delete/cancel` 撤销；`GET /api/account/status` 查询状态。
+  用户名为空或不匹配时返回 `400 {code:'need_confirm'}`。
 
 ## 5. 消息附件（统一到文件托管）
 
-- 前端：`chat.html` 输入区新增 📎 按钮，并支持**粘贴图片**与**拖拽文件**；上传成功后自动作为一条消息发出：
-  - 图片 → Markdown 内嵌 `![标题](直链)`
-  - 音视频 → 带图标的链接
-  - 其他 → `📎 [文件名](下载页) · 大小`
-- 后端：`POST /api/files/upload`（multipart，≤20MB）由 Worker **中转**到文件托管站，无需用户二次登录：
-  - Worker 用 `FILES_SSO_SECRET` 以 HMAC-SHA256 签发 5 分钟票据：`base64(username)|exp|hmac(username|exp)`
-  - 请求头 `X-Files-Ticket` 传给文件站 `api.php?a=sso_upload`
-  - 文件站校验签名与有效期，首次调用自动建号（`users.sso_only = 1`，密码为随机不可用值），并沿用既有的**个人配额 / 站点总量**限制
-  - **返回地址统一为 HTTPS 公开入口**：Worker 用 `X-Media-Host: file.nflshcchat.cc.cd` + `X-Media-Proto: https`
-    让文件站按该域名生成链接，并额外做一次 `toPublicFileUrl()` 兜底改写。源站 `http://nflshcfile.l.cd`
-    在 HTTPS 页面里属于混合内容，浏览器会直接拦截导致图片不显示，因此**任何对外链接都不允许出现源站地址**。
-    `chat.html` 渲染历史消息时也会把旧地址改写为 HTTPS 入口。
-- 配额：新用户默认 1GB，站长账号 5GB，站点软上限 4.5GB；超限返回 413 与中文提示。
-- 更小的附件走此通道；更大文件引导到文件托管站分片上传（`https://file.nflshcchat.cc.cd/`）。
+前端（`chat.html`）：
 
-## 6. 扫码登录（手机端扫）
+- 三个入口：📎 按钮、粘贴图片、拖拽文件，统一走同一个上传流程；
+- 上传成功后把内容填入消息输入框（图片为 Markdown 内嵌 `![标题](直链)`，音视频为带图标链接，
+  其它为 `📎 [文件名](下载页) · 大小`），由用户确认后发送；
+- 渲染历史消息时会把旧的源站地址改写为 HTTPS 公开入口。
 
-- PC 端：`index.html` →「📱 使用手机扫码登录」→ `POST /api/auth/qr/create` 得到 `{id, secret}`，把 `https://<站点>/index.html?qr=<id>` 渲染成二维码（`js/qrcode.js`，纯前端实现、无 CDN 依赖），每 2 秒 `POST /api/auth/qr/poll {id, secret}` 轮询。
-- 手机端：扫码打开链接 → 若已登录直接弹确认框（显示请求设备与 IP）→ `POST /api/auth/qr/confirm {id}`；未登录则先登录再自动进入确认流程。
-- 安全设计：二维码 3 分钟有效、**一次性**（取到 token 即删除）、轮询必须携带 `secret`（防他人猜 id 窃取）、可 `POST /api/auth/qr/cancel` 取消。
-- `js/qrcode.js` 的正确性已用参考实现逐模块比对验证：`node tools-qr-verify.mjs`（需先 `npm i --no-save qrcode`），6/6 完全一致（含中文 UTF-8）。
+后端（`POST /api/files/upload`，multipart，单项 ≤20MB）：
+
+- Worker 用 `FILES_SSO_SECRET` 以 HMAC-SHA256 签发 5 分钟票据：`base64(username)|exp|hmac(username|exp)`，
+  通过请求头 `X-Files-Ticket` 传给文件站 `api.php?a=sso_upload`；
+- 文件站校验签名与有效期，首次调用自动建号（`users.sso_only = 1`，密码为随机不可用值），
+  并沿用既有的个人配额 / 站点总量限制；
+- **返回地址必须是 HTTPS 公开入口**：Worker 发送 `X-Media-Host: file.nflshcchat.cc.cd` + `X-Media-Proto: https`
+  让文件站按该域名生成链接，并额外做一次 `toPublicFileUrl()` 兜底改写。
+  源站 `http://nflshcfile.l.cd` 在 HTTPS 页面中属于混合内容，会被浏览器拦截，因此对外链接不得出现源站地址；
+- 配额：新用户默认 1GB，站长账号 5GB，站点软上限 4.5GB，超限返回 `413`；
+- 超过 20MB 的文件请引导用户到文件托管站（`https://file.nflshcchat.cc.cd/`）分片上传，业务上限 512MB。
+
+## 6. 扫码登录
+
+- 取码（PC）：`POST /api/auth/qr/create` → `{id, secret, expiresAt}`（3 分钟有效）。
+  前端把 `https://<站点>/index.html?qr=<id>` 渲染成二维码（`js/qrcode.js`，零依赖实现），
+  每 2 秒 `POST /api/auth/qr/poll {id, secret}` 轮询。
+- 确认（手机）：扫码打开 `?qr=<id>` → 若已登录则 `GET /api/auth/qr/info?id=` 展示设备与 IP，
+  用户确认后 `POST /api/auth/qr/confirm {id}`；未登录则先登录，再自动进入确认流程。
+- 安全设计：一次性（取到 token 即删除记录）、轮询必须携带 `secret`（防止猜 id 窃取）、
+  支持 `POST /api/auth/qr/cancel` 取消；确认成功后由服务端签发新会话（`via='qr'`）。
 
 ## 7. 会议
 
-- `meeting.html`：创建**快速会议**（立即开会）或**预定会议**（时间/时长/密码/邀请人），用**会议编号**加入，查看「我的会议」（全部 / 即将开始 / 进行中 / 已结束），复制编号与邀请链接、主持人结束会议；可从好友列表快速勾选邀请对象。
-- 会议编号形如 `ABC-123-XYZ`（去掉易混字符），全局唯一；可设会议密码；也可 `meeting.html?code=XXX` 直接通过邀请链接进入。
-- 邀请会写入 `notifications` 表，被邀请人在站内收到「📅 会议邀请」通知（含会议编号）。
-- `meeting-room.html`：会中页面
-  - 参与者列表（含主持人 👑、加入状态）、会议编号一键复制
-  - **会中聊天**（2.5 秒轮询，消息落库 `meeting_messages`，会后可回看）
-  - **语音 / 视频**：WebRTC 网状（mesh）点对点连接，信令通过 `meeting_signals` 表轮询中转；使用公共 STUN；媒体流不经服务器、不录制
-  - 主持人可结束会议；离开会议会更新成员状态
-- 技术细节：用户名较大的一方主动发起 offer（避免 glare）；ICE candidate 在远端描述未就绪时排队，随后冲刷；双方镜像：谁先开麦/摄像都会补轨道并重新协商。
-- **入会即成员**：`meeting-room.html` 打开时必须先调 `/api/meeting/join`（用 `?id=` 或 `?code=` 都可以）。
-  未入会直接进房间会导致聊天与信令全部 403，表现为「成员列表看不到人、完全没声音画面」。
-- **重新协商**：协商由一方统一发起（用户名较大的那侧）。另一方开启麦克风/摄像头后，
-  通过 `kind:'ice'` + `payload:{__renegotiate:true}` 请求对方重新发 offer，
-  这样既能把新轨道送出去，又不会双方同时发 offer 造成 glare。
-- **媒体轨道用 replaceTrack 挂载（视频能通的关键）**：建立连接时就 `addTransceiver('audio'|'video', {direction:'sendrecv'})`，
-  之后开启麦克风/摄像头只对 transceiver 的 sender 做 `replaceTrack` —— **不需要重新协商**，媒体立刻开始发送。
-  早期实现用的是「先 offer 再 addTrack」，协商出来的 video m-line 是 recvonly/inactive，
-  对方无法把画面送过来，表现为「声音正常、视频一直卡在协商中」。
-  验证脚本：`node test-webrtc-negotiation.mjs`（用真实 WebRTC 实现跑一遍协商顺序，
-  断言 audio/video 两条 m-line 都是 sendrecv、replaceTrack 不产生信令、ICE 能到 connected）。
-- 诊断条里的「🔄 重新连接」按钮可手动触发 ICE 重启，用于连接卡住时恢复。
-- 页面内置连接诊断条：入会状态、信令状态、与每个对端 ICE 的 `connectionState`
-  （准备中 / 连接中 / 已连接 / 连接失败），出现问题时可直接看出卡在哪一步。
-- 排查提示：**同一个账号在多个标签页打开无法互通**（对端按用户名区分），请用另一个账号或另一台设备测试。
-- 离开页面用 `fetch(..., {keepalive:true})` 携带鉴权头通知服务端（`sendBeacon` 无法带 `Authorization`，
-  会造成「幽灵成员」一直显示在线）。
+`meeting.html`（会议中心）：
+
+- 快速会议（立即开会）与预定会议（开始时间 / 时长 / 可选会议密码 / 邀请人）；
+- 会议编号形如 `ABC-123-XYZ`（剔除易混字符），全局唯一；`meeting.html?code=XXX` 可直接加入；
+- 我的会议（全部 / 即将开始 / 进行中 / 已结束），支持复制编号与入会链接、主持人结束会议；
+- 邀请写入 `notifications`（类型 `meeting`），被邀请人站内收到「📅 会议邀请」通知。
+
+`meeting-room.html`（会中）：
+
+- 参与者列表（主持人标记、加入状态）、会议编号复制、会中聊天（落库 `meeting_messages`，会后可回看）；
+- 语音/视频为 WebRTC 点对点（mesh），信令经 `meeting_signals` 表轮询中转，使用公共 STUN，
+  媒体流不经服务器、不录制；
+- 页面内置诊断条：入会状态、信令状态、每个对端的 `connectionState`，以及「🔄 重新连接」（ICE 重启）。
+
+**接入约定（改动前请先读，否则很容易出现「能听见但看不到」这类问题）**：
+
+1. **进房间必须先入会**：`meeting-room.html` 打开时先调 `POST /api/meeting/join`（`{code}` 支持会议编号或会议 id）。
+   未入会直接进房间会让聊天与信令接口全部 `403`，表现为成员列表为空、完全无声音画面。
+2. **媒体轨道用 `replaceTrack` 挂载**：建连接时就 `pc.addTransceiver('audio'|'video', {direction:'sendrecv'})`，
+   之后开启麦克风/摄像头只对 transceiver 的 `sender` 调 `replaceTrack`——不需要重新协商，媒体立即开始发送。
+   若改为「先 offer 再 `addTrack`」，协商出的 video m-line 会是 `recvonly`/`inactive`，对方无法把画面送过来。
+3. **协商由一方发起**：用户名较大的一方负责发 offer；另一方需要重新协商时，
+   发送 `kind:'ice'` + `payload:{__renegotiate:true}` 请求对方发新 offer（避免双方同时 offer 造成 glare）。
+   需要 ICE 重启时带 `payload:{__renegotiate:true, iceRestart:true}`。
+4. **离开要通知服务端**：用 `fetch(..., {keepalive:true})` 携带 `Authorization` 头调用 `/api/meeting/leave`
+   （`navigator.sendBeacon` 无法携带鉴权头，会造成「幽灵成员」一直显示在线）。
+5. **同一账号在多个标签页无法互通**（对端按用户名区分），测试请用两个账号或两台设备。
 
 ---
 
-## 数据库新增对象
+## 数据库对象
 
 ```
-oauth_identities      Google/第三方身份绑定
+oauth_identities      Google / 第三方身份绑定
 google_login_tickets  Google 回跳一次性票据
-qr_login_sessions     扫码登录会话（id, secret, status, ...）
-account_deletions     注销申请（7 天冷静期）
-metrics_events        健康看板运行指标
+qr_login_sessions     扫码登录会话（id, secret, status, expires_at, username, token）
+account_deletions     注销申请（requested_at, effective_at, cancelled_at, reason）
+metrics_events        健康看板运行指标（kind, name, detail, status, ms, username, ip）
 meetings              会议（id, code, title, host, kind, status, scheduled_at, duration_min, password, note）
 meeting_members       会议成员（role: host/guest；state: invited/joined/left）
 meeting_messages      会中聊天
-meeting_signals       WebRTC 信令（offer/answer/ice）
+meeting_signals       WebRTC 信令（from_user, to_user, kind: offer/answer/ice, payload）
 auth_tokens 新增列    session_id, device_label, user_agent, ip, last_seen_at, via
-users 新增列（文件站） sso_only
+users（文件站）新增列  sso_only
 ```
 
 ## 部署与运维
 
 ```bash
-# Worker（主站后端）
+# 主站 Worker
 cd nflshcchat && npx wrangler deploy
 
-# 密钥（只需设置一次）
+# 密钥（仅首次需要）
 npx wrangler secret put GOOGLE_CLIENT_SECRET
-npx wrangler secret put FILES_SSO_SECRET     # 需与文件站 config.php 的 sso_secret 一致
+npx wrangler secret put FILES_SSO_SECRET     # 必须与文件站 config.php 的 sso_secret 一致
 
-# 文件站（byethost）：推荐一键全量部署
+# 文件站（byethost）全量部署
 pwsh byethost/tools/deploy.ps1
-
-# 或只上传改动的文件到 /nflshcfile.l.cd/htdocs/
-powershell -File byethost/tools/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/api.php -Local byethost/filehost/api.php
-powershell -File byethost/tools/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/lib.php -Local byethost/filehost/lib.php
-powershell -File byethost/tools/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/config.php -Local byethost/filehost/config.php
 ```
 
-> 文件站的目录结构：`byethost/filehost/`（站点源码，进仓库）、`byethost/tools/`（部署脚本，**不进仓库**，含 FTP 口令）、
-> `byethost/tests/`（回归测试，不进仓库）。详见 `byethost/README.md`。
+- 文件站目录约定：`byethost/filehost/` 为站点源码（随仓库发布），
+  `byethost/tools/`（部署脚本，含 FTP 口令）与 `byethost/tests/`（回归测试）**不随仓库发布**。
+  详见 [`../byethost/README.md`](../byethost/README.md)。
+- 前端资源改动后请同步更新引用处的 `?v=` 版本号（`js/theme.js?v=4`、`css/themes.css` 等），避免 CDN/浏览器缓存。
 
-自检脚本：
+## 安全注意事项
 
-```bash
-node test-new-features.mjs     # 会话/扫码/导出注销/健康/会议/附件 全链路（29 项）
-node test-security-flows.mjs   # 安全回归：吊销是否真失效、扫码 token 是否可用、导出是否泄露（31 项）
-node test-attachment-url.mjs   # 附件地址是否为 HTTPS 公开入口、图片能否真正取到（12 项）
-node test-meeting-signaling.mjs # 会议入会与信令链路：成员可见性、offer/answer/ICE 双向可达（29 项）
-node tools-check-html.mjs *.html   # 内联脚本语法检查
-node tools-check-links.mjs *.html  # 本地引用完整性检查
-node tools-qr-verify.mjs       # 二维码生成器与参考实现逐模块比对
-```
-
-> 网络受限时（`github.com:443` 不可达但 `api.github.com` 可用）可用 `tools-gh-batch.mjs`
-> 通过 Contents API 上传文件：先 `$env:GH_TOKEN='<token>'`，再
-> `node tools-gh-batch.mjs put user-henry/nflshcchat main "提交说明" list.json`。
-
-## 安全注意
-
-- **切勿把 `Token.txt`、`deepseek-api-key.txt`、`nva-api-key.txt`、`byethost/.sso_secret.txt` 提交到仓库**（已加入 `.gitignore`）。其中 GitHub Token 曾存在于公开仓库历史中，建议到 GitHub 吊销并重新签发。
-- 文件站的 `config.php`（含数据库口令与 `sso_secret`）已被 `.gitignore` 排除，只会通过 FTP 上传。
-- 所有跨站写操作都要求 `Authorization: Bearer <token>`，令牌 30 天有效且可按设备吊销。
+- 凭据文件（`Token.txt`、`deepseek-api-key.txt`、`nva-api-key.txt`、`byethost/.sso_secret.txt`）
+  已在 `.gitignore` 中排除，切勿提交。
+- 文件站的 `config.php`（数据库口令 + `sso_secret`）不进仓库，只通过 FTP 上传。
+- 所有跨站写操作都要求 `Authorization: Bearer <token>`。
