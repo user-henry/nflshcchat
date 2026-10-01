@@ -595,14 +595,34 @@
             renderPeerStates();
         }
 
-        // 把本地音视频轨道挂到某条连接上（与 chat.html 一样）
-        // 用 pc.addTrack：统一计划下会自动复用同类型、尚未发送的 transceiver（把 recvonly 变成 sendrecv），
-        // 因此不会出现「轨道挂在 mid=null 的孤立 transceiver 上」这种发不出媒体的情况。
+        // 找到某条连接上该类型的 transceiver：
+        //   idle —— sender 还没有轨道的那条（占位 transceiver，或对端 offer 协商出来的接收通道），
+        //          开麦/开摄像头时优先把轨道放进它，这样 m-line 不会多出来、answer 也不会变 recvonly；
+        //   busy —— 已经挂着同类型轨道的（例如摄像头/屏幕切换时用）。
+        function transceiverFor(p, kind) {
+            const same = p.pc.getTransceivers().filter(t => !t.stopped).filter(t => {
+                const k = (t.sender && t.sender.track && t.sender.track.kind)
+                    || (t.receiver && t.receiver.track && t.receiver.track.kind);
+                return k === kind;
+            });
+            return { idle: same.find(t => !t.sender.track) || null, busy: same.find(t => t.sender.track) || null };
+        }
+
+        // 把本地音视频轨道挂到某条连接上（与 chat.html 的通话一致：拿到轨道后挂载、再协商）
         async function attachLocal(name) {
             const p = peers[name];
             if (!p || !localStream) return;
             for (const track of localStream.getTracks()) {
                 if (p.addedTracks.has(track.id)) continue;
+                const { idle } = transceiverFor(p, track.kind);
+                if (idle) {
+                    try {
+                        await idle.sender.replaceTrack(track);
+                        idle.direction = 'sendrecv';      // 占位 recvonly → 既能收也能发
+                        p.addedTracks.add(track.id);
+                        continue;
+                    } catch (e) { console.warn('replaceTrack 失败', name, e); }
+                }
                 try {
                     p.pc.addTrack(track, localStream);
                     p.addedTracks.add(track.id);
@@ -632,15 +652,17 @@
             };
             peers[name] = p;
 
-            // 与 chat.html 的音视频通话保持一致：轨道用 addTrack 挂载。
-            // 这里只先放两条 recvonly 占位 transceiver，目的是让「双方都还没开麦/开摄像头」时
-            // 也能协商出 m-line、把 ICE/DTLS 连起来（画面/声音的收发由后面的 addTrack 决定）。
-            // 之前那套「预建 sendrecv + replaceTrack」在真实网络里会出现：
+            // 每条连接先放两条 recvonly 占位 transceiver（audio / video）：
+            //   · offer 里因此一定有 m-line，双方都还没开麦/开摄像头时也能把连接建起来；
+            //   · 之后开麦/开摄像头时，用 replaceTrack 把轨道放进这两条 transceiver 并把方向改成
+            //     sendrecv（见 attachLocal），再重新协商一次 —— 这是与 chat.html 通话一致的收发模型。
+            // 旧实现在这里创建的是 sendrecv 并直接 replaceTrack，真实网络下会出现：
             // 被动方的 answer 变成 recvonly（对方 offer 的 m-line 是 sendonly）、本地轨道挂在
-            // 未关联的 transceiver 上（mid=null）→ 表现为「能听到看到对方，但自己的声音画面发不出去」。
+            // mid=null 的孤立 transceiver 上 → 表现为「能看到听到对方，自己的声音画面发不出去」。
+            p.placeholders = {};
             try {
-                pc.addTransceiver('audio', { direction: 'recvonly' });
-                pc.addTransceiver('video', { direction: 'recvonly' });
+                p.placeholders.audio = pc.addTransceiver('audio', { direction: 'recvonly' });
+                p.placeholders.video = pc.addTransceiver('video', { direction: 'recvonly' });
             } catch (e) { console.warn('addTransceiver 失败', e); }
 
             pc.onicecandidate = (ev) => {
@@ -778,15 +800,11 @@
             if (sig.kind === 'offer') {
                 // 被动方才会收到 offer（发起方由 webrtc 的 shouldInitiate 规则唯一确定）
                 if (p.initiator) return;
-                if (pc.signalingState === 'have-remote-offer') {
-                    // 上一轮还没答完：先把本轮 offer 应用掉再答（rollback 后重新应用）
-                    try { await pc.setRemoteDescription(new RTCSessionDescription(payload)); } catch (e) { return; }
-                } else {
-                    await pc.setRemoteDescription(new RTCSessionDescription(payload));
-                }
-                // 关键：应答之前先把自己的麦克风/摄像头轨道挂上，
-                // 这样 answer 里对应 m-line 就是 sendrecv（照搬 chat.html 的顺序）
+                // 关键顺序（照搬 chat.html 通话）：先把自己的麦克风/摄像头轨道挂上，
+                // 再 setRemoteDescription / createAnswer —— 这样 answer 里对应 m-line 才是 sendrecv；
+                // 反过来先 setRemoteDescription 的话，本地轨道只能挂到新造的孤立 transceiver 上（发不出去）。
                 await attachLocal(from);
+                await pc.setRemoteDescription(new RTCSessionDescription(payload));
                 if (pc.signalingState !== 'have-remote-offer') return;
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
