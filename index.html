@@ -323,6 +323,11 @@
             使用 Google 账号登录
         </button>
 
+        <!-- ===== 通行密钥登录（指纹 / 面容 / PIN） ===== -->
+        <button id="passkeyLoginBtn" type="button" class="qr-login-btn" onclick="passkeyLogin()" style="margin-top:10px;">
+            🔑 用通行密钥登录
+        </button>
+
         <!-- ===== 扫码登录（手机扫码确认，免输密码） ===== -->
         <button id="qrLoginBtn" type="button" class="qr-login-btn" onclick="showQrLogin()">
             📱 使用手机扫码登录
@@ -1252,6 +1257,85 @@
             msg.innerHTML = '<span style="color:#f39c12;">已取消该登录请求。</span>';
             setTimeout(function () { window.location.href = 'index.html'; }, 1000);
         }
+
+        // ============================================================
+        //  通行密钥登录（Passkey / WebAuthn）
+        //  设备指纹 / 面容 / PIN 验证后由服务端校验签名并签发 token。
+        //  不填用户名也可以：通行密钥是「可发现凭据」时浏览器会弹出账号选择。
+        // ============================================================
+        function pkU8ToB64u(buf) {
+            const bytes = new Uint8Array(buf);
+            let s = '';
+            for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+            return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+        function pkB64uToU8(s) {
+            const pad = '='.repeat((4 - s.length % 4) % 4);
+            const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+            const out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            return out;
+        }
+
+        async function passkeyLogin() {
+            const messageDiv = document.getElementById('message');
+            const username = (document.getElementById('username').value || '').trim();
+            if (!window.PublicKeyCredential || !navigator.credentials) {
+                messageDiv.innerHTML = '<span style="color:red;">当前浏览器不支持通行密钥（需要 HTTPS 与较新的浏览器）</span>';
+                return;
+            }
+            messageDiv.innerHTML = '<span style="color:#666;">请完成设备验证（指纹 / 面容 / PIN）…</span>';
+            try {
+                const beginRes = await fetch(WORKER_API + '/api/auth/webauthn/login/begin', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, origin: window.location.origin }),
+                });
+                const begin = await beginRes.json().catch(() => ({}));
+                if (!beginRes.ok || !begin.ok) {
+                    messageDiv.innerHTML = '<span style="color:red;">' + escapeHtml(begin.error || ('HTTP ' + beginRes.status)) +
+                        (begin.code === 'no_credential' ? '（请先登录后在「账号与安全」里添加）' : '') + '</span>';
+                    return;
+                }
+                const o = begin.options || {};
+                const cred = await navigator.credentials.get({
+                    publicKey: {
+                        challenge: pkB64uToU8(o.challenge),
+                        rpId: o.rpId,
+                        timeout: o.timeout,
+                        userVerification: o.userVerification,
+                        allowCredentials: (o.allowCredentials || []).map(c => ({ type: c.type, id: pkB64uToU8(c.id), transports: c.transports })),
+                    },
+                });
+                if (!cred) { messageDiv.innerHTML = '<span style="color:#666;">已取消</span>'; return; }
+                const finRes = await fetch(WORKER_API + '/api/auth/webauthn/login/finish', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        challengeKey: begin.challengeKey,
+                        origin: window.location.origin,
+                        id: pkU8ToB64u(cred.rawId),
+                        clientDataJSON: pkU8ToB64u(cred.response.clientDataJSON),
+                        authenticatorData: pkU8ToB64u(cred.response.authenticatorData),
+                        signature: pkU8ToB64u(cred.response.signature),
+                        userHandle: cred.response.userHandle ? pkU8ToB64u(cred.response.userHandle) : null,
+                    }),
+                });
+                const fin = await finRes.json().catch(() => ({}));
+                if (!finRes.ok || !fin.ok || !fin.token) {
+                    messageDiv.innerHTML = '<span style="color:red;">' + escapeHtml(fin.error || '登录失败') + '</span>';
+                    return;
+                }
+                if (window.AuthToken) window.AuthToken.set(fin.token);
+                saveLoginState({ username: fin.username, isAdmin: !!fin.isAdmin });
+                messageDiv.innerHTML = '<span style="color:green;">✅ 通行密钥登录成功，正在跳转…</span>';
+                const next = new URLSearchParams(window.location.search).get('next');
+                setTimeout(() => {
+                    window.location.href = next || (fin.isAdmin ? 'admin.html' : 'chat.html');
+                }, 600);
+            } catch (e) {
+                messageDiv.innerHTML = '<span style="color:red;">通行密钥登录失败：' + escapeHtml(e.message || e) + '</span>';
+            }
+        }
+        window.passkeyLogin = passkeyLogin;
 
         // ============================================================
         //  页面启动时检查自动登录
