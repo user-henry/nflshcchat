@@ -19,6 +19,7 @@
 | 8 | 笔记（独立笔记 + 会议笔记：逐字稿 / 讨论区 / 纪要） | `notes.html`、`meeting-room.html` 笔记面板 | `/api/notes/*` |
 | 9 | 离线通知（Web Push）与日程到期提醒 | `security.html`（开启通知）、`sw.js` | `/api/push/*`、Cron 定时任务 |
 | 10 | 会议语音转文字 + AI 会议纪要 | `meeting-room.html` 笔记面板 | 浏览器语音识别 + HZYAI 网关 `POST /chat` |
+| 11 | HZYAI 学习：AI 讲题 + 错题本 | `study.html`（`hzyai.html` 入口） | `/api/study/*` |
 
 所有需要登录的接口统一使用 `Authorization: Bearer <token>`；令牌 30 天有效，可按设备吊销。
 
@@ -192,6 +193,23 @@
   - 坐标在服务端裁剪到 0..1600 / 0..900，单笔最多 800 点、序列化后不超过 20KB
   - 支持画笔/橡皮/颜色/粗细、保存为 PNG 图片
 
+## 13. HZYAI 学习：AI 讲题与错题本
+
+- 页面：`study.html`（入口：`hzyai.html` 与 HZYAI 侧边栏「📚 学习」）。
+- AI 讲题：`POST /api/study/solve { question?, imageUrl?, subject?, save? }`
+  - 传图片时走 HZYAI 网关 `POST /vision`（识别图片中的题目），传文字时走 `POST /chat`；
+  - 固定输出结构：学科与知识点 → 解题思路（分步） → 完整解答 → 易错点提醒；
+  - `save:true` 时讲解结果直接写入错题本，返回 `savedId`。
+- 错题本：
+  - `GET  /api/study/mistakes?subject=&status=&q=` → `{ mistakes, subjects, stats }`
+  - `POST /api/study/mistakes { question, answer?, explanation?, subject?, imageUrl?, tags?, source? }`
+  - `POST /api/study/mistakes/update { id, status?, subject?, tags?, answer?, explanation?, reviewed? }`
+    （`reviewed:true` 使复习次数 +1 并记录最近复习时间）
+  - `POST /api/study/mistakes/delete { id }`
+  - `status` ∈ `open`（未掌握）/ `reviewing`（复习中）/ `mastered`（已掌握）
+  - 数据按 `username` 隔离，他人无法读改
+- 同类练习：`POST /api/study/practice { id? | question?, count? }` → 让 AI 出同知识点、同难度的题目（含答案与解析）。
+
 ---
 
 ## 数据库对象
@@ -211,6 +229,8 @@ notes                 笔记（owner, title, content, kind: note/meeting, meetin
 note_shares           笔记共享（note_id, username, can_edit）
 calendar_reminders    日程提醒发送记录（event_id, username, notified_at）
 push_subscriptions    Web Push 订阅（endpoint, username, p256dh, auth）
+mistake_book          错题本（username, subject, question, answer, explanation, image_url, tags,
+                      status: open/reviewing/mastered, review_count, last_review_at）
 auth_tokens 新增列    session_id, device_label, user_agent, ip, last_seen_at, via
 users（文件站）新增列  sso_only
 ```
