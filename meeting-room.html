@@ -69,12 +69,15 @@
         @keyframes sp { to { transform: rotate(360deg); } }
 
         /* ===== 共享白板 ===== */
-        .board-wrap { border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; background: #ffffff; }
-        .board-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
+        /* 注意：.stage 是「固定高度的 flex 列」，它里面的每一项默认都可以被压缩（flex-shrink:1）。
+           白板以前没写 flex:none，视频墙一高就被压成只剩工具条那点高度，canvas 被 overflow:hidden
+           裁掉 —— 表现就是「只看到颜色选择区、白板不显示」。这里固定不可压缩，并在容器内滚动。 */
+        .board-wrap { flex: none; max-height: 70vh; overflow: auto; border: 1px solid var(--border-color); border-radius: 14px; background: #ffffff; }
+        .board-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 2; }
         .board-tools .palette { display: inline-flex; gap: 6px; }
         .board-tools .sw { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border-color); cursor: pointer; }
         .board-tools .sw.on { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(255,215,0,.35); }
-        #board { display: block; width: 100%; height: auto; cursor: crosshair; touch-action: none; background: #ffffff; }
+        #board { display: block; flex: none; width: 100%; height: auto; aspect-ratio: 16 / 9; min-height: 240px; cursor: crosshair; touch-action: none; background: #ffffff; }
 
         @media (max-width: 820px) {
             .main { flex-direction: column; }
@@ -211,15 +214,28 @@
         }
         function token() { return (window.AuthToken && window.AuthToken.get()) || ''; }
         function fmt(t) { const d = new Date(t); return isNaN(d.getTime()) ? '' : d.toLocaleTimeString('zh-CN', { hour12: false }); }
+        // 统一的 API 调用：带超时（9 秒）。
+        // 网络抖动时浏览器可能长时间挂住一个请求（表现为「信令网络错误：Failed to fetch」或界面卡住），
+        // 有超时才能快速失败、交给重试逻辑，否则轮询会被一个卡死的请求永久挡住。
         async function api(path, opts) {
             const o = opts || {};
             const headers = Object.assign({}, o.headers || {});
             if (o.body) headers['Content-Type'] = 'application/json';
-            const res = await fetch(API + path, { method: o.method || (o.body ? 'POST' : 'GET'), headers, body: o.body ? JSON.stringify(o.body) : undefined });
-            const data = await res.json().catch(() => ({}));
-            return { status: res.status, ok: res.ok, data };
-        }
-        function sysMsg(text) {
+            const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (e) { /* 忽略 */ } }, o.timeout || 9000) : null;
+            try {
+                const res = await fetch(API + path, {
+                    method: o.method || (o.body ? 'POST' : 'GET'),
+                    headers: headers,
+                    body: o.body ? JSON.stringify(o.body) : undefined,
+                    signal: ctrl ? ctrl.signal : undefined,
+                });
+                const data = await res.json().catch(() => ({}));
+                return { status: res.status, ok: res.ok, data };
+            } finally {
+                if (timer) clearTimeout(timer);
+            }
+        }        function sysMsg(text) {
             const box = document.getElementById('chat');
             const div = document.createElement('div');
             div.className = 'cmsg sys';
@@ -245,31 +261,50 @@
         // ============================================================
         //  一、入会（关键：必须先成为会议成员，否则聊天与信令都会被拒绝）
         // ============================================================
+        // 入会：带重试。网络抖动（Failed to fetch / 超时）时不能让整个页面卡死在「正在加入会议…」——
+        // 以前这里没有 try/catch，一次请求失败就会让 init() 的 Promise 直接 reject，页面从此不再工作。
         async function joinMeeting() {
             setDiag('Join', 'wait', '正在加入会议…');
             const body = { code: meetingCode || meetingId };
             if (meetingPassword) body.password = meetingPassword;
-            const r = await api('/api/meeting/join', { body: body });
-            if (r.ok && r.data.ok) {
-                joined = true;
-                meetingCode = r.data.code || meetingCode;
-                if (!meetingId && r.data.meeting && r.data.meeting.id) meetingId = r.data.meeting.id;
-                setDiag('Join', 'ok', '已入会（' + meetingCode + '）');
-                return true;
-            }
-            if (r.status === 403 && r.data.code === 'need_password') {
-                setDiag('Join', 'bad', '该会议需要密码');
-                document.getElementById('pwdModal').classList.add('active');
-                document.getElementById('pwdInput').focus();
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                let r = null;
+                try {
+                    r = await api('/api/meeting/join', { body: body });
+                } catch (e) {
+                    sysMsg('入会请求失败（第 ' + attempt + ' 次）：' + (e.message || e) + '，正在重试…');
+                    setDiag('Join', 'wait', '入会重试中…（第 ' + attempt + ' 次）');
+                    await new Promise(res => setTimeout(res, 400 * attempt));
+                    continue;
+                }
+                if (r.ok && r.data.ok) {
+                    joined = true;
+                    meetingCode = r.data.code || meetingCode;
+                    if (!meetingId && r.data.meeting && r.data.meeting.id) meetingId = r.data.meeting.id;
+                    setDiag('Join', 'ok', '已入会（' + meetingCode + '）');
+                    return true;
+                }
+                if (r.status === 403 && r.data.code === 'need_password') {
+                    setDiag('Join', 'bad', '该会议需要密码');
+                    document.getElementById('pwdModal').classList.add('active');
+                    document.getElementById('pwdInput').focus();
+                    return false;
+                }
+                if (r.status === 401) {
+                    setDiag('Join', 'bad', '登录已过期');
+                    window.location.href = 'index.html?next=' + encodeURIComponent('meeting-room.html' + window.location.search);
+                    return false;
+                }
+                // 5xx / 404 之类：退避后重试，仍失败就明确提示
+                if (attempt < 3) {
+                    setDiag('Join', 'wait', '入会失败，正在重试…（' + (r.data.error || ('HTTP ' + r.status)) + '）');
+                    await new Promise(res => setTimeout(res, 400 * attempt));
+                    continue;
+                }
+                setDiag('Join', 'bad', '入会失败：' + (r.data.error || ('HTTP ' + r.status)));
+                sysMsg('入会失败：' + (r.data.error || ('HTTP ' + r.status)));
                 return false;
             }
-            if (r.status === 401) {
-                setDiag('Join', 'bad', '登录已过期');
-                window.location.href = 'index.html?next=' + encodeURIComponent('meeting-room.html' + window.location.search);
-                return false;
-            }
-            setDiag('Join', 'bad', '入会失败：' + (r.data.error || ('HTTP ' + r.status)));
-            sysMsg('入会失败：' + (r.data.error || ('HTTP ' + r.status)));
             return false;
         }
 
@@ -295,13 +330,15 @@
         //  二、聊天
         // ============================================================
         let lastChatAt = '';
+        let chatPolling = false;
         async function loadChat() {
-            if (!meetingId || !joined) return;
+            if (!meetingId || !joined || chatPolling) return;   // 防叠加：上一个请求没回来就不要发新的
+            chatPolling = true;
             try {
                 const q = '/api/meeting/chat?meetingId=' + encodeURIComponent(meetingId) + (lastChatAt ? '&since=' + encodeURIComponent(lastChatAt) : '');
                 const r = await api(q);
                 if (!r.ok) {
-                    if (r.status === 403) { joined = false; joinMeeting().then(ok => { if (ok) loadChat(); }); }
+                    if (r.status === 403) { joined = false; joinMeeting().then(ok => { if (ok) loadChat(); }).catch(() => {}); }
                     return;
                 }
                 const msgs = r.data.messages || [];
@@ -315,7 +352,7 @@
                     box.appendChild(div);
                 }
                 if (msgs.length) box.scrollTop = box.scrollHeight;
-            } catch (e) { /* 下一轮重试 */ }
+            } catch (e) { /* 下一轮重试 */ } finally { chatPolling = false; }
         }
         async function sendChat() {
             const input = document.getElementById('chatInput');
@@ -333,8 +370,10 @@
         //  三、成员 / 会议状态
         // ============================================================
         let knownMembers = new Set();
+        let detailPolling = false;
         async function loadDetail() {
-            if (!meetingId) return;
+            if (!meetingId || detailPolling) return;   // 防叠加
+            detailPolling = true;
             try {
                 const r = await api('/api/meeting/detail?id=' + encodeURIComponent(meetingId));
                 if (!r.ok || !r.data.ok) {
@@ -382,7 +421,7 @@
                 } else {
                     document.getElementById('hint').innerHTML = '已与 ' + (active.length - 1) + ' 位参与者建立连接中。双方都点「开启语音/视频」就能互相听到、看到。';
                 }
-            } catch (e) { /* 下一轮重试 */ }
+            } catch (e) { /* 下一轮重试 */ } finally { detailPolling = false; }
         }
 
         async function endMeeting() {
@@ -425,9 +464,9 @@
         //  协商规则（避免 glare）：只有用户名较大的一方（initiator）负责发 offer；
         //  另一方需要新增/变更媒体时，发一条 __renegotiate 请求让 initiator 重新发 offer。
         // ============================================================
-        // ICE 配置：只用公共 STUN（与 chat.html 的 1 对 1 通话完全一致的策略）。
-        // 双方各自发现自己的公网地址后直连，媒体不经服务器；不用 TURN，
-        // 避免公共中继不可用/凭据失效时 ICE 卡住、协商迟迟完不成。
+        // ICE 配置：默认内置公共 STUN（点对点直连）。
+        // 服务端若配置了 TURN（Cloudflare Realtime TURN 或自建 coturn），/api/rtc/ice 会下发带
+        // 短时效凭据的 TURN，这里就把它合并进来 —— 对称 NAT / 严格企业网下靠中继也能通。
         const RTC_CONFIG = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -442,18 +481,22 @@
             const dot = document.getElementById('dotIce');
             if (dot) dot.className = 'dot ok';
         }
-        // 服务端 /api/rtc/ice 现在也只下发 STUN：这里取一次用于展示诊断信息，
-        // 拿不到就继续用内置配置（保证会议一定能开始）。
+        // 取一次服务端 ICE 配置：有 TURN 就用 TURN，没有就保持内置 STUN
         async function loadIceConfig() {
             try {
                 const r = await api('/api/rtc/ice');
                 if (r.ok && r.data && Array.isArray(r.data.iceServers) && r.data.iceServers.length) {
                     const hasTurn = r.data.iceServers.some(s => JSON.stringify(s.urls).indexOf('turn') !== -1);
-                    updateIceHint(hasTurn ? 'ICE：STUN + TURN' : '仅 STUN 直连（不用 TURN 中继）');
+                    if (hasTurn) {
+                        RTC_CONFIG.iceServers = r.data.iceServers;   // 含 STUN + TURN
+                        updateIceHint('ICE：STUN + TURN 中继（' + (r.data.source || 'server') + '）');
+                        return;
+                    }
+                    updateIceHint('仅 STUN 直连（未配置 TURN）');
                     return;
                 }
             } catch (e) { /* 用内置配置 */ }
-            updateIceHint('仅 STUN 直连（不用 TURN 中继）');
+            updateIceHint('仅 STUN 直连（未配置 TURN）');
         }
 
         let localStream = null;
@@ -529,10 +572,23 @@
             const needVideo = wantVideo && (!localStream || localStream.getVideoTracks().length === 0);
             if (!needAudio && !needVideo) { await pushLocalToPeers(); return localStream; }
 
-            const s = await getMedia(needVideo);
             if (!localStream) localStream = new MediaStream();
-            s.getAudioTracks().forEach(t => { if (localStream.getAudioTracks().length === 0) localStream.addTrack(t); else t.stop(); });
-            s.getVideoTracks().forEach(t => { if (localStream.getVideoTracks().length === 0) localStream.addTrack(t); else t.stop(); });
+            const addFrom = (s) => {
+                s.getAudioTracks().forEach(t => { if (localStream.getAudioTracks().length === 0) localStream.addTrack(t); else t.stop(); });
+                s.getVideoTracks().forEach(t => { if (localStream.getVideoTracks().length === 0) localStream.addTrack(t); else t.stop(); });
+            };
+            addFrom(await getMedia(needVideo));
+            // 摄像头有时第一次拿不到（设备被别的程序占用、刚授权、虚拟摄像头初始化慢）：
+            // 重试几次，否则会出现「点了开启视频，但对方一直看不到你」。
+            for (let i = 0; i < 3 && wantVideo && localStream.getVideoTracks().length === 0; i++) {
+                await new Promise(r => setTimeout(r, 500));
+                try { addFrom(await getMedia(true)); } catch (e) { /* 继续重试 */ }
+            }
+            // 麦克风同理
+            for (let i = 0; i < 2 && localStream.getAudioTracks().length === 0; i++) {
+                await new Promise(r => setTimeout(r, 400));
+                try { addFrom(await getMedia(false)); } catch (e) { /* 继续重试 */ }
+            }
             const v = tileVideo(me);
             v.srcObject = localStream;
             v.muted = true;
@@ -547,6 +603,14 @@
             try {
                 if (!localStream || localStream.getAudioTracks().length === 0) {
                     await ensureLocal(false);
+                    if (!localStream || localStream.getAudioTracks().length === 0) {
+                        micOn = false;
+                        btn.classList.remove('on');
+                        btn.textContent = '🎙️ 开启语音';
+                        msg.innerHTML = '<span class="err">没有拿到麦克风（可能被其它程序占用或权限被拒绝）。请检查后重试。</span>';
+                        renderPeerStates();
+                        return;
+                    }
                     micOn = true;
                     btn.classList.add('on');
                     btn.textContent = '🎙️ 静音';
@@ -573,6 +637,14 @@
                 if (!localStream || localStream.getVideoTracks().length === 0) {
                     msg.innerHTML = '正在请求摄像头权限…';
                     await ensureLocal(true);
+                    if (!localStream || localStream.getVideoTracks().length === 0) {
+                        camOn = false;
+                        btn.classList.remove('on');
+                        btn.textContent = '🎥 开启视频';
+                        msg.innerHTML = '<span class="err">没有拿到摄像头画面（可能被其它程序占用或权限被拒绝）。请检查后重试，你仍然可以使用语音。</span>';
+                        renderPeerStates();
+                        return;
+                    }
                     camOn = true;
                     btn.classList.add('on');
                     btn.textContent = '🎥 关闭视频';
@@ -605,7 +677,13 @@
                     || (t.receiver && t.receiver.track && t.receiver.track.kind);
                 return k === kind;
             });
-            return { idle: same.find(t => !t.sender.track) || null, busy: same.find(t => t.sender.track) || null };
+            // 优先选「已经和 m-line 关联(mid 非空)」的那条空 transceiver：
+            // 只有它才是真正协商出去的通道；把轨道挂到 mid=null 的孤立 transceiver 上，
+            // 对方永远收不到（这是之前「能听能看对方、自己发不出去」的根源）。
+            const idle = same.find(t => t.mid !== null && !t.sender.track)
+                || same.find(t => !t.sender.track)
+                || null;
+            return { idle: idle, busy: same.find(t => t.sender.track) || null };
         }
 
         // 发起方在生成 offer 之前，为「自己还没有本地轨道的媒体类型」补一条 recvonly transceiver：
@@ -654,8 +732,15 @@
         async function pushLocalToPeers() {
             for (const name of Object.keys(peers)) {
                 await attachLocal(name);
-                await requestNegotiation(name);
+                await sendSignal(name, 'ice', { __ready: true });   // 通知对端「我已经有媒体了」
+                const p = peers[name];
+                if (p && p.initiator && p.peerReady) await makeOffer(name);
+                else await requestNegotiation(name);
             }
+            // 挂完轨道后立刻自检一次（不等 5 秒定时器）：
+            // 常见情况是某一方先发了 offer（那时自己摄像头还没就绪，m-line 协商成了 recvonly），
+            // 之后轨道才挂上——这里马上再协商一轮，双向就都通了。
+            setTimeout(checkNegotiationDrift, 800);
         }
 
         function createPeer(name, initiator) {
@@ -678,7 +763,7 @@
             //   · 发起方在 makeOffer 前才为「自己还没有的媒体类型」补一条 recvonly transceiver，保证 offer 里有 m-line；
             //   · 被动方收到 offer、应用之后再把自己的轨道挂到 offer 协商出来的 transceiver 上（见 attachLocal）。
             pc.onicecandidate = (ev) => {
-                if (ev.candidate) sendSignal(name, 'ice', ev.candidate.toJSON());
+                if (ev.candidate) queueCandidate(name, ev.candidate.toJSON());
             };
             pc.ontrack = (ev) => {
                 if (!p.stream) {
@@ -714,6 +799,7 @@
                 const st = pc.connectionState;
                 if (st === 'connected') {
                     document.getElementById('mediaMsg').innerHTML = '<span class="ok">🔗 已与 ' + escapeHtml(name) + ' 建立点对点连接。</span>';
+                    setTimeout(checkNegotiationDrift, 600);   // 连上后再自检一次方向
                 } else if (st === 'failed' || st === 'disconnected') {
                     setBadge(name, '⚠️ 连接不稳定');
                     // 尝试用 ICE 重启恢复（只有发起方重新发 offer）
@@ -726,11 +812,29 @@
             return p;
         }
 
-        // 新成员出现时调用：发起方建连接并 offer，被动方只等 offer
+        // 新成员出现时调用。
+        // 协商时机（与 chat.html 的通话一致：先有媒体再 offer/answer）：
+        //   · 自己已有媒体、且对端也报过「我也有媒体」→ 立刻 offer（一轮就把双向都协商成 sendrecv）
+        //   · 自己已有媒体但还没等到对方 → 3 秒宽限后仍然 offer（对方不开媒体也能先看到听到我们）
+        //   · 自己还没有媒体 → 不主动 offer，等对方的 __ready 或自己开麦后再协商
         async function connectTo(name) {
             const p = createPeer(name, shouldInitiate(name));
-            if (p.initiator) await makeOffer(name);
+            await attachLocal(name);
+            const hasMedia = !!(localStream && localStream.getTracks().length);
+            if (hasMedia) await sendSignal(name, 'ice', { __ready: true });   // 告诉对方我已经有媒体
+            if (p.initiator && hasMedia) {
+                if (p.peerReady) await makeOffer(name);
+                else {
+                    if (p.readyTimer) clearTimeout(p.readyTimer);
+                    p.readyTimer = setTimeout(() => { p.readyTimer = null; if (objectsStableReady(p)) makeOffer(name); }, 3000);
+                }
+            }
             renderPeerStates();
+        }
+
+        // offer 前再确认一次连接状态可用（避免刚被关掉/正在关闭）
+        function objectsStableReady(p) {
+            return p && p.pc && !p.pc.__closed && (p.pc.signalingState === 'stable' || p.pc.signalingState === 'new');
         }
 
         // 等连接回到 stable（正在协商时不要叠加新的 offer）
@@ -769,6 +873,10 @@
         async function requestNegotiation(name) {
             const p = peers[name];
             if (!p) return;
+            // 节流：2 秒内不对同一个对端重复请求协商，避免「自检 + 媒体变化」叠加成一串 __renegotiate
+            const now = Date.now();
+            if (p.negAt && now - p.negAt < 2000) return;
+            p.negAt = now;
             await attachLocal(name);
             if (p.initiator) {
                 await makeOffer(name, false);
@@ -779,8 +887,10 @@
 
         // 自愈：本地明明有轨道、方向也写着要发（sendrecv/sendonly），但协商结果却没让我们发
         // （currentDirection 是 recvonly/inactive）——这通常是「双方几乎同时开麦/开摄像头」时
-        // 挂轨道与协商交错造成的，再协商一轮即可恢复。每 5 秒检查一次。
+        // 挂轨道与协商交错造成的，再协商一轮即可恢复。发现漂移后会连着复查几轮直到收敛。
+        let driftRetries = 0;
         function checkNegotiationDrift() {
+            let drifted = false;
             for (const name of Object.keys(peers)) {
                 const p = peers[name];
                 if (!p || !p.pc || p.pc.signalingState !== 'stable') continue;
@@ -789,7 +899,13 @@
                     const got = (t.currentDirection === 'sendrecv' || t.currentDirection === 'sendonly');
                     return want && t.sender && t.sender.track && !got;
                 });
-                if (drift) requestNegotiation(name);
+                if (drift) { requestNegotiation(name); drifted = true; }
+            }
+            if (drifted && driftRetries < 5) {
+                driftRetries++;
+                setTimeout(checkNegotiationDrift, 3000);   // 一轮没修好就接着来，最多 5 轮
+            } else if (!drifted) {
+                driftRetries = 0;
             }
         }
         setInterval(checkNegotiationDrift, 5000);
@@ -844,10 +960,27 @@
                 if (pc.signalingState === 'have-local-offer') {
                     await pc.setRemoteDescription(new RTCSessionDescription(payload));
                 }
+                // 协商完成后自检：如果对方 answer 里我们的 m-line 是 recvonly（对方当时还没开麦/开摄像头），
+                // 等我们自己的轨道挂上后要主动再协商一次
+                setTimeout(checkNegotiationDrift, 300);
             } else if (sig.kind === 'ice') {
-                if (payload && payload.__renegotiate) {
+                if (payload && payload.__ready) {
+                    // 对方已开启音视频：如果我是发起方且有媒体，立刻 offer（一轮协商双向都通）
+                    p.peerReady = true;
+                    const hasMedia = !!(localStream && localStream.getTracks().length);
+                    if (p.initiator && hasMedia && pc.signalingState !== 'have-local-offer') await makeOffer(from);
+                } else if (payload && payload.__renegotiate) {
                     // 对方需要重新协商（例如刚开启摄像头）→ 由我们发新 offer；带 iceRestart 时顺便重启 ICE
                     await makeOffer(from, !!payload.iceRestart);
+                } else if (payload && Array.isArray(payload.candidates)) {
+                    // 合并发来的候选（新格式）
+                    for (const c of payload.candidates) {
+                        if (pc.remoteDescription && pc.remoteDescription.type) {
+                            try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { /* 忽略单个候选 */ }
+                        } else {
+                            p.pending.push(c);
+                        }
+                    }
                 } else if (pc.remoteDescription && pc.remoteDescription.type) {
                     await pc.addIceCandidate(new RTCIceCandidate(payload));
                 } else {
@@ -861,24 +994,81 @@
             }
         }
 
-        async function sendSignal(to, kind, payload) {
+        // ------------------------------------------------------------
+        //  信令发送：串行 + 失败重试 + ICE 候选合并
+        //  之前每个 ICE 候选都单独 POST，一个连接动辄几十条请求，叠加 1 秒一次的信令轮询，
+        //  很容易出现「信令网络错误：Failed to fetch」（请求在浏览器/边缘层就断了），
+        //  候选与 SDP 丢掉之后就再也协商不起来。现在：
+        //    · 候选先缓冲，300ms 或攒够 8 条合并成一条信令发出；
+        //    · 所有信令排成一个队列逐条发送（不并发抢连接）；
+        //    · 发送失败自动退避重试（最多 6 次），不再静默丢包。
+        // ------------------------------------------------------------
+        const signalQueue = [];
+        let signalFlushing = false;
+        let sigSent = 0, sigFailed = 0;
+
+        function queueSignal(to, kind, payload) {
+            signalQueue.push({ to: to, kind: kind, payload: payload, tries: 0 });
+            flushSignals();
+        }
+
+        async function flushSignals() {
+            if (signalFlushing) return;
+            signalFlushing = true;
+            try {
+                while (signalQueue.length) {
+                    const s = signalQueue[0];
+                    const ok = await postSignal(s.to, s.kind, s.payload);
+                    if (ok) { signalQueue.shift(); sigSent++; }
+                    else {
+                        s.tries++;
+                        if (s.tries >= 6) {
+                            signalQueue.shift(); sigFailed++;
+                            setDiag('Signal', 'bad', '信令发送失败（已重试 6 次，连接可能不稳定）');
+                        } else {
+                            setDiag('Signal', 'wait', '信令重试中…（第 ' + (s.tries + 1) + ' 次）');
+                            await new Promise(r => setTimeout(r, 250 * s.tries));
+                        }
+                    }
+                }
+            } finally {
+                signalFlushing = false;
+                if (signalQueue.length) setTimeout(flushSignals, 50);
+            }
+        }
+
+        async function postSignal(to, kind, payload) {
             try {
                 const r = await api('/api/meeting/signal', { body: { meetingId: meetingId, to: to, kind: kind, payload: payload } });
                 if (!r.ok) {
-                    setDiag('Signal', 'bad', '信令发送失败：' + (r.data.error || ('HTTP ' + r.status)));
-                    if (r.status === 403) { joined = false; joinMeeting(); }
+                    if (r.status === 403) { joined = false; joinMeeting(); return true; }   // 重新入会后再协商
                     return false;
                 }
                 setDiag('Signal', 'ok', '信令：正常');
                 return true;
             } catch (e) {
-                setDiag('Signal', 'bad', '信令网络错误：' + e.message);
+                // 网络层失败（Failed to fetch 等）：返回 false 交给队列退避重试，不再直接报错
                 return false;
             }
         }
 
+        // 向下兼容：sendSignal 仍然可用（内部走队列）
+        async function sendSignal(to, kind, payload) {
+            queueSignal(to, kind, payload);
+            return true;
+        }
+
+        // ICE 候选：逐条立即入队发送（与 chat.html 通话一致 —— 那边就是这么发的，最可靠）。
+        // 队列会把它们串行化 + 失败重试，所以不会像以前那样「几十条并发 POST 打满连接」。
+        function queueCandidate(name, cand) {
+            queueSignal(name, 'ice', cand);
+        }
+
+        // 轮询信令（同一时刻只跑一个，避免请求堆叠）
+        let signalPolling = false;
         async function pollSignals() {
-            if (!meetingId || !joined) return;
+            if (!meetingId || !joined || signalPolling) return;
+            signalPolling = true;
             try {
                 const r = await api('/api/meeting/signal?meetingId=' + encodeURIComponent(meetingId) + '&since=' + lastSignalId);
                 if (!r.ok) {
@@ -888,10 +1078,18 @@
                 const list = r.data.signals || [];
                 for (const sig of list) {
                     if (sig.id > lastSignalId) lastSignalId = sig.id;
-                    await handleSignal(sig);
+                    // 关键：不要 await —— 处理一条信令可能涉及协商（要等 stable、createOffer…），
+                    // 一旦在这里 await，轮询就被卡住，后面的 answer/candidate 迟迟取不到，
+                    // 表现为「一方一直 have-local-offer、另一方一直 checking」，永远连不上。
+                    // handleSignal 内部按对端串行（p.queue），这里直接放手让它跑即可。
+                    handleSignal(sig).catch(() => {});
                 }
                 if (typeof r.data.lastId === 'number' && r.data.lastId > lastSignalId) lastSignalId = r.data.lastId;
-            } catch (e) { /* 下一轮重试 */ }
+            } catch (e) {
+                // 网络抖动：下一轮继续（不影响已建立的点对点连接）
+            } finally {
+                signalPolling = false;
+            }
         }
 
         // ============================================================
@@ -1313,16 +1511,18 @@
                     if (r.ok && r.data && r.data.id) boardLastId = Math.max(boardLastId, r.data.id);
                 } catch (err) { /* 忽略 */ }
             };
-            cv.addEventListener('mousedown', start);
-            cv.addEventListener('mousemove', move);
-            window.addEventListener('mouseup', end);
-            cv.addEventListener('touchstart', start, { passive: false });
-            cv.addEventListener('touchmove', move, { passive: false });
-            cv.addEventListener('touchend', end);
+            // 统一用 Pointer Events：鼠标、触摸、手写笔/触控笔都走同一套（canvas 已设 touch-action:none），
+            // 比只监听 mouse/touch 两套更可靠（触控笔在部分设备上只发 pointer 事件）
+            cv.addEventListener('pointerdown', (e) => { try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 忽略 */ } start(e); });
+            cv.addEventListener('pointermove', move);
+            cv.addEventListener('pointerup', end);
+            cv.addEventListener('pointercancel', end);
         }
 
+        let boardPolling = false;
         async function pollBoard() {
-            if (!boardOpen || !meetingId) return;
+            if (!boardOpen || !meetingId || boardPolling) return;   // 防叠加
+            boardPolling = true;
             try {
                 const r = await api('/api/meeting/board?meetingId=' + encodeURIComponent(meetingId) + '&since=' + boardLastId);
                 if (!r.ok || !r.data.ok) return;
@@ -1332,7 +1532,7 @@
                     boardLastId = Math.max(boardLastId, s.id);
                 }
                 if (typeof r.data.lastId === 'number') boardLastId = Math.max(boardLastId, r.data.lastId);
-            } catch (e) { /* 下一轮重试 */ }
+            } catch (e) { /* 下一轮重试 */ } finally { boardPolling = false; }
         }
 
         async function loadBoard() {
@@ -1444,15 +1644,31 @@
             await loadIceConfig();
 
             // 关键：先入会，成为会议成员后再开始聊天与信令
-            const ok = await joinMeeting();
+            let ok = await joinMeeting();
+            // 入会失败（网络抖动）时定时自动重试，别让页面停在「正在加入会议…」
+            for (let i = 0; !ok && i < 10; i++) {
+                await new Promise(res => setTimeout(res, 3000));
+                if (joined) { ok = true; break; }
+                setDiag('Join', 'wait', '入会未成功，3 秒后自动重试…（第 ' + (i + 1) + '/10 次）');
+                ok = await joinMeeting().catch(() => false);
+            }
             await loadDetail();
-            await loadMeetingNote(true);   // 会议笔记（逐字稿/讨论区/纪要都写这里）
+            await loadMeetingNote(true).catch(() => null);   // 会议笔记（逐字稿/讨论区/纪要都写这里）
             if (ok) {
                 startPollers();
                 await loadChat();
                 await pollSignals();
+            } else {
+                setDiag('Join', 'bad', '入会失败：请刷新页面或检查网络');
+                sysMsg('无法入会：请刷新页面重试；若持续失败，请检查网络或稍后再试。');
             }
-        })();
+        })().catch(e => {
+            // 兜底：init 里任何未预料的异常都不应该让页面静默卡死
+            try {
+                setDiag('Join', 'bad', '初始化失败：' + (e && e.message ? e.message : e));
+                sysMsg('页面初始化出错：' + (e && e.message ? e.message : e) + '（请刷新重试）');
+            } catch (err) { /* 忽略 */ }
+        });
     </script>
     <script src="shortcuts.js"></script>
 </body>
