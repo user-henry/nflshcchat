@@ -65,7 +65,7 @@ curl -X POST https://worker.nflshcchat.cc.cd/api/auth/login \
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/rtc/ice` | WebRTC ICE 配置：只含公共 STUN（`source: "stun-only"`，不含 TURN） |
+| GET | `/api/rtc/ice` | WebRTC ICE 配置：默认只含公共 STUN；配置了 TURN（Cloudflare Realtime / coturn）会自动带上 |
 | POST | `/api/meeting/create` | 建会（`kind='instant'|'scheduled'`、`invitees[]`、`password?`） |
 | GET | `/api/meeting/list` | 我的会议 |
 | POST | `/api/meeting/join` | 用会议编号加入（`{code, password?}`） |
