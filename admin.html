@@ -959,16 +959,19 @@
                         <div><div style="font-family:monospace;color:#ffd700;">${escapeHtml(b.ip)}</div><div style="font-size:11px;color:var(--text-muted,#888);">${escapeHtml(b.reason || '')} · ${b.banned_at ? new Date(b.banned_at).toLocaleString() : ''}</div></div>
                         <button onclick="unbanIp('${escapeAttr(b.ip)}')" style="background:#2ecc71;color:white;padding:4px 12px;">解封</button>
                     </div>`).join('');
-                // 冻结用户：isFrozen = true（系统自动，同时置了 isBanned）
-                const frozen = (allUsers || []).filter(u => u.isFrozen);
+                // 冻结用户：isFrozen = true（系统自动，同时置了 is_banned）。
+                // 兼容 snake_case（is_frozen）与 camelCase（isFrozen）两种写法，避免漏显示。
+                const isFrozenUser = (u) => u.isFrozen === true || Number(u.is_frozen) === 1;
+                const isBannedUser = (u) => u.isBanned === true || Number(u.is_banned) === 1;
+                const frozen = (allUsers || []).filter(isFrozenUser);
                 frozenBox.innerHTML = frozen.length === 0
                     ? '<div style="padding:10px;color:var(--text-secondary,#aaa);">暂无被冻结用户</div>'
                     : frozen.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-tertiary,#12121f);border-radius:6px;margin-bottom:4px;">
-                        <div>${escapeHtml(u.username)}<span style="font-size:11px;color:#f39c12;">（登录失败达 50 次自动冻结）</span></div>
+                        <div>${escapeHtml(u.username)}<span style="font-size:11px;color:#f39c12;">（${escapeHtml(u.frozenReason || '登录失败达 50 次自动冻结')}）</span></div>
                         <button onclick="unfreezeUser('${escapeAttr(u.username)}')" style="background:#2ecc71;color:white;padding:4px 12px;">解冻</button>
                     </div>`).join('');
                 // 封禁用户：管理员手动封禁（isBanned 且非 isFrozen）
-                const banned = (allUsers || []).filter(u => u.isBanned && !u.isFrozen);
+                const banned = (allUsers || []).filter(u => isBannedUser(u) && !isFrozenUser(u));
                 bannedBox.innerHTML = banned.length === 0
                     ? '<div style="padding:10px;color:var(--text-secondary,#aaa);">暂无被封禁用户</div>'
                     : banned.map(u => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg-tertiary,#12121f);border-radius:6px;margin-bottom:4px;">
@@ -1060,9 +1063,10 @@
                 loadBanManagement();
             } catch (e) { alert('解封失败：' + e.message); }
         }
-        // 解冻：清除 isFrozen 和 is_banned（冻结时两者都被置位）
+        // 解冻：清除 isFrozen 和 is_banned（冻结时两者都被置位）；
+        // 服务端同时会重置该账号的登录失败计数，否则下次输错一次密码就会立刻再次冻结
         async function unfreezeUser(username) {
-            if (!confirm(`确定解冻用户 ${username} 吗？解冻后该账号可重新登录。`)) return;
+            if (!confirm(`确定解冻用户 ${username} 吗？解冻后会清除冻结标记与登录失败计数，该账号可重新登录。`)) return;
             try {
                 const res = await fetch(`${WORKER_API}/api/users/${encodeURIComponent(username)}`, {
                     method: 'PATCH',
@@ -1070,7 +1074,7 @@
                     body: JSON.stringify({ is_banned: 0, is_frozen: 0 })
                 });
                 if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || ('HTTP ' + res.status)); }
-                alert('✅ 已解冻用户');
+                alert('✅ 已解冻用户，该账号现在可以登录了');
                 await loadAllData();
                 loadBanManagement();
             } catch (e) { alert('解冻失败：' + e.message); }
