@@ -608,7 +608,25 @@
             return { idle: same.find(t => !t.sender.track) || null, busy: same.find(t => t.sender.track) || null };
         }
 
-        // 把本地音视频轨道挂到某条连接上（与 chat.html 的通话一致：拿到轨道后挂载、再协商）
+        // 发起方在生成 offer 之前，为「自己还没有本地轨道的媒体类型」补一条 recvonly transceiver：
+        // 保证 offer 里一定有 audio/video 两条 m-line，这样即使自己没开麦，对方也能通过 answer 把
+        // 声音画面发过来（answer 不能新增 m-line，只能跟着 offer 走）。
+        function ensureOfferTransceivers(p) {
+            for (const kind of ['audio', 'video']) {
+                const has = p.pc.getTransceivers().some(t => {
+                    const k = (t.sender && t.sender.track && t.sender.track.kind)
+                        || (t.receiver && t.receiver.track && t.receiver.track.kind);
+                    return k === kind;
+                });
+                if (has) continue;
+                try { p.pc.addTransceiver(kind, { direction: 'recvonly' }); } catch (e) { console.warn('addTransceiver 失败', e); }
+            }
+        }
+
+        // 把本地音视频轨道挂到某条连接上（与 chat.html 的通话一致）
+        //   1) 优先复用同类型、sender 还没轨道的 transceiver（自己 offer 里的占位，或对方 offer 协商出来的那条）
+        //      —— 用 replaceTrack 并改成 sendrecv，这样不会多出 m-line，answer 里也是 sendrecv；
+        //   2) 没有可复用的才用 addTrack（新建的 transceiver 可以被对方后续的 offer 按类型匹配到）。
         async function attachLocal(name) {
             const p = peers[name];
             if (!p || !localStream) return;
@@ -618,7 +636,7 @@
                 if (idle) {
                     try {
                         await idle.sender.replaceTrack(track);
-                        idle.direction = 'sendrecv';      // 占位 recvonly → 既能收也能发
+                        idle.direction = 'sendrecv';
                         p.addedTracks.add(track.id);
                         continue;
                     } catch (e) { console.warn('replaceTrack 失败', name, e); }
@@ -652,19 +670,13 @@
             };
             peers[name] = p;
 
-            // 每条连接先放两条 recvonly 占位 transceiver（audio / video）：
-            //   · offer 里因此一定有 m-line，双方都还没开麦/开摄像头时也能把连接建起来；
-            //   · 之后开麦/开摄像头时，用 replaceTrack 把轨道放进这两条 transceiver 并把方向改成
-            //     sendrecv（见 attachLocal），再重新协商一次 —— 这是与 chat.html 通话一致的收发模型。
-            // 旧实现在这里创建的是 sendrecv 并直接 replaceTrack，真实网络下会出现：
-            // 被动方的 answer 变成 recvonly（对方 offer 的 m-line 是 sendonly）、本地轨道挂在
-            // mid=null 的孤立 transceiver 上 → 表现为「能看到听到对方，自己的声音画面发不出去」。
-            p.placeholders = {};
-            try {
-                p.placeholders.audio = pc.addTransceiver('audio', { direction: 'recvonly' });
-                p.placeholders.video = pc.addTransceiver('video', { direction: 'recvonly' });
-            } catch (e) { console.warn('addTransceiver 失败', e); }
-
+            // 注意：这里**不能**预建 transceiver。
+            // addTransceiver() 建出来的 transceiver 只会成为「自己发出的 offer」里的 m-line，
+            // 永远不会被匹配到「别人发来的 offer」的 m-line 上；被动方预建之后，自己的轨道就会挂在
+            // mid=null 的孤立 transceiver 上 → 表现为「能看到听到对方，但自己的声音画面发不出去」。
+            // 正确做法（与 chat.html 的通话一致）：
+            //   · 发起方在 makeOffer 前才为「自己还没有的媒体类型」补一条 recvonly transceiver，保证 offer 里有 m-line；
+            //   · 被动方收到 offer、应用之后再把自己的轨道挂到 offer 协商出来的 transceiver 上（见 attachLocal）。
             pc.onicecandidate = (ev) => {
                 if (ev.candidate) sendSignal(name, 'ice', ev.candidate.toJSON());
             };
@@ -735,7 +747,7 @@
             await attachLocal(name);
             if (!(await waitStable(p.pc))) return;      // 正在协商中：交给当前这一轮，等它结束再重试
             try {
-                // 与 chat.html 相同：轨道已经用 addTrack 挂好，createOffer 会带上真实的收发方向
+                ensureOfferTransceivers(p);             // 保证 offer 里一定有 audio/video 两条 m-line
                 const offer = await p.pc.createOffer(iceRestart ? { iceRestart: true } : {});
                 await p.pc.setLocalDescription(offer);
                 p.offerAt = Date.now();
@@ -764,6 +776,23 @@
                 await sendSignal(name, 'ice', { __renegotiate: true });
             }
         }
+
+        // 自愈：本地明明有轨道、方向也写着要发（sendrecv/sendonly），但协商结果却没让我们发
+        // （currentDirection 是 recvonly/inactive）——这通常是「双方几乎同时开麦/开摄像头」时
+        // 挂轨道与协商交错造成的，再协商一轮即可恢复。每 5 秒检查一次。
+        function checkNegotiationDrift() {
+            for (const name of Object.keys(peers)) {
+                const p = peers[name];
+                if (!p || !p.pc || p.pc.signalingState !== 'stable') continue;
+                const drift = p.pc.getTransceivers().some(t => {
+                    const want = (t.direction === 'sendrecv' || t.direction === 'sendonly');
+                    const got = (t.currentDirection === 'sendrecv' || t.currentDirection === 'sendonly');
+                    return want && t.sender && t.sender.track && !got;
+                });
+                if (drift) requestNegotiation(name);
+            }
+        }
+        setInterval(checkNegotiationDrift, 5000);
 
         // 手动「重新连接」：发起方直接做 ICE 重启，被动方请求对方重启
         async function restartConnections() {
@@ -800,11 +829,12 @@
             if (sig.kind === 'offer') {
                 // 被动方才会收到 offer（发起方由 webrtc 的 shouldInitiate 规则唯一确定）
                 if (p.initiator) return;
-                // 关键顺序（照搬 chat.html 通话）：先把自己的麦克风/摄像头轨道挂上，
-                // 再 setRemoteDescription / createAnswer —— 这样 answer 里对应 m-line 才是 sendrecv；
-                // 反过来先 setRemoteDescription 的话，本地轨道只能挂到新造的孤立 transceiver 上（发不出去）。
-                await attachLocal(from);
+                // 顺序很关键（照搬 chat.html 通话的被叫流程）：
+                // 先 setRemoteDescription 把对方 offer 的 m-line 建出来，再把本地轨道挂到这些
+                // transceiver 上（attachLocal 里的 replaceTrack + sendrecv），最后 createAnswer ——
+                // 这样 answer 里对应 m-line 才是 sendrecv，自己的声音画面才发得出去。
                 await pc.setRemoteDescription(new RTCSessionDescription(payload));
+                await attachLocal(from);
                 if (pc.signalingState !== 'have-remote-offer') return;
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
@@ -1111,7 +1141,14 @@
             if (sender) {
                 try { await sender.replaceTrack(track); } catch (e) { console.warn('替换视频轨道失败', name, e); }
             } else if (track) {
-                try { p.pc.addTrack(track, localStream); p.addedTracks.add(track.id); } catch (e) { console.warn('addTrack 失败', name, e); }
+                // 还没有视频 sender：优先复用一条空闲的 video transceiver（对方 offer 协商出来的那条）
+                const { idle } = transceiverFor(p, 'video');
+                if (idle) {
+                    try { await idle.sender.replaceTrack(track); idle.direction = 'sendrecv'; p.addedTracks.add(track.id); }
+                    catch (e) { console.warn('replaceTrack 失败', name, e); }
+                } else {
+                    try { p.pc.addTrack(track, localStream); p.addedTracks.add(track.id); } catch (e) { console.warn('addTrack 失败', name, e); }
+                }
                 await requestNegotiation(name);
             }
             if (replacedTrack) p.addedTracks.delete(replacedTrack.id);
