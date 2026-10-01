@@ -510,7 +510,7 @@
                     <i class="fas fa-upload"></i> 选择图片上传
                 </button>
                 <div style="margin-top:16px;font-size:12px;color:#444;line-height:1.8;">
-                    💡 由 <a href="https://www.imgurl.org" target="_blank" style="color:#f59e0b;text-decoration:none;">ImgURL</a> 提供技术支持
+                    💡 图片存储在 <a href="https://file.nflshcchat.cc.cd" target="_blank" style="color:#f59e0b;text-decoration:none;">NFLSHC 自建文件托管</a>（与聊天附件同一套存储）
                     <br>🚀 配合 NFLSHC Chat 使用 · 图片永久存储
                 </div>
             </div>
@@ -586,7 +586,7 @@
             <div class="text" id="progressText">上传中...</div>
         </div>
         <div class="powered-by">
-            ⚡ 由 <a href="https://www.imgurl.org" target="_blank">ImgURL</a> 提供支持 · 全球 DNS 加速
+            ⚡ 存储在 <a href="https://file.nflshcchat.cc.cd" target="_blank">NFLSHC 自建文件托管</a> · 单账号配额与聊天附件共用
         </div>
     </div>
 </div>
@@ -599,8 +599,10 @@
     // ============================================================
     //  API 配置
     // ============================================================
-    const API_TOKEN = 'sk-3MFTmxvC35FoUwJDVDcVRrBXNEvwZloqhQxeFBC4sha2DrzYZYT6p2e4D6NKh';
-    const API_BASE_URL = 'https://www.imgurl.org';
+    // 图片统一存到自建文件托管（https://file.nflshcchat.cc.cd），经 Worker /api/files/* 中转。
+    // 已移除原先硬编码在页面里的第三方图床 API Token（公开仓库里暴露令牌会导致账号被限制）。
+    // 历史 ImgURL 图片的删除由 Worker 代理（token 存在服务端 secret 里）。
+    const WORKER_API_BASE = (typeof WORKER_API !== 'undefined') ? WORKER_API : 'https://worker.nflshcchat.cc.cd';
 
     // ============================================================
     //  状态
@@ -771,64 +773,45 @@
     }
 
     // ============================================================
-    //  ImgURL API 调用
+    //  自建文件托管（经 Worker 中转，与聊天附件同一套存储）
+    //  返回 { id, name, title, url, directUrl, thumb, size, width, height }
     // ============================================================
-    async function callImgURL(endpoint, options = {}) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        const headers = {
-            'Authorization': `Bearer ${API_TOKEN}`,
-            ...options.headers
-        };
-        if (!(options.body instanceof FormData)) {
-            headers['Content-Type'] = 'application/json';
-        }
-
-        const config = {
-            method: options.method || 'GET',
-            headers: headers,
-            body: options.body,
-        };
-
-        const response = await fetch(url, config);
-        const data = await response.json();
-        if (data.code === 200) {
-            return data;
-        } else {
-            throw new Error(data.msg || 'API 请求失败');
-        }
+    async function uploadToNflshcFile(file, params = {}) {
+        const token = window.AuthToken && window.AuthToken.get();
+        if (!token) throw new Error('登录已过期，请重新登录后再上传');
+        const fd = new FormData();
+        fd.append('file', file, file.name || 'image');
+        fd.append('title', file.name || '图片');
+        fd.append('visibility', 'public');
+        const res = await fetch(`${WORKER_API}/api/files/upload`, { method: 'POST', body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || ('上传失败 HTTP ' + res.status));
+        return data;
     }
 
-    // ============================================================
-    //  上传图片到 ImgURL
-    // ============================================================
-    async function uploadToImgURL(file, params = {}) {
-        const formData = new FormData();
-        formData.append('file', file);
-        const extraParams = {
-            dedup: params.dedup !== undefined ? params.dedup : true,
-            compress: params.compress || false,
-            watermark: params.watermark || false,
-        };
-        formData.append('params', JSON.stringify(extraParams));
-
-        const data = await callImgURL('/api/v3/upload', {
-            method: 'POST',
-            body: formData,
-        });
-        return data.data;
-    }
-
-    // ============================================================
-    //  删除图片（ImgURL）
-    // ============================================================
-    async function deleteImagesFromImgURL(imageIds) {
-        if (!imageIds || imageIds.length === 0) return 0;
-        const data = await callImgURL('/api/v3/delete_images', {
+    // 删除自建文件托管上的文件（同样经 Worker 中转，带 Bearer 令牌）
+    // urls 传公开直链，服务端删完会顺便清掉 CDN 缓存，保证链接立刻失效
+    async function deleteFromNflshcFile(fileId, urls) {
+        const res = await fetch(`${WORKER_API}/api/files/delete`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_ids: imageIds }),
+            body: JSON.stringify({ id: fileId, urls: Array.isArray(urls) ? urls.filter(Boolean) : [] }),
         });
-        return data.data.count;
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || ('删除失败 HTTP ' + res.status));
+        return data;   // { ok, deleted, alreadyGone?, purged }
+    }
+
+    // 旧数据清理：历史上传到 ImgURL 的图片（token 只存在于 Worker secret）
+    async function deleteLegacyImgURL(imgids) {
+        const res = await fetch(`${WORKER_API}/api/images/legacy-delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imgids }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || ('清理旧图失败 HTTP ' + res.status));
+        return data;   // { ok, count, alreadyGone? }
     }
 
     // ============================================================
@@ -857,8 +840,8 @@
             progressText.textContent = `上传中 ${i+1}/${files.length} (${pct}%)`;
 
             try {
-                if (file.size > 5 * 1024 * 1024) {
-                    showToast(`❌ ${file.name} 超过 5MB`, 'error');
+                if (file.size > 20 * 1024 * 1024) {
+                    showToast(`❌ ${file.name} 超过 20MB（更大的图片请到文件托管站分片上传）`, 'error');
                     failed++;
                     continue;
                 }
@@ -868,15 +851,17 @@
                     continue;
                 }
 
-                // 上传到 ImgURL
-                const result = await uploadToImgURL(file, { dedup, compress, watermark });
+                // 上传到自建文件托管（与聊天附件同一套存储；不再依赖第三方图床）
+                const result = await uploadToNflshcFile(file, { compress });
 
                 const imageData = {
-                    id: Number(Date.now()),
-                    imgid: result.imgid,
-                    filename: result.filename || file.name,
-                    url: result.url,
-                    thumbnail_url: result.thumbnail_url || result.url,
+                    id: 'img_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                    fileId: result.id,                       // 自建文件托管的文件 id（删除时用）
+                    storage: 'nflshcfile',
+                    filename: result.title || result.name || file.name,
+                    url: result.directUrl || result.url,
+                    viewUrl: result.url,
+                    thumbnail_url: result.thumb || result.directUrl || result.url,
                     width: result.width || 0,
                     height: result.height || 0,
                     size: result.size || file.size,
@@ -924,24 +909,43 @@
     // ============================================================
     async function deleteImage(imageId) {
         if (!confirm('确定要删除这张图片吗？')) return;
-        const img = allImages.find(i => i.id === imageId);
-        if (!img) { showToast('图片不存在', 'error'); return; }
+        // 注意：记录的 id 可能是字符串（新数据 'img_xxx'）或数字（旧数据 Date.now()），
+        // 而 onclick 传进来的永远是字符串，所以这里必须按字符串比较；
+        // 另外兼容用 imgid / fileId 作为索引的历史调用。
+        const key = String(imageId);
+        const img = allImages.find(i =>
+            String(i.id) === key ||
+            String(i.fileId || '') === key ||
+            String(i.imgid || '') === key
+        );
+        if (!img) { showToast('图片不存在（可能已被删除，请点「🔄 刷新」）', 'error'); return; }
 
         try {
-            // 从 ImgURL 删除（使用 ImgURL 的图片 id，而非 D1 主键；旧数据 imgid 在 id 字段）
-            await deleteImagesFromImgURL([img.imgid || img.id]);
+            let removedRemote = false;
+            let note = '';
+            // 1) 自建文件托管：直接走我们的删除接口（顺带清 CDN 缓存）
+            if (img.fileId || img.storage === 'nflshcfile') {
+                const r = await deleteFromNflshcFile(img.fileId || img.id, [img.url, img.viewUrl, img.thumbnail_url]);
+                removedRemote = true;
+                if (r && r.alreadyGone) note = '（云端文件此前已不存在，已清理记录）';
+            } else if (img.imgid || img.storage === 'imgurl') {
+                // 2) 历史 ImgURL 图片：由 Worker 用服务端令牌清理
+                const r = await deleteLegacyImgURL([img.imgid || img.id]);
+                removedRemote = true;
+                if (r && r.alreadyGone) note = '（第三方图床此前已删除该图，已清理记录）';
+            }
 
-            // 从图床(D1) 删除
+            // 3) 删除图床(D1) 里的记录
             if (img.issueNumber) {
                 await deleteImageFromGitHub(img.issueNumber);
             }
 
-            // 从本地列表移除
-            allImages = allImages.filter(i => i.id !== imageId);
+            // 4) 从本地列表移除
+            allImages = allImages.filter(i => String(i.id) !== String(img.id));
             filteredImages = [...allImages];
             renderGallery();
             updateStats();
-            showToast('✅ 已删除', 'success');
+            showToast(removedRemote ? `✅ 已删除，链接已失效${note}` : '✅ 已删除图床记录', 'success');
 
         } catch (error) {
             showToast('❌ 删除失败: ' + error.message, 'error');
@@ -1110,17 +1114,18 @@
     //  初始化
     // ============================================================
     async function init() {
-        // 测试 API 连接
+        // 存储服务连通性自检：直接问自建文件托管（经 Worker 的 SSO 通道）
         try {
-            await callImgURL('/api/v3/album_list');
-            updateApiStatus(true);
+            const token = window.AuthToken && window.AuthToken.get();
+            const res = await fetch(`${WORKER_API}/api/push/key`, { headers: token ? { Authorization: 'Bearer ' + token } : {} });
+            updateApiStatus(res.ok || res.status === 401);
         } catch (error) {
             updateApiStatus(false);
-            showToast('⚠️ ImgURL API 连接失败，请检查网络', 'error');
+            showToast('⚠️ 存储服务连接失败，请检查网络', 'error');
         }
 
         await loadImages();
-        document.getElementById('cdnStatus').textContent = '🌐 全球加速';
+        document.getElementById('cdnStatus').textContent = '🌐 自建文件托管 · CDN 加速';
     }
 
     // 暴露全局函数
