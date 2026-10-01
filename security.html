@@ -57,6 +57,7 @@
             <span class="muted">当前账号：<span id="whoami">…</span></span>
             <a href="chat.html">💬 聊天</a>
             <a href="meeting.html">📅 会议</a>
+            <a href="notes.html">📝 笔记</a>
             <a href="index.html" onclick="logout()">🚪 退出</a>
         </div>
     </div>
@@ -90,7 +91,22 @@
             <div class="msg" id="exportMsg"></div>
         </div>
 
-        <!-- ===== 3. 注销账号 ===== -->
+        <!-- ===== 3. 离线通知（Web Push） ===== -->
+        <div class="card">
+            <h3>🔔 离线通知</h3>
+            <div class="desc">
+                开启后，即使关闭了浏览器页面，也能收到<strong>会议邀请、笔记共享、日程提醒</strong>等通知
+                （手机端同样支持，建议把本站「添加到主屏幕」后再开启）。通知内容不会包含聊天正文。
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-primary" id="btnPushOn" onclick="enablePush()">🔔 开启离线通知</button>
+                <button class="btn" id="btnPushTest" onclick="testPush()" style="display:none;">📨 发送测试通知</button>
+                <button class="btn" id="btnPushOff" onclick="disablePush()" style="display:none;">🔕 关闭离线通知</button>
+            </div>
+            <div class="msg" id="pushMsg"></div>
+        </div>
+
+        <!-- ===== 4. 注销账号 ===== -->
         <div class="card">
             <h3>⚠️ 注销账号</h3>
             <div class="danger-box">
@@ -286,6 +302,108 @@
             } finally { btn.disabled = false; }
         }
 
+        // ---------- 离线通知（Web Push） ----------
+        function b64uToU8(s) {
+            const pad = '='.repeat((4 - s.length % 4) % 4);
+            const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+            const out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            return out;
+        }
+        function pushMsg(text, cls) {
+            const el = document.getElementById('pushMsg');
+            el.className = 'msg ' + (cls || '');
+            el.innerHTML = text;
+        }
+        async function pushSupported() {
+            return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+        }
+        async function refreshPushState() {
+            if (!(await pushSupported())) {
+                pushMsg('当前浏览器不支持离线通知（iOS 需先「添加到主屏幕」）', 'warn');
+                document.getElementById('btnPushOn').disabled = true;
+                return;
+            }
+            const cfg = await fetch(API + '/api/push/key').then(r => r.json()).catch(() => null);
+            if (!cfg || !cfg.enabled) {
+                pushMsg('服务端未配置推送密钥，离线通知暂不可用', 'warn');
+                document.getElementById('btnPushOn').disabled = true;
+                return;
+            }
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                const on = !!sub && Notification.permission === 'granted';
+                document.getElementById('btnPushOn').style.display = on ? 'none' : '';
+                document.getElementById('btnPushTest').style.display = on ? '' : 'none';
+                document.getElementById('btnPushOff').style.display = on ? '' : 'none';
+                if (on) pushMsg('<span class="ok">✅ 已开启</span>', '');
+                else if (Notification.permission === 'denied') pushMsg('浏览器已拒绝通知权限，请在地址栏左侧的站点设置里重新允许', 'err');
+                else pushMsg('尚未开启', 'muted');
+            } catch (e) {
+                pushMsg('读取订阅状态失败：' + escapeHtml(e.message), 'err');
+            }
+        }
+        async function enablePush() {
+            const btn = document.getElementById('btnPushOn');
+            btn.disabled = true;
+            try {
+                if (!(await pushSupported())) { pushMsg('当前浏览器不支持离线通知', 'err'); return; }
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') { pushMsg('未授予通知权限，无法开启离线通知', 'err'); return; }
+                const cfg = await fetch(API + '/api/push/key').then(r => r.json()).catch(() => null);
+                if (!cfg || !cfg.enabled || !cfg.publicKey) { pushMsg('服务端未配置推送密钥', 'err'); return; }
+                const reg = await navigator.serviceWorker.ready;
+                let sub = await reg.pushManager.getSubscription();
+                if (!sub) {
+                    sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: b64uToU8(cfg.publicKey),
+                    });
+                }
+                const r = await fetch(API + '/api/push/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subscription: sub.toJSON() }),
+                }).then(x => x.json()).catch(() => null);
+                if (!r || !r.ok) { pushMsg('登记订阅失败：' + ((r && r.error) || '未知错误'), 'err'); return; }
+                pushMsg('<span class="ok">✅ 已开启离线通知</span>，可以点「发送测试通知」验证。', '');
+                refreshPushState();
+            } catch (e) {
+                pushMsg('开启失败：' + escapeHtml(e.message), 'err');
+            } finally { btn.disabled = false; }
+        }
+        async function disablePush() {
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                if (sub) {
+                    await fetch(API + '/api/push/unsubscribe', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ endpoint: sub.endpoint }),
+                    }).catch(() => {});
+                    await sub.unsubscribe().catch(() => {});
+                }
+                pushMsg('已关闭离线通知', 'muted');
+                refreshPushState();
+            } catch (e) {
+                pushMsg('关闭失败：' + escapeHtml(e.message), 'err');
+            }
+        }
+        async function testPush() {
+            pushMsg('正在发送测试通知…', 'muted');
+            const r = await fetch(API + '/api/push/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+            }).then(x => x.json()).catch(() => null);
+            if (!r || !r.ok) { pushMsg('发送失败：' + ((r && r.error) || '未知错误'), 'err'); return; }
+            if (r.skipped) { pushMsg('服务端未配置推送密钥', 'err'); return; }
+            if (!r.sent) { pushMsg('没有成功送达的订阅端（可能是浏览器订阅已失效，试试关闭后重新开启）', 'warn'); return; }
+            pushMsg('<span class="ok">✅ 已向 ' + r.sent + ' 个设备发送，请查看系统通知</span>', '');
+        }
+        window.enablePush = enablePush;
+        window.disablePush = disablePush;
+        window.testPush = testPush;
+
         // ---------- 注销账号 ----------
         async function loadDeleteStatus() {
             const pending = document.getElementById('delPending');
@@ -377,6 +495,7 @@
             document.getElementById('delNameHint').textContent = uname ? ('「' + uname + '」') : '';
             loadSessions();
             loadDeleteStatus();
+            refreshPushState();
         })();
     </script>
     <script src="shortcuts.js"></script>
