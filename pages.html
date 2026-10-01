@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="js/theme.js?v=4"></script>
+    <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 全部功能导航</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .nav { background: var(--bg-secondary); padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 20; }
+        .nav-left { display: flex; align-items: center; gap: 12px; }
+        .logo { width: 36px; height: 36px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .nav h2 { font-size: 18px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 16px; font-size: 14px; }
+        .nav a:hover { color: var(--accent-color); }
+        .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 20px 70px; }
+        .hero { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 22px; margin-bottom: 20px; }
+        .hero h1 { font-size: 22px; margin-bottom: 8px; }
+        .hero p { color: var(--text-secondary); font-size: 14px; line-height: 1.8; }
+        .searchbar { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .searchbar input { flex: 1; min-width: 200px; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 11px; background: var(--bg-primary); color: var(--text-primary); font-size: 15px; font-family: inherit; }
+        .searchbar input:focus { outline: none; border-color: var(--accent-color); }
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .chips button { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; font-size: 13px; font-family: inherit; }
+        .chips button.on { border-color: var(--accent-color); color: var(--accent-color); }
+        .group { margin-bottom: 26px; }
+        .group h3 { font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .group h3 .cnt { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 12px; }
+        .item { display: flex; gap: 12px; padding: 14px; border: 1px solid var(--border-color); border-radius: 13px; background: var(--bg-secondary); text-decoration: none; color: inherit; transition: .18s; }
+        .item:hover { border-color: var(--accent-color); transform: translateY(-2px); }
+        .item .ic { font-size: 24px; line-height: 1; flex: 0 0 30px; text-align: center; }
+        .item .tt { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
+        .item .dd { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; }
+        .item .url { font-size: 11px; color: var(--text-secondary); opacity: .75; margin-top: 4px; word-break: break-all; }
+        .item.ext { border-style: dashed; }
+        .badge { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-secondary); margin-left: 6px; vertical-align: 1px; }
+        .badge.admin { color: #e74c3c; border-color: rgba(231,76,60,.5); }
+        .badge.new { color: #28a745; border-color: rgba(40,167,69,.5); }
+        .badge.ext { color: #3498db; border-color: rgba(52,152,219,.5); }
+        .empty { padding: 50px 20px; text-align: center; color: var(--text-secondary); font-size: 14.5px; line-height: 1.9; }
+        footer { text-align: center; color: var(--text-secondary); font-size: 12.5px; padding: 20px; }
+        footer a { color: var(--text-secondary); text-decoration: none; margin: 0 8px; }
+        footer a:hover { color: var(--accent-color); }
+        @media (max-width: 640px) { .wrap { padding: 16px 12px 50px; } .nav { padding: 10px 14px; } }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>🧭 功能导航</h2></div>
+        <div>
+            <a href="chat.html">💬 聊天</a>
+            <a href="meeting.html">📅 会议</a>
+            <a href="notes.html">📝 笔记</a>
+            <a href="study.html">📚 学习</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div class="hero">
+            <h1>本站全部功能一览</h1>
+            <p>
+                下面是 NFLSHC Chat 的<b>所有页面与外部站点</b>，附简短说明与直达链接。
+                输入关键词即可搜索（支持搜索功能名、说明文字与网址），也可以按分类筛选。
+                <br><span style="color:var(--text-secondary);font-size:13px;">🔒 标注「管理员」的页面仅管理员账号可访问；「外部站点」为新窗口打开的独立站点。</span>
+            </p>
+            <div class="searchbar">
+                <input type="search" id="q" placeholder="搜索功能…（例如：会议、笔记、错题、主题、导出）" autofocus oninput="render()">
+                <button class="btn" style="padding:12px 18px;border-radius:11px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);cursor:pointer;font-family:inherit;" onclick="document.getElementById('q').value='';render();">清空</button>
+            </div>
+            <div class="chips" id="chips"></div>
+        </div>
+
+        <div id="out"></div>
+    </div>
+
+    <footer>
+        <a href="privacy.html">隐私政策</a>·<a href="terms.html">用户协议</a>·<a href="security.html">账号与安全</a>·<a href="about.html">关于我们</a>
+    </footer>
+
+    <script>
+        // 每一项：{ icon, name, url, desc, group, badge? }
+        // group: 核心 / 沟通协作 / 学习与创作 / 账号与安全 / 数据与统计 / 管理 / 趣味 / 外部站点
+        const PAGES = [
+            { icon: '💬', name: '聊天', url: 'chat.html', group: '核心', desc: '主界面：聊天室、私聊、群聊、语音消息、消息附件（📎 / 粘贴 / 拖拽）、引用回复、表情回应、置顶、AI 回复。' },
+            { icon: '📅', name: '会议中心', url: 'meeting.html', group: '核心', desc: '创建快速会议 / 预定会议、会议编号加入、邀请他人、查看我的会议（进行中 / 已结束）。' },
+            { icon: '🎥', name: '会议中', url: 'meeting-room.html', group: '核心', desc: '音视频通话（点对点 + TURN 中继）、屏幕共享、共享白板、会中聊天、会议笔记、语音转文字、AI 纪要。', badge: 'new' },
+            { icon: '📝', name: '笔记', url: 'notes.html', group: '核心', desc: '独立笔记与会议笔记：Markdown 编辑 / 预览、自动保存、搜索、共享给他人（可设只读或可修改）。', badge: 'new' },
+            { icon: '📚', name: 'HZYAI 学习', url: 'study.html', group: '学习与创作', desc: 'AI 讲题（支持拍照识别题目）+ 错题本（复习、掌握度、标签、让 AI 出同类练习题）。', badge: 'new' },
+            { icon: '🤖', name: 'HZYAI 对话', url: 'hzyai.html', group: '学习与创作', desc: 'HZYAI 入口页（会跳转到 chatai.bot.cd）：多模型对话、视觉理解、绘图、视频、语音转文字、代码生成等。' },
+            { icon: '📤', name: 'HZYAI 分享', url: 'hzyai-share.html', group: '学习与创作', desc: '把 HZYAI 对话导出为公开分享页，支持搜索、浏览量统计与公开角色。' },
+            { icon: '🎵', name: '音乐', url: 'music.html', group: '学习与创作', desc: '音乐库与播放列表。' },
+            { icon: '▶️', name: '音乐播放', url: 'music-play.html', group: '学习与创作', desc: '播放器界面，支持歌词与播放控制。' },
+            { icon: '🎼', name: '音乐创作', url: 'music-make.html', group: '学习与创作', desc: '用 AI 生成歌曲 / 旋律。' },
+            { icon: '🖼️', name: '图床', url: 'image-host.html', group: '学习与创作', desc: '上传图片生成外链，支持在聊天中直接引用。' },
+            { icon: '⭐', name: '作品展示', url: 'showcase.html', group: '学习与创作', desc: '展示社区作品与项目。' },
+            { icon: '🖥️', name: '演示页', url: 'presentation.html', group: '学习与创作', desc: '用于课堂 / 活动演示的展示页。' },
+            { icon: '🔐', name: '账号与安全', url: 'security.html', group: '账号与安全', desc: '登录设备列表与一键下线、通行密钥（Passkey）管理、离线通知开关、数据导出、注销账号。', badge: 'new' },
+            { icon: '📅', name: '日历', url: 'calendar.html', group: '账号与安全', desc: '日程安排与事件提醒（到点自动发站内通知，开启离线通知后还会推送系统通知）。' },
+            { icon: '👤', name: '个人资料', url: 'profile.html', group: '账号与安全', desc: '昵称、头像、简介等资料编辑。' },
+            { icon: '👥', name: '好友', url: 'friends.html', group: '沟通协作', desc: '好友列表、好友请求与私聊入口。' },
+            { icon: '⭐', name: '我的收藏', url: 'favorites.html', group: '沟通协作', desc: '收藏的消息，便于回看。' },
+            { icon: '🔍', name: '消息搜索', url: 'search.html', group: '沟通协作', desc: '按关键词搜索消息与用户。' },
+            { icon: '📢', name: '公告', url: 'notice.html', group: '沟通协作', desc: '站点公告与通知。' },
+            { icon: '🗳️', name: '投票', url: 'polls.html', group: '沟通协作', desc: '发起投票、查看结果。' },
+            { icon: '📰', name: '帖子', url: 'posts.html', group: '沟通协作', desc: '社区帖子（发帖、评论）。' },
+            { icon: '📄', name: '文章', url: 'articles.html', group: '沟通协作', desc: '长文与教程阅读。' },
+            { icon: '💡', name: '意见反馈', url: 'suggestions.html', group: '沟通协作', desc: '提交建议，管理员会看到并回复。' },
+            { icon: '🚨', name: '举报', url: 'report.html', group: '沟通协作', desc: '举报违规内容或用户。' },
+            { icon: '📊', name: '统计', url: 'stats.html', group: '数据与统计', desc: '个人活跃度、消息量等统计图表。' },
+            { icon: '📋', name: '仪表盘', url: 'dashboard.html', group: '数据与统计', desc: '个人数据总览。' },
+            { icon: '📤', name: '数据导出', url: 'export.html', group: '数据与统计', desc: '导出消息 / 收藏等数据；也可在「账号与安全」里一键导出全部数据。' },
+            { icon: '🩺', name: '健康看板', url: 'health.html', group: '管理', desc: '站点运行状态：用户 / 会话 / 消息量、服务连通性、错误与慢请求明细。', badge: 'admin' },
+            { icon: '👑', name: '管理后台', url: 'admin.html', group: '管理', desc: '用户管理、封禁、群聊管理、数据维护。', badge: 'admin' },
+            { icon: '💡', name: '建议审核', url: 'admin-suggestions.html', group: '管理', desc: '审核用户提交的意见反馈。', badge: 'admin' },
+            { icon: '🧑‍💼', name: '管理员资料', url: 'admin-profile.html', group: '管理', desc: '管理员账号资料。', badge: 'admin' },
+            { icon: '🤖', name: 'AI 个人资料', url: 'ai-profile.html', group: '学习与创作', desc: '站点 AI 助手（机器人）的个人资料页。' },
+            { icon: '🎮', name: '文字游戏', url: 'word-game.html', group: '趣味', desc: '文字小游戏，随时摸鱼。' },
+            { icon: '🎨', name: '主题切换', url: 'theme.html', group: '趣味', desc: '5 套配色主题，全站生效。' },
+            { icon: 'ℹ️', name: '关于我们', url: 'about.html', group: '趣味', desc: '项目介绍、技术栈与联系方式。' },
+            { icon: '🔒', name: '隐私政策', url: 'privacy.html', group: '账号与安全', desc: '收集哪些信息、如何使用与保护、你的权利（导出 / 注销）。' },
+            { icon: '📜', name: '用户协议', url: 'terms.html', group: '账号与安全', desc: '服务内容、行为规范、文件托管额度、免责与责任限制。' },
+            { icon: '🔑', name: '登录', url: 'index.html', group: '账号与安全', desc: '密码登录 / Google 登录 / 扫码登录 / 通行密钥登录。' },
+            { icon: '✍️', name: '注册', url: 'register.html', group: '账号与安全', desc: '注册新账号。' },
+            { icon: '🆘', name: '帮助文档', url: 'https://help.nflshcchat.cc.cd', group: '外部站点', desc: '使用教程与常见问题。', badge: 'ext' },
+            { icon: '🌐', name: '官网首页', url: 'https://home.nflshcchat.cc.cd', group: '外部站点', desc: 'NFLSHC Chat 官网，含客户端下载。', badge: 'ext' },
+            { icon: '🧑‍💻', name: '账号中心', url: 'https://accounts.nflshcchat.cc.cd', group: '外部站点', desc: '统一账号管理：登录、注册、应用授权。', badge: 'ext' },
+            { icon: '🧩', name: '开放平台', url: 'https://platform.nflshcchat.cc.cd', group: '外部站点', desc: '为第三方开发者提供 OAuth 应用接入、API 文档与 Webhook。', badge: 'ext' },
+            { icon: '📦', name: '文件托管', url: 'https://file.nflshcchat.cc.cd', group: '外部站点', desc: '上传图片 / 音频 / 视频，生成外链；支持分片上传大文件（单账号默认 1GB）。', badge: 'ext' },
+            { icon: '💬', name: 'HZYAI（新地址）', url: 'https://chatai.bot.cd', group: '外部站点', desc: 'HZYAI 主站：多模型 AI 对话与创作工具。', badge: 'ext' },
+            { icon: '🖥️', name: '桌面客户端', url: 'https://home.nflshcchat.cc.cd/windows.html', group: '外部站点', desc: 'Windows 客户端下载（安装版 / 便携版）。', badge: 'ext' },
+            { icon: '📱', name: 'Android 客户端', url: 'https://home.nflshcchat.cc.cd/android.html', group: '外部站点', desc: 'Android 客户端下载与安装说明。', badge: 'ext' }
+        ];
+
+        let filter = '全部';
+        const GROUPS = ['核心', '沟通协作', '学习与创作', '账号与安全', '数据与统计', '管理', '趣味', '外部站点'];
+
+        function initChips() {
+            const box = document.getElementById('chips');
+            box.innerHTML = ['全部'].concat(GROUPS).map(g =>
+                '<button class="' + (g === filter ? 'on' : '') + '" onclick="setFilter(\'' + g + '\')">' + g +
+                (g === '全部' ? '' : '（' + PAGES.filter(p => p.group === g).length + '）') + '</button>').join('');
+        }
+        function setFilter(g) {
+            filter = g;
+            initChips();
+            render();
+        }
+        window.setFilter = setFilter;
+
+        function render() {
+            const q = (document.getElementById('q').value || '').trim().toLowerCase();
+            const out = document.getElementById('out');
+            const list = PAGES.filter(p => {
+                if (filter !== '全部' && p.group !== filter) return false;
+                if (!q) return true;
+                return (p.name + ' ' + p.desc + ' ' + p.url + ' ' + p.group).toLowerCase().indexOf(q) !== -1;
+            });
+            if (!list.length) {
+                out.innerHTML = '<div class="empty">没有找到匹配的功能。<br>换个关键词试试，比如「会议」「笔记」「导出」「管理员」。</div>';
+                return;
+            }
+            const byGroup = {};
+            for (const p of list) (byGroup[p.group] = byGroup[p.group] || []).push(p);
+            out.innerHTML = GROUPS.filter(g => byGroup[g]).map(g => `
+                <div class="group">
+                    <h3>${g} <span class="cnt">${byGroup[g].length} 项</span></h3>
+                    <div class="grid">
+                        ${byGroup[g].map(p => `
+                            <a class="item${p.badge === 'ext' ? ' ext' : ''}" href="${p.url}"${p.badge === 'ext' ? ' target="_blank" rel="noopener"' : ''}>
+                                <div class="ic">${p.icon}</div>
+                                <div>
+                                    <div class="tt">${p.name}${p.badge === 'admin' ? '<span class="badge admin">管理员</span>' : ''}${p.badge === 'new' ? '<span class="badge new">新</span>' : ''}${p.badge === 'ext' ? '<span class="badge ext">外部站点</span>' : ''}</div>
+                                    <div class="dd">${p.desc}</div>
+                                    <div class="url">${p.url}</div>
+                                </div>
+                            </a>`).join('')}
+                    </div>
+                </div>`).join('');
+        }
+
+        initChips();
+        render();
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { document.getElementById('q').value = ''; render(); }
+        });
+    </script>
+    <script src="shortcuts.js"></script>
+</body>
+</html>
