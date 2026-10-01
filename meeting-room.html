@@ -96,6 +96,13 @@
             <button class="btn" id="btnMic" onclick="toggleMic()">🎙️ 开启语音</button>
             <button class="btn" id="btnCam" onclick="toggleCam()">🎥 开启视频</button>
             <button class="btn" id="btnShare" onclick="toggleScreenShare()">🖥️ 共享屏幕</button>
+            <button class="btn" id="btnRelated" style="display:none"></button>
+            <button class="btn" id="btnRelay" onclick="toggleRelay()" title="点对点连不上时的语音兜底：走 HTTPS 中转，约 1~2 秒延迟">📻 语音对讲</button>
+            <select id="relayClip" title="每段语音时长（秒）" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:13px">
+                <option value="1200">1.2s/段</option>
+                <option value="2000" selected>2s/段</option>
+                <option value="3000">3s/段</option>
+            </select>
             <button class="btn" id="btnBoard" onclick="toggleBoard()">✏️ 白板</button>
             <button class="btn" id="btnNotes" onclick="toggleNotes()">📝 笔记</button>
             <button class="btn" onclick="openInvite()">✉️ 邀请</button>
@@ -142,6 +149,7 @@
                 </div>
             </div>
             <div class="msg" id="mediaMsg"></div>
+            <div class="msg" id="relayStatus" style="min-height:14px;"></div>
         </div>
         <div class="side">
             <!-- ===== 会议笔记（随时记录，会上/会后都能看；逐字稿与讨论区都进这里） ===== -->
@@ -464,15 +472,18 @@
         //  协商规则（避免 glare）：只有用户名较大的一方（initiator）负责发 offer；
         //  另一方需要新增/变更媒体时，发一条 __renegotiate 请求让 initiator 重新发 offer。
         // ============================================================
-        // ICE 配置：默认内置公共 STUN（点对点直连）。
-        // 服务端若配置了 TURN（Cloudflare Realtime TURN 或自建 coturn），/api/rtc/ice 会下发带
-        // 短时效凭据的 TURN，这里就把它合并进来 —— 对称 NAT / 严格企业网下靠中继也能通。
+        // ICE 配置：只用公共 STUN（不需要 TURN、不需要绑卡）。
+        // 多放几家 STUN（含国内可达的），并把候选池开大一点：候选越多，穿透成功率越高。
         const RTC_CONFIG = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun.cloudflare.com:3478' }
-            ]
+                { urls: 'stun:stun.cloudflare.com:3478' },
+                { urls: 'stun:stun.miwifi.com:3478' },
+                { urls: 'stun:stun.chat.bilibili.com:3478' },
+                { urls: 'stun:stun.nextcloud.com:443' }
+            ],
+            iceCandidatePoolSize: 4
         };
 
         function updateIceHint(text) {
@@ -481,22 +492,20 @@
             const dot = document.getElementById('dotIce');
             if (dot) dot.className = 'dot ok';
         }
-        // 取一次服务端 ICE 配置：有 TURN 就用 TURN，没有就保持内置 STUN
+        // 服务端若配置了自建 TURN（coturn）就采用；默认只有 STUN（点对点直连）
         async function loadIceConfig() {
             try {
                 const r = await api('/api/rtc/ice');
                 if (r.ok && r.data && Array.isArray(r.data.iceServers) && r.data.iceServers.length) {
                     const hasTurn = r.data.iceServers.some(s => JSON.stringify(s.urls).indexOf('turn') !== -1);
                     if (hasTurn) {
-                        RTC_CONFIG.iceServers = r.data.iceServers;   // 含 STUN + TURN
+                        RTC_CONFIG.iceServers = r.data.iceServers;
                         updateIceHint('ICE：STUN + TURN 中继（' + (r.data.source || 'server') + '）');
                         return;
                     }
-                    updateIceHint('仅 STUN 直连（未配置 TURN）');
-                    return;
                 }
             } catch (e) { /* 用内置配置 */ }
-            updateIceHint('仅 STUN 直连（未配置 TURN）');
+            updateIceHint('仅 STUN 直连（无需 TURN）');
         }
 
         let localStream = null;
@@ -1406,6 +1415,145 @@
                 msg.innerHTML = '<span class="ok">✅ 正在共享屏幕（对方会看到你的画面）。</span>';
             } catch (e) {
                 msg.innerHTML = '<span class="muted">已取消或无法共享屏幕：' + escapeHtml(e.message) + '</span>';
+            }
+        }
+
+        // ============================================================
+        //  语音对讲兜底（P2P 打不通时用；走 HTTPS 中转，不需要 TURN）
+        //  原理：每 1.2 秒录一段**完整**的 webm/opus 片段（每次都是独立文件，
+        //  这样对端可以直接播放，不需要 MediaSource），POST 给 Worker；另一端轮询取出、
+        //  按顺序排队播放。延迟约 1~2 秒，只支持语音（视频在这种网络下无法兜底）。
+        // ============================================================
+        let relayOn = false, relaySeq = 0, relayLastId = 0, relayRec = null;
+        let relayPollTimer = null, relayClipTimer = null, relayPlaying = false;
+        const relayQueue = [];
+        let relaySent = 0, relayPlayed = 0;
+
+        function setRelayStatus(text, cls) {
+            const el = document.getElementById('relayStatus');
+            if (el) { el.className = 'muted ' + (cls || ''); el.textContent = text || ''; }
+        }
+
+        async function toggleRelay() {
+            const btn = document.getElementById('btnRelay');
+            if (relayOn) {
+                relayOn = false;
+                if (relayRec && relayRec.state !== 'inactive') { try { relayRec.stop(); } catch (e) { /* 忽略 */ } }
+                relayRec = null;
+                if (relayPollTimer) { clearInterval(relayPollTimer); relayPollTimer = null; }
+                if (relayClipTimer) { clearTimeout(relayClipTimer); relayClipTimer = null; }
+                btn.classList.remove('on');
+                btn.textContent = '📻 语音对讲';
+                setRelayStatus('已停止对讲（发送 ' + relaySent + ' 段，播放 ' + relayPlayed + ' 段）');
+                return;
+            }
+            if (!window.MediaRecorder) {
+                setRelayStatus('当前浏览器不支持 MediaRecorder，无法使用对讲兜底', 'err');
+                return;
+            }
+            let stream = null;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (e) {
+                setRelayStatus('无法访问麦克风：' + e.message, 'err');
+                return;
+            }
+            // 复用同一条本地音频轨道（也能让 P2P 那条路继续有机会）
+            if (!localStream) localStream = new MediaStream();
+            stream.getAudioTracks().forEach(t => {
+                if (localStream.getAudioTracks().length === 0) localStream.addTrack(t); else t.stop();
+            });
+            await pushLocalToPeers();
+
+            relayOn = true;
+            relaySeq = 0;
+            relayLastId = 0;
+            btn.classList.add('on');
+            btn.textContent = '📻 停止对讲';
+            setRelayStatus('对讲中：约 1~2 秒延迟，说完等对方回（网络直连不通时的兜底）', 'ok');
+            relayRecordLoop();
+            relayPollTimer = setInterval(relayPollVoice, 800);
+            relayPollVoice();
+        }
+        window.toggleRelay = toggleRelay;
+
+        // 录一段固定时长（默认 1.2 秒）的完整片段，发出去后再录下一段
+        function relayRecordLoop() {
+            if (!relayOn) return;
+            const dur = Number(document.getElementById('relayClip') && document.getElementById('relayClip').value) || 1200;
+            let rec = null;
+            try {
+                const stream = new MediaStream(localStream.getAudioTracks());
+                const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+                rec = new MediaRecorder(stream, { mimeType: mime });
+            } catch (e) {
+                setRelayStatus('无法开始录音：' + e.message, 'err');
+                return;
+            }
+            relayRec = rec;
+            const parts = [];
+            rec.ondataavailable = (ev) => { if (ev.data && ev.data.size) parts.push(ev.data); };
+            rec.onstop = async () => {
+                const blob = new Blob(parts, { type: parts[0] && parts[0].type || 'audio/webm' });
+                if (relayOn && blob.size > 200) {
+                    try {
+                        const buf = await blob.arrayBuffer();
+                        let bin = '';
+                        const bytes = new Uint8Array(buf);
+                        for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+                        const r = await api('/api/meeting/voice', { body: {
+                            meetingId: meetingId, seq: ++relaySeq, mime: blob.type, data: btoa(bin),
+                        } });
+                        if (r.ok && r.data.ok) { relaySent++; setRelayStatus('对讲中 · 已发 ' + relaySent + ' 段 / 已播 ' + relayPlayed + ' 段'); }
+                        else setRelayStatus('发送失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status)), 'err');
+                    } catch (e) { setRelayStatus('发送异常：' + e.message, 'err'); }
+                }
+                if (relayOn) relayClipTimer = setTimeout(relayRecordLoop, 60);
+            };
+            try { rec.start(); } catch (e) { setRelayStatus('录音失败：' + e.message, 'err'); return; }
+            relayClipTimer = setTimeout(() => { try { if (rec.state !== 'inactive') rec.stop(); } catch (e) { /* 忽略 */ } }, dur);
+        }
+
+        async function relayPollVoice() {
+            if (!relayOn || !meetingId) return;
+            try {
+                const r = await api('/api/meeting/voice?meetingId=' + encodeURIComponent(meetingId) + '&since=' + relayLastId);
+                if (!r.ok || !r.data.ok) return;
+                const chunks = r.data.chunks || [];
+                for (const c of chunks) {
+                    relayLastId = Math.max(relayLastId, c.id);
+                    relayQueue.push(c);
+                }
+                // 队列太长说明播放跟不上：丢掉最旧的，避免延迟越积越大
+                while (relayQueue.length > 4) relayQueue.shift();
+                relayPlayNext();
+                if (typeof r.data.lastId === 'number' && r.data.lastId > relayLastId && !chunks.length) relayLastId = r.data.lastId;
+            } catch (e) { /* 下一轮重试 */ }
+        }
+
+        function relayPlayNext() {
+            if (relayPlaying || !relayQueue.length) return;
+            const c = relayQueue.shift();
+            try {
+                let bin = atob(c.data || '');
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                const url = URL.createObjectURL(new Blob([bytes], { type: c.mime || 'audio/webm' }));
+                const audio = new Audio(url);
+                relayPlaying = true;
+                const done = () => {
+                    relayPlaying = false;
+                    URL.revokeObjectURL(url);
+                    relayPlayed++;
+                    setRelayStatus('对讲中 · 已发 ' + relaySent + ' 段 / 已播 ' + relayPlayed + ' 段');
+                    relayPlayNext();
+                };
+                audio.onended = done;
+                audio.onerror = done;
+                audio.play().catch(() => done());
+            } catch (e) {
+                relayPlaying = false;
+                relayPlayNext();
             }
         }
 
