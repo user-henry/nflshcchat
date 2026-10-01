@@ -473,7 +473,6 @@ export default {
           probe('文件托管（源站）', 'http://nflshcfile.l.cd/api.php?a=public', false),
           probe('文件托管（HTTPS 入口）', 'https://file.nflshcchat.cc.cd/assets/style.css', false),
           probe('Google 公钥（登录依赖）', 'https://www.googleapis.com/oauth2/v3/certs', true),
-          probe('BigModel（智谱）', 'https://open.bigmodel.cn/api/paas/v4/models', false),
         ]);
 
         const recentErrors = await (async () => {
