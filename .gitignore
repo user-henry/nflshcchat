@@ -1,39 +1,59 @@
-# Python environment
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-.venv/
-venv/
+# Dependencies
+node_modules/
+/.wrangler/
+/hzyai-worker/.wrangler/
+
+# Build outputs
+/dist/
+/build/
+
+# Environment
 .env
+.env.local
 
-# OS/editor
-.DS_Store
-
-# Runtime state (local only)
-state.json
-agents-state.json
-runtime-config.json
+# Logs
 *.log
-*.out
-*.pid
-*.backup*
-*.original
-cloudflared.pid
-cloudflared.out
-healthcheck.log
-backend.log
+npm-debug.log*
 
-# Generated / mutable assets (local only)
-assets/bg-history/
-assets/home-favorites/
-frontend/office_bg.png
-frontend/*.bak
-layers/
-desktop-pet/src-tauri/icons/*Logo.png
+# OS
+.DS_Store
+Thumbs.db
 
-# Electron local build artifacts
-electron-shell/node_modules/
-electron-shell/release/
-join-keys.json
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Wrangler state
+.wrangler/
+hzyai-worker/.wrangler/
+hzyai-worker/.tmp/
+
+# Test files
+_test_model.js
+
+# System files
+*.lnk
+
+# ------------------------------------------------------------------
+# byethost / nflshcfile.l.cd 部署资料（含 FTP 口令、控制面板工具与密钥，禁止入库）
+# 白名单：只版本化 byethost/filehost/ 站点源码与 byethost/README.md，
+#         tools/（部署脚本，含 FTP 密码）、tests/、凭据文件一律不入库
+# ------------------------------------------------------------------
+/byethost/*
+!/byethost/filehost/
+!/byethost/README.md
+/byethost/filehost/config.php
+/byethost/filehost/_*.php
+/byethost/.sso_secret.txt
+
+# ------------------------------------------------------------------
+# 敏感凭据：绝对不能入库（若历史提交里已存在，请到对应平台吊销并重新签发）
+# ------------------------------------------------------------------
+/Token.txt
+/deepseek-api-key.txt
+/nva-api-key.txt
+*.secret
+*.secret.txt
+
