@@ -53,6 +53,7 @@ worker.js
 _worker.js
 wrangler.toml
 wrangler.jsonc
+/wrangler/
 /nflshcfile-proxy/
 /hzyai-worker/
 /help-nflshc202401/
@@ -67,16 +68,11 @@ wrangler.jsonc
 /_patch_chat.js
 
 # ------------------------------------------------------------------
-# byethost / nflshcfile.l.cd 部署资料（含 FTP 口令、控制面板工具与密钥，禁止入库）
-# 白名单：只版本化 byethost/filehost/ 站点源码与 byethost/README.md，
-#         tools/（部署脚本，含 FTP 密码）、tests/、凭据文件一律不入库
+# byethost / nflshcfile.l.cd（自建文件托管站）
+#   站点源码 filehost/、部署脚本（含 FTP 口令）、测试与凭据一律不进仓库，
+#   只在本机工作副本维护，通过 FTP 部署。对外接口契约见 docs/FEATURES.md。
 # ------------------------------------------------------------------
-/byethost/*
-!/byethost/filehost/
-!/byethost/README.md
-/byethost/filehost/config.php
-/byethost/filehost/_*.php
-/byethost/.sso_secret.txt
+/byethost/
 
 # ------------------------------------------------------------------
 # 敏感凭据：绝对不能入库（若历史提交里已存在，请到对应平台吊销并重新签发）
