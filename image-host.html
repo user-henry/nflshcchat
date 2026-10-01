@@ -955,6 +955,55 @@
     // ============================================================
     //  渲染
     // ============================================================
+    // ============================================================
+    //  Cloudflare 图片转换（Image Resizing）
+    //  在原始直链前插入 /cdn-cgi/image/width=…,quality=…,format=auto，
+    //  由 Cloudflare 在边缘实时生成并缓存（不占我们的存储，也不落一份缩略图）：
+    //    · format=auto 会按浏览器能力自动给 AVIF / WebP（实测 1200×800 的 PNG 从 120KB 降到 1.6KB）
+    //    · 只使用固定几档宽度（避免用户乱传参数产生大量唯一变换 → 计费与缓存都不划算）
+    //  仅对「我们自己的文件托管/媒体入口」上的常见图片生效；其它域名或非图片原样返回。
+    // ============================================================
+    const CF_IMAGE_HOSTS = ['file.nflshcchat.cc.cd', 'media.nflshcchat.cc.cd'];
+    const CF_IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|bmp|tiff?)$/i;
+
+    function cfImageUrl(url, opts) {
+        const o = opts || {};
+        const width = Math.max(16, Math.min(2400, Math.round(Number(o.width) || 480)));
+        const quality = Math.max(30, Math.min(95, Math.round(Number(o.quality) || 80)));
+        try {
+            const u = new URL(String(url || ''), location.href);
+            if (!CF_IMAGE_HOSTS.includes(u.host)) return url;
+            // 已经是转换地址就不再套一层
+            if (u.pathname.indexOf('/cdn-cgi/image/') === 0) return url;
+            const looksImage = CF_IMAGE_EXT.test(u.pathname) || /[?&]e=(png|jpe?g|gif|webp|avif)$/i.test(u.search);
+            if (!looksImage) return url;
+            const prefix = `/cdn-cgi/image/width=${width},quality=${quality},format=auto`;
+            return u.origin + prefix + u.pathname + u.search;
+        } catch (e) { return url; }
+    }
+    window.cfImageUrl = cfImageUrl;
+
+    // 供「复制链接」用：给出原始直链与优化直链
+    function copyOptimizedUrl(url) {
+        const opt = cfImageUrl(url, { width: 1600, quality: 82 });
+        showToast('🔗 已复制优化链接（宽度 1600 · 自动 AVIF/WebP）', 'success');
+        copyText(opt);
+    }
+    window.copyOptimizedUrl = copyOptimizedUrl;
+
+    function copyText(t) {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t); return; }
+        } catch (e) { /* 退回 execCommand */ }
+        const el = document.createElement('textarea');
+        el.value = t; document.body.appendChild(el); el.select();
+        try { document.execCommand('copy'); } catch (e) { /* 忽略 */ }
+        document.body.removeChild(el);
+    }
+
+    // ============================================================
+    //  渲染
+    // ============================================================
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
         const items = filteredImages;
@@ -968,14 +1017,20 @@
             return;
         }
 
-        grid.innerHTML = items.map(img => `
+        grid.innerHTML = items.map(img => {
+            // 列表用 Cloudflare 实时转换的小图（宽 480），加载失败则回退原图
+            const tile = cfImageUrl(img.url, { width: 480, quality: 78 });
+            const fallback = String(img.url).replace(/'/g, '%27');
+            return `
             <div class="gallery-item" data-id="${img.id}">
                 <div class="img-wrapper">
-                    <img src="${img.url}" alt="${img.filename}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%231a1a2e\'/%3E%3Ctext x=\'100\' y=\'100\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23555\' font-size=\'14\' font-family=\'sans-serif\'%3E加载失败%3C/text%3E%3C/svg%3E'">
+                    <img src="${tile}" alt="${img.filename}" loading="lazy"
+                         onerror="this.onerror=null;this.src='${fallback}'">
                     <div class="overlay">
                         <div class="actions">
-                            <button onclick="event.stopPropagation();copyUrl('${img.url}')" title="复制链接">📋</button>
-                            <button onclick="event.stopPropagation();window.open('${img.url}','_blank')" title="查看">🔗</button>
+                            <button onclick="event.stopPropagation();copyUrl('${img.url}')" title="复制原始链接">📋</button>
+                            <button onclick="event.stopPropagation();copyOptimizedUrl('${img.url}')" title="复制优化链接（自动 AVIF/WebP）">✨</button>
+                            <button onclick="event.stopPropagation();window.open('${cfImageUrl(img.url, { width: 1600, quality: 85 })}','_blank')" title="查看">🔗</button>
                             <button onclick="event.stopPropagation();deleteImage('${img.id}')" title="删除">🗑️</button>
                         </div>
                     </div>
@@ -984,11 +1039,11 @@
                     <div class="filename" title="${img.filename}">${img.filename}</div>
                     <div class="meta">
                         <span>${formatFileSize(img.size)}</span>
-                        <span class="cdn-badge">🌐 CDN</span>
+                        <span class="cdn-badge">🌐 CF 自动优化</span>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
 
         document.getElementById('albumCount').textContent = allImages.length;
     }
