@@ -91,7 +91,22 @@
             <div class="msg" id="exportMsg"></div>
         </div>
 
-        <!-- ===== 3. 离线通知（Web Push） ===== -->
+        <!-- ===== 3. 通行密钥（Passkey / WebAuthn） ===== -->
+        <div class="card">
+            <h3>🔑 通行密钥（Passkey）</h3>
+            <div class="desc">
+                用设备的<strong>指纹 / 面容 / 系统 PIN</strong> 直接登录，不必再输密码，也不怕被钓鱼
+                （通行密钥与本站域名绑定，仿冒站无法使用）。添加后可在登录页点「🔑 用通行密钥登录」。
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-primary" id="btnPasskeyAdd" onclick="addPasskey()">🔑 添加通行密钥</button>
+                <button class="btn" onclick="loadPasskeys()">🔄 刷新列表</button>
+            </div>
+            <div id="passkeyList" class="muted" style="margin-top:12px;font-size:13.5px;">加载中…</div>
+            <div class="msg" id="passkeyMsg"></div>
+        </div>
+
+        <!-- ===== 4. 离线通知（Web Push） ===== -->
         <div class="card">
             <h3>🔔 离线通知</h3>
             <div class="desc">
@@ -302,6 +317,110 @@
             } finally { btn.disabled = false; }
         }
 
+        // ---------- 通行密钥（Passkey / WebAuthn） ----------
+        function u8ToB64u(buf) {
+            const bytes = new Uint8Array(buf);
+            let s = '';
+            for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+            return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+        function b64uToU8(s) {
+            const pad = '='.repeat((4 - s.length % 4) % 4);
+            const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+            const out = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+            return out;
+        }
+        function pkMsg(text, cls) {
+            const el = document.getElementById('passkeyMsg');
+            el.className = 'msg ' + (cls || '');
+            el.innerHTML = text;
+        }
+        async function loadPasskeys() {
+            const box = document.getElementById('passkeyList');
+            try {
+                const res = await fetch(API + '/api/auth/webauthn/credentials');
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data.ok) { box.innerHTML = '<span class="err">加载失败：' + escapeHtml(data.error || ('HTTP ' + res.status)) + '</span>'; return; }
+                const list = data.credentials || [];
+                if (!list.length) { box.innerHTML = '还没有添加通行密钥。点上方按钮添加（推荐用手机指纹或电脑的 Windows Hello / Touch ID）。'; return; }
+                box.innerHTML = list.map(c =>
+                    '<div class="sess" style="padding:10px 12px;margin-bottom:8px;">' +
+                    '<div><div class="dev">🔑 ' + escapeHtml(c.label || '通行密钥') + '</div>' +
+                    '<div class="meta">添加于 ' + fmtTime(c.createdAt) +
+                    (c.lastUsedAt ? ' · 最近使用 ' + fmtTime(c.lastUsedAt) : ' · 尚未使用') +
+                    ' · 使用签名计数 ' + (c.signCount || 0) + '</div></div>' +
+                    '<button class="btn btn-danger" onclick="deletePasskey(\'' + escapeHtml(c.id) + '\')">删除</button>' +
+                    '</div>').join('');
+            } catch (e) {
+                box.innerHTML = '<span class="err">加载失败：' + escapeHtml(e.message) + '</span>';
+            }
+        }
+        async function addPasskey() {
+            const btn = document.getElementById('btnPasskeyAdd');
+            btn.disabled = true;
+            pkMsg('正在请求设备验证（指纹 / 面容 / PIN）…', 'muted');
+            try {
+                if (!window.PublicKeyCredential || !navigator.credentials) {
+                    pkMsg('当前浏览器不支持通行密钥（需要 HTTPS 与较新的浏览器）', 'err');
+                    return;
+                }
+                const beginRes = await fetch(API + '/api/auth/webauthn/register/begin', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ origin: window.location.origin }),
+                });
+                const begin = await beginRes.json().catch(() => ({}));
+                if (!beginRes.ok || !begin.ok) { pkMsg('无法开始注册：' + escapeHtml(begin.error || ('HTTP ' + beginRes.status)), 'err'); return; }
+                const o = begin.options;
+                const cred = await navigator.credentials.create({
+                    publicKey: {
+                        challenge: b64uToU8(o.challenge),
+                        rp: o.rp,
+                        user: { id: b64uToU8(o.user.id), name: o.user.name, displayName: o.user.displayName },
+                        pubKeyCredParams: o.pubKeyCredParams,
+                        timeout: o.timeout,
+                        attestation: o.attestation,
+                        authenticatorSelection: o.authenticatorSelection,
+                        excludeCredentials: (o.excludeCredentials || []).map(c => ({ type: c.type, id: b64uToU8(c.id) })),
+                    },
+                });
+                if (!cred) { pkMsg('已取消添加', 'muted'); return; }
+                let transports = '';
+                try { transports = (cred.response.getTransports ? cred.response.getTransports() : []).join(','); } catch (e) { /* 忽略 */ }
+                const label = prompt('给这把通行密钥起个名字（方便识别设备）：', '我的设备') || '通行密钥';
+                const finRes = await fetch(API + '/api/auth/webauthn/register/finish', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        challengeKey: begin.challengeKey,
+                        origin: window.location.origin,
+                        label: label,
+                        transports: transports,
+                        clientDataJSON: u8ToB64u(cred.response.clientDataJSON),
+                        attestationObject: u8ToB64u(cred.response.attestationObject),
+                    }),
+                });
+                const fin = await finRes.json().catch(() => ({}));
+                if (!finRes.ok || !fin.ok) { pkMsg('添加失败：' + escapeHtml(fin.error || ('HTTP ' + finRes.status)), 'err'); return; }
+                pkMsg('<span class="ok">✅ 通行密钥已添加，之后可在登录页用它一键登录</span>', '');
+                loadPasskeys();
+            } catch (e) {
+                pkMsg('添加失败：' + escapeHtml(e.message) + '（可能是设备验证被取消或浏览器不支持）', 'err');
+            } finally { btn.disabled = false; }
+        }
+        async function deletePasskey(id) {
+            if (!confirm('删除这把通行密钥？删除后该设备将无法用它登录。')) return;
+            const res = await fetch(API + '/api/auth/webauthn/credentials/delete', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.ok) { pkMsg('删除失败：' + escapeHtml(data.error || ('HTTP ' + res.status)), 'err'); return; }
+            pkMsg('<span class="ok">✅ 已删除</span>', '');
+            loadPasskeys();
+        }
+        window.addPasskey = addPasskey;
+        window.deletePasskey = deletePasskey;
+        window.loadPasskeys = loadPasskeys;
+
         // ---------- 离线通知（Web Push） ----------
         function b64uToU8(s) {
             const pad = '='.repeat((4 - s.length % 4) % 4);
@@ -496,6 +615,7 @@
             loadSessions();
             loadDeleteStatus();
             refreshPushState();
+            loadPasskeys();
         })();
     </script>
     <script src="shortcuts.js"></script>
