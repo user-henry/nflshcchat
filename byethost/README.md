@@ -30,8 +30,10 @@ MySQL：sql308.byethost11.com / b11_43002442_media（用户 b11_43002442）
 ## 二、部署方法
 
 ```powershell
+cd byethost
+
 # 1) 部署 PHP 站点（FTP 到附加域名目录）
-pwsh .\deploy.ps1                     # 默认上传到 /nflshcfile.l.cd/htdocs
+pwsh .\tools\deploy.ps1                # 默认上传到 /nflshcfile.l.cd/htdocs
 
 # 2) 部署/更新 Cloudflare 入口
 cd ..\nflshcfile-proxy
@@ -54,9 +56,10 @@ npx wrangler deploy
    （实测 `429 rateLimited`，配额窗口滚动释放），因此即便签下来也不稳定。
 4. 故最终由 Cloudflare 提供证书（自动续期，无共享配额问题），源站保持 HTTP。
 
-> 仓库里仍保留 DNS-01 的全套工具（`byethost/tools-acme/`），如果以后换到支持自定义 SSL 的主机，
-> 可以直接复用：`node acme-issue.mjs --ca=letsencrypt`（面板 CNAME `_acme-challenge.nflshcfile.l.cd`
-> 已指向 acme-dns 委派）。
+> 结论：源站 SSL 这条路暂时走不通，因此**公开链接一律使用 `https://file.nflshcchat.cc.cd`**
+> （HTTPS 页面里引用 `http://nflshcfile.l.cd` 会被浏览器当作混合内容拦截）。
+> 当时的 DNS-01 工具链已完成使命，为避免密钥留在本地已删除；若以后换到支持自定义 SSL 的主机，
+> 可按本节的实测结论重新评估。
 
 ## 四、源站的已知限制（重要）
 
@@ -70,25 +73,34 @@ npx wrangler deploy
 ## 五、常用维护操作
 
 ```powershell
-# 清理测试账号（test_ / cli_ / cf_ 前缀）与残留文件
-#   上传 _cleanup.php → 访问一次 → 删除
-pwsh .\ftp.ps1 -Action put -Path /nflshcfile.l.cd/htdocs/_cleanup.php -Local .\filehost\_cleanup.php
-curl -A "Mozilla/5.0 (compatible; Googlebot/2.1)" http://nflshcfile.l.cd/_cleanup.php
-pwsh .\ftp.ps1 -Action del -Path /nflshcfile.l.cd/htdocs/_cleanup.php
+cd byethost
+
+# 清理测试账号（test_ / cli_ / cf_ / t_ 前缀）与残留文件
+pwsh .\tools\cleanup-all.ps1
+
+# 单独调整某账号配额（默认站长 5GB）
+pwsh .\tools\set-quota.ps1 -User huangzhiyuan -Bytes 5368709120
+
+# 上传并执行一个远端 PHP 脚本（诊断用，跑完记得从服务器删除）
+node .\tools\php-run.mjs .\filehost\_lint.php /nflshcfile.l.cd/htdocs/_lint.php
 
 # 端到端自测
-node .\test-filehost.mjs        # 源站（HTTP）23 项
-node .\test-https-proxy.mjs     # 经 Cloudflare HTTPS 入口 17 项
-node .\test-pages.mjs           # 页面渲染
-node .\test-cli.mjs             # 命令行上传脚本（含分片）
+node .\tests\test-filehost.mjs        # 源站（HTTP）端到端
+node .\tests\test-https-proxy.mjs     # 经 Cloudflare HTTPS 入口
+node .\tests\test-pages.mjs           # 页面渲染
+node .\tests\test-cli.mjs             # 命令行上传脚本（含分片）
+node .\tests\test-final-verify.mjs    # 上线前最终验收
 
 # 命令行上传（给用户/脚本用）
-node .\filehost-tools\upload-cli.mjs --token=<令牌> --file=.\a.mp4 --visibility=public
+node .\tools\upload-cli.mjs --token=<令牌> --file=.\a.mp4 --visibility=public
 ```
 
 ## 六、账号与权限
 
 - 站点账号独立于主站（自建 `users` 表 + bcrypt + PHP 会话）。
+- **主站 SSO**：主站在 `chat.html` 里发消息附件时，由 Worker 用 `FILES_SSO_SECRET` 签发 5 分钟票据
+  （`X-Files-Ticket`）调用 `api.php?a=sso_upload`，用户无需在文件站二次登录；
+  首次调用会自动建号（`users.sso_only = 1`，密码为随机不可用值）。文件站侧密钥在同名配置项 `sso_secret`。
 - **容量规则（三层）**：
   1. 单文件上限 512MB（`config.php` 的 `max_file_bytes`）。
   2. 每账号上限：新用户默认 **1GB**（`default_quota_bytes`）；个别账号可在数据库单独调大，
@@ -108,19 +120,36 @@ node .\filehost-tools\upload-cli.mjs --token=<令牌> --file=.\a.mp4 --visibilit
 并过滤掉系统不友好字符与换行；同时给出 ASCII 回退名与 `filename*=UTF-8''` 中文名。
 例如标题「我的风景照」的 PNG 会被保存为 `我的风景照.png`，不再出现「下载下来没有后缀」的问题。
 
-## 八、维护脚本（本地 `byethost/` 目录，不进仓库）
+## 八、目录结构与脚本清单
+
+```
+byethost/
+  README.md               本文件（版本控制）
+  filehost/               PHP 站点源码（版本控制；config.php / _*.php 维护脚本除外）
+  tools/                  本地运维脚本（不入库：含 FTP 口令）
+  tests/                  回归测试脚本（不入库）
+  .sso_secret.txt         主站 SSO 密钥（不入库，需与 Worker 的 FILES_SSO_SECRET 一致）
+```
 
 | 脚本 | 用途 |
 |---|---|
-| `deploy.ps1` | 把 `filehost/` 全量部署到附加域名目录 |
-| `ftp.ps1` | FTP 基础操作（list/put/get/mkdir/del/rmdir） |
-| `verify-and-cleanup.ps1` | 登录后页面验收 + 清理测试账号 + 删除临时脚本 |
-| `test-filehost.mjs` | 源站端到端测试（注册/上传/私有控制/Range/删除等 23 项） |
-| `test-https-light.mjs` | 经 Cloudflare HTTPS 入口的轻量验证 |
-| `test-download-link.mjs` | 详情页下载链接（上传者视角）验证 |
-| `test-quota-filename.mjs` | 下载扩展名 + 容量上限（含谎报大小）验证 |
-| `test-html-escape.mjs` | 标题含引号/尖括号时的 HTML 转义验证 |
-| `tools-acme/` | DNS-01 工具链（acme-dns 委派、ACME 客户端、面板证书上传） |
+| `tools/deploy.ps1` | 把 `filehost/` 全量部署到附加域名目录 |
+| `tools/ftp.ps1` | FTP 基础操作（list/put/get/mkdir/del/rmdir） |
+| `tools/php-run.mjs` | 上传一个 PHP 文件并用 Googlebot UA 直接执行取回结果（诊断用） |
+| `tools/cleanup-all.ps1` | 清理测试账号（test_/cli_/cf_/t_ 前缀）并移除远端临时脚本 |
+| `tools/set-quota.ps1` | 单独调整某账号容量上限 |
+| `tools/upload-cli.mjs` | 命令行上传工具（支持大于 20MB 的分片上传），可给用户/脚本用 |
+| `tests/test-filehost.mjs` | 源站端到端测试（注册/上传/私有控制/Range/删除等） |
+| `tests/test-https-proxy.mjs` | 经 Cloudflare HTTPS 入口的端到端验证 |
+| `tests/test-https-light.mjs` | HTTPS 入口轻量验证 |
+| `tests/test-pages.mjs` | 页面渲染验证 |
+| `tests/test-download-link.mjs` | 详情页下载链接（上传者视角）验证 |
+| `tests/test-quota-filename.mjs` | 下载扩展名 + 容量上限（含谎报大小）验证 |
+| `tests/test-html-escape.mjs` | 标题含引号/尖括号时的 HTML 转义验证 |
+| `tests/test-site-cap.mjs` | 站点总容量软上限验证 |
+| `tests/test-smoke.mjs` | 冒烟测试（注册→上传→列表→删除） |
+| `tests/test-final-verify.mjs` | 上线前最终验收（一次性跑完关键路径） |
 | `filehost/_*.php` | 一次性维护脚本（清理账号、探针、配额调整），**用完必须从服务器删除** |
 
 > 注意：`.ps1` 脚本必须保持纯 ASCII（Windows PowerShell 5.1 按 ANSI 读取，中文会导致解析失败）。
+
