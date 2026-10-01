@@ -91,8 +91,14 @@
 - **返回地址必须是 HTTPS 公开入口**：Worker 发送 `X-Media-Host: file.nflshcchat.cc.cd` + `X-Media-Proto: https`
   让文件站按该域名生成链接，并额外做一次 `toPublicFileUrl()` 兜底改写。
   源站 `http://nflshcfile.l.cd` 在 HTTPS 页面中属于混合内容，会被浏览器拦截，因此对外链接不得出现源站地址；
+- **直链走 media 入口**：`toPublicFileUrl()` 会把文件站的静态直链
+  `http://nflshcfile.l.cd/storage/pub/<分片>/<id>.<扩展名>` 改写成
+  `https://media.nflshcchat.cc.cd/pub/<分片>/<id>?e=<扩展名>&n=<原文件名>`。
+  页面地址（`url` / `viewUrl`）仍留在 `file.nflshcchat.cc.cd`。原因与缓存清理见 `docs/FILE-HOST.md`；
 - 配额：新用户默认 1GB，站长账号 5GB，站点软上限 4.5GB，超限返回 `413`；
 - 超过 20MB 的文件请引导用户到文件托管站（`https://file.nflshcchat.cc.cd/`）分片上传，业务上限 512MB。
+- 删除：`POST /api/files/delete { id, urls? }`（`urls` 传该文件的公开直链，服务端删完立即清缓存）。
+  文件在文件站已不存在时按成功返回 `{ok:true, alreadyGone:true}`，前端据此清理本地记录而不是报错。
 
 ## 6. 扫码登录
 
