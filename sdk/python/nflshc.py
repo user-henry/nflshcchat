@@ -173,7 +173,7 @@ class NFLSHC:
         return self.post("/api/meeting/end", {"meetingId": meeting_id})
 
     def ice_servers(self):
-        """WebRTC ICE 配置（含 TURN）"""
+        """WebRTC ICE 配置（只含公共 STUN，不含 TURN）"""
         return self.get("/api/rtc/ice")
 
     # ---------------- 笔记 ----------------
