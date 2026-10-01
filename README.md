@@ -190,7 +190,8 @@ nflshcchat/
 
 > **后端不在本仓库**：主站后端是 Cloudflare Worker（本机工作副本中的 `worker.js` + `wrangler.toml`）。
 > 按项目约定，**任何 Cloudflare Workers 的源码与部署配置都不进仓库**，只在本地维护并 `wrangler deploy` 发布。
-> 其对外接口契约、数据库对象与接入约定见 [`docs/FEATURES.md`](docs/FEATURES.md)。
+> 其对外接口契约、数据库对象与接入约定见 [`docs/FEATURES.md`](docs/FEATURES.md)，
+> 文件托管（自建文件站、媒体直链、缓存与删除语义）见 [`docs/FILE-HOST.md`](docs/FILE-HOST.md)。
 
 ---
 
