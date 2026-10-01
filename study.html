@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="js/theme.js?v=4"></script>
+    <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HZYAI 学习 - 讲题与错题本</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .nav { background: var(--bg-secondary); padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 20; }
+        .nav-left { display: flex; align-items: center; gap: 12px; }
+        .logo { width: 36px; height: 36px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .nav h2 { font-size: 18px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 16px; font-size: 14px; }
+        .nav a:hover { color: var(--accent-color); }
+        .tabs { display: flex; gap: 8px; padding: 14px 22px 0; flex-wrap: wrap; }
+        .tabs button { padding: 9px 18px; border-radius: 999px 999px 0 0; border: 1px solid var(--border-color); border-bottom: none; background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; font-size: 14px; font-family: inherit; }
+        .tabs button.active { color: var(--accent-color); border-color: var(--accent-color); background: var(--bg-primary); }
+        .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 60px; }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0 14px 14px 14px; padding: 22px; }
+        .card h3 { font-size: 17px; margin-bottom: 10px; }
+        .desc { color: var(--text-secondary); font-size: 13.5px; line-height: 1.75; margin-bottom: 14px; }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+        input[type=text], input[type=search], select, textarea {
+            padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 9px;
+            background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-color); }
+        textarea#question { width: 100%; min-height: 120px; line-height: 1.75; resize: vertical; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; font-size: 13.5px; transition: .18s; font-family: inherit; }
+        .btn:hover:not(:disabled) { border-color: var(--accent-color); color: var(--accent-color); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; }
+        .btn.primary { background: var(--accent-color, #ffd700); color: #1a1a2e; border-color: transparent; font-weight: 600; }
+        .btn.sm { padding: 5px 10px; font-size: 12.5px; }
+        .btn.danger { border-color: rgba(231,76,60,.6); color: var(--danger, #e74c3c); }
+        .md { line-height: 1.9; font-size: 14.5px; }
+        .md h1, .md h2, .md h3 { margin: 16px 0 8px; color: var(--accent-color); }
+        .md h3 { font-size: 15.5px; }
+        .md p { margin-bottom: 10px; }
+        .md ul, .md ol { margin: 8px 0 12px 22px; }
+        .md code { background: var(--bg-primary); padding: 2px 6px; border-radius: 5px; font-size: 13px; color: var(--accent-color); }
+        .md pre { background: var(--bg-primary); padding: 12px; border-radius: 10px; overflow: auto; margin-bottom: 10px; }
+        .md blockquote { border-left: 3px solid var(--accent-color); padding-left: 12px; color: var(--text-secondary); margin: 8px 0; }
+        .answer-box { border: 1px solid var(--border-color); border-radius: 12px; padding: 18px; background: var(--bg-primary); margin-top: 14px; }
+        .status { font-size: 13px; color: var(--text-secondary); min-height: 18px; }
+        .ok { color: #28a745; } .err { color: #e74c3c; } .muted { color: var(--text-secondary); } .warn { color: #f39c12; }
+        .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: sp .8s linear infinite; vertical-align: -2px; }
+        @keyframes sp { to { transform: rotate(360deg); } }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+        .mk { border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; background: var(--bg-primary); }
+        .mk .q { font-size: 14.5px; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+        .mk .meta { font-size: 11.5px; color: var(--text-secondary); display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+        .mk .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .mk img.qimg { max-width: 100%; max-height: 260px; border-radius: 10px; margin-top: 8px; border: 1px solid var(--border-color); }
+        .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-color); color: var(--text-secondary); }
+        .tag.open { color: #f39c12; border-color: rgba(243,156,18,.5); }
+        .tag.reviewing { color: #3498db; border-color: rgba(52,152,219,.5); }
+        .tag.mastered { color: #28a745; border-color: rgba(40,167,69,.5); }
+        .empty { padding: 40px 20px; text-align: center; color: var(--text-secondary); line-height: 1.9; }
+        .stat { display: inline-flex; gap: 14px; font-size: 13px; color: var(--text-secondary); flex-wrap: wrap; }
+        .hide { display: none !important; }
+        @media (max-width: 640px) { .wrap { padding: 0 12px 40px; } .nav { padding: 10px 14px; } }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>📚 HZYAI 学习</h2></div>
+        <div>
+            <span class="muted" style="font-size:13px;"><span id="whoami">…</span></span>
+            <a href="hzyai.html">🤖 HZYAI</a>
+            <a href="notes.html">📝 笔记</a>
+            <a href="chat.html">💬 聊天</a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="active" id="tabSolveBtn" onclick="switchTab('solve')">🧠 AI 讲题</button>
+        <button id="tabBookBtn" onclick="switchTab('book')">📕 错题本（<span id="mkCount">0</span>）</button>
+    </div>
+
+    <div class="wrap">
+        <!-- ===== AI 讲题 ===== -->
+        <div class="card" id="tabSolve">
+            <h3>🧠 AI 讲题</h3>
+            <div class="desc">
+                把题目文字粘贴进来，或者拍照 / 截图上传（会自动识别图片里的题目）。AI 会给出
+                <strong>学科与知识点 → 解题思路（分步） → 完整解答 → 易错点提醒</strong>。<br>
+                讲完可以一键存进错题本，方便以后复习。
+            </div>
+            <div class="row">
+                <select id="subject">
+                    <option value="">学科（可选）</option>
+                    <option>数学</option><option>物理</option><option>化学</option><option>生物</option>
+                    <option>语文</option><option>英语</option><option>历史</option><option>地理</option>
+                    <option>政治</option><option>信息技术</option><option>其它</option>
+                </select>
+                <button class="btn" onclick="document.getElementById('qimg').click()">📷 上传题目图片</button>
+                <input type="file" id="qimg" accept="image/*" style="display:none;" onchange="onImagePicked(this)">
+                <span class="status" id="imgStatus"></span>
+            </div>
+            <textarea id="question" placeholder="例如：一辆汽车以 20 m/s 匀速行驶，刹车后加速度大小为 5 m/s²，求刹车后 3s 内的位移。"></textarea>
+            <div class="row" style="margin-top:12px;">
+                <button class="btn primary" id="btnSolve" onclick="solve()">🧠 开始讲题</button>
+                <button class="btn" onclick="clearSolve()">🧹 清空</button>
+                <span class="stat" id="solveStat"></span>
+            </div>
+            <div class="status" id="solveStatus"></div>
+            <div class="answer-box hide" id="answerBox">
+                <div class="md" id="answerMd"></div>
+                <div class="row" style="margin-top:16px;">
+                    <button class="btn primary" id="btnSaveMk" onclick="saveFromSolve()">📕 存入错题本</button>
+                    <button class="btn" onclick="copyAnswer()">📋 复制讲解</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 错题本 ===== -->
+        <div class="card hide" id="tabBook">
+            <h3>📕 错题本</h3>
+            <div class="desc">
+                按学科与掌握程度筛选、搜索题目；点「复习」可以隐藏答案自测，再展开对照；
+                还能让 AI 出同类型练习题巩固。
+            </div>
+            <div class="filters">
+                <select id="fSubject" onchange="loadMistakes()"><option value="">全部学科</option></select>
+                <select id="fStatus" onchange="loadMistakes()">
+                    <option value="">全部状态</option>
+                    <option value="open">未掌握</option>
+                    <option value="reviewing">复习中</option>
+                    <option value="mastered">已掌握</option>
+                </select>
+                <input type="search" id="fq" placeholder="搜索题目 / 解析 / 标签" style="flex:1;min-width:160px;" oninput="debouncedLoad()">
+                <button class="btn primary sm" onclick="addManual()">＋ 手动添加</button>
+            </div>
+            <div class="stat" id="bookStat" style="margin-bottom:12px;"></div>
+            <div id="mkList"><div class="empty">加载中…</div></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const API = WORKER_API;
+        let me = '';
+        let tab = 'solve';
+        let lastSolve = null;      // { question, imageUrl, subject, explanation }
+        let imageDataUrl = '';
+        let mistakes = [];
+        let loadTimer = null;
+
+        function escapeHtml(t) {
+            if (t === null || t === undefined) return '';
+            const d = document.createElement('div'); d.textContent = String(t); return d.innerHTML;
+        }
+        function token() { return (window.AuthToken && window.AuthToken.get()) || ''; }
+        function md(text) {
+            if (!text) return '';
+            try { if (typeof marked !== 'undefined') return marked.parse(text); } catch (e) { /* 纯文本 */ }
+            return '<pre style="white-space:pre-wrap;">' + escapeHtml(text) + '</pre>';
+        }
+        function fmt(t) {
+            if (!t) return '';
+            const d = new Date(t);
+            return isNaN(d.getTime()) ? String(t) : d.toLocaleString('zh-CN', { hour12: false });
+        }
+        async function api(path, opts) {
+            const o = opts || {};
+            const headers = Object.assign({}, o.headers || {});
+            if (o.body) headers['Content-Type'] = 'application/json';
+            const res = await fetch(API + path, { method: o.method || (o.body ? 'POST' : 'GET'), headers, body: o.body ? JSON.stringify(o.body) : undefined });
+            const data = await res.json().catch(() => ({}));
+            return { status: res.status, ok: res.ok, data };
+        }
+        function sw(t) {
+            tab = t;
+            document.getElementById('tabSolve').classList.toggle('hide', t !== 'solve');
+            document.getElementById('tabBook').classList.toggle('hide', t !== 'book');
+            document.getElementById('tabSolveBtn').classList.toggle('active', t === 'solve');
+            document.getElementById('tabBookBtn').classList.toggle('active', t === 'book');
+            if (t === 'book') loadMistakes();
+        }
+        window.switchTab = sw;
+
+        // ---------- AI 讲题 ----------
+        function onImagePicked(input) {
+            const f = input.files && input.files[0];
+            if (!f) return;
+            if (f.size > 8 * 1024 * 1024) { alert('图片不要超过 8MB'); return; }
+            const r = new FileReader();
+            r.onload = () => {
+                imageDataUrl = String(r.result || '');
+                document.getElementById('imgStatus').innerHTML = '<span class="ok">✅ 已选择图片：' +
+                    escapeHtml(f.name) + '（讲题时会识别图中的题目）</span>';
+            };
+            r.readAsDataURL(f);
+        }
+        function clearSolve() {
+            document.getElementById('question').value = '';
+            document.getElementById('qimg').value = '';
+            imageDataUrl = '';
+            lastSolve = null;
+            document.getElementById('answerBox').classList.add('hide');
+            document.getElementById('answerMd').innerHTML = '';
+            document.getElementById('solveStatus').textContent = '';
+            document.getElementById('imgStatus').textContent = '';
+            document.getElementById('solveStat').textContent = '';
+        }
+        async function solve() {
+            const btn = document.getElementById('btnSolve');
+            const status = document.getElementById('solveStatus');
+            const question = document.getElementById('question').value.trim();
+            if (!question && !imageDataUrl) { status.className = 'status err'; status.textContent = '请先输入题目或上传题目图片'; return; }
+            const subject = document.getElementById('subject').value;
+            btn.disabled = true;
+            status.className = 'status muted';
+            status.innerHTML = 'AI 正在讲解… <span class="spin"></span>（首次可能稍慢）';
+            const t0 = Date.now();
+            try {
+                const r = await api('/api/study/solve', { body: { question, imageUrl: imageDataUrl, subject } });
+                if (!r.ok || !r.data.ok) {
+                    status.className = 'status err';
+                    status.textContent = '讲题失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status));
+                    return;
+                }
+                lastSolve = { question, imageUrl: imageDataUrl, subject, explanation: r.data.explanation };
+                document.getElementById('answerMd').innerHTML = md(r.data.explanation);
+                document.getElementById('answerBox').classList.remove('hide');
+                document.getElementById('btnSaveMk').textContent = '📕 存入错题本';
+                const secs = ((Date.now() - t0) / 1000).toFixed(1);
+                status.className = 'status ok';
+                status.textContent = '✅ 讲解完成';
+                document.getElementById('solveStat').textContent = '耗时 ' + secs + ' 秒' + (r.data.model ? ' · 模型 ' + r.data.model : '');
+            } catch (e) {
+                status.className = 'status err';
+                status.textContent = '讲题失败：' + e.message;
+            } finally { btn.disabled = false; }
+        }
+        async function saveFromSolve() {
+            if (!lastSolve) return;
+            const btn = document.getElementById('btnSaveMk');
+            btn.disabled = true;
+            const r = await api('/api/study/mistakes', {
+                body: {
+                    question: lastSolve.question || '（图片题目）',
+                    explanation: lastSolve.explanation,
+                    subject: lastSolve.subject,
+                    imageUrl: lastSolve.imageUrl,
+                    source: 'ai',
+                },
+            });
+            btn.disabled = false;
+            if (!r.ok || !r.data.ok) { alert('保存失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status))); return; }
+            btn.textContent = '✅ 已存入错题本';
+            loadMistakeCount();
+        }
+        function copyAnswer() {
+            if (!lastSolve) return;
+            const text = lastSolve.explanation || '';
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => alert('已复制讲解内容')).catch(() => prompt('复制下面内容：', text));
+            } else { prompt('复制下面内容：', text); }
+        }
+
+        // ---------- 错题本 ----------
+        function debouncedLoad() {
+            if (loadTimer) clearTimeout(loadTimer);
+            loadTimer = setTimeout(loadMistakes, 350);
+        }
+        async function loadMistakeCount() {
+            const r = await api('/api/study/mistakes');
+            if (r.ok && r.data.ok) document.getElementById('mkCount').textContent = (r.data.mistakes || []).length;
+        }
+        async function loadMistakes() {
+            const box = document.getElementById('mkList');
+            const subject = document.getElementById('fSubject').value;
+            const status = document.getElementById('fStatus').value;
+            const q = document.getElementById('fq').value.trim();
+            const qs = [];
+            if (subject) qs.push('subject=' + encodeURIComponent(subject));
+            if (status) qs.push('status=' + encodeURIComponent(status));
+            if (q) qs.push('q=' + encodeURIComponent(q));
+            const r = await api('/api/study/mistakes' + (qs.length ? ('?' + qs.join('&')) : ''));
+            if (!r.ok || !r.data.ok) { box.innerHTML = '<div class="empty err">加载失败：' + escapeHtml((r.data && r.data.error) || ('HTTP ' + r.status)) + '</div>'; return; }
+            mistakes = r.data.mistakes || [];
+            document.getElementById('mkCount').textContent = mistakes.length;
+            // 学科下拉
+            const sel = document.getElementById('fSubject');
+            const cur = sel.value;
+            const subs = (r.data.subjects || []).map(s => s.subject);
+            sel.innerHTML = '<option value="">全部学科</option>' + subs.map(s => '<option' + (s === cur ? ' selected' : '') + '>' + escapeHtml(s) + '</option>').join('');
+            const stats = r.data.stats || [];
+            document.getElementById('bookStat').innerHTML = '共 <b>' + mistakes.length + '</b> 题 · ' +
+                stats.map(s => ({ open: '未掌握', reviewing: '复习中', mastered: '已掌握' }[s.status] || s.status) + ' ' + s.count).join(' · ');
+            renderMistakes();
+        }
+        const STATUS_TEXT = { open: '未掌握', reviewing: '复习中', mastered: '已掌握' };
+        function renderMistakes() {
+            const box = document.getElementById('mkList');
+            if (!mistakes.length) {
+                box.innerHTML = '<div class="empty">还没有错题。<br>用「🧠 AI 讲题」讲完一题后点「存入错题本」，或在右上角「＋ 手动添加」。</div>';
+                return;
+            }
+            box.innerHTML = mistakes.map(m => `
+                <div class="mk" id="mk-${escapeHtml(m.id)}">
+                    <div class="meta">
+                        <span class="tag ${escapeHtml(m.status)}">${escapeHtml(STATUS_TEXT[m.status] || m.status)}</span>
+                        ${m.subject ? '<span class="tag">' + escapeHtml(m.subject) + '</span>' : ''}
+                        ${m.tags ? '<span class="tag">' + escapeHtml(m.tags) + '</span>' : ''}
+                        <span>复习 ${m.reviewCount} 次</span>
+                        <span>${fmt(m.createdAt)}</span>
+                    </div>
+                    <div class="q">${escapeHtml(m.question)}</div>
+                    ${m.imageUrl ? '<img class="qimg" src="' + escapeHtml(m.imageUrl) + '" alt="题目图片" loading="lazy">' : ''}
+                    <div class="acts">
+                        <button class="btn sm" onclick="toggleReveal('${escapeHtml(m.id)}')">👁️ 复习（显示解析）</button>
+                        <button class="btn sm" onclick="makePractice('${escapeHtml(m.id)}')">✍️ 出同类题</button>
+                        <button class="btn sm" onclick="setStatus('${escapeHtml(m.id)}','mastered')">✅ 已掌握</button>
+                        <button class="btn sm" onclick="setStatus('${escapeHtml(m.id)}','reviewing')">🔁 复习中</button>
+                        <button class="btn sm" onclick="editMistake('${escapeHtml(m.id)}')">✏️ 编辑</button>
+                        <button class="btn sm danger" onclick="deleteMistake('${escapeHtml(m.id)}')">🗑️ 删除</button>
+                    </div>
+                    <div class="answer-box hide" id="rev-${escapeHtml(m.id)}">
+                        <div class="md">${m.explanation ? md(m.explanation) : '<span class="muted">（没有解析，点「编辑」补充）</span>'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        function toggleReveal(id) {
+            const el = document.getElementById('rev-' + id);
+            if (!el) return;
+            const show = el.classList.contains('hide');
+            el.classList.toggle('hide', !show);
+            if (show) api('/api/study/mistakes/update', { body: { id, reviewed: true } });
+        }
+        async function setStatus(id, status) {
+            const r = await api('/api/study/mistakes/update', { body: { id, status } });
+            if (!r.ok || !r.data.ok) { alert('操作失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status))); return; }
+            loadMistakes();
+        }
+        async function deleteMistake(id) {
+            if (!confirm('删除这道错题？')) return;
+            const r = await api('/api/study/mistakes/delete', { body: { id } });
+            if (!r.ok || !r.data.ok) { alert('删除失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status))); return; }
+            loadMistakes();
+        }
+        async function editMistake(id) {
+            const m = mistakes.find(x => x.id === id);
+            if (!m) return;
+            const subject = prompt('学科：', m.subject || '');
+            if (subject === null) return;
+            const tags = prompt('标签（逗号分隔，例如：力学,易错）：', m.tags || '');
+            if (tags === null) return;
+            const question = prompt('题目：', m.question || '');
+            if (question === null) return;
+            const answer = prompt('答案（可留空）：', m.answer || '');
+            if (answer === null) return;
+            const explanation = prompt('解析（可用 Markdown）：', m.explanation || '');
+            if (explanation === null) return;
+            const r = await api('/api/study/mistakes/update', { body: { id, subject, tags, question, answer, explanation } });
+            if (!r.ok || !r.data.ok) { alert('保存失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status))); return; }
+            loadMistakes();
+        }
+        async function addManual() {
+            const question = prompt('题目内容：');
+            if (!question) return;
+            const subject = prompt('学科（可留空）：') || '';
+            const explanation = prompt('解析（可留空，可稍后用 AI 讲题补上）：') || '';
+            const r = await api('/api/study/mistakes', { body: { question, subject, explanation, source: 'manual' } });
+            if (!r.ok || !r.data.ok) { alert('保存失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status))); return; }
+            sw('book');
+            loadMistakes();
+        }
+        async function makePractice(id) {
+            const box = document.getElementById('rev-' + id);
+            if (box) { box.classList.remove('hide'); box.innerHTML = '<div class="status muted">AI 正在出题… <span class="spin"></span></div>'; }
+            const r = await api('/api/study/practice', { body: { id, count: 2 } });
+            if (!r.ok || !r.data.ok) {
+                if (box) box.innerHTML = '<div class="status err">出题失败：' + escapeHtml((r.data && r.data.error) || ('HTTP ' + r.status)) + '</div>';
+                return;
+            }
+            const m = mistakes.find(x => x.id === id);
+            if (box) {
+                box.innerHTML = '<div class="md">' + md(m && m.explanation ? m.explanation : '') + '</div>' +
+                    '<h4 style="margin:16px 0 8px;color:var(--accent-color);">✍️ 同类练习（AI 生成）</h4>' +
+                    '<div class="md">' + md(r.data.practice) + '</div>';
+            }
+        }
+
+        (function init() {
+            try {
+                const raw = localStorage.getItem('nflshc_currentUser') || sessionStorage.getItem('currentUser');
+                if (raw) me = (JSON.parse(raw) || {}).username || '';
+            } catch (e) { /* 忽略 */ }
+            document.getElementById('whoami').textContent = me || '已登录';
+            if (!token()) { window.location.href = 'index.html?next=study.html'; return; }
+            loadMistakeCount();
+        })();
+    </script>
+    <script src="shortcuts.js"></script>
+</body>
+</html>
