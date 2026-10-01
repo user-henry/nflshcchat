@@ -105,7 +105,7 @@
         <div class="stage">
             <div class="hint" id="hint">
                 点「🎙️ 开启语音」或「🎥 开启视频」开始通话（浏览器会请求麦克风/摄像头权限）。<br>
-                音视频在参与者之间<strong>点对点传输</strong>（打不通时经 TURN 中继）；会议结束后不保留任何录音录像。
+                音视频在参与者之间<strong>点对点直连</strong>（只用 STUN 发现地址，不经服务器中转、不录制）；会议结束后不保留任何录音录像。
             </div>
             <div id="playBanner" style="display:none;">
                 <button class="btn" onclick="resumeAudio()" style="border-color:var(--accent-color);color:var(--accent-color);">🔊 点击开启对方声音（浏览器自动播放限制）</button>
@@ -425,34 +425,35 @@
         //  协商规则（避免 glare）：只有用户名较大的一方（initiator）负责发 offer；
         //  另一方需要新增/变更媒体时，发一条 __renegotiate 请求让 initiator 重新发 offer。
         // ============================================================
-        // ICE 配置：优先用服务端下发（含 TURN，可穿透对称 NAT / 跨运营商），
-        // 拉取失败时回退到内置的公共 STUN（仅同网段大概率可用）。
-        let ICE = {
+        // ICE 配置：只用公共 STUN（与 chat.html 的 1 对 1 通话完全一致的策略）。
+        // 双方各自发现自己的公网地址后直连，媒体不经服务器；不用 TURN，
+        // 避免公共中继不可用/凭据失效时 ICE 卡住、协商迟迟完不成。
+        const RTC_CONFIG = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun.cloudflare.com:3478' },
-            ],
-            iceCandidatePoolSize: 2,
+                { urls: 'stun:stun.cloudflare.com:3478' }
+            ]
         };
-        let iceSource = 'builtin';
 
-        async function loadIceConfig() {
-            try {
-                const r = await api('/api/rtc/ice');
-                if (r.ok && r.data && Array.isArray(r.data.iceServers) && r.data.iceServers.length) {
-                    ICE = { iceServers: r.data.iceServers, iceCandidatePoolSize: 2 };
-                    iceSource = r.data.source || 'server';
-                    const hasTurn = r.data.iceServers.some(s => JSON.stringify(s.urls).indexOf('turn') !== -1);
-                    updateIceHint(hasTurn ? ('TURN 已启用（' + iceSource + '）') : '仅 STUN（TURN 未配置）');
-                }
-            } catch (e) { /* 用内置回退配置 */ }
-        }
         function updateIceHint(text) {
             const box = document.getElementById('iceHint');
             if (box) box.textContent = text;
             const dot = document.getElementById('dotIce');
-            if (dot) dot.className = 'dot ' + (text.indexOf('TURN 已启用') === 0 ? 'ok' : 'wait');
+            if (dot) dot.className = 'dot ok';
+        }
+        // 服务端 /api/rtc/ice 现在也只下发 STUN：这里取一次用于展示诊断信息，
+        // 拿不到就继续用内置配置（保证会议一定能开始）。
+        async function loadIceConfig() {
+            try {
+                const r = await api('/api/rtc/ice');
+                if (r.ok && r.data && Array.isArray(r.data.iceServers) && r.data.iceServers.length) {
+                    const hasTurn = r.data.iceServers.some(s => JSON.stringify(s.urls).indexOf('turn') !== -1);
+                    updateIceHint(hasTurn ? 'ICE：STUN + TURN' : '仅 STUN 直连（不用 TURN 中继）');
+                    return;
+                }
+            } catch (e) { /* 用内置配置 */ }
+            updateIceHint('仅 STUN 直连（不用 TURN 中继）');
         }
 
         let localStream = null;
@@ -617,7 +618,7 @@
 
         function createPeer(name, initiator) {
             if (peers[name]) return peers[name];
-            const pc = new RTCPeerConnection(ICE);
+            const pc = new RTCPeerConnection(RTC_CONFIG);
             const p = { pc: pc, stream: null, pending: [], initiator: !!initiator, answered: false, offerAt: 0, recvAudio: false, recvVideo: false, negotiating: false };
             peers[name] = p;
 
@@ -1336,7 +1337,7 @@
             ensureTile(me, true);
             document.getElementById('mtCode').textContent = meetingCode || '—';
 
-            // 先取 ICE 配置（含 TURN），再入会/建连接，避免用回退配置错过中继
+            // 先取一次 ICE 提示信息（只用 STUN），再入会/建连接
             await loadIceConfig();
 
             // 关键：先入会，成为会议成员后再开始聊天与信令
