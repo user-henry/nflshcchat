@@ -20,6 +20,9 @@
 | 9 | 离线通知（Web Push）与日程到期提醒 | `security.html`（开启通知）、`sw.js` | `/api/push/*`、Cron 定时任务 |
 | 10 | 会议语音转文字 + AI 会议纪要 | `meeting-room.html` 笔记面板 | 浏览器语音识别 + HZYAI 网关 `POST /chat` |
 | 11 | HZYAI 学习：AI 讲题 + 错题本 | `study.html`（`hzyai.html` 入口） | `/api/study/*` |
+| 12 | Passkey / WebAuthn 登录 | `index.html`、`security.html` | `/api/auth/webauthn/*` |
+| 13 | 开放 API + JS/Python SDK | `sdk/js/nflshc.js`、`sdk/python/nflshc.py` | 见 `docs/API.md` |
+| 14 | 全站功能导航（可搜索） | `pages.html`（`chat.html` 导航入口） | 纯前端 |
 
 所有需要登录的接口统一使用 `Authorization: Bearer <token>`；令牌 30 天有效，可按设备吊销。
 
@@ -212,6 +215,33 @@
 
 ---
 
+## 14. Passkey / WebAuthn 登录
+
+- 流程：浏览器 `navigator.credentials.create/get`，服务端完整校验 `challenge`（一次性、5 分钟）、
+  `origin`（白名单：`*.nflshcchat.cc.cd`、`*.chatai.bot.cd`）、`rpIdHash`、UP 标志与 **ES256 签名**。
+- 接口：
+  - `POST /api/auth/webauthn/register/begin`（需登录，`{origin}`）→ `{ challengeKey, options }`
+  - `POST /api/auth/webauthn/register/finish`（需登录，`{challengeKey, origin, clientDataJSON, attestationObject}`）
+  - `POST /api/auth/webauthn/login/begin`（匿名，`{username?, origin}`）→ 无 username 时返回可发现凭据选项
+  - `POST /api/auth/webauthn/login/finish`（匿名）→ 校验通过后签发会话（`via='passkey'`）
+  - `GET  /api/auth/webauthn/credentials`、`POST /api/auth/webauthn/credentials/delete {id}`
+- 服务端内含最小 CBOR 解码器（解析 `attestationObject` / `authData` / COSE 公钥），
+  不校验 attestation 证书链（平台通行密钥普遍为 `none`）。
+- 前端入口：登录页「🔑 用通行密钥登录」、`security.html` 的「🔑 通行密钥」卡片（添加 / 列表 / 删除）。
+
+## 15. 开放 API 与 SDK
+
+- 完整接口清单与接入说明见 [`API.md`](./API.md)。
+- SDK：[`../sdk/js/nflshc.js`](../sdk/js/nflshc.js)（`NFLSHC` 客户端 + `NFLSHCOAuth` 授权码流程）、
+  [`../sdk/python/nflshc.py`](../sdk/python/nflshc.py)（同等能力，仅标准库）。
+- 覆盖能力：账号与会话、消息、好友收藏、会议（含信令/白板）、笔记、学习、文件上传、OAuth、机器人。
+
+## 16. 全站功能导航页
+
+- `pages.html`：按分类（核心 / 沟通协作 / 学习与创作 / 账号与安全 / 数据与统计 / 管理 / 趣味 / 外部站点）
+  列出**全部页面与外部站点**，含功能说明、直达链接、管理员标记，支持关键词搜索（名称/说明/网址）
+  与分类筛选；入口在 `chat.html` 顶部导航的「🧭 功能导航」。
+
 ## 数据库对象
 
 ```
@@ -231,6 +261,8 @@ calendar_reminders    日程提醒发送记录（event_id, username, notified_at
 push_subscriptions    Web Push 订阅（endpoint, username, p256dh, auth）
 mistake_book          错题本（username, subject, question, answer, explanation, image_url, tags,
                       status: open/reviewing/mastered, review_count, last_review_at）
+webauthn_credentials  Passkey 凭据（id, username, public_key(COSE), sign_count, rp_id, label）
+webauthn_challenges   WebAuthn 一次性挑战（key, challenge, type, username, expires_at）
 auth_tokens 新增列    session_id, device_label, user_agent, ip, last_seen_at, via
 users（文件站）新增列  sso_only
 ```
