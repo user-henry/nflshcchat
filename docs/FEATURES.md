@@ -182,14 +182,20 @@
 - 讨论区消息可用「📥 导入讨论区」一次性写入「## 讨论区记录」小节。
 - 逐字稿、讨论区记录、纪要**全部保存在同一篇会议笔记**中，会后可在 `notes.html` 查看、修改、共享。
 
-## 11. 会议网络穿透（TURN）
+## 11. 会议 / 通话的网络穿透（只用 STUN）
 
-- `GET /api/rtc/ice` 下发 ICE 配置：内置 STUN + TURN。会议页与通话页启动时先取该配置，
-  取不到时回退到内置 STUN。
-- TURN 凭据通过环境变量注入（`TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL`）；
-  未配置时回退公共 TURN（Open Relay），仅适合小规模使用。
-- 为什么必须有 TURN：STUN 只能协助发现公网地址，遇到对称 NAT / 不同运营商时点对点打不通，
-  必须由 TURN 中继媒体。会议页诊断条会显示「TURN 已启用 / 仅 STUN」。
+- `GET /api/rtc/ice` 下发 ICE 配置，**只含公共 STUN**（`stun.l.google.com:19302`、
+  `stun1.l.google.com:19302`、`stun.cloudflare.com:3478`），返回 `source: "stun-only"`；
+  不再下发 TURN，也不需要 `TURN_URLS` / `TURN_USERNAME` / `TURN_CREDENTIAL` 之类的配置。
+- 会议页（`meeting-room.html`）与 1 对 1 通话（`chat.html`）使用同一套策略：
+  把内置的 STUN 列表直接交给 `RTCPeerConnection`，双方发现各自公网地址后点对点直连，
+  媒体不经服务器；会议页启动时仍会取一次 `/api/rtc/ice`，仅用于诊断条展示，
+  取不到就用内置列表，保证会议一定能开始。
+- 为什么不再用 TURN：此前在未配置自有 TURN 时会回退到公共中继（Open Relay），
+  公共中继不稳定/凭据失效时 ICE 会长时间收集不到可用的 relay 候选甚至卡住协商，
+  表现为「能进会议但连不上、没有声音画面」，而 STUN 直连路径简单、延迟最低。
+- 代价：双方都处于对称 NAT 时点对点可能打不通（此时会显示「连接不稳定」并自动做 ICE 重启）。
+  若将来需要覆盖这种网络，建议接入自建 TURN 并在 `createPeer()` 的 `RTC_CONFIG` 里按需增加。
 
 ## 12. 会议屏幕共享与共享白板
 
