@@ -148,25 +148,22 @@ users（文件站）新增列  sso_only
 ## 部署与运维
 
 ```bash
-# 主站 Worker（源码与配置仅存在于本机工作副本，不进仓库）
+# 主站 Worker
 npx wrangler deploy
 
 # 密钥（仅首次需要）
 npx wrangler secret put GOOGLE_CLIENT_SECRET
-npx wrangler secret put FILES_SSO_SECRET     # 必须与文件站 config.php 的 sso_secret 一致
-
-# 文件站（byethost）全量部署
-pwsh byethost/tools/deploy.ps1
+npx wrangler secret put FILES_SSO_SECRET     # 必须与文件站配置项 sso_secret 一致
 ```
 
-- 文件站目录约定：`byethost/filehost/` 为站点源码（随仓库发布），
-  `byethost/tools/`（部署脚本，含 FTP 口令）与 `byethost/tests/`（回归测试）**不随仓库发布**。
-  详见 [`../byethost/README.md`](../byethost/README.md)。
+- **本仓库只包含前端与文档**：主站后端（Cloudflare Worker：`worker.js` + `wrangler.toml`）与
+  自建文件托管站（byethost 上的 PHP 站点）的源码、部署脚本与凭据都**不在本仓库**，
+  只由维护者在本地工作副本中部署。前端接入所需的接口契约已完整写在本文件中。
 - 前端资源改动后请同步更新引用处的 `?v=` 版本号（`js/theme.js?v=4`、`css/themes.css` 等），避免 CDN/浏览器缓存。
 
 ## 安全注意事项
 
-- 凭据文件（`Token.txt`、`deepseek-api-key.txt`、`nva-api-key.txt`、`byethost/.sso_secret.txt`）
+- 凭据文件（`Token.txt`、`deepseek-api-key.txt`、`nva-api-key.txt`、文件站 `.sso_secret.txt`）
   已在 `.gitignore` 中排除，切勿提交。
-- 文件站的 `config.php`（数据库口令 + `sso_secret`）不进仓库，只通过 FTP 上传。
+- 文件站的 `config.php`（数据库口令 + `sso_secret`）同样不入库，只通过 FTP 上传。
 - 所有跨站写操作都要求 `Authorization: Bearer <token>`。
