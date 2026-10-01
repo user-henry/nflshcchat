@@ -522,8 +522,8 @@
             });
         }
 
-        // 按需打开麦克风 / 摄像头。轨道统一通过 replaceTrack 挂到已协商好的 transceiver 上，
-        // 因此开启媒体不需要重新协商，立刻就能发送（这是视频之前一直不通的关键）。
+        // 按需打开麦克风 / 摄像头（与 chat.html 的通话一致：先拿到轨道，再 addTrack 挂到各条连接上，
+        // 然后按「只有发起方发 offer」的规则重新协商一次）。
         async function ensureLocal(wantVideo) {
             const needAudio = !localStream || localStream.getAudioTracks().length === 0;
             const needVideo = wantVideo && (!localStream || localStream.getVideoTracks().length === 0);
@@ -595,42 +595,53 @@
             renderPeerStates();
         }
 
-        // 把本地音视频轨道挂到每条连接的 transceiver 上（replaceTrack 不需要重新协商）
+        // 把本地音视频轨道挂到某条连接上（与 chat.html 一样）
+        // 用 pc.addTrack：统一计划下会自动复用同类型、尚未发送的 transceiver（把 recvonly 变成 sendrecv），
+        // 因此不会出现「轨道挂在 mid=null 的孤立 transceiver 上」这种发不出媒体的情况。
         async function attachLocal(name) {
             const p = peers[name];
             if (!p || !localStream) return;
-            const a = localStream.getAudioTracks()[0];
-            const v = localStream.getVideoTracks()[0];
-            try {
-                if (p.txAudio && a && (!p.txAudio.sender.track || p.txAudio.sender.track !== a)) {
-                    await p.txAudio.sender.replaceTrack(a);
-                    p.txAudio.direction = 'sendrecv';
-                }
-                if (p.txVideo && v && (!p.txVideo.sender.track || p.txVideo.sender.track !== v)) {
-                    await p.txVideo.sender.replaceTrack(v);
-                    p.txVideo.direction = 'sendrecv';
-                }
-            } catch (e) { console.warn('挂载本地轨道失败', name, e); }
+            for (const track of localStream.getTracks()) {
+                if (p.addedTracks.has(track.id)) continue;
+                try {
+                    p.pc.addTrack(track, localStream);
+                    p.addedTracks.add(track.id);
+                } catch (e) { console.warn('addTrack 失败', name, e); }
+            }
         }
+
+        // 媒体发生变化（首次开麦/开摄像头）后：
+        // 先把轨道挂到所有连接上，再按 chat.html 的规则重新协商——发起方发新 offer，
+        // 被动方发一条 __renegotiate 请求，让对方来 offer（避免双方同时 offer 造成 glare）。
         async function pushLocalToPeers() {
-            for (const name of Object.keys(peers)) await attachLocal(name);
+            for (const name of Object.keys(peers)) {
+                await attachLocal(name);
+                await requestNegotiation(name);
+            }
         }
 
         function createPeer(name, initiator) {
             if (peers[name]) return peers[name];
             const pc = new RTCPeerConnection(RTC_CONFIG);
-            const p = { pc: pc, stream: null, pending: [], initiator: !!initiator, answered: false, offerAt: 0, recvAudio: false, recvVideo: false, negotiating: false };
+            const p = {
+                pc: pc, stream: null, pending: [], initiator: !!initiator, answered: false,
+                offerAt: 0, recvAudio: false, recvVideo: false, negotiating: false,
+                addedTracks: new Set(),   // 已经 addTrack 到这条连接的轨道 id（避免重复添加）
+                queue: Promise.resolve(), // 信令处理串行化：避免多轮 offer/answer 交叉执行
+                offerTimer: null,
+            };
             peers[name] = p;
 
-            // 关键：一开始就把 audio / video 两条 transceiver 建好并声明为 sendrecv。
-            // 这样无论谁先开麦/开摄像，都只是 replaceTrack 换轨道，不需要重新协商；
-            // 反过来，双方协商出来的 m-line 也一定是 sendrecv，不会再出现「视频 m-line 被协商成 inactive」的情况。
+            // 与 chat.html 的音视频通话保持一致：轨道用 addTrack 挂载。
+            // 这里只先放两条 recvonly 占位 transceiver，目的是让「双方都还没开麦/开摄像头」时
+            // 也能协商出 m-line、把 ICE/DTLS 连起来（画面/声音的收发由后面的 addTrack 决定）。
+            // 之前那套「预建 sendrecv + replaceTrack」在真实网络里会出现：
+            // 被动方的 answer 变成 recvonly（对方 offer 的 m-line 是 sendonly）、本地轨道挂在
+            // 未关联的 transceiver 上（mid=null）→ 表现为「能听到看到对方，但自己的声音画面发不出去」。
             try {
-                p.txAudio = pc.addTransceiver('audio', { direction: 'sendrecv' });
-                p.txVideo = pc.addTransceiver('video', { direction: 'sendrecv' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+                pc.addTransceiver('video', { direction: 'recvonly' });
             } catch (e) { console.warn('addTransceiver 失败', e); }
-
-            pc.onnegotiationneeded = () => { scheduleNegotiation(name); };
 
             pc.onicecandidate = (ev) => {
                 if (ev.candidate) sendSignal(name, 'ice', ev.candidate.toJSON());
@@ -688,48 +699,48 @@
             renderPeerStates();
         }
 
+        // 等连接回到 stable（正在协商时不要叠加新的 offer）
+        async function waitStable(pc, tries) {
+            for (let i = 0; i < (tries || 12); i++) {
+                if (pc.signalingState === 'stable') return true;
+                await new Promise(r => setTimeout(r, 250));
+            }
+            return pc.signalingState === 'stable';
+        }
+
         async function makeOffer(name, iceRestart) {
             const p = createPeer(name, shouldInitiate(name));
             await attachLocal(name);
+            if (!(await waitStable(p.pc))) return;      // 正在协商中：交给当前这一轮，等它结束再重试
             try {
-                // 不用 offerToReceive*：transceiver 已经建好且是 sendrecv，直接按当前状态生成 offer
-                const opts = iceRestart ? { iceRestart: true } : {};
-                const offer = await p.pc.createOffer(opts);
+                // 与 chat.html 相同：轨道已经用 addTrack 挂好，createOffer 会带上真实的收发方向
+                const offer = await p.pc.createOffer(iceRestart ? { iceRestart: true } : {});
                 await p.pc.setLocalDescription(offer);
                 p.offerAt = Date.now();
                 p.answered = false;
                 const sent = await sendSignal(name, 'offer', { type: offer.type, sdp: offer.sdp });
-                // 答案迟迟不来（例如对方页面刚从后台恢复）→ 重试一次
+                // 答案迟迟不来（例如对方页面刚从后台恢复）→ 重试一次（同一时刻只保留一个重试定时器）
                 if (sent) {
-                    setTimeout(() => {
-                        if (!p.answered && p.pc && p.pc.signalingState === 'have-local-offer') { makeOffer(name, false); }
+                    if (p.offerTimer) clearTimeout(p.offerTimer);
+                    p.offerTimer = setTimeout(() => {
+                        p.offerTimer = null;
+                        if (!p.answered && p.pc && p.pc.signalingState === 'have-local-offer') makeOffer(name, false);
                     }, 6000);
                 }
             } catch (e) { console.warn('createOffer 失败', e); }
         }
 
-        // 需要重新协商时统一走这里：发起方直接 offer，被动方请求对方 offer（避免双方同时发 offer）
-        async function scheduleNegotiation(name) {
+        // 媒体变化后请求（重新）协商：
+        //   发起方直接发新 offer；被动方发一条 __renegotiate 信令，让发起方来 offer。
+        async function requestNegotiation(name) {
             const p = peers[name];
-            if (!p || p.negotiating) return;
-            p.negotiating = true;
-            setTimeout(async () => {
-                p.negotiating = false;
-                if (p.pc.signalingState !== 'stable') return;   // 正在协商中，交给当前这一轮
-                if (shouldInitiate(name)) {
-                    if (!p.renegotiating) {
-                        p.renegotiating = true;
-                        try { await makeOffer(name); } finally { setTimeout(() => { p.renegotiating = false; }, 1500); }
-                    }
-                } else {
-                    await attachLocal(name);
-                    sendSignal(name, 'ice', { __renegotiate: true });
-                }
-            }, 120);
-        }
-
-        async function renegotiateAll() {
-            for (const name of Object.keys(peers)) await scheduleNegotiation(name);
+            if (!p) return;
+            await attachLocal(name);
+            if (p.initiator) {
+                await makeOffer(name, false);
+            } else {
+                await sendSignal(name, 'ice', { __renegotiate: true });
+            }
         }
 
         // 手动「重新连接」：发起方直接做 ICE 重启，被动方请求对方重启
@@ -751,40 +762,55 @@
         }
         window.restartConnections = restartConnections;
 
+        // 信令处理：每条连接串行执行，避免多轮 offer/answer 交叉（否则会出现
+        // 「Failed to set local answer sdp: Called in wrong state: stable」这类竞态，双方都连不上）
         async function handleSignal(sig) {
             const from = sig.from_user;
             if (!from || from === me) return;
             const p = createPeer(from, false);
+            p.queue = p.queue.then(() => handleSignalNow(p, from, sig)).catch(e => console.warn('处理信令失败', sig.kind, e));
+            return p.queue;
+        }
+
+        async function handleSignalNow(p, from, sig) {
             const payload = sig.payload;
-            try {
-                if (sig.kind === 'offer') {
-                    // 正在等对方的 answer 时又收到新 offer（对端重试）→ 用新 offer 覆盖，直接应答
-                    await p.pc.setRemoteDescription(new RTCSessionDescription(payload));
-                    await attachLocal(from);
-                    const answer = await p.pc.createAnswer();
-                    await p.pc.setLocalDescription(answer);
-                    sendSignal(from, 'answer', { type: answer.type, sdp: answer.sdp });
-                } else if (sig.kind === 'answer') {
-                    p.answered = true;
-                    if (p.pc.signalingState === 'have-local-offer') {
-                        await p.pc.setRemoteDescription(new RTCSessionDescription(payload));
-                    }
-                } else if (sig.kind === 'ice') {
-                    if (payload && payload.__renegotiate) {
-                        // 对方需要重新协商（例如刚开启摄像头）→ 由我们发新 offer；带 iceRestart 时顺便重启 ICE
-                        await makeOffer(from, !!payload.iceRestart);
-                    } else if (p.pc.remoteDescription && p.pc.remoteDescription.type) {
-                        await p.pc.addIceCandidate(new RTCIceCandidate(payload));
-                    } else {
-                        p.pending.push(payload);
-                    }
+            const pc = p.pc;
+            if (sig.kind === 'offer') {
+                // 被动方才会收到 offer（发起方由 webrtc 的 shouldInitiate 规则唯一确定）
+                if (p.initiator) return;
+                if (pc.signalingState === 'have-remote-offer') {
+                    // 上一轮还没答完：先把本轮 offer 应用掉再答（rollback 后重新应用）
+                    try { await pc.setRemoteDescription(new RTCSessionDescription(payload)); } catch (e) { return; }
+                } else {
+                    await pc.setRemoteDescription(new RTCSessionDescription(payload));
                 }
-                if (p.pc.remoteDescription && p.pc.remoteDescription.type && p.pending.length) {
-                    for (const c of p.pending.splice(0)) {
-                        try { await p.pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { /* 忽略 */ }
-                    }
+                // 关键：应答之前先把自己的麦克风/摄像头轨道挂上，
+                // 这样 answer 里对应 m-line 就是 sendrecv（照搬 chat.html 的顺序）
+                await attachLocal(from);
+                if (pc.signalingState !== 'have-remote-offer') return;
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                sendSignal(from, 'answer', { type: answer.type, sdp: answer.sdp });
+            } else if (sig.kind === 'answer') {
+                p.answered = true;
+                if (pc.signalingState === 'have-local-offer') {
+                    await pc.setRemoteDescription(new RTCSessionDescription(payload));
                 }
-            } catch (e) { console.warn('处理信令失败', sig.kind, e); }
+            } else if (sig.kind === 'ice') {
+                if (payload && payload.__renegotiate) {
+                    // 对方需要重新协商（例如刚开启摄像头）→ 由我们发新 offer；带 iceRestart 时顺便重启 ICE
+                    await makeOffer(from, !!payload.iceRestart);
+                } else if (pc.remoteDescription && pc.remoteDescription.type) {
+                    await pc.addIceCandidate(new RTCIceCandidate(payload));
+                } else {
+                    p.pending.push(payload);
+                }
+            }
+            if (pc.remoteDescription && pc.remoteDescription.type && p.pending.length) {
+                for (const c of p.pending.splice(0)) {
+                    try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { /* 忽略 */ }
+                }
+            }
         }
 
         async function sendSignal(to, kind, payload) {
@@ -1052,8 +1078,27 @@
         }
 
         // ============================================================
-        //  屏幕共享：把显示器/窗口的轨道替换到 video transceiver 上（无需重新协商）
+        //  屏幕共享：把显示器/窗口的轨道换到「正在发送视频的那个 sender」上。
+        //  同类型轨道替换用 replaceTrack 即可（不需要重新协商）；若对方还没有任何视频轨道，
+        //  则用 addTrack 挂上并触发一次重新协商。
         // ============================================================
+        function videoSenderOf(p) {
+            return p.pc.getSenders().find(s => s.track && s.track.kind === 'video') || null;
+        }
+
+        async function swapVideoTrack(name, track, replacedTrack) {
+            const p = peers[name];
+            if (!p) return;
+            const sender = videoSenderOf(p);
+            if (sender) {
+                try { await sender.replaceTrack(track); } catch (e) { console.warn('替换视频轨道失败', name, e); }
+            } else if (track) {
+                try { p.pc.addTrack(track, localStream); p.addedTracks.add(track.id); } catch (e) { console.warn('addTrack 失败', name, e); }
+                await requestNegotiation(name);
+            }
+            if (replacedTrack) p.addedTracks.delete(replacedTrack.id);
+        }
+
         async function toggleScreenShare() {
             const msg = document.getElementById('mediaMsg');
             const btn = document.getElementById('btnShare');
@@ -1067,8 +1112,7 @@
                     setBadge(me, '');
                     const restore = (cameraTrack && cameraTrack.readyState === 'live') ? cameraTrack : null;
                     for (const name of Object.keys(peers)) {
-                        const p = peers[name];
-                        if (p.txVideo) { try { await p.txVideo.sender.replaceTrack(restore); } catch (e) { /* 忽略 */ } }
+                        await swapVideoTrack(name, restore, screenTrack);
                     }
                     const v = tileVideo(me);
                     if (localStream) { localStream.getVideoTracks().forEach(t => localStream.removeTrack(t)); if (restore) localStream.addTrack(restore); }
@@ -1089,13 +1133,17 @@
                 btn.textContent = '🖥️ 停止共享';
 
                 // 记住当前摄像头轨道，便于结束后恢复
-                if (localStream && localStream.getVideoTracks().length) cameraTrack = localStream.getVideoTracks()[0];
+                cameraTrack = (localStream && localStream.getVideoTracks().length) ? localStream.getVideoTracks()[0] : null;
 
                 for (const name of Object.keys(peers)) {
-                    const p = peers[name];
-                    if (p.txVideo) { try { await p.txVideo.sender.replaceTrack(screenTrack); } catch (e) { /* 忽略 */ } }
+                    await swapVideoTrack(name, screenTrack, cameraTrack);
                 }
-                // 本地预览切换到屏幕画面
+                // 本地预览切换到屏幕画面（同时把 localStream 里的视频轨换成屏幕轨，
+                // 这样后续新加入的参与者 addTrack 时拿到的是屏幕画面）
+                if (localStream) {
+                    localStream.getVideoTracks().forEach(t => localStream.removeTrack(t));
+                    localStream.addTrack(screenTrack);
+                }
                 const v = tileVideo(me);
                 v.srcObject = new MediaStream([screenTrack]);
                 v.play().catch(() => {});
