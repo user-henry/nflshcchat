@@ -115,11 +115,49 @@ NFLSHC 所在的 Cloudflare 区域把这两个入口主机上的 **200 响应**�
 在解决之前，图床/附件页面的删除行为是：**本地记录与源站文件都会立即删除，源站 404；
 但已被边缘缓存过的直链在其缓存 TTL 内仍可访问**。因此不要用这套存储放敏感内容。
 
-## 6. 相关测试
+## 6. 图片自动优化与缓存（Cloudflare 图片转换）
+
+本区域的 Cloudflare **图片转换（Image Resizing）已可用**，并且对 `file.*` / `media.*` 这两个
+Worker 自定义域名同样生效（Cloudflare 在处理 `/cdn-cgi/image/…` 时不会把它交给 Worker）。
+因此「缩略图 / 压缩图」不需要我们存储，也不需要文件站生成：
+
+```
+原图：  https://media.nflshcchat.cc.cd/pub/<分片>/<id>?e=png&n=图.png
+列表图：https://media.nflshcchat.cc.cd/cdn-cgi/image/width=480,quality=78,format=auto/pub/<分片>/<id>?e=png
+大图：  https://media.nflshcchat.cc.cd/cdn-cgi/image/width=1600,quality=85,format=auto/pub/<分片>/<id>?e=png
+```
+
+实测（1200×800 渐变 PNG，经 Cloudflare 转换）：
+
+| 形式 | 返回 | 体积 |
+| --- | --- | --- |
+| 原始直链 | `image/png` | 119.7 KB |
+| `width=400,format=auto` | `image/avif` | **1.6 KB** |
+| `width=400`（不指定 format） | `image/jpeg` | 4.7 KB |
+| `width=200,quality=60` | `image/jpeg` | 1.6 KB |
+
+实现约定（`image-host.html`）：
+
+- `cfImageUrl(url, {width, quality})` 只对 `file.nflshcchat.cc.cd` / `media.nflshcchat.cc.cd`
+  上的图片地址生效（其它域名、非图片原样返回），并且**只使用固定几档宽度**
+  （列表 480、查看/分享 1600）——Cloudflare 按「唯一变换」计费，不能让用户随意传尺寸；
+- 列表用 480 档并 `onerror` 回退到原图；「🔗 查看」用 1600 档；
+- 工具栏新增「✨ 复制优化链接」，复制的是 1600 档、`format=auto` 的地址
+  （浏览器支持时自动 AVIF/WebP，贴到聊天里更省流量）。
+
+注意：
+
+- 转换结果是**边缘缓存**的（带 `Vary: accept`），和原图一样受第 5 节的缓存规则影响：
+  这点对「删除后旧链接仍可访问」的时间窗没有改善，但转换图是派生资源，删除记录后不会再被引用；
+- `/cdn-cgi/image/…` 请求由 Cloudflare 处理，因此代理 Worker 的 `__purge` 清不到它
+  （清的是我们自己的 `/pub|tpub|storage` 缓存）。
+
+## 7. 相关测试
 
 ```bash
 node dev/tests/test-image-host.mjs       # 图床：上传 → 直链可取 → 删除 → 已清理语义 → 权限隔离
 node dev/tests/test-attachment-url.mjs   # 聊天附件：HTTPS 入口、直链可下载、私密文件不给直链
+node dev/tests/_probe-image-resize.mjs   # Cloudflare 图片转换：原图 vs /cdn-cgi/image 各种参数（含体积对比）
 ```
 
 测试脚本会创建 `t_img_*` / `t_*` 前缀的临时账号与文件，跑完请清理：
