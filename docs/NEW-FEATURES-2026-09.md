@@ -129,11 +129,17 @@ cd nflshcchat && npx wrangler deploy
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put FILES_SSO_SECRET     # 需与文件站 config.php 的 sso_secret 一致
 
-# 文件站（byethost）上传改动文件到 /nflshcfile.l.cd/htdocs/
-powershell -File byethost/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/api.php -Local byethost/filehost/api.php
-powershell -File byethost/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/lib.php -Local byethost/filehost/lib.php
-powershell -File byethost/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/config.php -Local byethost/filehost/config.php
+# 文件站（byethost）：推荐一键全量部署
+pwsh byethost/tools/deploy.ps1
+
+# 或只上传改动的文件到 /nflshcfile.l.cd/htdocs/
+powershell -File byethost/tools/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/api.php -Local byethost/filehost/api.php
+powershell -File byethost/tools/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/lib.php -Local byethost/filehost/lib.php
+powershell -File byethost/tools/ftp.ps1 put -Path /nflshcfile.l.cd/htdocs/config.php -Local byethost/filehost/config.php
 ```
+
+> 文件站的目录结构：`byethost/filehost/`（站点源码，进仓库）、`byethost/tools/`（部署脚本，**不进仓库**，含 FTP 口令）、
+> `byethost/tests/`（回归测试，不进仓库）。详见 `byethost/README.md`。
 
 自检脚本：
 
