@@ -1,4 +1,4 @@
-﻿# NFLSHC Chat 🎓💬
+# NFLSHC Chat 🎓💬
 
 > 南外淮安分校学生聊天平台 — 纯前端 + Cloudflare D1 驱动，零服务器、零数据库
 
@@ -173,8 +173,6 @@ nflshcchat/
 ├── presentation.html       # 演示页
 ├── offline.html            # 离线 fallback
 ├── 404.html                # 404 页面
-├── worker.js               # Cloudflare Worker（D1 读写 + 兼容层）
-├── wrangler.toml           # Worker / D1 部署配置
 ├── backend/                # 后端辅助脚本
 ├── css/
 │   └── themes.css          # 5 套主题样式
@@ -187,10 +185,12 @@ nflshcchat/
 ├── LOGO.png                # 项目 Logo
 ├── HZYAI LOGO.png          # AI 功能 Logo
 ├── NFLSHC 校歌.mp3          # 校歌音频
-├── NFLSHC Chat.apk         # Android 客户端
-└── .github/workflows/
-    └── deploy.yml          # GitHub Pages 部署工作流
+└── NFLSHC Chat.apk         # Android 客户端
 ```
+
+> **后端不在本仓库**：主站后端是 Cloudflare Worker（本机工作副本中的 `worker.js` + `wrangler.toml`）。
+> 按项目约定，**任何 Cloudflare Workers 的源码与部署配置都不进仓库**，只在本地维护并 `wrangler deploy` 发布。
+> 其对外接口契约、数据库对象与接入约定见 [`docs/FEATURES.md`](docs/FEATURES.md)。
 
 ---
 
