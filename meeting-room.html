@@ -26,6 +26,9 @@
         .tile video { width: 100%; height: 100%; object-fit: cover; background: #101018; }
         .tile .nm { position: absolute; left: 10px; bottom: 8px; font-size: 12px; color: #fff; background: rgba(0,0,0,.55); border-radius: 999px; padding: 2px 10px; }
         .tile .badge { position: absolute; right: 10px; top: 8px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); border-radius: 999px; padding: 2px 9px; }
+        /* 画面兜底：一张张 JPEG 帧盖在 tile 上（点对点画面传不过去时用） */
+        .tile .fallback { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #0b0b10; z-index: 2; }
+        .tile .fallback.off { display: none; }
         .avatar { width: 66px; height: 66px; border-radius: 50%; background: var(--bg-secondary); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--accent-color); }
         .hint { color: var(--text-secondary); font-size: 13px; line-height: 1.8; background: var(--bg-secondary); border: 1px dashed var(--border-color); border-radius: 12px; padding: 12px 14px; }
         .hint b { color: var(--text-primary); }
@@ -103,6 +106,12 @@
                 <option value="2000" selected>2s/段</option>
                 <option value="3000">3s/段</option>
             </select>
+            <button class="btn" id="btnFrame" onclick="toggleFrame()" title="点对点画面传不过去时的兜底：每几秒发一张画面（幻灯片式，比看不到强）">🖼 画面兜底</button>
+            <select id="frameEvery" title="每隔多久发一张画面" style="padding:8px 10px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:13px">
+                <option value="2000">2s/帧</option>
+                <option value="3000" selected>3s/帧</option>
+                <option value="5000">5s/帧</option>
+            </select>
             <button class="btn" id="btnBoard" onclick="toggleBoard()">✏️ 白板</button>
             <button class="btn" id="btnNotes" onclick="toggleNotes()">📝 笔记</button>
             <button class="btn" onclick="openInvite()">✉️ 邀请</button>
@@ -150,6 +159,7 @@
             </div>
             <div class="msg" id="mediaMsg"></div>
             <div class="msg" id="relayStatus" style="min-height:14px;"></div>
+            <div class="msg" id="frameStatus" style="min-height:14px;"></div>
         </div>
         <div class="side">
             <!-- ===== 会议笔记（随时记录，会上/会后都能看；逐字稿与讨论区都进这里） ===== -->
@@ -1555,6 +1565,143 @@
                 relayPlaying = false;
                 relayPlayNext();
             }
+        }
+
+        // ============================================================
+        //  画面兜底（视频版的「对讲」；点对点画面传不过去时用，不需要 TURN）
+        //  原理：每 2~5 秒把本地画面压成一张 480px 宽的 JPEG（质量 0.45），
+        //  POST 给 Worker 落库；另一端每 1.5 秒轮询「每个对端最新的一帧」显示在
+        //  对应的小窗里。相当于幻灯片式画面：不流畅、有几秒延迟，但至少能看到
+        //  对方在不在、在做什么。帧只保留 3 分钟，不落盘、不留档。
+        // ============================================================
+        let frameOn = false, frameLastId = 0, frameSent = 0, frameGot = 0;
+        let frameSendTimer = null, framePollTimer = null, frameCanvas = null;
+        let frameBusy = false;
+
+        function setFrameStatus(text, cls) {
+            const el = document.getElementById('frameStatus');
+            if (el) { el.className = 'muted ' + (cls || ''); el.textContent = text || ''; }
+        }
+
+        function frameEl(name) {
+            const el = ensureTile(name, name === me);
+            let img = el.querySelector('img.fallback');
+            if (!img) {
+                img = document.createElement('img');
+                img.className = 'fallback off';
+                img.alt = '';
+                el.appendChild(img);
+            }
+            return img;
+        }
+
+        async function toggleFrame() {
+            const btn = document.getElementById('btnFrame');
+            if (frameOn) {
+                frameOn = false;
+                if (frameSendTimer) { clearInterval(frameSendTimer); frameSendTimer = null; }
+                if (framePollTimer) { clearInterval(framePollTimer); framePollTimer = null; }
+                btn.classList.remove('on');
+                btn.textContent = '🖼 画面兜底';
+                setFrameStatus('已停止画面兜底（发送 ' + frameSent + ' 帧，收到 ' + frameGot + ' 帧）');
+                return;
+            }
+            // 有摄像头就用现成的，没有就单独申请一路视频（顺便也给 P2P 多一次机会）
+            let track = (localStream && localStream.getVideoTracks().length) ? localStream.getVideoTracks()[0] : null;
+            if (!track) {
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15 } } });
+                    track = s.getVideoTracks()[0];
+                } catch (e) {
+                    setFrameStatus('无法访问摄像头：' + e.message, 'err');
+                    return;
+                }
+                if (!localStream) localStream = new MediaStream();
+                localStream.addTrack(track);
+                const v = tileVideo(me);
+                v.srcObject = localStream;
+                v.play().catch(() => {});
+                try { await pushLocalToPeers(); } catch (e) { /* 兜底不依赖 P2P */ }
+            }
+            frameOn = true;
+            frameLastId = 0;
+            btn.classList.add('on');
+            btn.textContent = '🖼 停止兜底';
+            setFrameStatus('画面兜底中：每 ' + (frameInterval() / 1000) + ' 秒发一张，对端约 1~3 秒后看到', 'ok');
+            framePollTimer = setInterval(framePoll, 1500);
+            framePoll();
+            frameSendLoop();
+        }
+        window.toggleFrame = toggleFrame;
+
+        function frameInterval() {
+            return Number(document.getElementById('frameEvery') && document.getElementById('frameEvery').value) || 3000;
+        }
+
+        function frameSendLoop() {
+            if (!frameOn) return;
+            const src = tileVideo(me);
+            const track = localStream && localStream.getVideoTracks()[0];
+            if (!track || track.readyState !== 'live' || !src.videoWidth) {
+                frameSendTimer = setTimeout(frameSendLoop, 500);
+                return;
+            }
+            try {
+                if (!frameCanvas) frameCanvas = document.createElement('canvas');
+                const w = 480;
+                const h = Math.max(1, Math.round(w * src.videoHeight / src.videoWidth));
+                frameCanvas.width = w; frameCanvas.height = h;
+                const c = frameCanvas.getContext('2d');
+                c.drawImage(src, 0, 0, w, h);
+                const url = frameCanvas.toDataURL('image/jpeg', 0.45);
+                const data = url.split(',')[1] || '';
+                if (!data || data.length > 320 * 1024) {
+                    setFrameStatus('画面太大，已跳过这一帧（降低分辨率或画质）', 'err');
+                } else {
+                    api('/api/meeting/frame', { body: { meetingId: meetingId, mime: 'image/jpeg', data } })
+                        .then(r => {
+                            if (r.ok && r.data && r.data.ok) {
+                                frameSent++;
+                                setFrameStatus('画面兜底中 · 已发 ' + frameSent + ' 帧 / 已收 ' + frameGot + ' 帧');
+                            } else {
+                                setFrameStatus('发送失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status)), 'err');
+                            }
+                        })
+                        .catch(e => setFrameStatus('发送异常：' + e.message, 'err'));
+                }
+            } catch (e) {
+                setFrameStatus('截取画面失败：' + e.message, 'err');
+            }
+            frameSendTimer = setTimeout(frameSendLoop, frameInterval());
+        }
+
+        async function framePoll() {
+            if (!frameOn || !meetingId || frameBusy) return;
+            frameBusy = true;
+            try {
+                const r = await api('/api/meeting/frame?meetingId=' + encodeURIComponent(meetingId) + '&since=' + frameLastId);
+                if (r.ok && r.data && r.data.ok) {
+                    for (const f of (r.data.frames || [])) {
+                        frameLastId = Math.max(frameLastId, f.id);
+                        frameGot++;
+                        const img = frameEl(f.from_user);
+                        // 如果这条 P2P 连接已经能收到对方的实时画面，就别用兜底画面盖住它
+                        const p2p = peers[f.from_user];
+                        if (p2p && p2p.recvVideo && p2p.pc && p2p.pc.connectionState === 'connected') {
+                            img.classList.add('off');
+                            continue;
+                        }
+                        img.src = 'data:' + (f.mime || 'image/jpeg') + ';base64,' + f.data;
+                        img.classList.remove('off');
+                        setBadge(f.from_user, '🖼 兜底画面');
+                        // 很久没有新帧就把角标撤掉，避免把「上一张」当实时画面
+                        const name = f.from_user;
+                        setTimeout(() => { if (frameOn) setBadge(name, ''); }, frameInterval() * 2 + 4000);
+                    }
+                    if (frameGot) setFrameStatus('画面兜底中 · 已发 ' + frameSent + ' 帧 / 已收 ' + frameGot + ' 帧');
+                }
+            } catch (e) { /* 下一轮重试 */ }
+            frameBusy = false;
         }
 
         // ============================================================
