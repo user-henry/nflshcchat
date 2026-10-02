@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修复应用 - NFLSHC Chat</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #1a1a2e; color: #e8edf4; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; padding: 24px;
+        }
+        .box {
+            background: #20203a; border: 1px solid #33335c; border-radius: 20px;
+            padding: 36px; max-width: 520px; width: 100%; text-align: center;
+        }
+        .box .icon { font-size: 56px; display: block; margin-bottom: 16px; }
+        h1 { font-size: 22px; color: #ffd700; margin-bottom: 12px; }
+        p { font-size: 14px; line-height: 1.75; color: #a9b0c0; margin-bottom: 14px; }
+        .btn {
+            display: inline-block; background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1a2e; border: none; border-radius: 12px; padding: 13px 28px;
+            font-size: 16px; font-weight: 700; cursor: pointer; margin: 6px 4px;
+            text-decoration: none;
+        }
+        .btn.ghost { background: transparent; color: #ffd700; border: 1px solid #ffd700; }
+        .btn[disabled] { opacity: .55; cursor: default; }
+        #log {
+            margin-top: 18px; text-align: left; font-size: 12.5px; line-height: 1.7;
+            background: #16162a; border: 1px solid #2c2c50; border-radius: 12px;
+            padding: 12px 14px; max-height: 190px; overflow: auto; white-space: pre-wrap;
+            color: #9aa3b5;
+        }
+        .ok { color: #2ecc71; }
+        .warn { color: #f5a623; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <span class="icon">🛠️</span>
+        <h1>修复 NFLSHC Chat 应用</h1>
+        <p>如果网页或已安装的应用出现<strong>白屏、打不开、一直转圈、内容停留在旧版本</strong>，多半是浏览器里的
+           Service Worker 与旧缓存卡住了。点下面的按钮会清掉本站的缓存并重新加载最新版本 ——
+           不会删除登录状态、聊天记录与本地设置。</p>
+        <button class="btn" id="fixBtn">🔄 清理缓存并重新加载</button>
+        <a class="btn ghost" href="/">返回首页</a>
+        <div id="log">等待操作…</div>
+    </div>
+
+    <script>
+        (function () {
+            var logBox = document.getElementById('log');
+            var btn = document.getElementById('fixBtn');
+            function log(text, cls) {
+                var line = document.createElement('div');
+                if (cls) line.className = cls;
+                line.textContent = text;
+                logBox.appendChild(line);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+
+            // 只清理缓存与 Service Worker：不碰 localStorage / IndexedDB / Cookie，
+            // 所以登录态、主题、聊天记录都不会丢。
+            async function repair() {
+                btn.disabled = true;
+                logBox.textContent = '';
+                var problems = 0;
+                log('开始修复…');
+
+                try {
+                    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                        var regs = await navigator.serviceWorker.getRegistrations();
+                        log('发现 ' + regs.length + ' 个 Service Worker 注册');
+                        for (var i = 0; i < regs.length; i++) {
+                            var ok = await regs[i].unregister();
+                            log((ok ? '✓ 已注销：' : '✗ 注销失败：') + regs[i].scope, ok ? 'ok' : 'warn');
+                            if (!ok) problems++;
+                        }
+                    } else {
+                        log('该浏览器不支持 Service Worker，跳过', 'warn');
+                    }
+                } catch (e) { problems++; log('✗ 注销 Service Worker 出错：' + e.message, 'warn'); }
+
+                try {
+                    if (window.caches && caches.keys) {
+                        var names = await caches.keys();
+                        log('发现 ' + names.length + ' 个缓存空间');
+                        for (var j = 0; j < names.length; j++) {
+                            var done = await caches.delete(names[j]);
+                            log((done ? '✓ 已删除缓存：' : '✗ 删除失败：') + names[j], done ? 'ok' : 'warn');
+                            if (!done) problems++;
+                        }
+                    }
+                } catch (e) { problems++; log('✗ 清理缓存出错：' + e.message, 'warn'); }
+
+                log(problems ? ('完成，但有 ' + problems + ' 项没成功；仍尝试重新加载') : '完成：缓存已清理', problems ? 'warn' : 'ok');
+                log('正在重新加载最新版本…');
+                setTimeout(function () { location.replace('/?cachebust=' + Date.now()); }, 900);
+            }
+
+            btn.addEventListener('click', repair);
+
+            // 顺手把当前状态显示出来，方便判断问题
+            (async function () {
+                try {
+                    var regs = (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) ? await navigator.serviceWorker.getRegistrations() : [];
+                    var names = (window.caches && caches.keys) ? await caches.keys() : [];
+                    log('当前状态：Service Worker ' + regs.length + ' 个，缓存空间 ' + names.length + ' 个'
+                        + (names.length ? '（' + names.join('、') + '）' : ''));
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        log('页面正被 Service Worker 接管：' + navigator.serviceWorker.controller.scriptURL);
+                    } else {
+                        log('页面当前没有被 Service Worker 接管');
+                    }
+                } catch (e) { log('读取状态失败：' + e.message, 'warn'); }
+            })();
+        })();
+    </script>
+</body>
+</html>
