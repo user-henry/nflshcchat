@@ -3504,8 +3504,9 @@
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            // 带版本号绕过 CDN 缓存，确保加载到最新 sw.js（修复旧缓存导致页面/数据过期）
-            navigator.serviceWorker.register('sw.js?v=2.4.0')
+            // 带版本号绕过 CDN/浏览器缓存，确保加载到最新 sw.js（修复旧缓存导致页面/数据过期）
+            // 注意：改了 sw.js 就同步改这里的版本号，否则客户端可能十几分钟内拿不到新的 SW
+            navigator.serviceWorker.register('sw.js?v=2.5.2')
                 .then(function(registration) {
                     console.log('[PWA] Service Worker 注册成功');
                 })
