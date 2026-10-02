@@ -1,9 +1,11 @@
 // sw.js - NFLSHC Chat Service Worker
 // 版本号：每次更新代码时修改此版本号，浏览器会自动更新缓存
+// v2.5.1: 站点图标改为本地文件（favicon/PWA 图标）并纳入预缓存；bump 版本号让已安装的
+//         旧客户端强制重建缓存（旧缓存 nflshc-chat-v2.5.0 会在 activate 时被删除）
 // v2.5.0: 新增 Web Push 离线通知（会议邀请 / 消息提醒 / 日程提醒）
 // v2.4.0: 主题/资源引用带版本号（theme.js?v=4），配合网络优先导航彻底解决旧缓存卡页面问题
 
-const CACHE_VERSION = 'v2.5.0';
+const CACHE_VERSION = 'v2.5.1';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
 // 需要预缓存的资源列表（只放确定存在的文件，任何 404 都会导致安装失败、SW 无法更新）
@@ -33,7 +35,13 @@ const urlsToCache = [
   '/shortcuts.js',
   '/css/themes.css',
   '/manifest.json',
-  '/offline.html'
+  '/offline.html',
+  // 站点图标（PWA 安装图标 + favicon）：本地文件，断网时也能正常显示
+  '/favicon.svg',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 // ===== 安装事件：缓存资源 =====
