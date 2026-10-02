@@ -1,11 +1,13 @@
 // sw.js - NFLSHC Chat Service Worker
 // 版本号：每次更新代码时修改此版本号，浏览器会自动更新缓存
+// v2.5.2: 预缓存改为「逐个添加、互不牵连」——以前任何一个资源失败都会让整个 install 被拒，
+//         SW 卡在 installing（页面因此停留在旧版本，看起来像"应用坏了"）；现在失败只记日志。
 // v2.5.1: 站点图标改为本地文件（favicon/PWA 图标）并纳入预缓存；bump 版本号让已安装的
 //         旧客户端强制重建缓存（旧缓存 nflshc-chat-v2.5.0 会在 activate 时被删除）
 // v2.5.0: 新增 Web Push 离线通知（会议邀请 / 消息提醒 / 日程提醒）
 // v2.4.0: 主题/资源引用带版本号（theme.js?v=4），配合网络优先导航彻底解决旧缓存卡页面问题
 
-const CACHE_VERSION = 'v2.5.1';
+const CACHE_VERSION = 'v2.5.2';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
 // 需要预缓存的资源列表（只放确定存在的文件，任何 404 都会导致安装失败、SW 无法更新）
@@ -45,14 +47,25 @@ const urlsToCache = [
 ];
 
 // ===== 安装事件：缓存资源 =====
+// 关键改动：不再用 cache.addAll —— 它要求清单里**每一个**资源都 200，
+// 只要有一个请求失败（网络抖动、Cloudflare 挑战、公告性资源被删）整个 install 就被拒，
+// SW 永远停在 installing，页面一直用旧缓存 → 用户看到的就是「应用打不开 / 内容不更新」。
+// 现在逐个 add 并各自兜错，最差情况只是少缓存几个文件，SW 一定能装上并接管。
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('[SW] 缓存资源中...');
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => Promise.all(urlsToCache.map(url =>
+        cache.add(new Request(url, { cache: 'reload' }))
+          .catch(err => {
+            console.warn('[SW] 预缓存失败（已跳过）：', url, err && err.message);
+            return null;
+          })
+      )))
       .then(() => self.skipWaiting())
+      .catch(err => {
+        console.warn('[SW] 安装阶段异常，仍然继续接管：', err && err.message);
+        return self.skipWaiting();
+      })
   );
 });
 
