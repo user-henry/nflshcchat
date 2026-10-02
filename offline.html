@@ -42,6 +42,13 @@
             font-size: 16px;
         }
         .offline-box .retry-btn:hover { opacity: 0.9; }
+        .offline-box .repair-link {
+            display: inline-block;
+            margin-top: 18px;
+            font-size: 13px;
+            color: var(--text-muted);
+            text-decoration: underline;
+        }
         .offline-box .version {
             margin-top: 16px;
             font-size: 12px;
@@ -60,7 +67,9 @@
         <h1>网络连接已断开</h1>
         <p>请检查您的网络连接，然后点击下方按钮重试。<br>NFLSHC Chat 部分内容已缓存，您仍可查看历史消息。</p>
         <button class="retry-btn" onclick="location.reload()">🔄 重新连接</button>
-        <p class="version">NFLSHC Chat · 离线模式 v2.2.0</p>
+        <br>
+        <a class="repair-link" href="/pwa-reset.html">页面一直打不开？点这里修复应用（清理旧缓存）</a>
+        <p class="version">NFLSHC Chat · 离线模式 v2.5.1</p>
     </div>
     </body>
 </html>
