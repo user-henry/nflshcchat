@@ -74,6 +74,8 @@ curl -X POST https://worker.nflshcchat.cc.cd/api/auth/login \
 | POST | `/api/meeting/signal` / GET 同路径 | WebRTC 信令（`offer`/`answer`/`ice`） |
 | POST | `/api/meeting/board` / GET 同路径 | 共享白板笔画（增量同步） |
 | POST | `/api/meeting/board/clear` | 清空白板（主持人） |
+| POST | `/api/meeting/voice` / GET 同路径 | 语音对讲兜底：webm/opus 片段中转（无 TURN 时的"能说话"通道） |
+| POST | `/api/meeting/frame` / GET 同路径 | 画面兜底：JPEG 帧中转（GET 只返回每个对端最新一帧） |
 | POST | `/api/meeting/end` | 结束会议（主持人） |
 
 ### 笔记
