@@ -217,7 +217,7 @@
 ## 11.2 画面兜底（视频版的「对讲」，同样不需要 TURN）
 
 - 入口：会议页工具栏「🖼 画面兜底」（可调 2s / 3s / 5s 一帧）。
-- 原理：每 2~5 秒把本地画面画到 480px 宽的 canvas 上，压成 `image/jpeg`（质量 0.45，实测约 4~40KB），
+- 原理：每 2-5 秒把本地画面画到 480px 宽的 canvas 上，压成 `image/jpeg`（质量 0.45，实测约 4-40KB），
   经 `POST /api/meeting/frame` 交 Worker 落库；对端每 1.5 秒 `GET /api/meeting/frame?meetingId=&since=`
   轮询，**每个对端只取最新一帧**（不回溯历史，所以打开就能立刻看到对方当前的样子），
   以 `<img class="fallback">` 盖在该用户的小窗上，并打上「🖼 兜底画面」角标。
