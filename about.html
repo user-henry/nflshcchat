@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>NFLSHC Chat · 宣传片（关于本站）</title>
+<title>NFLSHC Chat · 宣传片</title>
 <style>
 :root{--fg:#e8ecf8;--mut:#8b94b3;--a:#3ddc97;--b:#4c8dff;--c:#a78bfa;--g:#f5c542;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -110,8 +110,6 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
 </style>
 <link rel="stylesheet" href="css/themes.css">
 <style>
-
-/* ===== 信息面板（原「关于本站」内容）===== */
 #infoBar{position:fixed;right:14px;top:12px;z-index:40;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 #infoBar a,#infoBar button{font:600 13px/1 system-ui,"PingFang SC","Microsoft YaHei",sans-serif;color:#dff7ef;text-decoration:none;
   background:rgba(6,20,30,.72);border:1px solid rgba(24,224,192,.45);border-radius:999px;padding:9px 14px;cursor:pointer;backdrop-filter:blur(6px)}
@@ -119,17 +117,16 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
 #infoPanel{position:fixed;inset:0;z-index:35;display:none;overflow:auto;background:var(--bg-primary,#0f1218);color:var(--text-primary,#e8edf4)}
 #infoPanel.show{display:block}
 #infoPanel .container{max-width:900px;margin:0 auto;padding:24px 20px 60px}
-#infoPanel .nav{position:sticky;top:0;z-index:2}
+#infoPanel .nav{position:sticky;top:0;z-index:2;background:var(--bg-secondary,#161b22)}
+#infoPanel .panel-title{font-size:26px;margin:18px 0 12px;color:var(--accent-color,#18e0c0)}
 #infoPanel h1{font-size:34px;margin:0 0 10px;letter-spacing:0}
 #infoPanel h2{font-size:22px;margin:0 0 14px}
 #infoPanel h3{font-size:17px;margin:16px 0 8px}
 #infoPanel pre{font-size:13px;background:var(--bg-primary,#0f1218);border-radius:10px;padding:10px 12px;overflow:auto}
 #infoPanel .card{background:var(--bg-secondary,#161b22);border:1px solid var(--border-color,#2a323d);border-radius:16px;padding:22px;margin-bottom:20px}
 #infoPanel .hero{border-radius:20px;padding:34px 24px;text-align:center;margin-bottom:22px}
-#infoPanel .close{margin:0 0 12px}
 </style>
 </head><body>
-
 <div id="infoBar">
   <a href="index.html">🏠 首页</a>
   <a href="chat.html">💬 聊天</a>
@@ -138,29 +135,21 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
 </div>
 <div id="infoPanel">
   <div class="container">
-    <button class="btn close" onclick="toggleInfo()" style="padding:8px 14px;border-radius:10px;cursor:pointer">← 返回宣传片</button>
+    <button class="btn close" onclick="toggleInfo(false)" style="padding:8px 14px;border-radius:10px;cursor:pointer">← 返回宣传片</button>
     <div class="nav">
-        <div class="nav-left"><div class="logo"></div><h2>💬 NFLSHC Chat</h2></div>
-        <div>
-            <span>欢迎，<span id="username"></span></span>
-            <a href="chat.html">💬 聊天</a>
-            <a href="#" onclick="logout()">🚪 退出</a>
-        </div>
+      <div class="nav-left"><h2>💬 NFLSHC Chat</h2></div>
+      <div><a href="chat.html">💬 聊天</a><a href="pages.html">🧭 功能导航</a><a href="index.html">🏠 首页</a></div>
     </div>
-
-    <div class="container">
-        <div class="hero">
+<div class="hero">
             <h1>💬 NFLSHC Chat</h1>
             <p>一个安全、便捷、功能丰富的现代聊天平台</p>
         </div>
-
-        <div class="card">
+<div class="card">
             <h2>📖 关于本站</h2>
             <p>NFLSHC Chat 是一款基于 Cloudflare D1 构建的轻量级聊天平台。我们致力于为用户提供安全、私密、功能丰富的聊天体验，无需复杂的服务器部署，即可享受群聊、私聊等多种功能。</p>
             <p>本平台采用现代化的 Web 技术栈，支持 Markdown 格式消息、实时预览、消息收藏、聊天记录导出等功能，让您的沟通更加高效便捷。</p>
         </div>
-
-        <div class="card">
+<div class="card">
             <h2>🎵 NFLSHC 校歌</h2>
                         <p style="text-align:center; margin-bottom:15px; color: var(--text-secondary);">🎵 点击播放按钮收听 NFLSHC 校歌，让我们一起感受校园情怀 🎶</p>
             <div class="anthem-player" style="max-width:600px;margin:0 auto 25px;">
@@ -171,8 +160,7 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
             </div>
 
         </div>
-
-        <div class="card">
+<div class="card">
             <h2>🎬 NFLSHC 学校官方宣传片</h2>
             <div class="anthem-player" style="max-width:720px;margin:0 auto;">
                 <video controls preload="none" style="width:100%;border-radius:10px;outline:none;background:#000;">
@@ -260,110 +248,7 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
             <h1>💬 NFLSHC Chat</h1>
             <p>一个安全、便捷、功能丰富的现代聊天平台</p>
         </div>
-
-        <div class="card">
-            <h2>📖 关于本站</h2>
-            <p>NFLSHC Chat 是一款基于 Cloudflare D1 构建的轻量级聊天平台。我们致力于为用户提供安全、私密、功能丰富的聊天体验，无需复杂的服务器部署，即可享受群聊、私聊等多种功能。</p>
-            <p>本平台采用现代化的 Web 技术栈，支持 Markdown 格式消息、实时预览、消息收藏、聊天记录导出等功能，让您的沟通更加高效便捷。</p>
-        </div>
-
-        <div class="card">
-            <h2>🎵 NFLSHC 校歌</h2>
-                        <p style="text-align:center; margin-bottom:15px; color: var(--text-secondary);">🎵 点击播放按钮收听 NFLSHC 校歌，让我们一起感受校园情怀 🎶</p>
-            <div class="anthem-player" style="max-width:600px;margin:0 auto 25px;">
-                <audio controls preload="none" style="width:100%;border-radius:10px;outline:none;">
-                    <source src="https://raw.githubusercontent.com/user-henry/nflshcchat/main/NFLSHC%20%E6%A0%A1%E6%AD%8C.mp3" type="audio/mpeg">
-                    您的浏览器不支持音频播放。
-                </audio>
-            </div>
-
-        </div>
-
-        <div class="card">
-            <h2>🎬 NFLSHC 学校官方宣传片</h2>
-            <div class="anthem-player" style="max-width:720px;margin:0 auto;">
-                <video controls preload="none" style="width:100%;border-radius:10px;outline:none;background:#000;">
-                    <source src="https://eos-shanghai-2.cmecloud.cn/nanwai001/599835a1cd8de38bea7e6e73a5dd7123.mp4" type="video/mp4">
-                    您的浏览器不支持视频播放。
-                </video>
-            </div>
-        </div>
-
-            <div class="feature-grid">
-                <div class="feature-item">
-                    <div class="feature-icon">💬</div>
-                    <h4>群聊 & 私聊</h4>
-                    <p>支持创建群聊和一对一私聊，满足不同场景需求</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📝</div>
-                    <h4>Markdown 支持</h4>
-                    <p>消息支持 Markdown 格式，实时预览效果</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">⭐</div>
-                    <h4>消息收藏</h4>
-                    <p>收藏重要消息，方便日后查阅</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🔍</div>
-                    <h4>消息搜索</h4>
-                    <p>按关键词、发送者、时间范围搜索历史消息</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📤</div>
-                    <h4>数据导出</h4>
-                    <p>导出聊天记录为 JSON 或 HTML 格式</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📊</div>
-                    <h4>群聊统计</h4>
-                    <p>消息趋势、发言排行榜、词云分析</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">@</div>
-                    <h4>@提及通知</h4>
-                    <p>使用 @用户名 或 @所有人 通知其他成员</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🔒</div>
-                    <h4>隐私保护</h4>
-                    <p>数据存储在 Cloudflare D1，完全透明可控</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">↩️</div>
-                    <h4>消息引用回复</h4>
-                    <p>回复特定消息，引用原文上下文清晰</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📌</div>
-                    <h4>群聊置顶</h4>
-                    <p>管理员可置顶重要消息，全员可见</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🎤</div>
-                    <h4>语音消息</h4>
-                    <p>一键录音发送语音，沟通更便捷</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">👥</div>
-                    <h4>好友系统</h4>
-                    <p>添加好友、等级显示、快速私聊</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">🏆</div>
-                    <h4>用户等级</h4>
-                    <p>聊天获取经验，升级解锁成就</p>
-                </div>
-                <div class="feature-item">
-                    <div class="feature-icon">📊</div>
-                    <h4>个人仪表盘</h4>
-                    <p>数据可视化，活动趋势一目了然</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
+<div class="card">
             <h2>🛠️ 技术栈</h2>
             <div class="tech-stack">
                 <span class="tech-tag">HTML5</span>
@@ -376,8 +261,7 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
                 <span class="tech-tag">GitHub Actions</span>
             </div>
         </div>
-
-        <div class="card">
+<div class="card">
             <h2>📋 版本信息</h2>
             <div class="version-info">
                 <span class="version-badge">当前版本: v2.2.0</span>
@@ -425,8 +309,7 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
             - 公告发布系统<br>
             - 意见反馈系统</p>
         </div>
-
-        <div class="card">
+<div class="card">
             <h2>👥 开发团队</h2>
             <p><strong>项目发起人 & 主要开发者：</strong> HZY</p>
             <p><strong>项目贡献者：</strong> NFLSHC 202401 社区成员</p>
@@ -442,24 +325,31 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
     </div>
   </div>
 </div>
+  </div>
+</div>
 <script>
-  // 信息面板：默认隐藏，宣传片是默认视图
+  // 信息面板：默认隐藏（宣传片是默认视图）
+  var FILM_TITLE = 'NFLSHC Chat · 宣传片';
   function toggleInfo(force) {
     var p = document.getElementById('infoPanel');
     var show = (typeof force === 'boolean') ? force : !p.classList.contains('show');
     p.classList.toggle('show', show);
     document.getElementById('btnInfo').textContent = show ? '🎬 看宣传片' : 'ℹ️ 关于本站';
-    if (show) { try { var v = document.querySelectorAll('video,audio'); v.forEach(function (x) { if (!x.paused) x.pause(); }); } catch (e) {} }
+    if (show) {
+      p.scrollTop = 0;                              // 第一眼就是「💬 NFLSHC Chat / 一个安全、便捷、功能丰富的现代聊天平台」
+      document.title = '关于本站 · NFLSHC Chat';    // 标签页/文件名显示「关于本站」
+      try { document.querySelectorAll('video,audio').forEach(function (x) { if (!x.paused) x.pause(); }); } catch (e) {}
+    } else {
+      document.title = FILM_TITLE;
+    }
   }
   window.toggleInfo = toggleInfo;
   addEventListener('keydown', function (e) {
     if (e.key === 'i' || e.key === 'I') { if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return; toggleInfo(); }
     if (e.key === 'Escape') toggleInfo(false);
   });
-  // 直接带 #info 打开时展示信息面板
   if (location.hash === '#info') toggleInfo(true);
 </script>
-
 <div id="vp"><div id="stage">
 <div class="o o1"></div><div class="o o2"></div><div id="grid"></div><canvas id="fx" width="1280" height="720"></canvas>
 
