@@ -1576,7 +1576,9 @@
         // ============================================================
         let frameOn = false, frameLastId = 0, frameSent = 0, frameGot = 0;
         let frameSendTimer = null, framePollTimer = null, frameCanvas = null;
+        let frameStartedAt = 0;
         let frameBusy = false;
+        let framePolls = 0, frameErr = '';   // 轮询次数 / 最近一次失败原因（出问题时能在页面上看到）
 
         function setFrameStatus(text, cls) {
             const el = document.getElementById('frameStatus');
@@ -1625,11 +1627,12 @@
             }
             frameOn = true;
             frameLastId = 0;
+            frameStartedAt = Date.now();
+            frameErr = '';
             btn.classList.add('on');
             btn.textContent = '🖼 停止兜底';
             setFrameStatus('画面兜底中：每 ' + (frameInterval() / 1000) + ' 秒发一张，对端约 1~3 秒后看到', 'ok');
-            framePollTimer = setInterval(framePoll, 1500);
-            framePoll();
+            framePollLoop();
             frameSendLoop();
         }
         window.toggleFrame = toggleFrame;
@@ -1638,14 +1641,23 @@
             return Number(document.getElementById('frameEvery') && document.getElementById('frameEvery').value) || 3000;
         }
 
-        function frameSendLoop() {
+        async function frameSendLoop() {
             if (!frameOn) return;
-            const src = tileVideo(me);
-            const track = localStream && localStream.getVideoTracks()[0];
-            if (!track || track.readyState !== 'live' || !src.videoWidth) {
-                frameSendTimer = setTimeout(frameSendLoop, 500);
+            // 兜底画面是应急手段：连续开太久既费流量也费数据库写入，30 分钟后自动停
+            if (frameStartedAt && Date.now() - frameStartedAt > 30 * 60 * 1000) {
+                toggleFrame();
+                setFrameStatus('画面兜底已自动停止（连续使用超过 30 分钟）。需要的话再点一次。', 'muted');
                 return;
             }
+            await frameSendOnce();
+            frameSendTimer = setTimeout(frameSendLoop, frameInterval());
+        }
+
+        // 采集一帧并发出（独立成函数，方便自检/测试直接调用一次）
+        async function frameSendOnce() {
+            const src = tileVideo(me);
+            const track = localStream && localStream.getVideoTracks()[0];
+            if (!track || track.readyState !== 'live' || !src.videoWidth) return { ok: false, reason: '摄像头画面还没准备好' };
             try {
                 if (!frameCanvas) frameCanvas = document.createElement('canvas');
                 const w = 480;
@@ -1657,30 +1669,41 @@
                 const data = url.split(',')[1] || '';
                 if (!data || data.length > 320 * 1024) {
                     setFrameStatus('画面太大，已跳过这一帧（降低分辨率或画质）', 'err');
-                } else {
-                    api('/api/meeting/frame', { body: { meetingId: meetingId, mime: 'image/jpeg', data } })
-                        .then(r => {
-                            if (r.ok && r.data && r.data.ok) {
-                                frameSent++;
-                                setFrameStatus('画面兜底中 · 已发 ' + frameSent + ' 帧 / 已收 ' + frameGot + ' 帧');
-                            } else {
-                                setFrameStatus('发送失败：' + ((r.data && r.data.error) || ('HTTP ' + r.status)), 'err');
-                            }
-                        })
-                        .catch(e => setFrameStatus('发送异常：' + e.message, 'err'));
+                    return { ok: false, reason: '画面太大' };
                 }
+                const r = await api('/api/meeting/frame', { timeout: 15000, body: { meetingId: meetingId, mime: 'image/jpeg', data } });
+                if (r.ok && r.data && r.data.ok) {
+                    frameSent++;
+                    setFrameStatus('画面兜底中 · 已发 ' + frameSent + ' 帧 / 已收 ' + frameGot + ' 帧');
+                    return { ok: true, bytes: data.length };
+                }
+                const why = (r.data && r.data.error) || ('HTTP ' + r.status);
+                setFrameStatus('发送失败：' + why, 'err');
+                return { ok: false, reason: why };
             } catch (e) {
-                setFrameStatus('截取画面失败：' + e.message, 'err');
+                setFrameStatus('发送异常：' + e.message, 'err');
+                return { ok: false, reason: e.message };
             }
-            frameSendTimer = setTimeout(frameSendLoop, frameInterval());
+        }
+        window.frameSendOnce = frameSendOnce;
+
+        // 轮询用「上一次结束后再排下一次」的链式定时器，而不是 setInterval：
+        // 网络慢的时候上一次请求还没回来，setInterval 只会把这一轮丢掉（表现为长时间收不到新画面）。
+        async function framePollLoop() {
+            if (!frameOn) return;
+            await framePoll();
+            if (frameOn) framePollTimer = setTimeout(framePollLoop, 1500);
         }
 
         async function framePoll() {
             if (!frameOn || !meetingId || frameBusy) return;
             frameBusy = true;
+            framePolls++;
             try {
-                const r = await api('/api/meeting/frame?meetingId=' + encodeURIComponent(meetingId) + '&since=' + frameLastId);
+                // 兜底画面走的是「慢网络也能用」的通道，超时给宽一点，别自己把自己掐断
+                const r = await api('/api/meeting/frame?meetingId=' + encodeURIComponent(meetingId) + '&since=' + frameLastId, { timeout: 15000 });
                 if (r.ok && r.data && r.data.ok) {
+                    frameErr = '';
                     for (const f of (r.data.frames || [])) {
                         frameLastId = Math.max(frameLastId, f.id);
                         frameGot++;
@@ -1699,8 +1722,15 @@
                         setTimeout(() => { if (frameOn) setBadge(name, ''); }, frameInterval() * 2 + 4000);
                     }
                     if (frameGot) setFrameStatus('画面兜底中 · 已发 ' + frameSent + ' 帧 / 已收 ' + frameGot + ' 帧');
+                } else {
+                    // 失败原因留在页面上，方便现场判断（是网络、是权限，还是服务端问题）
+                    frameErr = 'HTTP ' + r.status + ' ' + ((r.data && r.data.error) || '');
+                    setFrameStatus('取画面失败：' + frameErr, 'err');
                 }
-            } catch (e) { /* 下一轮重试 */ }
+            } catch (e) {
+                frameErr = '异常 ' + e.message;
+                setFrameStatus('取画面异常：' + e.message, 'err');
+            }
             frameBusy = false;
         }
 
