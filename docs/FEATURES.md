@@ -322,6 +322,27 @@
   `/apple-touch-icon.png`、`/icon-192.png`、`/icon-512.png` 全部 200；首页、`/chat`、`about.html`
   三个页面在无头 Chrome 里都能加载到全部图标声明。
 
+## 18. PWA 与缓存（安装 / 更新 / 修复）
+
+- **Service Worker（`sw.js`）策略**：`CACHE_VERSION` 决定缓存名（当前 `v2.5.2`，缓存名 `nflshc-chat-v2.5.2`），
+  `activate` 时删除所有旧的 `nflshc-chat-*` 缓存；导航请求**网络优先**（失败回退缓存 → 再回退 `offline.html`），
+  其他静态资源**缓存优先 + 后台刷新**，`/api/*` 与跨域请求一律不拦截、不缓存。
+- **预缓存清单**（31 项：主要页面 + `css/themes.css` + `shortcuts.js` + `manifest.json` + `offline.html` + 站点图标）
+  自 v2.5.2 起改为**逐个 `cache.add`、互不牵连**：以前用 `cache.addAll`，清单里任何一项失败（网络抖动、
+  Cloudflare 挑战、资源被改名）都会让整个 `install` 被拒 —— SW 永远停在 `installing`，页面一直吃旧缓存，
+  用户看到的就是「应用打不开 / 白屏 / 内容不更新」。现在最差只是少缓存几个文件，SW 一定能装上并接管。
+- **注册要带版本号**：`index.html` 与 `chat.html` 里是 `serviceWorker.register('sw.js?v=2.5.2')`。
+  ⚠️ **改了 `sw.js` 就同步改这个版本号**，否则客户端可能十几分钟内拿不到新 SW（GitHub Pages 静态文件
+  `Cache-Control: max-age=600`，浏览器/边缘缓存都会复用旧的 `sw.js`）。
+- **一键修复页 `pwa-reset.html`**：注销全部 Service Worker + 删除全部缓存，然后跳回首页重新加载最新版本；
+  只清缓存与 SW，**不动 `localStorage` / Cookie / IndexedDB**，所以登录态、主题、本地数据都不会丢。
+  `offline.html` 上也放了入口链接。适合「白屏 / 一直转圈 / 内容停留在旧版本 / 应用打不开」这类
+  「客户端缓存坏了」的问题；网页版和已安装的 PWA 都适用（PWA 里用浏览器打开该地址即可）。
+- **回归验证**：`dev/tests/test-pwa-sw.mjs`（无头 Chrome，真实线上环境）检查 SW 装上并接管、缓存版本正确、
+  旧缓存被清理、修复页能清掉 SW 与缓存并成功重载 —— 11/11。
+  另外用 CDP 的 `Page.getAppManifest` / `Page.getInstallabilityErrors` 确认：manifest 无错误、
+  Chrome 认为**可安装**（`installabilityErrors` 为空）——见 `dev/tools/tools-favicon-check.mjs` 同族脚本的用法。
+
 ## 数据库对象
 
 ```
