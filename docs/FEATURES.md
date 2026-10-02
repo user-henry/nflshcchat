@@ -301,6 +301,27 @@
   列出**全部页面与外部站点**，含功能说明、直达链接、管理员标记，支持关键词搜索（名称/说明/网址）
   与分类筛选；入口在 `chat.html` 顶部导航的「🧭 功能导航」。
 
+## 17. 站点图标（favicon / PWA 图标）
+
+- 仓库根目录新增图标：`favicon.svg`（矢量，现代浏览器优先）、`favicon.ico`（16/32/48 三尺寸，兼容旧浏览器与
+  Windows 快捷方式）、`apple-touch-icon.png`（180×180，iOS 添加到主屏）、`icon-192.png` 与 `icon-512.png`
+  （PWA 清单图标；512 那张四周留白，可作 `maskable`）。
+- 设计沿用站点黑金主题：金 → 橙渐变圆角方块 + 深色聊天气泡 + 三个金色圆点，配色取自 `styles.css` 的
+  `--gold` / `--orange`，底色用 `#1a1a2e`（与 `manifest.json` 的 `background_color` 一致）。
+- 全部 44 个根目录页面都在 `</head>` 前声明了 `<link rel="icon">`（ico + svg）与 `<link rel="apple-touch-icon">`，
+  且都用**根路径**（`/favicon.ico`），所以深层页面与应用内跳转同样生效。
+  即使某个页面（或浏览器里缓存下来的旧版本）没有声明，浏览器仍会按默认规则请求 `/favicon.ico`，图标照样显示。
+- `manifest.json` 的 `icons` 由外链（`cdn.luogu.com.cn` 上 1598×1080 的横版 LOGO，被当作正方形图标使用）
+  改为本地 `/icon-192.png` 与 `/icon-512.png`，PWA 安装图标不再依赖第三方 CDN。
+- 生成与回归工具（都不需要第三方依赖）：
+  - `dev/tools/tools-favicon-build.mjs`：无头 Chrome 把 SVG 渲染成各尺寸 PNG，再手写 ICO 容器（内嵌 PNG 条目）；
+    自带像素自检（金色占比 / 不透明占比），避免生成空白图。
+  - `dev/tools/tools-favicon-apply.mjs`：给所有页面插入图标声明（幂等：已有 `rel="icon"` 就跳过）。
+  - `dev/tools/tools-favicon-check.mjs`：真实浏览器打开线上页面，校验声明存在且 ico / svg / apple-touch 都能取到。
+- 上线后实测：`https://nflshcchat.cc.cd/favicon.ico`（3170B，`image/vnd.microsoft.icon`）、`/favicon.svg`、
+  `/apple-touch-icon.png`、`/icon-192.png`、`/icon-512.png` 全部 200；首页、`/chat`、`about.html`
+  三个页面在无头 Chrome 里都能加载到全部图标声明。
+
 ## 数据库对象
 
 ```
