@@ -343,6 +343,36 @@
   另外用 CDP 的 `Page.getAppManifest` / `Page.getInstallabilityErrors` 确认：manifest 无错误、
   Chrome 认为**可安装**（`installabilityErrors` 为空）——见 `dev/tools/tools-favicon-check.mjs` 同族脚本的用法。
 
+## 19. 消息 / 文章里的 HTML 白名单（XSS 防护）
+
+- 背景：正文用 `marked` 渲染，而 marked **默认保留内联 HTML**。不做过滤时，任何人在消息里写
+  `<img src=x onerror=…>`、`<script>`、`<div style="position:fixed;inset:0">` 都能执行脚本或盖住整页。
+  媒体文件（视频/音频）又确实是靠内联 HTML 嵌进来的，所以不能一关了之 —— 于是做**白名单**。
+- 实现：`js/sanitize.js`，暴露 `window.sanitizeHtml(html)`，做法是「DOMParser 解析 → 深度遍历 → 按白名单重建」：
+  - **保留**：段落/标题/列表/表格/代码/引用/加粗斜体等排版标签，以及 `img`、`video`、`audio`、`source`、`track`、
+    `figure`、`details/summary`、`time`；
+  - **整段删除**：`script`、`style`、`iframe`、`frame(set)`、`object`、`embed`、`applet`、`form` 及其控件、
+    `link`、`meta`、`base`、`noscript`、`template`、`svg`、`math`（SVG/MathML 是 mXSS 的主要来源）；
+  - **去标签留内容**：其它未知标签；
+  - **属性白名单**：只按标签放行（如 `a[href|title]`、`img[src|alt|width|height|loading]`、
+    `video[src|poster|controls|loop|muted|preload|playsinline]`），`on*` 事件属性天然进不来；
+    `id`/`name` 一律删除（防止 DOM clobbering 覆盖页面自己的元素）；
+  - **地址校验**：`href`/`src`/`cite`/`poster` 只允许 http(s)、站内相对地址、`mailto:`/`tel:`（仅链接）、
+    位图 `data:image/(png|jpeg|gif|webp|avif);base64,`；`javascript:`、`vbscript:`、`data:text/html` 全部丢弃
+    （判定前会先去掉协议里的空白/制表符，挡住 `java\tscript:` 这类绕过）；
+  - **style 白名单**：只允许 `max-width`/`width`/`height`/`margin`/`border-radius`/`object-fit` 等排版属性，
+    且值里不许出现 `url(`、`expression`、`behavior`；`position`/`inset`/`z-index` 这类一律丢弃（防蒙层）；
+  - 外链统一补 `target="_blank"` + `rel="noopener noreferrer nofollow"`；`class` 只保留 `[A-Za-z0-9_- ]`。
+- 接入位置（渲染出口统一过一遍，正常 Markdown 不受影响）：
+  `chat.html`（消息与输入预览）、`articles.html`、`posts.html`、`notice.html`、`notes.html`（预览）、`study.html`。
+  `chat.html` 里 marked 缺失/异常时的兜底也从「原样塞入」改成了转义。
+- 与 PWA 的关系：`js/sanitize.js?v=1` 已加入 Service Worker 预缓存 —— 否则离线打开时脚本缺失，
+  渲染会退化成「未过滤」，等于把 XSS 留给离线场景（见 §18）。
+- 回归：`node dev/tests/test-markdown-sanitize.mjs`（真实线上环境 + 无头 Chrome）覆盖 19 种攻击载荷
+  （script/onerror/javascript:/制表符绕过/iframe/svg/mXSS 组合/表单/fixed 蒙层/id 覆盖/data:URL…）、
+  `renderMarkdown` 的真实输出、以及 5 个页面的渲染出口 —— **48/48 通过**，且全程没有任何载荷真的执行、
+  没有弹窗/异常；同时校验 `<video controls>`、`<audio controls>`、`<img>`、表格、`@提及` 等都按预期保留。
+
 ## 数据库对象
 
 ```
