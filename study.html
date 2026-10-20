@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="js/theme.js?v=4"></script>
+<script src="js/sanitize.js?v=1"></script>
     <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -161,8 +162,11 @@
         function token() { return (window.AuthToken && window.AuthToken.get()) || ''; }
         function md(text) {
             if (!text) return '';
-            try { if (typeof marked !== 'undefined') return marked.parse(text); } catch (e) { /* 纯文本 */ }
-            return '<pre style="white-space:pre-wrap;">' + escapeHtml(text) + '</pre>';
+            var html;
+            try { html = (typeof marked !== 'undefined') ? marked.parse(text) : '<pre style="white-space:pre-wrap;">' + escapeHtml(text) + '</pre>'; }
+            catch (e) { html = '<pre style="white-space:pre-wrap;">' + escapeHtml(text) + '</pre>'; }
+            // 白名单过滤：允许内联 HTML（图片/视频/音频/表格），去掉脚本、事件属性与危险链接
+            return window.sanitizeHtml ? window.sanitizeHtml(html) : html;
         }
         function fmt(t) {
             if (!t) return '';
