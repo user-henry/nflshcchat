@@ -1,5 +1,7 @@
 // sw.js - NFLSHC Chat Service Worker
 // 版本号：每次更新代码时修改此版本号，浏览器会自动更新缓存
+// v2.5.3: 新增消息 HTML 白名单（js/sanitize.js），它必须进预缓存 —— 否则离线打开时脚本缺失，
+//         渲染会退化成「未过滤」，反而把 XSS 口子留给离线场景
 // v2.5.2: 预缓存改为「逐个添加、互不牵连」——以前任何一个资源失败都会让整个 install 被拒，
 //         SW 卡在 installing（页面因此停留在旧版本，看起来像"应用坏了"）；现在失败只记日志。
 // v2.5.1: 站点图标改为本地文件（favicon/PWA 图标）并纳入预缓存；bump 版本号让已安装的
@@ -7,7 +9,7 @@
 // v2.5.0: 新增 Web Push 离线通知（会议邀请 / 消息提醒 / 日程提醒）
 // v2.4.0: 主题/资源引用带版本号（theme.js?v=4），配合网络优先导航彻底解决旧缓存卡页面问题
 
-const CACHE_VERSION = 'v2.5.2';
+const CACHE_VERSION = 'v2.5.3';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
 // 需要预缓存的资源列表（只放确定存在的文件，任何 404 都会导致安装失败、SW 无法更新）
@@ -43,7 +45,8 @@ const urlsToCache = [
   '/favicon.ico',
   '/apple-touch-icon.png',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+  '/js/sanitize.js?v=1'
 ];
 
 // ===== 安装事件：缓存资源 =====
