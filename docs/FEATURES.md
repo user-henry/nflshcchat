@@ -366,6 +366,10 @@
 - 接入位置（渲染出口统一过一遍，正常 Markdown 不受影响）：
   `chat.html`（消息与输入预览）、`articles.html`、`posts.html`、`notice.html`、`notes.html`（预览）、`study.html`。
   `chat.html` 里 marked 缺失/异常时的兜底也从「原样塞入」改成了转义。
+- 同一份实现还用于：**HZYAI（`chatai` 仓库的 `js/sanitize.js`）** —— `index.html` 的 `renderMarkdown()` 与
+  `share.html` 的 `renderMarkdownSimple()`（分享的对话来自其他用户，尤其需要过滤）；
+  以及 **Windows 桌面客户端**（`nflshcchat-windows` 的 `pages/sanitize.js` + `pages/messages.js`）。
+  三处规则完全一致，各自的兜底都是「白名单脚本缺失时退回纯文本」。
 - 与 PWA 的关系：`js/sanitize.js?v=1` 已加入 Service Worker 预缓存 —— 否则离线打开时脚本缺失，
   渲染会退化成「未过滤」，等于把 XSS 留给离线场景（见 §18）。
 - 回归：`node dev/tests/test-markdown-sanitize.mjs`（真实线上环境 + 无头 Chrome）覆盖 19 种攻击载荷
