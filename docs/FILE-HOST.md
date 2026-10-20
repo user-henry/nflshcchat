@@ -175,3 +175,60 @@ node dev/tools/cleanup-test-data.mjs     # 清理测试数据并解除测试期�
 - 文件站 `byethost/filehost/api.php`：`sso_upload`、`sso_delete`、`file_list` 等动作与配额校验。
 
 `worker.js`、`wrangler.toml`、`byethost/`、`dev/` 都只在本地工作副本中维护，**不进入 GitHub 仓库**。
+
+## 8. 媒体直链的播放与「贴到别处」（2026-10 修复）
+
+### 8.1 为什么「直接打开视频直链」是一片空白
+
+`f.php` 曾经对**所有**响应都加 `Content-Security-Policy: sandbox; default-src none`（初衷是防止上传的文件
+被当成脚本执行）。但浏览器打开媒体直链时会创建一个「媒体文档」，内部用真实的 `<video>` / `<audio>` 元素
+去加载这个地址 —— 该元素受这个响应**自身**的 CSP 约束，`default-src none` 作为 `media-src` 的兜底把媒体挡掉：
+
+```
+Loading media from 'f.php?id=…' violates the following Content Security Policy directive: "default-src none".
+Note that 'media-src' was not explicitly set, so 'default-src' is used as a fallback. The action has been blocked.
+```
+
+图片不受影响（浏览器用图像文档直接渲染，不走子资源加载），所以现象就是「图片能看、视频/音频打不开」；
+而 `view.php` 里是用 `<video src>` 当子资源加载的，子资源不看响应自己的 CSP，于是「详情页能播、直链打不开」。
+
+现在 `f.php` 按类型下发：
+
+| 类型 | CSP | 其它头 |
+| --- | --- | --- |
+| `image` / `video` / `audio` | **不发** sandbox（媒体不能执行脚本，`nosniff` + 正确 `Content-Type` 已足够） | `Content-Disposition: inline`、`Accept-Ranges: bytes`、Range/206 |
+| `file`（zip/pdf/txt/md/…） | 仍发 `sandbox; default-src none` | `attachment` |
+| `image/svg+xml`、`text/html`、`application/xml`、`application/javascript` 等可执行类型 | 仍发 `sandbox; default-src none` | 视 kind 而定 |
+
+实测（无头 Chrome，2026-10）：视频直链 `readyState=3`、`duration=15`、1920×1080、无 CSP 违规；
+音频直链 `readyState=4`、60.6 秒；图片直链正常出图；zip 仍是 `attachment` + sandbox。
+
+### 8.2 分享 / 嵌入链接为什么要换域名
+
+byethost 源站会给**没有 `__test` cookie** 的请求回一段 JS 挑战页（`aes.js`）。浏览器直接打开会自动通过，
+但把 `nflshcfile.l.cd` 的直链贴到 Markdown / 站外页面时，子资源请求无法执行挑战脚本，拿到的是一段 HTML
+→ 图片/视频/音频全部加载失败。
+
+所以 `config.php` 新增 `share_base`（默认 `https://file.nflshcchat.cc.cd`，即 Cloudflare 前置入口：https、无挑战），
+由 `lib.php` 的 `share_base()` / `file_share_url()` 使用：`view.php` 的「文件链接 / Markdown / HTML 嵌入」三处
+都生成这个域名；页面内的播放器仍用同源地址（不依赖 CF）。
+
+### 8.3 「贴到 Markdown」的三种写法
+
+| 类型 | 复制出来的片段 |
+| --- | --- |
+| image | `![标题](https://file.nflshcchat.cc.cd/f.php?id=…)` |
+| video | `<video src="https://file.nflshcchat.cc.cd/f.php?id=…" controls style="max-width:100%"></video>` |
+| audio | `<audio src="https://file.nflshcchat.cc.cd/f.php?id=…" controls></audio>` |
+| file | `[标题](https://file.nflshcchat.cc.cd/f.php?id=…&dl=1)`（带 `dl=1` 直接下载） |
+
+Markdown 本身没有视频/音频语法，用内联 HTML 即可 —— 只要渲染器允许内联 HTML。
+
+### 8.4 回归检查
+
+```bash
+node dev/tools/tools-filehost-csp.mjs    # 按类型抽一个公开文件，校验 Content-Type / CSP / Content-Disposition 是否符合上表
+```
+
+浏览器侧（直接打开 + 跨站嵌入）用无头 Chrome 复验：判定依据是媒体文档里 `<video>/<audio>` 的 `readyState`
+与控制台是否出现 CSP 违规日志；跨站嵌入要用 `file.nflshcchat.cc.cd` 的地址（见 8.2）。
