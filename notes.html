@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="js/theme.js?v=4"></script>
+<script src="js/sanitize.js?v=1"></script>
     <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -309,6 +310,8 @@
             const text = document.getElementById('content').value || '';
             let html = escapeHtml(text);
             try { if (typeof marked !== 'undefined') html = marked.parse(text); } catch (e) { /* 用纯文本 */ }
+            // 白名单过滤：允许内联 HTML（图片/视频/音频/表格），去掉脚本、事件属性与危险链接
+            if (window.sanitizeHtml) html = window.sanitizeHtml(html);
             p.innerHTML = html;
         }
 
