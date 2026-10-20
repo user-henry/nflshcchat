@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="js/theme.js?v=4"></script>
+<script src="js/sanitize.js?v=1"></script>
 
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
 
@@ -410,15 +411,19 @@
 
         function renderMarkdown(content) {
             if (!content) return '';
+            var html;
             if (typeof marked !== 'undefined') {
                 try {
-                    return marked.parse(content);
+                    html = marked.parse(content);
                 } catch (e) {
                     console.error('Markdown 渲染失败:', e);
-                    return escapeHtml(content);
+                    html = escapeHtml(content);
                 }
+            } else {
+                html = escapeHtml(content);
             }
-            return escapeHtml(content);
+            // 白名单过滤：允许内联 HTML（图片/视频/音频/表格），去掉脚本、事件属性与危险链接
+            return window.sanitizeHtml ? window.sanitizeHtml(html) : html;
         }
 
         function updatePreview() {
