@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="js/theme.js?v=4"></script>
+<script src="js/sanitize.js?v=1"></script>
 
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
 
@@ -1735,12 +1736,12 @@
                 mentions.push(match);
                 return `\u200B\u200BMENTION_${mentions.length - 1}\u200B\u200B`;
             });
-            let html = tempContent;
+            let html = escapeHtml(tempContent);   // 兜底：marked 不可用时按纯文本显示
             if (typeof marked !== 'undefined') {
                 try {
                     html = marked.parse(tempContent);
-                    if (html && typeof html.then === 'function') html = tempContent;
-                } catch (e) { html = tempContent; }
+                    if (html && typeof html.then === 'function') html = escapeHtml(tempContent);
+                } catch (e) { html = escapeHtml(tempContent); }
             }
             html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
             html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -1752,7 +1753,8 @@
                 const regex = new RegExp(`\u200B\u200BMENTION_${i}\u200B\u200B`, 'g');
                 html = html.replace(regex, `<span class="${mentionClass}">${mention}</span>`);
             }
-            return html;
+            // 白名单过滤：允许内联 HTML（图片/视频/音频/表格），去掉脚本、事件属性与危险链接
+            return window.sanitizeHtml ? window.sanitizeHtml(html) : html;
         }
         
         function updatePreview() {
@@ -3506,7 +3508,7 @@
         window.addEventListener('load', function() {
             // 带版本号绕过 CDN/浏览器缓存，确保加载到最新 sw.js（修复旧缓存导致页面/数据过期）
             // 注意：改了 sw.js 就同步改这里的版本号，否则客户端可能十几分钟内拿不到新的 SW
-            navigator.serviceWorker.register('sw.js?v=2.5.2')
+            navigator.serviceWorker.register('sw.js?v=2.5.3')
                 .then(function(registration) {
                     console.log('[PWA] Service Worker 注册成功');
                 })
