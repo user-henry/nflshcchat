@@ -232,3 +232,53 @@ node dev/tools/tools-filehost-csp.mjs    # 按类型抽一个公开文件，校�
 
 浏览器侧（直接打开 + 跨站嵌入）用无头 Chrome 复验：判定依据是媒体文档里 `<video>/<audio>` 的 `readyState`
 与控制台是否出现 CSP 违规日志；跨站嵌入要用 `file.nflshcchat.cc.cd` 的地址（见 8.2）。
+
+## 9. 上传通道：为什么不再用 multipart（2026-10 修复）
+
+**症状**：文件站自己的上传界面点上传后提示「服务器返回异常（HTTP 403）」；主站发附件提示
+「文件托管返回异常 HTTP 403」。但浏览已有图片 / 文件（`f.php`、`/storage/...` 直链）一切正常。
+
+**根因**：byethost 的前端（`openresty`）从 2026-10 起**把所有 `multipart/form-data` 请求一律拦成 403**，
+而且是服务器层直接拒绝（返回的是 `openresty` 的 403 页面，连 PHP 都没跑到）。实测对照：
+
+| 请求 | 结果 |
+| --- | --- |
+| `GET /api.php?a=public` | 200 JSON |
+| `POST /api.php?a=public`（JSON body） | 200 JSON |
+| `POST /api.php?a=upload_init`（JSON body） | 200 JSON |
+| `POST /api.php?a=sso_upload`（multipart + 文件） | **403 openresty** |
+| `POST /api.php?a=sso_upload`（multipart 只有文本字段、不带文件） | **403 openresty** |
+| `POST /api.php?a=upload_chunk`（`application/octet-stream` 裸字节） | 到 PHP（401/正常） |
+| `POST /api.php?a=upload_init`（`x-www-form-urlencoded`） | 到 PHP（401/正常） |
+
+也就是说：**只要 `Content-Type` 是 `multipart/form-data` 就直接 403**，与文件大小、UA、是否带 cookie 都无关；
+走源站和走 Cloudflare 前置域名结果一样。所以以前能用的上传（`upload_finish` / `upload_simple` /
+`sso_upload` / `api_upload` 用的都是 multipart）在主机改策略后就全断了。
+
+**修复**：上传全部改成「**元数据走 JSON / 请求头，文件内容直接放在 body**」，分片协议本来就是裸字节，因此只动了三处：
+
+| 端点 | 新协议 |
+| --- | --- |
+| `upload_init` | 不变（本来就是 JSON） |
+| `upload_chunk` | 不变（本来就是 `application/octet-stream` 裸字节） |
+| `upload_finish` | 改 `application/json`：`{ uid, width?, height?, duration?, poster_b64? }`；
+视频首帧（以前 multipart 的 `poster` 字段）改为 base64 放在 `poster_b64` 里 |
+| `upload_simple` | 前端不再调用（改为走分片协议）；服务端仍兼容：裸 body + `X-File-*` 头 |
+| `sso_upload`（主站 Worker 调用） | 裸 body（文件字节）+ 请求头：`X-File-Name`（URL 编码）、`X-File-Type`、
+`X-File-Title`（URL 编码）、`X-File-Visibility`；票据仍是 `X-Files-Ticket` |
+| `api_upload`（脚本令牌） | 同上：裸 body + `X-File-*` 头 + `X-Api-Token` |
+
+服务端新增 `raw_upload_receive()`：流式把 `php://input` 落到临时文件（不整块读进内存），
+从 `X-File-*` 头里取文件名 / MIME / 标题 / 可见性；`store_file()` 增加 `poster_tmp` 参数，
+让 poster 不再依赖 `$_FILES`。**老的 multipart 分支保留**（万一主机以后放开，或有人用老客户端）。
+
+**前端改动**（`assets/app.js`）：`upload_finish` 改成 JSON 提交，视频首帧用 `FileReader` 转 dataURL 放进
+`poster_b64`；`uploadSimple()` 直接转走分片协议 —— 现在整个站点**不再有任何 multipart 请求**。
+
+**回归**：`node dev/tests/test-filehost-upload.mjs`（12/12）
+- ① 自己签一张 SSO 票据，直连源站与走 Cloudflare 前置各做一次「裸字节上传 → 直链 200 → 删除」；
+- ② 真实浏览器里跑站内链路：登录 → `upload_init`(JSON) → `upload_chunk`(裸字节) → `upload_finish`(JSON+poster_b64) → 直链 200 → 删除。
+- 另外主站侧用 `POST /api/files/upload`（浏览器→Worker 仍是 multipart，Cloudflare 不拦）验证整条附件链路返回 200。
+
+> 以后如果再遇到「只有上传 403、读文件正常」，先按上面的对照表试 `Content-Type`：主机层拦 multipart 的可能性最大。
+
