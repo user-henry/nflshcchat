@@ -108,6 +108,33 @@ curl -X POST https://worker.nflshcchat.cc.cd/api/auth/login \
 |---|---|---|
 | POST | `/api/files/upload` | 上传附件（multipart：`file`、`title?`、`visibility?`），≤20MB，返回 HTTPS 直链 |
 
+### 犇犇（吐槽板 / 灌水）
+
+主楼与楼中楼回复同表（`benben_posts`，`parent_id` 为空即主楼），全部接口都需要 Bearer Token。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/benben/list?cursor=&limit=20&author=` | 主楼列表（新→旧）。`limit` 1–50；`cursor` 传上一页返回的 `cursor` 翻页；`author=@me` 只看自己 |
+| GET | `/api/benben/get?id=` | 单条犇犇（通知深链用） |
+| GET | `/api/benben/replies?postId=&limit=100` | 某条犇犇的回复（旧→新） |
+| POST | `/api/benben/create` | 发布：`{ content, parentId? }`。`content` 最多 **500 字**（按字符计，Markdown 原样保存）；带 `parentId` 即为回复 |
+| POST | `/api/benben/delete` | 删除：`{ id }`。只能删自己的（管理员可删任意）；删主楼会连带收掉楼内回复 |
+| GET | `/api/benben/users?q=` | `@` 补全用的用户名搜索（完全匹配 → 前缀 → 包含，最多 8 个，只返回用户名） |
+
+约定与限制：
+
+- **Markdown**：服务端只存原文，前端用 `marked` 渲染后再过 `js/sanitize.js` 白名单，脚本/事件属性/危险协议都会被剥掉。
+- **@ 提醒**：正文里的 `@用户名` 会解析出真实存在的账号（最多 10 个），被提到的人收到 `📢 有人@了你` 通知；回复时楼主收到 `💬 有人回复了你的犇犇`。
+- **风控**：同一账号每小时最多 40 条（含回复），超出返回 `429`。
+- **不支持附件**：没有上传入口，接口也不接收文件字段。
+
+```bash
+curl -X POST https://worker.nflshcchat.cc.cd/api/benben/create \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"content":"**第一条犇犇** @alice 你看这个"}'
+# → 201 { "ok": true, "post": { "id":"bb_...", "author":"me", "mentions":["alice"], ... }, "maxLength": 500 }
+```
+
 ---
 
 ## 五、OAuth 2.0 授权码流程（第三方应用）
