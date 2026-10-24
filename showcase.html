@@ -232,47 +232,7 @@
             border-color: rgba(255,215,0,0.3);
         }
 
-        /* ===== Scroll Indicator ===== */
-        .scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            animation: fadeSlideDown 1s ease-out 1s both;
-        }
-
-        .scroll-indicator span {
-            font-size: 12px;
-            color: var(--text-muted, rgba(255,255,255,0.4));
-            letter-spacing: 2px;
-        }
-
-        .scroll-mouse {
-            width: 24px; height: 38px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 12px;
-            position: relative;
-        }
-
-        .scroll-mouse::before {
-            content: '';
-            position: absolute;
-            top: 6px; left: 50%;
-            transform: translateX(-50%);
-            width: 3px; height: 8px;
-            background: var(--gold);
-            border-radius: 2px;
-            animation: scrollBounce 1.5s ease-in-out infinite;
-        }
-
-        @keyframes scrollBounce {
-            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
-            50% { transform: translateX(-50%) translateY(10px); opacity: 0.3; }
-        }
+        /* ===== Sections ===== */
 
         /* ===== Sections ===== */
         .section {
@@ -669,10 +629,6 @@
                 <a href="about.html" class="btn btn-ghost">了解更多</a>
             </div>
 
-            <div class="scroll-indicator">
-                <span>SCROLL</span>
-                <div class="scroll-mouse"></div>
-            </div>
         </section>
 
         <!-- ===== MARQUEE ===== -->
