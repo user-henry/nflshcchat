@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="js/theme.js?v=4"></script>
-<script src="js/sanitize.js?v=1"></script>
+<script src="js/sanitize.js?v=2"></script>
     <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,6 +57,9 @@
         .preview th, .preview td { border: 1px solid var(--table-border); padding: 9px 13px; text-align: left; vertical-align: top; }
         .preview thead th { background: var(--table-head-bg); color: var(--text-primary); font-weight: 700; white-space: nowrap; }
         .preview tbody tr:nth-child(even) td { background: var(--hover-bg); }
+        /* 合并单元格（rowspan / colspan）：内容水平 + 垂直居中 */
+        .preview td[rowspan], .preview th[rowspan],
+        .preview td[colspan], .preview th[colspan] { vertical-align: middle; text-align: center; }
         .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; font-size: 13.5px; transition: .18s; font-family: inherit; }
         .btn:hover:not(:disabled) { border-color: var(--accent-color); color: var(--accent-color); }
         .btn:disabled { opacity: .5; cursor: not-allowed; }
