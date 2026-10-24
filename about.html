@@ -132,15 +132,27 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
 }
 #infoBar a:active,#infoBar button:active{transform:translateY(0) scale(.98)}
 /* 关于本站 panel 里的 hero LOGO */
-.hero-logo{width:132px;height:132px;display:block;margin:2px auto 10px;filter:drop-shadow(0 0 14px var(--accent-color-alpha,rgba(255,215,0,.25)))}
-.hero-logo .bubble{stroke-dasharray:300;stroke-dashoffset:300;animation:logoDraw 1.6s ease-out .2s forwards}
-.hero-logo .bubble2{stroke-dasharray:160;stroke-dashoffset:160;animation:logoDraw 1.4s ease-out .6s forwards}
+.hero-logo{width:132px;height:132px;display:block;margin:2px auto 10px;
+  filter:drop-shadow(0 0 14px var(--accent-color-alpha,rgba(255,215,0,.25)));
+  animation:logoGlow 6s ease-in-out infinite}
+/* 描边动画改成「画出来 → 停一会儿 → 退回去 → 再画」的无限循环（--len 是该路径的长度） */
+.hero-logo .bubble{--len:300;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:logoDrawLoop 6s ease-in-out infinite}
+.hero-logo .bubble2{--len:160;stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:logoDrawLoop 6s ease-in-out .45s infinite}
 .hero-logo .dot{animation:logoPulse 1.4s ease-in-out infinite}
 .hero-logo .dot:nth-child(2){animation-delay:.18s}
 .hero-logo .dot:nth-child(3){animation-delay:.36s}
-@keyframes logoDraw{to{stroke-dashoffset:0}}
+/* 0-35% 画线，35-78% 保持完整，78-100% 悄悄退回起点再循环 */
+@keyframes logoDrawLoop{
+  0%{stroke-dashoffset:var(--len);opacity:.55}
+  35%,78%{stroke-dashoffset:0;opacity:1}
+  100%{stroke-dashoffset:var(--len);opacity:.55}
+}
 @keyframes logoPulse{0%,100%{opacity:.35;r:3}50%{opacity:1;r:4.2}}
-@media (prefers-reduced-motion: reduce){.hero-logo .bubble,.hero-logo .bubble2,.hero-logo .dot{animation:none;stroke-dashoffset:0}}
+@keyframes logoGlow{0%,100%{filter:drop-shadow(0 0 12px var(--accent-color-alpha,rgba(255,215,0,.22)))}
+  40%,70%{filter:drop-shadow(0 0 22px var(--accent-color-alpha,rgba(255,215,0,.45)))}}
+@media (prefers-reduced-motion: reduce){
+  .hero-logo,.hero-logo .bubble,.hero-logo .bubble2,.hero-logo .dot{animation:none;stroke-dashoffset:0}
+}
 #infoBar a,#infoBar button{font:600 13px/1 system-ui,"PingFang SC","Microsoft YaHei",sans-serif;color:#dff7ef;text-decoration:none;
   background:rgba(6,20,30,.72);border:1px solid rgba(24,224,192,.45);border-radius:999px;padding:9px 14px;cursor:pointer;backdrop-filter:blur(6px)}
 #infoBar a:hover,#infoBar button:hover{border-color:#18e0c0;color:#fff;background:rgba(24,224,192,.18)}
