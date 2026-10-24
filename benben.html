@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="js/theme.js?v=4"></script>
+    <script src="js/sanitize.js?v=1"></script>
+    <script>const WORKER_API = 'https://worker.nflshcchat.cc.cd';</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFLSHC Chat - 犇犇</title>
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .nav { background: var(--bg-secondary); padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 30; }
+        .nav-left { display: flex; align-items: center; gap: 14px; }
+        .logo { width: 36px; height: 36px; background-image: url('https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png'); background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .nav h2 { font-size: 18px; color: var(--accent-color); }
+        .nav a { color: var(--text-primary); text-decoration: none; margin-left: 16px; font-size: 14px; }
+        .nav a:hover { color: var(--accent-color); }
+        .wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 80px; }
+
+        /* ---------- 发布框 ---------- */
+        .composer { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 18px; position: relative; }
+        .composer textarea { width: 100%; min-height: 92px; max-height: 40vh; resize: vertical; padding: 12px 13px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-primary); color: var(--text-primary); font: 14.5px/1.75 inherit; }
+        .composer textarea:focus { outline: none; border-color: var(--accent-color); }
+        .composer .row { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .composer .hint { font-size: 12px; color: var(--text-secondary); }
+        .composer .grow { flex: 1; }
+        .counter { font-size: 12.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+        .counter.warn { color: #f39c12; }
+        .counter.over { color: #e74c3c; font-weight: 700; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; font: 13.5px inherit; transition: .18s; }
+        .btn:hover:not(:disabled) { border-color: var(--accent-color); color: var(--accent-color); }
+        .btn:disabled { opacity: .5; cursor: not-allowed; }
+        .btn.primary { background: var(--accent-color, #ffd700); color: #1a1a2e; border-color: transparent; font-weight: 700; }
+        .btn.sm { padding: 5px 10px; font-size: 12.5px; }
+        .btn.danger { border-color: rgba(231,76,60,.55); color: #e74c3c; }
+        .btn.link { border: none; background: none; color: var(--text-secondary); padding: 4px 6px; }
+        .btn.link:hover { color: var(--accent-color); }
+        .preview { margin-top: 10px; padding: 12px 13px; border: 1px dashed var(--border-color); border-radius: 12px; background: var(--bg-primary); font-size: 14.5px; line-height: 1.8; display: none; }
+        .preview.show { display: block; }
+
+        /* ---------- @ 补全 ---------- */
+        .at-picker { position: absolute; z-index: 40; min-width: 180px; max-width: 260px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.35); padding: 6px; display: none; }
+        .at-picker.show { display: block; }
+        .at-picker .item { padding: 7px 10px; border-radius: 8px; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .at-picker .item .av { width: 20px; height: 20px; border-radius: 50%; background: var(--bg-primary) center/cover no-repeat; border: 1px solid var(--border-color); flex: none; }
+        .at-picker .item:hover, .at-picker .item.on { background: rgba(46, 204, 113, .16); color: #2ecc71; }
+        .at-picker .empty { padding: 8px 10px; font-size: 12.5px; color: var(--text-secondary); }
+
+        /* ---------- 列表 ---------- */
+        .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .tab { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+        .tab.on { border-color: var(--accent-color); color: var(--accent-color); background: rgba(255,215,0,.1); }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+        .card.hl { box-shadow: 0 0 0 2px var(--accent-color); }
+        .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--bg-primary) center/cover no-repeat; border: 1px solid var(--border-color); flex: none; cursor: pointer; }
+        .who { min-width: 0; }
+        .who .name { font-size: 14px; font-weight: 700; cursor: pointer; }
+        .who .name:hover { color: var(--accent-color); }
+        .who .time { font-size: 11.5px; color: var(--text-secondary); }
+        .body { font-size: 14.8px; line-height: 1.85; word-break: break-word; overflow-wrap: anywhere; }
+        .body p { margin-bottom: 10px; }
+        .body p:last-child { margin-bottom: 0; }
+        .body h1, .body h2, .body h3 { margin: 12px 0 8px; line-height: 1.4; }
+        .body h1 { font-size: 20px; } .body h2 { font-size: 18px; } .body h3 { font-size: 16px; }
+        .body code { background: var(--bg-primary); padding: 1.5px 6px; border-radius: 6px; font-size: 13px; color: var(--accent-color); }
+        .body pre { background: var(--bg-primary); padding: 12px; border-radius: 10px; overflow: auto; margin: 8px 0 12px; }
+        .body pre code { background: none; padding: 0; color: inherit; }
+        .body ul, .body ol { margin: 6px 0 10px 22px; }
+        .body a { color: var(--accent-color); }
+        .body blockquote { border-left: 3px solid var(--accent-color); padding-left: 12px; color: var(--text-secondary); margin: 8px 0; }
+        .body img { max-width: 100%; border-radius: 10px; }
+        .body table { border-collapse: collapse; margin: 8px 0; }
+        .body th, .body td { border: 1px solid var(--border-color); padding: 6px 10px; font-size: 13.5px; }
+        /* @ 提及：与聊天里的样式保持一致 */
+        .body .mention, .card .mention {
+            background: #2ecc71; color: var(--bg-primary, #1a1a2e); padding: 2px 6px;
+            border-radius: 12px; font-weight: bold; display: inline-block;
+        }
+        .body .mention-all, .card .mention-all {
+            background: #e74c3c; color: #fff; padding: 2px 6px;
+            border-radius: 12px; font-weight: bold; display: inline-block;
+        }
+        .card-foot { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+        .card-foot .sp { flex: 1; }
+        .card-foot .act { border: none; background: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+        .card-foot .act:hover { color: var(--accent-color); background: rgba(255,215,0,.08); }
+        .card-foot .act.del:hover { color: #e74c3c; background: rgba(231,76,60,.1); }
+
+        /* ---------- 回复区 ---------- */
+        .replies { margin-top: 12px; border-top: 1px dashed var(--border-color); padding-top: 10px; }
+        .reply { display: flex; gap: 10px; padding: 9px 0; }
+        .reply + .reply { border-top: 1px solid var(--border-color); }
+        .reply .avatar { width: 28px; height: 28px; }
+        .reply .r-main { flex: 1; min-width: 0; }
+        .reply .r-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .reply .r-name { font-size: 13.5px; font-weight: 700; cursor: pointer; }
+        .reply .r-name:hover { color: var(--accent-color); }
+        .reply .r-name .to { color: var(--text-secondary); font-weight: 400; font-size: 12.5px; }
+        .reply .r-time { font-size: 11.5px; color: var(--text-secondary); }
+        .reply .r-body { font-size: 14px; line-height: 1.8; margin-top: 3px; word-break: break-word; overflow-wrap: anywhere; }
+        .reply .r-body p { margin-bottom: 8px; }
+        .reply .r-body p:last-child { margin-bottom: 0; }
+        .reply .r-body .mention { font-size: 13px; }
+        .reply .r-act { border: none; background: none; color: var(--text-secondary); font-size: 12px; cursor: pointer; padding: 2px 4px; }
+        .reply .r-act:hover { color: #e74c3c; }
+        .more-replies { font-size: 12.5px; color: var(--accent-color); cursor: pointer; padding: 6px 0; }
+        .reply-box { margin-top: 10px; }
+        .reply-box textarea { width: 100%; min-height: 62px; resize: vertical; padding: 9px 11px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font: 13.8px/1.7 inherit; }
+        .reply-box textarea:focus { outline: none; border-color: var(--accent-color); }
+        .reply-box .row { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .reply-box .counter { font-size: 12px; }
+
+        .empty { padding: 44px 20px; text-align: center; color: var(--text-secondary); font-size: 14.5px; line-height: 1.9; }
+        .center { text-align: center; margin: 18px 0; }
+        .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px); background: #1f2632; color: #fff; border: 1px solid var(--border-color); border-radius: 12px; padding: 11px 18px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: .25s; z-index: 80; max-width: 90vw; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.err { border-color: rgba(231,76,60,.7); }
+        .toast.ok { border-color: rgba(46,204,113,.7); }
+        @media (max-width: 640px) { .wrap { padding: 14px 10px 70px; } .nav { padding: 10px 14px; } .nav a { margin-left: 10px; font-size: 13px; } }
+    </style>
+    <!-- 站点图标：现代浏览器用 SVG，旧浏览器/Windows 用 ICO，iOS 主屏用 apple-touch-icon -->
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left"><div class="logo"></div><h2>🐂 犇犇</h2></div>
+        <div>
+            <span class="hint" style="font-size:13px;color:var(--text-secondary);">👤 <span id="whoami">…</span></span>
+            <a href="chat.html">💬 聊天</a>
+            <a href="pages.html">🧭 功能导航</a>
+            <a href="notes.html">📝 笔记</a>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <!-- 发布框 -->
+        <div class="composer">
+            <textarea id="content" placeholder="来一条犇犇吧：吐槽、灌水、感叹都行（支持 Markdown，@ 可提醒某人）"></textarea>
+            <div class="at-picker" id="atPicker"></div>
+            <div class="row">
+                <span class="hint">支持 Markdown · 用 <b>@用户名</b> 提醒他人 · 不支持上传附件</span>
+                <span class="grow"></span>
+                <span class="counter" id="counter">0 / 500</span>
+                <button class="btn sm" id="btnPreview" onclick="togglePreview()">👁️ 预览</button>
+                <button class="btn primary sm" id="btnPost" onclick="publish()">犇一条</button>
+            </div>
+            <div class="preview" id="preview"></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab on" id="tabAll" onclick="setFilter('all')">🌟 全部犇犇</button>
+            <button class="tab" id="tabMine" onclick="setFilter('mine')">👤 我发的</button>
+        </div>
+
+        <div id="feed"><div class="empty">加载中…</div></div>
+        <div class="center"><button class="btn sm" id="btnMore" onclick="loadMore()" style="display:none;">加载更多</button></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const API = WORKER_API;
+        const SITE_LOGO = 'https://cdn.luogu.com.cn/upload/image_hosting/5rdb3c08.png';
+        const MAX_LEN = 500;
+
+        let me = '';
+        let isAdmin = false;
+        let maxLen = MAX_LEN;
+        let filter = 'all';          // all | mine
+        let cursor = null;
+        let loading = false;
+        let done = false;
+        let posts = [];              // 当前已渲染的主楼
+        const replyOpen = new Set(); // 已展开回复的主楼 id
+        const replyMore = new Set(); // 需要显示「查看全部回复」的主楼 id
+
+        // ---------- 基础工具 ----------
+        function escapeHtml(t) {
+            if (t === null || t === undefined) return '';
+            const d = document.createElement('div'); d.textContent = String(t); return d.innerHTML;
+        }
+        function cpLen(s) { return Array.from(String(s || '')).length; }
+        function avatarOf(url) { return 'background-image:url(\'' + (url || SITE_LOGO).replace(/'/g, '%27') + '\')'; }
+        function timeAgo(iso) {
+            if (!iso) return '';
+            const t = new Date(iso).getTime();
+            if (isNaN(t)) return String(iso);
+            const d = Math.floor((Date.now() - t) / 1000);
+            if (d < 60) return '刚刚';
+            if (d < 3600) return Math.floor(d / 60) + ' 分钟前';
+            if (d < 86400) return Math.floor(d / 3600) + ' 小时前';
+            if (d < 86400 * 7) return Math.floor(d / 86400) + ' 天前';
+            return new Date(iso).toLocaleDateString('zh-CN');
+        }
+        function toast(msg, kind) {
+            const t = document.getElementById('toast');
+            t.className = 'toast show ' + (kind || '');
+            t.textContent = msg || '';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(function () { t.className = 'toast'; }, 2600);
+        }
+        async function api(path, opts) {
+            const o = opts || {};
+            const headers = Object.assign({}, o.headers || {});
+            if (o.body) headers['Content-Type'] = 'application/json';
+            const res = await fetch(API + path, {
+                method: o.method || (o.body ? 'POST' : 'GET'),
+                headers: headers,
+                body: o.body ? JSON.stringify(o.body) : undefined,
+            });
+            const data = await res.json().catch(function () { return {}; });
+            return { status: res.status, ok: res.ok, data: data };
+        }
+
+        // ---------- Markdown + @ 提及（与 chat.html 的渲染方式一致）----------
+        function renderMarkdown(content) {
+            if (!content) return '';
+            // 先把 @提及 换成占位符，避免被 Markdown 吃掉；渲染完再还原成高亮标签
+            const mentionPattern = /(@[a-zA-Z0-9_\u4e00-\u9fa5]+|@所有人)/g;
+            const mentions = [];
+            const tempContent = String(content).replace(mentionPattern, function (match) {
+                mentions.push(match);
+                return '\u200B\u200BMENTION_' + (mentions.length - 1) + '\u200B\u200B';
+            });
+            let html = escapeHtml(tempContent);
+            if (typeof marked !== 'undefined') {
+                try {
+                    let out = marked.parse(tempContent);
+                    if (out && typeof out.then === 'function') out = escapeHtml(tempContent);
+                    html = out;
+                } catch (e) { html = escapeHtml(tempContent); }
+            }
+            for (let i = 0; i < mentions.length; i++) {
+                const mention = mentions[i];
+                const cls = mention === '@所有人' ? 'mention-all' : 'mention';
+                html = html.replace(new RegExp('\u200B\u200BMENTION_' + i + '\u200B\u200B', 'g'),
+                    '<span class="' + cls + '">' + mention + '</span>');
+            }
+            // 白名单过滤：去掉脚本/事件属性/危险链接，只留下安全的排版与媒体标签
+            return window.sanitizeHtml ? window.sanitizeHtml(html) : html;
+        }
+
+        // ---------- 字数统计 ----------
+        function updateCounter() {
+            const ta = document.getElementById('content');
+            const n = cpLen(ta.value);
+            const el = document.getElementById('counter');
+            el.textContent = n + ' / ' + maxLen;
+            el.className = 'counter' + (n > maxLen ? ' over' : (n > maxLen * 0.9 ? ' warn' : ''));
+            document.getElementById('btnPost').disabled = n === 0 || n > maxLen;
+            if (document.getElementById('preview').classList.contains('show')) {
+                document.getElementById('preview').innerHTML = renderMarkdown(ta.value);
+            }
+        }
+        function togglePreview() {
+            const box = document.getElementById('preview');
+            const on = box.classList.toggle('show');
+            box.innerHTML = on ? (renderMarkdown(document.getElementById('content').value) || '<span style="color:var(--text-secondary)">（空）</span>') : '';
+            document.getElementById('btnPreview').classList.toggle('primary', on);
+        }
+
+        // ---------- @ 补全 ----------
+        let atState = { open: false, items: [], index: 0, start: -1 };
+        function closePicker() {
+            atState = { open: false, items: [], index: 0, start: -1 };
+            const p = document.getElementById('atPicker');
+            p.classList.remove('show'); p.innerHTML = '';
+        }
+        function currentAtToken(ta) {
+            const before = ta.value.slice(0, ta.selectionStart);
+            const m = before.match(/(?:^|[\s(（])@([A-Za-z0-9_\u4e00-\u9fa5]{0,24})$/);
+            if (!m) return null;
+            return { q: m[1], start: ta.selectionStart - m[1].length - 1 };
+        }
+        async function updatePicker() {
+            const ta = document.getElementById('content');
+            const tok = currentAtToken(ta);
+            if (!tok) { closePicker(); return; }
+            const r = await api('/api/benben/users?q=' + encodeURIComponent(tok.q));
+            const users = (r.ok && r.data.users) ? r.data.users : [];
+            const picker = document.getElementById('atPicker');
+            if (!users.length) {
+                atState.open = true; atState.items = []; atState.index = 0; atState.start = tok.start;
+                picker.innerHTML = '<div class="empty">没有匹配的用户</div>';
+                placePicker(ta, picker);
+                picker.classList.add('show');
+                return;
+            }
+            atState = { open: true, items: users, index: 0, start: tok.start };
+            picker.innerHTML = users.map(function (u, i) {
+                return '<div class="item' + (i === 0 ? ' on' : '') + '" data-u="' + escapeHtml(u) + '" onclick="pickUser(\'' + escapeHtml(u) + '\')">'
+                    + '<span class="av"></span><span>' + escapeHtml(u) + '</span></div>';
+            }).join('');
+            placePicker(ta, picker);
+            picker.classList.add('show');
+        }
+        function placePicker(ta, picker) {
+            picker.style.left = '16px';
+            picker.style.top = (ta.offsetTop + ta.offsetHeight - 6) + 'px';
+        }
+        function pickUser(name) {
+            const ta = document.getElementById('content');
+            const start = atState.start >= 0 ? atState.start : ta.selectionStart;
+            const before = ta.value.slice(0, start);
+            const after = ta.value.slice(ta.selectionStart);
+            ta.value = before + '@' + name + ' ' + after;
+            const pos = before.length + name.length + 2;
+            ta.setSelectionRange(pos, pos);
+            ta.focus();
+            closePicker();
+            updateCounter();
+        }
+        function movePicker(dir) {
+            if (!atState.open || !atState.items.length) return;
+            atState.index = (atState.index + dir + atState.items.length) % atState.items.length;
+            const items = document.querySelectorAll('#atPicker .item');
+            items.forEach(function (el, i) { el.classList.toggle('on', i === atState.index); });
+        }
+
+        // ---------- 渲染 ----------
+        function cardHtml(p, opts) {
+            const o = opts || {};
+            const replies = p.replies || [];
+            const showAll = replyMore.has(p.id);
+            const replyHtml = replies.map(function (r) {
+                return replyHtmlOf(r, p.author);
+            }).join('');
+            const more = (p.replyCount > replies.length && !showAll)
+                ? '<div class="more-replies" onclick="showAllReplies(\'' + escapeHtml(p.id) + '\')">查看全部 ' + p.replyCount + ' 条回复 ↓</div>'
+                : '';
+            const del = p.mine || isAdmin
+                ? '<button class="act del" onclick="delPost(\'' + escapeHtml(p.id) + '\')">🗑️ 删除</button>'
+                : '';
+            return '<div class="card' + (o.hl ? ' hl' : '') + '" id="post-' + escapeHtml(p.id) + '">'
+                + '<div class="card-head">'
+                + '<div class="avatar" style="' + avatarOf(p.avatar) + '" onclick="openUser(\'' + escapeHtml(p.author) + '\')"></div>'
+                + '<div class="who"><div class="name" onclick="openUser(\'' + escapeHtml(p.author) + '\')">' + escapeHtml(p.author) + '</div>'
+                + '<div class="time">' + escapeHtml(timeAgo(p.createdAt)) + '</div></div>'
+                + '</div>'
+                + '<div class="body">' + renderMarkdown(p.content) + '</div>'
+                + '<div class="card-foot">'
+                + '<button class="act" onclick="openReply(\'' + escapeHtml(p.id) + '\')">↩️ 回复</button>'
+                + (p.replyCount ? '<span class="act" style="cursor:pointer" onclick="toggleReplies(\'' + escapeHtml(p.id) + '\')">💬 ' + p.replyCount + ' 条回复</span>' : '<span class="act" style="opacity:.6">💬 还没有回复</span>')
+                + '<span class="sp"></span>' + del
+                + '</div>'
+                + (replies.length || replyOpen.has(p.id) ? '<div class="replies">' + replyHtml + more + '</div>' : '')
+                + '<div class="reply-box" id="rbox-' + escapeHtml(p.id) + '" style="display:none;"></div>'
+                + '</div>';
+        }
+
+        function replyHtmlOf(r, parentAuthor) {
+            const to = (parentAuthor && parentAuthor !== r.author && r.author !== me)
+                ? '' : '';
+            const del = (r.mine || isAdmin)
+                ? '<button class="r-act" onclick="delReply(\'' + escapeHtml(r.id) + '\')">删除</button>'
+                : '';
+            return '<div class="reply" id="reply-' + escapeHtml(r.id) + '">'
+                + '<div class="avatar" style="' + avatarOf(r.avatar) + '" onclick="openUser(\'' + escapeHtml(r.author) + '\')"></div>'
+                + '<div class="r-main"><div class="r-head">'
+                + '<span class="r-name" onclick="openUser(\'' + escapeHtml(r.author) + '\')">' + escapeHtml(r.author) + '</span>' + to
+                + '<span class="r-time">' + escapeHtml(timeAgo(r.createdAt)) + '</span>'
+                + '<span class="sp" style="flex:1"></span>' + del
+                + '</div><div class="r-body">' + renderMarkdown(r.content) + '</div></div></div>';
+        }
+
+        function openUser(name) {
+            if (!name) return;
+            location.href = 'profile.html?user=' + encodeURIComponent(name);
+        }
+
+        // ---------- 数据 ----------
+        async function loadFeed(reset) {
+            if (loading) return;
+            loading = true;
+            if (reset) { posts = []; cursor = null; done = false; replyOpen.clear(); replyMore.clear(); }
+            const q = '/api/benben/list?limit=15' + (filter === 'mine' ? '&author=@me' : '') + (cursor ? '&cursor=' + encodeURIComponent(cursor) : '');
+            const r = await api(q);
+            loading = false;
+            if (r.status === 401) { location.href = 'index.html?next=benben.html'; return; }
+            if (!r.ok || !r.data.ok) {
+                document.getElementById('feed').innerHTML = '<div class="empty">加载失败：' + escapeHtml((r.data && r.data.error) || ('HTTP ' + r.status)) + '</div>';
+                return;
+            }
+            if (r.data.maxLength) { maxLen = r.data.maxLength; updateCounter(); }
+            const list = r.data.posts || [];
+            cursor = r.data.cursor || null;
+            done = !cursor;
+            if (reset) {
+                posts = list;
+                document.getElementById('feed').innerHTML = list.length
+                    ? list.map(function (p) { return cardHtml(p); }).join('')
+                    : '<div class="empty">' + (filter === 'mine' ? '你还没发过犇犇，来第一条？' : '还没有人犇，抢个沙发？') + '</div>';
+            } else {
+                posts = posts.concat(list);
+                document.getElementById('feed').insertAdjacentHTML('beforeend', list.map(function (p) { return cardHtml(p); }).join(''));
+            }
+            document.getElementById('btnMore').style.display = done ? 'none' : 'inline-flex';
+            await highlightFromUrl();
+        }
+
+        function loadMore() { loadFeed(false); }
+
+        function setFilter(f) {
+            filter = f;
+            document.getElementById('tabAll').classList.toggle('on', f === 'all');
+            document.getElementById('tabMine').classList.toggle('on', f === 'mine');
+            loadFeed(true);
+        }
+
+        function findPost(id) { return posts.find(function (p) { return p.id === id; }); }
+
+        function rerender(id) {
+            const p = findPost(id);
+            const el = document.getElementById('post-' + id);
+            if (!p || !el) return;
+            el.outerHTML = cardHtml(p);
+        }
+
+        // 展开 / 收起回复
+        async function toggleReplies(id) {
+            const p = findPost(id);
+            if (!p) return;
+            if (replyOpen.has(id) && !replyMore.has(id)) {
+                replyOpen.delete(id);
+                if (p.allReplies) { p.replies = p.allReplies.slice(-2); p.allReplies = null; }
+            } else {
+                await fetchAllReplies(id);
+            }
+            rerender(id);
+        }
+        async function showAllReplies(id) {
+            await fetchAllReplies(id);
+        }
+        async function fetchAllReplies(id) {
+            const p = findPost(id);
+            if (!p) return;
+            const r = await api('/api/benben/replies?postId=' + encodeURIComponent(id) + '&limit=200');
+            if (r.ok && r.data.ok) {
+                p.allReplies = r.data.replies || [];
+                p.replies = p.allReplies;
+                p.replyCount = p.allReplies.length;
+                replyOpen.add(id);
+                replyMore.add(id);
+            } else {
+                toast((r.data && r.data.error) || '回复加载失败', 'err');
+            }
+        }
+
+        // ---------- 发布 ----------
+        async function publish() {
+            const ta = document.getElementById('content');
+            const content = ta.value.trim();
+            const n = cpLen(content);
+            if (!content) { toast('先写点什么吧', 'err'); return; }
+            if (n > maxLen) { toast('超出字数上限（' + n + ' / ' + maxLen + '）', 'err'); return; }
+            const btn = document.getElementById('btnPost');
+            btn.disabled = true;
+            const r = await api('/api/benben/create', { body: { content: content } });
+            btn.disabled = false;
+            if (!r.ok || !r.data.ok) { toast((r.data && r.data.error) || '发布失败', 'err'); return; }
+            ta.value = '';
+            document.getElementById('preview').classList.remove('show');
+            document.getElementById('preview').innerHTML = '';
+            document.getElementById('btnPreview').classList.remove('primary');
+            updateCounter();
+            closePicker();
+            if (filter === 'all') {
+                posts.unshift(r.data.post);
+                const feed = document.getElementById('feed');
+                if (posts.length === 1) feed.innerHTML = '';
+                feed.insertAdjacentHTML('afterbegin', cardHtml(r.data.post));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                loadFeed(true);
+            }
+            toast('已发布 🐂', 'ok');
+        }
+
+        // ---------- 回复 ----------
+        function openReply(id) {
+            const box = document.getElementById('rbox-' + id);
+            if (!box) return;
+            if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            box.innerHTML = '<textarea id="rt-' + escapeHtml(id) + '" placeholder="回复这条犇犇…（支持 Markdown，@ 可提醒他人）"></textarea>'
+                + '<div class="row"><span class="counter" id="rc-' + escapeHtml(id) + '">0 / ' + maxLen + '</span>'
+                + '<span class="grow" style="flex:1"></span>'
+                + '<button class="btn sm" onclick="closeReply(\'' + escapeHtml(id) + '\')">取消</button>'
+                + '<button class="btn primary sm" onclick="sendReply(\'' + escapeHtml(id) + '\')">发送</button></div>';
+            const ta = document.getElementById('rt-' + id);
+            ta.focus();
+            ta.addEventListener('input', function () {
+                const n = cpLen(ta.value);
+                const c = document.getElementById('rc-' + id);
+                if (c) { c.textContent = n + ' / ' + maxLen; c.className = 'counter' + (n > maxLen ? ' over' : (n > maxLen * 0.9 ? ' warn' : '')); }
+            });
+            ta.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendReply(id); }
+            });
+        }
+        function closeReply(id) {
+            const box = document.getElementById('rbox-' + id);
+            if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+        }
+        async function sendReply(id) {
+            const ta = document.getElementById('rt-' + id);
+            if (!ta) return;
+            const content = ta.value.trim();
+            if (!content) { toast('回复不能为空', 'err'); return; }
+            if (cpLen(content) > maxLen) { toast('超出字数上限', 'err'); return; }
+            const r = await api('/api/benben/create', { body: { content: content, parentId: id } });
+            if (!r.ok || !r.data.ok) { toast((r.data && r.data.error) || '回复失败', 'err'); return; }
+            const p = findPost(id);
+            if (p) {
+                if (!p.replies) p.replies = [];
+                p.replies.push(r.data.post);
+                if (p.allReplies) p.allReplies.push(r.data.post);
+                p.replyCount = (p.replyCount || 0) + 1;
+                replyOpen.add(id);
+            }
+            closeReply(id);
+            rerender(id);
+            toast('已回复', 'ok');
+        }
+
+        // ---------- 删除 ----------
+        async function delPost(id) {
+            if (!confirm('删除这条犇犇？它下面的回复也会一起删掉，且无法恢复。')) return;
+            const r = await api('/api/benben/delete', { body: { id: id } });
+            if (!r.ok || !r.data.ok) { toast((r.data && r.data.error) || '删除失败', 'err'); return; }
+            posts = posts.filter(function (p) { return p.id !== id; });
+            const el = document.getElementById('post-' + id);
+            if (el) el.remove();
+            if (!posts.length) loadFeed(true);
+            toast('已删除', 'ok');
+        }
+        async function delReply(id) {
+            if (!confirm('删除这条回复？')) return;
+            const r = await api('/api/benben/delete', { body: { id: id } });
+            if (!r.ok || !r.data.ok) { toast((r.data && r.data.error) || '删除失败', 'err'); return; }
+            const el = document.getElementById('reply-' + id);
+            const card = el ? el.closest('.card') : null;
+            if (el) el.remove();
+            if (card) {
+                const pid = card.id.replace('post-', '');
+                const p = findPost(pid);
+                if (p) {
+                    p.replies = (p.replies || []).filter(function (x) { return x.id !== id; });
+                    if (p.allReplies) p.allReplies = p.allReplies.filter(function (x) { return x.id !== id; });
+                    p.replyCount = Math.max(0, (p.replyCount || 1) - 1);
+                }
+            }
+            toast('已删除', 'ok');
+        }
+
+        // ---------- 通知深链：benben.html?p=<id> ----------
+        async function highlightFromUrl() {
+            const id = new URLSearchParams(location.search).get('p');
+            if (!id) return;
+            if (findPost(id)) {
+                const el = document.getElementById('post-' + id);
+                if (el) { el.classList.add('hl'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+                return;
+            }
+            // 不在当前列表里（可能翻到后面了）：单独取回来插到最前面
+            const r = await api('/api/benben/get?id=' + encodeURIComponent(id));
+            if (!r.ok || !r.data.ok) return;
+            const p = r.data.post;
+            if (p.parentId) return;   // 这是条回复，交给它所属的主楼
+            if (findPost(p.id)) return;
+            posts.unshift(p);
+            const feed = document.getElementById('feed');
+            if (posts.length === 1) feed.innerHTML = '';
+            feed.insertAdjacentHTML('afterbegin', cardHtml(p, { hl: true }));
+            const url = new URL(location.href); url.searchParams.delete('p'); history.replaceState(null, '', url);
+        }
+
+        // ---------- 启动 ----------
+        async function boot() {
+            // 登录态：与其它页面一致，从 sessionStorage / localStorage 里取
+            let user = null;
+            try { user = JSON.parse(sessionStorage.getItem('currentUser') || 'null'); } catch (e) { user = null; }
+            if (!user) { try { user = JSON.parse(localStorage.getItem('nflshc_currentUser') || 'null'); } catch (e) { user = null; } }
+            const token = (window.AuthToken && window.AuthToken.get()) || '';
+            if (!user || !token) { location.href = 'index.html?next=benben.html'; return; }
+            me = user.username || '';
+            isAdmin = !!user.isAdmin || me === 'huangzhiyuan';
+            document.getElementById('whoami').textContent = me;
+
+            const ta = document.getElementById('content');
+            ta.addEventListener('input', function () {
+                updateCounter();
+                clearTimeout(ta._atTimer);
+                ta._atTimer = setTimeout(updatePicker, 120);
+            });
+            ta.addEventListener('keydown', function (e) {
+                if (atState.open) {
+                    if (e.key === 'ArrowDown') { e.preventDefault(); movePicker(1); return; }
+                    if (e.key === 'ArrowUp') { e.preventDefault(); movePicker(-1); return; }
+                    if (e.key === 'Enter' && atState.items.length) { e.preventDefault(); pickUser(atState.items[atState.index]); return; }
+                    if (e.key === 'Escape') { closePicker(); return; }
+                }
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); publish(); }
+            });
+            ta.addEventListener('blur', function () { setTimeout(closePicker, 180); });
+
+            updateCounter();
+            await loadFeed(true);
+        }
+
+        boot();
+    </script>
+</body>
+</html>
