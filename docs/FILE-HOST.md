@@ -282,3 +282,36 @@ node dev/tools/tools-filehost-csp.mjs    # 按类型抽一个公开文件，校�
 
 > 以后如果再遇到「只有上传 403、读文件正常」，先按上面的对照表试 `Content-Type`：主机层拦 multipart 的可能性最大。
 
+## 10. 主机限流（429 Scanner activity）与 Cloudflare 出口被封的关系
+
+**现象**：某个时间段内，`https://file.nflshcchat.cc.cd/...`（Cloudflare 前置域名）的**所有路径**
+都返回 `429 Too Many Requests - Scanner activity detected`：首页、`plaza.php`、`api.php`、`view.php`、
+`f.php`、`assets/app.js` 一样；换 UA（浏览器 / Googlebot）、换 referer 都没用。
+同一时刻**直连源站 `http://nflshcfile.l.cd`（本机 IP）返回 200 正常**。
+表现到产品上就是：主站发附件 429、图床上传 429、分享出去的 CF 链接打不开，而直接访问源站域名正常。
+
+**原因**：byethost 的安全策略。它对「从 Cloudflare 出口 IP 发来的大量请求」判定为扫描行为并限流。
+我们的 **Worker** 与 `file.nflshcchat.cc.cd` 这个前置 Worker 都从 Cloudflare 出口访问源站，所以一旦
+（例如密集的连通性自检 / 批量测试）触发，就等于把「所有经 CF 出去访问文件站的请求」一起封住；
+源站直连（用户浏览器自己的 IP）不受影响。
+
+**缓解措施（已落地）**：
+
+| 位置 | 做法 |
+| --- | --- |
+| `worker.js` `GET /api/files/health` | 结果**缓存 30 秒**；识别 429 时返回 `throttled: true`（不误判成「主机挂了」）；命中 429 会先等 800ms 重试一次 |
+| `worker.js` `filesApiFetch()` | 429 属于「太频繁」而不是「不可用」：先等 900ms 在原通道重试一次，再换另一条通道 |
+| `worker.js` `POST /api/files/upload` | 上游 429 时直接返回 **429 + `rateLimited: true` + `retryAfter: 60`**，文案提示「请 1 分钟后重试；也可直接到 nflshcfile.l.cd 上传」 |
+| `image-host.html` | 连通性检测多出「⏳ 限流中」状态（琥珀色），不会把限流显示成红色「异常」 |
+| 测试脚本 | 上传相关回归**优先打源站**（`http://nflshcfile.l.cd`），不要用 CF 前置域名反复探测 |
+
+**排查顺序（以后遇到同类问题）**：
+1. 先分清是「我们的代码挂了」还是「主机限流」：直接 `curl http://nflshcfile.l.cd/api.php?a=public`（带 Googlebot UA）
+   看源站是否 200；
+2. 若源站 200、CF 前置 429 → 就是本条所述的 CF 出口限流，只能等冷却（不要继续猛探，否则延长封禁）；
+3. 若两边都失败 → 再查 PHP 报错、磁盘配额、主机是否被临时挂起。
+
+> 长期建议：文件站如果长期依赖 Cloudflare 前置（`file.nflshcchat.cc.cd`、`media.nflshcchat.cc.cd`），
+> 就始终带着「出口 IP 被主机风控」的风险；要彻底规避，需要把文件站迁出这类共享虚拟主机，
+> 或者改用对象存储（R2/S3 之类）作为文件后端。
+
