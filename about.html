@@ -110,7 +110,37 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
 </style>
 <link rel="stylesheet" href="css/themes.css">
 <style>
-#infoBar{position:fixed;right:14px;top:12px;z-index:40;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#infoBar{position:fixed;right:14px;top:12px;z-index:40;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+/* 四个毛玻璃按钮（磨砂玻璃质感，随主题变色） */
+#infoBar{gap:10px}
+#infoBar a,#infoBar button{
+  backdrop-filter:blur(14px) saturate(160%);
+  -webkit-backdrop-filter:blur(14px) saturate(160%);
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 6px 22px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.25);
+  color:var(--text-primary,#e8edf4);
+  border-radius:14px;
+  padding:9px 16px;
+  transition:transform .16s ease, background .2s ease, box-shadow .2s ease, color .2s ease;
+}
+#infoBar a:hover,#infoBar button:hover{
+  background:rgba(255,255,255,.18);
+  color:var(--accent-color,#ffd700);
+  transform:translateY(-1px);
+  box-shadow:0 10px 26px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.35);
+}
+#infoBar a:active,#infoBar button:active{transform:translateY(0) scale(.98)}
+/* 关于本站 panel 里的 hero LOGO */
+.hero-logo{width:132px;height:132px;display:block;margin:2px auto 10px;filter:drop-shadow(0 0 14px var(--accent-color-alpha,rgba(255,215,0,.25)))}
+.hero-logo .bubble{stroke-dasharray:300;stroke-dashoffset:300;animation:logoDraw 1.6s ease-out .2s forwards}
+.hero-logo .bubble2{stroke-dasharray:160;stroke-dashoffset:160;animation:logoDraw 1.4s ease-out .6s forwards}
+.hero-logo .dot{animation:logoPulse 1.4s ease-in-out infinite}
+.hero-logo .dot:nth-child(2){animation-delay:.18s}
+.hero-logo .dot:nth-child(3){animation-delay:.36s}
+@keyframes logoDraw{to{stroke-dashoffset:0}}
+@keyframes logoPulse{0%,100%{opacity:.35;r:3}50%{opacity:1;r:4.2}}
+@media (prefers-reduced-motion: reduce){.hero-logo .bubble,.hero-logo .bubble2,.hero-logo .dot{animation:none;stroke-dashoffset:0}}
 #infoBar a,#infoBar button{font:600 13px/1 system-ui,"PingFang SC","Microsoft YaHei",sans-serif;color:#dff7ef;text-decoration:none;
   background:rgba(6,20,30,.72);border:1px solid rgba(24,224,192,.45);border-radius:999px;padding:9px 14px;cursor:pointer;backdrop-filter:blur(6px)}
 #infoBar a:hover,#infoBar button:hover{border-color:#18e0c0;color:#fff;background:rgba(24,224,192,.18)}
@@ -139,12 +169,26 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
 </div>
 <div id="infoPanel">
   <div class="container">
-    <button class="btn close" onclick="toggleInfo(false)" style="padding:8px 14px;border-radius:10px;cursor:pointer">← 返回宣传片</button>
-    <div class="nav">
-      <div class="nav-left"><h2>💬 NFLSHC Chat</h2></div>
-      <div><a href="chat.html">💬 聊天</a><a href="pages.html">🧭 功能导航</a><a href="index.html">🏠 首页</a></div>
-    </div>
+    <!-- 导航只保留右上角四个毛玻璃按钮；返回宣传片由「ℹ️ 关于本站」按钮切换（见下方脚本） -->
 <div class="hero">
+<svg class="hero-logo" viewBox="0 0 400 400" role="img" aria-label="NFLSHC Chat 标志">
+  <defs>
+    <linearGradient id="aboutLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="var(--accent-color,#ffd700)"/>
+      <stop offset="100%" stop-color="var(--extra-purple,#ff8c00)"/>
+    </linearGradient>
+  </defs>
+  <circle cx="200" cy="165" r="120" fill="none" stroke="url(#aboutLogoGrad)" stroke-width="1" stroke-opacity=".16" stroke-dasharray="4 12"/>
+  <circle cx="200" cy="165" r="140" fill="none" stroke="url(#aboutLogoGrad)" stroke-width=".5" stroke-opacity=".08"/>
+  <polygon points="200,40 310,100 310,220 200,280 90,220 90,100" fill="none" stroke="url(#aboutLogoGrad)" stroke-width="1.5" stroke-opacity=".35" stroke-linejoin="round" stroke-dasharray="30 15 10 15"/>
+  <path class="bubble2" d="M210 140 L265 140 C273 140 280 147 280 155 L280 205 C280 213 273 220 265 220 L235 220 L215 235 L222 220 L210 220 C202 220 195 213 195 205 L195 185" fill="none" stroke="var(--extra-purple,#ff8c00)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity=".7"/>
+  <path class="bubble" d="M190 200 L135 200 C124 200 115 191 115 180 L115 120 C115 109 124 100 135 100 L245 100 C256 100 265 109 265 120 L265 155 C265 166 256 175 245 175 L175 175 L150 195 L160 175 L190 175 Z" fill="url(#aboutLogoGrad)" fill-opacity=".12" stroke="url(#aboutLogoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g>
+    <circle class="dot" cx="177" cy="145" r="3.5" fill="var(--accent-color,#ffd700)"/>
+    <circle class="dot" cx="195" cy="145" r="3.5" fill="var(--accent-color,#ffd700)"/>
+    <circle class="dot" cx="213" cy="145" r="3.5" fill="var(--accent-color,#ffd700)"/>
+  </g>
+</svg>
             <h1>💬 NFLSHC Chat</h1>
             <p>一个安全、便捷、功能丰富的现代聊天平台</p>
         </div>
@@ -248,21 +292,17 @@ pre{margin:0;background:#0a0e1a;border-radius:8px;padding:6px 10px;font-size:15p
             </div>
         </div>
     <div class="container">
-        <div class="hero">
-            <h1>💬 NFLSHC Chat</h1>
-            <p>一个安全、便捷、功能丰富的现代聊天平台</p>
-        </div>
 <div class="card">
             <h2>🛠️ 技术栈</h2>
-            <div class="tech-stack">
-                <span class="tech-tag">HTML5</span>
-                <span class="tech-tag">CSS3</span>
-                <span class="tech-tag">JavaScript (ES6+)</span>
-                <span class="tech-tag">GitHub API</span>
-                <span class="tech-tag">Marked.js (Markdown 渲染)</span>
-                <span class="tech-tag">Chart.js (数据可视化)</span>
-                <span class="tech-tag">GitHub Pages</span>
-                <span class="tech-tag">GitHub Actions</span>
+            <div class="tech-stack" style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;">
+                <span class="tech-tag">HTML5 + CSS3 + 原生 JavaScript（无框架）</span>
+                <span class="tech-tag">Cloudflare Workers（唯一后端 / API）</span>
+                <span class="tech-tag">Cloudflare D1（数据存储）</span>
+                <span class="tech-tag">Cloudflare 边缘网络（缓存 / 图片转换 / Web Push）</span>
+                <span class="tech-tag">Marked.js（Markdown 渲染）+ highlight.js（代码高亮）</span>
+                <span class="tech-tag">Chart.js（数据可视化）</span>
+                <span class="tech-tag">GitHub Pages（静态页面托管）</span>
+                <span class="tech-tag">文件托管服务（聊天附件 / 图床统一存储）</span>
             </div>
         </div>
 <div class="card">
