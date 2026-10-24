@@ -33,6 +33,9 @@
     /* Markdown 表格：分割线 / 表头底色（比 --border-color 更明显，深色主题也看得清） */
     --table-border: #4d4d6b;
     --table-head-bg: rgba(255, 215, 0, 0.10);
+    /* 代码块：浅色主题也统一用深底浅字，highlight.js 的语法色才读得清 */
+    --code-bg: #0f0f1a;
+    --code-fg: #f2f5fa;
 }
 
 [data-theme="light"] {
@@ -67,6 +70,9 @@
     --table-head-bg: rgba(184, 134, 11, 0.14);
     /* 浅色底上的蓝色文字要压暗一点才够对比度 */
     --info: #1f6fb2;
+    /* 代码块：白页面上用深色卡片 + 浅字，对比度才够 */
+    --code-bg: #20262e;
+    --code-fg: #eef2f8;
 }
 
 [data-theme="blue"] {
