@@ -370,8 +370,20 @@
   `share.html` 的 `renderMarkdownSimple()`（分享的对话来自其他用户，尤其需要过滤）；
   以及 **Windows 桌面客户端**（`nflshcchat-windows` 的 `pages/sanitize.js` + `pages/messages.js`）。
   三处规则完全一致，各自的兜底都是「白名单脚本缺失时退回纯文本」。
-- 与 PWA 的关系：`js/sanitize.js?v=1` 已加入 Service Worker 预缓存 —— 否则离线打开时脚本缺失，
+- 与 PWA 的关系：`js/sanitize.js?v=2` 已加入 Service Worker 预缓存 —— 否则离线打开时脚本缺失，
   渲染会退化成「未过滤」，等于把 XSS 留给离线场景（见 §18）。
+- **合并单元格**（v2 新增，`mergeTableCells()`）：Markdown 原生没有合并语法，清洗完在 DOM 上补做一次网格化：
+  - 单元格写 `^` 或 `↑` → 与**正上方**的单元格纵向合并（`rowspan` 累加）；
+  - 单元格写 `<` 或 `←` → 与**左侧**单元格横向合并（`colspan` 累加）；
+  - 大合并格右边、下一行留空 → **空单元格自动并入上方**（不用每次重复写内容）；
+  - 手写的 HTML `rowspan` / `colspan` 原样保留，并参与同一套网格计算；
+  - 合并后的单元格由 CSS 统一 `vertical-align: middle` + `text-align: center`，
+    跨两行时是一个整体、中间不会多一条分割线。
+- **表格与代码块的可读性**：`css/themes.css` 提供 `--table-border` / `--table-head-bg` / `--code-bg` / `--code-fg`，
+  各主题分别取值（晨曦白光下表格线 `#b3b3c2`、代码块深底浅字），
+  帖子/文章/聊天（含实时预览）/笔记预览四个渲染出口共用同一套表格、代码、引用样式。
+- 回归：`node dev/tests/test-md-table-theme.mjs`（4 个页面 × 2 套主题，128 项）、
+  `node dev/tests/test-md-merge.mjs`（合并单元格 4 种写法 + 预览区样式，27 项）。
 - 回归：`node dev/tests/test-markdown-sanitize.mjs`（真实线上环境 + 无头 Chrome）覆盖 19 种攻击载荷
   （script/onerror/javascript:/制表符绕过/iframe/svg/mXSS 组合/表单/fixed 蒙层/id 覆盖/data:URL…）、
   `renderMarkdown` 的真实输出、以及 5 个页面的渲染出口 —— **48/48 通过**，且全程没有任何载荷真的执行、
