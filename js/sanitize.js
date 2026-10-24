@@ -200,6 +200,95 @@
   var cache = new Map();
   var CACHE_MAX = 300;
 
+  // ================= 表格合并单元格 =================
+  // Markdown 本身没有合并单元格语法，这里在清洗后的 DOM 上做一次网格化处理：
+  //   · 单元格写成 ^ 或 ↑     → 与正上方的单元格纵向合并（rowspan 累加）；
+  //   · 单元格写成 < 或 ←     → 与左侧的单元格横向合并（colspan 累加）；
+  //   · 写完大合并格后右边留空 → 空单元格自动并入正上方（大格右边的第二行不用重复填）；
+  //   · 手写 HTML 里的 rowspan / colspan 原样保留，并与上面的规则一同计算。
+  // 合并后的单元格由 CSS（[rowspan] / [colspan]）统一垂直 + 水平居中。
+  function isBlankCell(cell) {
+    if (!cell) return true;
+    if (cell.querySelector && cell.querySelector('img, video, audio, br, hr, picture, source')) return false;
+    return String(cell.textContent || '').replace(/[\s\u200B\uFEFF]+/g, '') === '';
+  }
+
+  function mergeTableCells(root) {
+    if (!root || !root.querySelectorAll) return;
+    var tables = root.querySelectorAll('table');
+    for (var ti = 0; ti < tables.length; ti++) {
+      var table = tables[ti];
+      var trs = table.querySelectorAll('tr');
+      if (!trs || trs.length < 2) continue;
+
+      var rows = [];
+      for (var ri = 0; ri < trs.length; ri++) {
+        rows[ri] = Array.prototype.slice.call(trs[ri].children || []).filter(function (el) {
+          return /^(TD|TH)$/i.test(el.tagName || '');
+        });
+      }
+      // 网格：grid[行][列] = 占据该格的单元格（用于定位「正上方」「左边」）
+      var grid = [];
+      var setGrid = function (r, c, cell) {
+        grid[r] = grid[r] || [];
+        if (!grid[r][c]) grid[r][c] = cell;
+      };
+      for (var r0 = 0; r0 < rows.length; r0++) {
+        var c0 = 0;
+        for (var i0 = 0; i0 < rows[r0].length; i0++) {
+          var cell0 = rows[r0][i0];
+          while (grid[r0] && grid[r0][c0]) c0++;
+          var cs = Math.max(1, Math.min(20, parseInt(cell0.getAttribute('colspan') || '1', 10) || 1));
+          var rs = Math.max(1, Math.min(50, parseInt(cell0.getAttribute('rowspan') || '1', 10) || 1));
+          cell0.__col = c0; cell0.__row = r0; cell0.__cs = cs; cell0.__rs = rs;
+          for (var dr = 0; dr < rs && r0 + dr < rows.length; dr++) {
+            for (var dc = 0; dc < cs; dc++) setGrid(r0 + dr, c0 + dc, cell0);
+          }
+          c0 += cs;
+        }
+      }
+
+      // 从下往上处理，避免删掉单元格后行内下标错乱
+      for (var rr = rows.length - 1; rr >= 0; rr--) {
+        for (var cc = rows[rr].length - 1; cc >= 0; cc--) {
+          var cur = rows[rr][cc];
+          if (!cur || !cur.parentNode) continue;
+          if (cur.closest && cur.closest('thead')) continue;         // 表头不参与合并
+          var txt = String(cur.textContent || '').trim();
+          var wantUp = /^[\^↑]+$/.test(txt);
+          var wantLeft = /^[<←]+$/.test(txt);
+          if (!wantUp && !wantLeft && !isBlankCell(cur)) continue;   // 正常有内容的格子不动
+
+          if (wantUp || isBlankCell(cur)) {
+            var above = (grid[rr - 1] && grid[rr - 1][cur.__col]) || null;
+            if (above && above !== cur && above.__row + above.__rs === rr &&
+                above.__col === cur.__col && above.__cs === cur.__cs &&
+                !(above.closest && above.closest('thead'))) {
+              above.__rs += cur.__rs;
+              try { above.setAttribute('rowspan', String(above.__rs)); } catch (e) { /* 忽略 */ }
+              for (var k = 0; k < cur.__rs; k++) {
+                for (var kc = 0; kc < cur.__cs; kc++) setGrid(rr + k, cur.__col + kc, above);
+              }
+              try { cur.parentNode.removeChild(cur); } catch (e) { /* 忽略 */ }
+              continue;
+            }
+          }
+          if (wantLeft) {
+            var left = (grid[rr] && grid[rr][cur.__col - 1]) || null;
+            if (left && left !== cur && left.__row === cur.__row && left.__col + left.__cs === cur.__col) {
+              left.__cs += cur.__cs;
+              try { left.setAttribute('colspan', String(left.__cs)); } catch (e) { /* 忽略 */ }
+              try { cur.parentNode.removeChild(cur); } catch (e) { /* 忽略 */ }
+              continue;
+            }
+          }
+          // 标记没找到可合并的目标：把占位符去掉，别显示 ^ / <
+          if (wantUp || wantLeft) cur.textContent = '';
+        }
+      }
+    }
+  }
+
   function sanitizeHtml(dirty) {
     if (dirty == null) return '';
     var src = String(dirty);
@@ -214,6 +303,7 @@
         var doc = new DOMParser().parseFromString('<!doctype html><html><body>' + src, 'text/html');
         var body = doc.body || doc.documentElement;
         walk(body);
+        try { mergeTableCells(body); } catch (e) { /* 合并失败不影响安全过滤 */ }
         out = body ? body.innerHTML : escapeText(src);
         // 兜底：即便走漏，也不允许出现脚本标签
         if (/<\s*script|<\s*iframe|on[a-z]+\s*=/i.test(out)) out = out.replace(/<\s*\/?\s*(script|iframe)[^>]*>/gi, '');
@@ -228,6 +318,7 @@
   }
 
   window.sanitizeHtml = sanitizeHtml;
+  window.mergeTableCells = mergeTableCells;
   // 方便其它脚本确认已经加载
-  window.NFLSHC_SANITIZER = 'v1';
+  window.NFLSHC_SANITIZER = 'v2';
 })();
