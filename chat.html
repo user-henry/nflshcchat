@@ -371,17 +371,22 @@
             color: var(--bg-primary, #1a1a2e);
         }
         
+        /* 行内代码 / 代码块：颜色对比度加强（浅色主题下也有足够反差） */
         .message-bubble code {
-            background: rgba(0,0,0,0.2);
-            padding: 2px 6px;
+            background: var(--bg-tertiary, rgba(0, 0, 0, 0.25));
+            color: var(--text-primary, #f2f5fa);
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 1px 6px;
             border-radius: 4px;
             font-family: 'Consolas', 'Monaco', monospace;
             font-size: 0.9em;
             word-break: break-all;
         }
         .message-bubble pre {
-            background: rgba(0,0,0,0.3);
-            padding: 10px;
+            background: var(--code-bg, #0f0f1a);
+            color: var(--code-fg, #f2f5fa);
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 10px 12px;
             border-radius: 8px;
             overflow-x: auto;
             margin: 8px 0;
@@ -390,8 +395,28 @@
         }
         .message-bubble pre code {
             background: transparent;
+            border: none;
+            color: inherit;
             padding: 0;
         }
+        /* highlight.js（atom-one-dark）默认前景偏灰，这里统一提到高对比，注释也看得清 */
+        .message-bubble pre .hljs { background: transparent; color: var(--code-fg, #f2f5fa); }
+        .message-bubble pre .hljs-comment,
+        .message-bubble pre .hljs-quote { color: #9aa7b8; font-style: italic; }
+        .message-bubble pre .hljs-string,
+        .message-bubble pre .hljs-attr,
+        .message-bubble pre .hljs-template-variable { color: #8fdc9c; }
+        .message-bubble pre .hljs-keyword,
+        .message-bubble pre .hljs-built_in,
+        .message-bubble pre .hljs-selector-tag { color: #ff8fa3; }
+        .message-bubble pre .hljs-number,
+        .message-bubble pre .hljs-literal,
+        .message-bubble pre .hljs-variable { color: #7fd1f5; }
+        .message-bubble pre .hljs-title,
+        .message-bubble pre .hljs-name,
+        .message-bubble pre .hljs-section { color: #ffd479; }
+        .message-bubble pre .hljs-type,
+        .message-bubble pre .hljs-class .hljs-title { color: #b9a6ff; }
         .message-bubble a {
             color: var(--accent-color, #ffd700);
             text-decoration: none;
@@ -401,9 +426,9 @@
             text-decoration: underline;
         }
         .message-bubble blockquote {
-            border-left: 3px solid var(--accent-color, #ffd700);
+            border-left: 4px solid var(--accent-color, #ffd700);
             margin: 8px 0;
-            padding-left: 12px;
+            padding: 2px 0 2px 12px;
             color: var(--text-secondary, #ccc);
             word-break: break-word;
         }
@@ -417,16 +442,29 @@
         .message-bubble h1 { font-size: 1.4em; }
         .message-bubble h2 { font-size: 1.2em; }
         .message-bubble h3 { font-size: 1.1em; }
+        /* 表格：用 --table-border（比 --border-color 深）+ 表头底色 + 斑马纹 */
         .message-bubble table {
             border-collapse: collapse;
             margin: 8px 0;
             width: 100%;
             overflow-x: auto;
             display: block;
+            font-size: 0.95em;
         }
         .message-bubble th, .message-bubble td {
-            border: 1px solid var(--border-color, #555);
-            padding: 4px 8px;
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 5px 9px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .message-bubble thead th {
+            background: var(--table-head-bg, rgba(255, 215, 0, 0.12));
+            color: var(--text-primary, #fff);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .message-bubble tbody tr:nth-child(even) td {
+            background: var(--hover-bg, rgba(255, 255, 255, 0.05));
         }
         .message-bubble img {
             max-width: 100%;
