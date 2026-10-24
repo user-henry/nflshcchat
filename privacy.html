@@ -115,7 +115,7 @@
 
             <h2 class="sec" id="s4">4. 信息的存储与安全</h2>
             <ul>
-                <li>业务数据存储于 Cloudflare D1（SQLite）与 Cloudflare 边缘网络；上传的文件存储于自建文件托管主机。</li>
+                <li>业务数据存储于 Cloudflare D1（SQLite）与 Cloudflare 边缘网络；上传的文件存储于文件托管主机。</li>
                 <li>所有站点强制 HTTPS 传输；接口调用使用 Bearer 令牌鉴权，令牌默认 30 天有效，可按设备单独吊销。</li>
                 <li>密码在浏览器端完成 SHA-256 哈希后再传输，服务端只保存哈希值，无法还原明文。</li>
                 <li>数据库访问受凭据隔离，配置文件不纳入公开代码仓库。</li>
