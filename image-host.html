@@ -1204,7 +1204,7 @@
         const lat = document.getElementById('fileHostLatency');
         if (badge) badge.textContent = '检测中…';
         const t0 = performance.now();
-        let payload = null, ok = false, ms = 0, reason = '';
+        let payload = null, ok = false, ms = 0, reason = '', throttled = false;
         try {
             const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
             const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, 12000) : null;
@@ -1215,6 +1215,7 @@
             if (timer) clearTimeout(timer);
             payload = await res.json().catch(() => null);
             ok = !!(payload && payload.ok);
+            throttled = !!(payload && payload.throttled);
             ms = (payload && typeof payload.ms === 'number') ? payload.ms : Math.round(performance.now() - t0);
             if (!ok) reason = (payload && (payload.upstream || payload.status)) ? String(payload.upstream || payload.status) : 'HTTP ' + res.status;
         } catch (e) {
@@ -1223,14 +1224,17 @@
             reason = e && e.message ? e.message : String(e);
         }
         updateApiStatus(ok);
-        if (badge) badge.textContent = ok ? ('✅ 在线 · ' + ms + 'ms') : '❌ 异常';
+        if (badge) badge.textContent = ok ? ('✅ 在线 · ' + ms + 'ms') : (throttled ? '⏳ 限流中' : '❌ 异常');
         if (lat) lat.textContent = ms ? (ms + ' ms') : '—';
-        if (lat) lat.style.color = ok ? '#2ecc71' : '#e74c3c';
+        if (lat) lat.style.color = ok ? '#2ecc71' : (throttled ? '#f59e0b' : '#e74c3c');
+        const detail = document.getElementById('apiStatusDetail');
+        if (detail && throttled && !ok) { detail.textContent = '⏳ 限流中（稍后重试）'; detail.style.color = '#f59e0b'; }
         if (notify) {
             if (ok) showToast('✅ 文件托管站连通正常（' + ms + 'ms）', 'success');
+            else if (throttled) showToast('⏳ 文件托管站正在限流（探测过于频繁），请稍后再试', 'info');
             else showToast('⚠️ 文件托管站异常：' + reason.slice(0, 80), 'error');
         }
-        return { ok, ms, reason };
+        return { ok, ms, reason, throttled };
     }
 
     // 暴露全局函数
