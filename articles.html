@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="js/theme.js?v=4"></script>
-<script src="js/sanitize.js?v=1"></script>
+<script src="js/sanitize.js?v=2"></script>
 
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
 
@@ -209,6 +209,14 @@
         .reply-content tbody tr:nth-child(even) td { background: var(--hover-bg, rgba(255, 255, 255, .04)); }
         .markdown-body tbody tr:hover td,
         .reply-content tbody tr:hover td { background: var(--accent-color-alpha, rgba(52, 152, 219, .12)); }
+        /* 合并单元格（rowspan / colspan）：内容水平 + 垂直居中 */
+        .markdown-body td[rowspan], .markdown-body th[rowspan],
+        .markdown-body td[colspan], .markdown-body th[colspan],
+        .reply-content td[rowspan], .reply-content th[rowspan],
+        .reply-content td[colspan], .reply-content th[colspan] {
+            vertical-align: middle;
+            text-align: center;
+        }
 
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted, #666); }
         .empty-state .icon { font-size: 48px; display: block; margin-bottom: 12px; }
