@@ -417,8 +417,8 @@
             <div>
                 <div class="title">NFLSHC 图床</div>
                 <div class="subtitle">
-                    配合 NFLSHC Chat 使用 · 全球 DNS 加速
-                    <span class="badge">🚀 CDN</span>
+                    配合 NFLSHC Chat 使用 · 图片统一存到文件托管站
+                    <span class="badge">⚡ Cloudflare</span>
                 </div>
             </div>
         </div>
@@ -428,6 +428,7 @@
                 <span id="statusText">已连接</span>
             </span>
             <a href="#" onclick="loadImages()" class="nav-link">🔄 刷新</a>
+            <a href="#" onclick="checkFileHost(true)" class="nav-link" title="检测文件托管站是否可达">🩺 连通性检测</a>
             <a href="chat.html" class="nav-link">💬 聊天</a>
             <div class="user-badge">
                 <div class="avatar" id="userAvatar">U</div>
@@ -465,9 +466,9 @@
                 <div class="number" id="totalViews">0</div>
                 <div class="label">👁️ 总浏览</div>
             </div>
-            <div class="stat-card">
-                <div class="number" id="cdnStatus">🌐</div>
-                <div class="label">⚡ CDN 加速</div>
+            <div class="stat-card" title="检测文件托管站是否可达（经 Worker 转发探测）">
+                <div class="number" id="cdnStatus" style="font-size:17px;line-height:1.35;">检测中…</div>
+                <div class="label">🩺 文件托管状态</div>
             </div>
         </div>
 
@@ -508,13 +509,13 @@
                 <h3 style="color:#f59e0b;font-size:20px;margin-bottom:8px;">上传图片到 NFLSHC 图床</h3>
                 <p style="color:#666;font-size:14px;margin-bottom:8px;">支持 JPG、PNG、GIF、WebP、SVG · 最大 5MB</p>
                 <p style="color:#555;font-size:12px;margin-bottom:20px;">
-                    🌐 全球 DNS 加速 · 图片自动同步到 GitHub Issues
+                    🌐 Cloudflare 全球加速 · 图片统一存到文件托管站
                 </p>
                 <button class="btn btn-primary" onclick="openUploadModal()" style="font-size:16px;padding:12px 32px;">
                     <i class="fas fa-upload"></i> 选择图片上传
                 </button>
                 <div style="margin-top:16px;font-size:12px;color:#444;line-height:1.8;">
-                    💡 图片存储在 <a href="https://file.nflshcchat.cc.cd" target="_blank" style="color:#f59e0b;text-decoration:none;">NFLSHC 自建文件托管</a>（与聊天附件同一套存储）
+                    💡 图片存储在 <a href="https://file.nflshcchat.cc.cd" target="_blank" style="color:#f59e0b;text-decoration:none;">NFLSHC 文件托管</a>（与聊天附件同一套存储）
                     <br>🚀 配合 NFLSHC Chat 使用 · 图片永久存储
                 </div>
             </div>
@@ -544,16 +545,23 @@
         <div class="stat-card" style="margin-top:16px;padding:20px;">
             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
                 <div>
-                    <div style="color:#666;font-size:12px;">🔗 API 状态</div>
-                    <div style="color:#2ecc71;font-size:14px;" id="apiStatusDetail">✅ 已连接</div>
+                    <div style="color:#666;font-size:12px;">🩺 文件托管站</div>
+                    <div style="color:#2ecc71;font-size:14px;" id="apiStatusDetail">检测中…</div>
                 </div>
                 <div>
-                    <div style="color:#666;font-size:12px;">🌐 CDN 加速</div>
-                    <div style="color:#2ecc71;font-size:14px;">✅ 全球 DNS 加速</div>
+                    <div style="color:#666;font-size:12px;">⏱️ 探测耗时</div>
+                    <div style="color:#2ecc71;font-size:14px;" id="fileHostLatency">—</div>
                 </div>
                 <div>
-                    <div style="color:#666;font-size:12px;">💾 存储引擎</div>
-                    <div style="color:#f59e0b;font-size:14px;">ImgURL + GitHub Issues</div>
+                    <div style="color:#666;font-size:12px;">🌐 全球加速</div>
+                    <div style="color:#2ecc71;font-size:14px;">Cloudflare 边缘网络</div>
+                </div>
+                <div>
+                    <div style="color:#666;font-size:12px;">💾 存储方式</div>
+                    <div style="color:#f59e0b;font-size:14px;">文件托管站（与聊天附件同一套存储）</div>
+                </div>
+                <div style="display:flex;align-items:flex-end;">
+                    <a href="#" onclick="checkFileHost(true)" class="btn btn-outline" style="text-decoration:none;">🩺 重新检测</a>
                 </div>
             </div>
         </div>
@@ -590,7 +598,7 @@
             <div class="text" id="progressText">上传中...</div>
         </div>
         <div class="powered-by">
-            ⚡ 存储在 <a href="https://file.nflshcchat.cc.cd" target="_blank">NFLSHC 自建文件托管</a> · 单账号配额与聊天附件共用
+            ⚡ 存储在 <a href="https://file.nflshcchat.cc.cd" target="_blank">NFLSHC 文件托管</a> · 单账号配额与聊天附件共用
         </div>
     </div>
 </div>
@@ -603,7 +611,7 @@
     // ============================================================
     //  API 配置
     // ============================================================
-    // 图片统一存到自建文件托管（https://file.nflshcchat.cc.cd），经 Worker /api/files/* 中转。
+    // 图片统一存到文件托管站（https://file.nflshcchat.cc.cd），经 Worker /api/files/* 中转。
     // 已移除原先硬编码在页面里的第三方图床 API Token（公开仓库里暴露令牌会导致账号被限制）。
     // 历史 ImgURL 图片的删除由 Worker 代理（token 存在服务端 secret 里）。
     const WORKER_API_BASE = (typeof WORKER_API !== 'undefined') ? WORKER_API : 'https://worker.nflshcchat.cc.cd';
@@ -777,7 +785,7 @@
     }
 
     // ============================================================
-    //  自建文件托管（经 Worker 中转，与聊天附件同一套存储）
+    //  文件托管站（经 Worker 中转，与聊天附件同一套存储）
     //  返回 { id, name, title, url, directUrl, thumb, size, width, height }
     // ============================================================
     async function uploadToNflshcFile(file, params = {}) {
@@ -793,7 +801,7 @@
         return data;
     }
 
-    // 删除自建文件托管上的文件（同样经 Worker 中转，带 Bearer 令牌）
+    // 删除文件托管站上的文件（同样经 Worker 中转，带 Bearer 令牌）
     // urls 传公开直链，服务端删完会顺便清掉 CDN 缓存，保证链接立刻失效
     async function deleteFromNflshcFile(fileId, urls) {
         const res = await fetch(`${WORKER_API}/api/files/delete`, {
@@ -855,12 +863,12 @@
                     continue;
                 }
 
-                // 上传到自建文件托管（与聊天附件同一套存储；不再依赖第三方图床）
+                // 上传到文件托管站（与聊天附件同一套存储）
                 const result = await uploadToNflshcFile(file, { compress });
 
                 const imageData = {
                     id: 'img_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-                    fileId: result.id,                       // 自建文件托管的文件 id（删除时用）
+                    fileId: result.id,                       // 文件托管站的文�� id（删除时用）
                     storage: 'nflshcfile',
                     filename: result.title || result.name || file.name,
                     url: result.directUrl || result.url,
@@ -927,7 +935,7 @@
         try {
             let removedRemote = false;
             let note = '';
-            // 1) 自建文件托管：直接走我们的删除接口（顺带清 CDN 缓存）
+            // 1) 文件托管站：直接走我们的删除接口（顺带清 CDN 缓存）
             if (img.fileId || img.storage === 'nflshcfile') {
                 const r = await deleteFromNflshcFile(img.fileId || img.id, [img.url, img.viewUrl, img.thumbnail_url]);
                 removedRemote = true;
@@ -1078,14 +1086,15 @@
     function updateApiStatus(online) {
         const dot = document.getElementById('statusDot');
         const text = document.getElementById('statusText');
+        const detail = document.getElementById('apiStatusDetail');
         if (online) {
             dot.className = 'dot online';
-            text.textContent = 'API 已连接';
-            document.getElementById('apiStatusDetail').textContent = '✅ 已连接';
+            text.textContent = '文件托管在线';
+            if (detail) detail.textContent = '✅ 在线';
         } else {
             dot.className = 'dot offline';
-            text.textContent = 'API 离线';
-            document.getElementById('apiStatusDetail').textContent = '❌ 离线';
+            text.textContent = '文件托管异常';
+            if (detail) detail.textContent = '❌ 异常';
         }
     }
 
@@ -1173,22 +1182,56 @@
     //  初始化
     // ============================================================
     async function init() {
-        // 存储服务连通性自检：直接问自建文件托管（经 Worker 的 SSO 通道）
-        try {
-            const token = window.AuthToken && window.AuthToken.get();
-            const res = await fetch(`${WORKER_API}/api/push/key`, { headers: token ? { Authorization: 'Bearer ' + token } : {} });
-            updateApiStatus(res.ok || res.status === 401);
-        } catch (error) {
-            updateApiStatus(false);
-            showToast('⚠️ 存储服务连接失败，请检查网络', 'error');
-        }
-
+        await checkFileHost();        // 先做一次文件托管站连通性检测（轻量，不带鉴权）
         await loadImages();
-        document.getElementById('cdnStatus').textContent = '🌐 自建文件托管 · CDN 加速';
+    }
+
+    // ============================================================
+    //  文件托管站连通性检测
+    //  经 Worker 的 /api/files/health 转发探测（主机侧直连会被反爬挑战页挡住，
+    //  而且 file.nflshcchat.cc.cd 不带 CORS 头，浏览器直接探测会误判成失败）
+    // ============================================================
+    let checkingFileHost = false;
+    async function checkFileHost(notify) {
+        if (checkingFileHost) return null;
+        checkingFileHost = true;
+        const badge = document.getElementById('cdnStatus');
+        const lat = document.getElementById('fileHostLatency');
+        if (badge) badge.textContent = '检测中…';
+        const t0 = performance.now();
+        let payload = null, ok = false, ms = 0, reason = '';
+        try {
+            const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timer = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, 12000) : null;
+            const res = await fetch(`${WORKER_API}/api/files/health`, {
+                cache: 'no-store',
+                signal: ctrl ? ctrl.signal : undefined,
+            });
+            if (timer) clearTimeout(timer);
+            payload = await res.json().catch(() => null);
+            ok = !!(payload && payload.ok);
+            ms = (payload && typeof payload.ms === 'number') ? payload.ms : Math.round(performance.now() - t0);
+            if (!ok) reason = (payload && (payload.upstream || payload.status)) ? String(payload.upstream || payload.status) : 'HTTP ' + res.status;
+        } catch (e) {
+            ok = false;
+            ms = Math.round(performance.now() - t0);
+            reason = e && e.message ? e.message : String(e);
+        }
+        checkingFileHost = false;
+        updateApiStatus(ok);
+        if (badge) badge.textContent = ok ? ('✅ 在线 · ' + ms + 'ms') : '❌ 异常';
+        if (lat) lat.textContent = ms ? (ms + ' ms') : '—';
+        if (lat) lat.style.color = ok ? '#2ecc71' : '#e74c3c';
+        if (notify) {
+            if (ok) showToast('✅ 文件托管站连通正常（' + ms + 'ms）', 'success');
+            else showToast('⚠️ 文件托管站异常：' + reason.slice(0, 80), 'error');
+        }
+        return { ok, ms, reason };
     }
 
     // 暴露全局函数
     window.loadImages = loadImages;
+    window.checkFileHost = checkFileHost;
     window.switchTab = switchTab;
     window.openUploadModal = openUploadModal;
     window.closeUploadModal = closeUploadModal;
@@ -1202,9 +1245,8 @@
 
     console.log('📤 NFLSHC 图床已加载 (主仓库版本)');
     console.log('👤 当前用户:', currentUser?.username);
-    console.log('🔗 ImgURL API: 已配置');
-    console.log('💾 存储: GitHub Issues');
-    console.log('🌐 CDN: 全球加速');
+    console.log('💾 存储: 文件托管站（与聊天附件同一套存储）');
+    console.log('🌐 加速: Cloudflare 边缘网络');
 </script>
 
     </body>
