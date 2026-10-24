@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <script src="js/theme.js?v=4"></script>
-<script src="js/sanitize.js?v=1"></script>
+<script src="js/sanitize.js?v=2"></script>
 
 <script>const WORKER_API='https://worker.nflshcchat.cc.cd';</script>
 
@@ -466,6 +466,14 @@
         .message-bubble tbody tr:nth-child(even) td {
             background: var(--hover-bg, rgba(255, 255, 255, 0.05));
         }
+        /* 合并单元格（rowspan / colspan）：内容水平 + 垂直居中 */
+        .message-bubble td[rowspan], .message-bubble th[rowspan],
+        .message-bubble td[colspan], .message-bubble th[colspan],
+        .preview-content td[rowspan], .preview-content th[rowspan],
+        .preview-content td[colspan], .preview-content th[colspan] {
+            vertical-align: middle;
+            text-align: center;
+        }
         .message-bubble img {
             max-width: 100%;
             border-radius: 8px;
@@ -605,6 +613,72 @@
             overflow-y: auto;
             word-wrap: break-word;
             word-break: break-word;
+        }
+        /* 实时预览区里的 Markdown：与消息气泡同一套渲染规则，表格/代码块也要看得清 */
+        .preview-content { color: var(--text-primary, #eef4ff); line-height: 1.7; }
+        .preview-content h1, .preview-content h2, .preview-content h3 { margin: 8px 0; }
+        .preview-content h1 { font-size: 1.4em; }
+        .preview-content h2 { font-size: 1.2em; }
+        .preview-content h3 { font-size: 1.1em; }
+        .preview-content strong { color: var(--text-primary, #eef4ff); font-weight: 700; }
+        .preview-content code {
+            background: var(--bg-tertiary, rgba(0, 0, 0, .25));
+            color: var(--text-primary, #f2f5fa);
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: .9em;
+        }
+        .preview-content pre {
+            background: var(--code-bg, #0f0f1a);
+            color: var(--code-fg, #f2f5fa);
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 10px 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .preview-content pre code { background: transparent; border: none; color: inherit; padding: 0; }
+        .preview-content blockquote {
+            border-left: 4px solid var(--accent-color, #ffd700);
+            margin: 8px 0;
+            padding: 2px 0 2px 12px;
+            color: var(--text-secondary, #ccc);
+        }
+        .preview-content ul, .preview-content ol { margin: 5px 0; padding-left: 20px; }
+        .preview-content a { color: var(--accent-color, #ffd700); text-decoration: underline; text-underline-offset: 2px; }
+        .preview-content img { max-width: 100%; border-radius: 8px; }
+        .preview-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 8px 0;
+            display: block;
+            overflow-x: auto;
+            font-size: .95em;
+        }
+        .preview-content th, .preview-content td {
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 5px 9px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .preview-content thead th {
+            background: var(--table-head-bg, rgba(255, 215, 0, .12));
+            color: var(--text-primary, #fff);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .preview-content tbody tr:nth-child(even) td { background: var(--hover-bg, rgba(255, 255, 255, .05)); }
+        .preview-content .mention {
+            background: #2ecc71; color: var(--bg-primary, #1a1a2e);
+            padding: 2px 6px; border-radius: 12px; font-weight: bold; display: inline-block;
+        }
+        .preview-content .mention-all {
+            background: #e74c3c; color: #fff;
+            padding: 2px 6px; border-radius: 12px; font-weight: bold; display: inline-block;
         }
         .preview-content p { margin: 0 0 5px 0; }
         .preview-content:empty::before {
@@ -3547,7 +3621,7 @@
         window.addEventListener('load', function() {
             // 带版本号绕过 CDN/浏览器缓存，确保加载到最新 sw.js（修复旧缓存导致页面/数据过期）
             // 注意：改了 sw.js 就同步改这里的版本号，否则客户端可能十几分钟内拿不到新的 SW
-            navigator.serviceWorker.register('sw.js?v=2.5.3')
+            navigator.serviceWorker.register('sw.js?v=2.5.4')
                 .then(function(registration) {
                     console.log('[PWA] Service Worker 注册成功');
                 })
