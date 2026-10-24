@@ -1191,10 +1191,15 @@
     //  经 Worker 的 /api/files/health 转发探测（主机侧直连会被反爬挑战页挡住，
     //  而且 file.nflshcchat.cc.cd 不带 CORS 头，浏览器直接探测会误判成失败）
     // ============================================================
-    let checkingFileHost = false;
-    async function checkFileHost(notify) {
-        if (checkingFileHost) return null;
-        checkingFileHost = true;
+    //  进行中的检测复用同一个 Promise：连点「连通性检测」不会重复探测，也不会出现「返回 null」
+    let fileHostPending = null;
+    function checkFileHost(notify) {
+        if (fileHostPending) return fileHostPending;
+        fileHostPending = runFileHostCheck(notify).finally(function () { fileHostPending = null; });
+        return fileHostPending;
+    }
+
+    async function runFileHostCheck(notify) {
         const badge = document.getElementById('cdnStatus');
         const lat = document.getElementById('fileHostLatency');
         if (badge) badge.textContent = '检测中…';
@@ -1217,7 +1222,6 @@
             ms = Math.round(performance.now() - t0);
             reason = e && e.message ? e.message : String(e);
         }
-        checkingFileHost = false;
         updateApiStatus(ok);
         if (badge) badge.textContent = ok ? ('✅ 在线 · ' + ms + 'ms') : '❌ 异常';
         if (lat) lat.textContent = ms ? (ms + ' ms') : '—';
