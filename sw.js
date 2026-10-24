@@ -9,7 +9,7 @@
 // v2.5.0: 新增 Web Push 离线通知（会议邀请 / 消息提醒 / 日程提醒）
 // v2.4.0: 主题/资源引用带版本号（theme.js?v=4），配合网络优先导航彻底解决旧缓存卡页面问题
 
-const CACHE_VERSION = 'v2.5.3';
+const CACHE_VERSION = 'v2.5.4';
 const CACHE_NAME = `nflshc-chat-${CACHE_VERSION}`;
 
 // 需要预缓存的资源列表（只放确定存在的文件，任何 404 都会导致安装失败、SW 无法更新）
@@ -46,7 +46,7 @@ const urlsToCache = [
   '/apple-touch-icon.png',
   '/icon-192.png',
   '/icon-512.png',
-  '/js/sanitize.js?v=1'
+  '/js/sanitize.js?v=2'
 ];
 
 // ===== 安装事件：缓存资源 =====
