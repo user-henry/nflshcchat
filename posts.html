@@ -130,7 +130,7 @@
             border-left: 3px solid #ffd700;
         }
         .reply-item .reply-meta { font-size: 12px; color: var(--text-muted, #888); margin-bottom: 4px; }
-        .reply-item .reply-content { font-size: 14px; color: #ddd; }
+        .reply-item .reply-content { font-size: 14px; color: var(--text-primary, #eef4ff); }
 
         /* 评论表情回应 (👍/👎) */
         .reply-reaction-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -161,14 +161,54 @@
         .reply-input-area button { padding: 10px 24px; background: var(--accent-color, #ffd700); color: #1a1a2e; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .reply-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .markdown-body { color: #ddd; line-height: 1.7; }
-        .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: var(--accent-color, #ffd700); margin: 12px 0 8px; }
-        .markdown-body code { background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-        .markdown-body pre { background: #0f0f1a; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; }
-        .markdown-body blockquote { border-left: 3px solid #ffd700; padding-left: 12px; color: var(--text-muted, #888); margin: 8px 0; }
-        .markdown-body ul, .markdown-body ol { padding-left: 20px; margin: 8px 0; }
-        .markdown-body a { color: var(--accent-color, #ffd700); }
-        .markdown-body img { max-width: 100%; border-radius: 8px; }
+        /* ---------- Markdown 正文（帖子 + 回复）：文字对比度与表格线加强，浅色主题也清晰 ---------- */
+        .markdown-body, .reply-content { color: var(--text-primary, #eef4ff); line-height: 1.75; font-size: 15px; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3,
+        .reply-content h1, .reply-content h2, .reply-content h3 { color: var(--accent-color, #ffd700); margin: 14px 0 8px; line-height: 1.35; }
+        .markdown-body h1 { font-size: 24px; }
+        .markdown-body h2 { font-size: 20px; }
+        .markdown-body h3 { font-size: 17px; }
+        .markdown-body p, .reply-content p { margin: 8px 0; }
+        .markdown-body strong, .reply-content strong { color: var(--text-primary, #eef4ff); font-weight: 700; }
+        .markdown-body code, .reply-content code {
+            background: var(--bg-tertiary, #0f0f1a); color: var(--text-primary, #eef4ff);
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 1px 6px; border-radius: 5px; font-size: 13px;
+        }
+        .markdown-body pre, .reply-content pre {
+            background: var(--bg-tertiary, #0f0f1a); border: 1px solid var(--table-border, #4d4d6b);
+            padding: 12px 14px; border-radius: 10px; overflow-x: auto; margin: 10px 0;
+        }
+        .markdown-body pre code, .reply-content pre code { background: none; border: none; padding: 0; }
+        .markdown-body blockquote, .reply-content blockquote {
+            border-left: 4px solid var(--accent-color, #ffd700); padding: 2px 0 2px 12px;
+            color: var(--text-secondary, #aaa); margin: 10px 0;
+        }
+        .markdown-body ul, .markdown-body ol, .reply-content ul, .reply-content ol { padding-left: 22px; margin: 10px 0; }
+        .markdown-body li, .reply-content li { margin: 4px 0; }
+        .markdown-body a, .reply-content a { color: var(--accent-color, #ffd700); text-decoration: underline; text-underline-offset: 2px; }
+        .markdown-body img, .reply-content img { max-width: 100%; border-radius: 8px; }
+        .markdown-body hr, .reply-content hr { border: none; border-top: 1px solid var(--table-border, #4d4d6b); margin: 16px 0; }
+
+        /* 表格：实线边框 + 表头底色 + 斑马纹 + 悬停高亮；宽表格可横向滚动 */
+        .markdown-body table, .reply-content table {
+            border-collapse: collapse; width: 100%; max-width: 100%;
+            margin: 14px 0; font-size: 14px; line-height: 1.6;
+            display: block; overflow-x: auto;
+        }
+        .markdown-body th, .markdown-body td,
+        .reply-content th, .reply-content td {
+            border: 1px solid var(--table-border, #4d4d6b);
+            padding: 9px 13px; text-align: left; vertical-align: top;
+        }
+        .markdown-body thead th, .reply-content thead th {
+            background: var(--table-head-bg, rgba(255, 215, 0, .12));
+            color: var(--text-primary, #eef4ff); font-weight: 700; white-space: nowrap;
+        }
+        .markdown-body tbody tr:nth-child(even) td,
+        .reply-content tbody tr:nth-child(even) td { background: var(--hover-bg, rgba(255, 255, 255, .04)); }
+        .markdown-body tbody tr:hover td,
+        .reply-content tbody tr:hover td { background: var(--accent-color-alpha, rgba(255, 215, 0, .12)); }
 
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted, #666); }
         .empty-state .icon { font-size: 48px; display: block; margin-bottom: 12px; }
@@ -395,13 +435,13 @@
         detail.innerHTML = `
             <div class="card">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
-                    <h2 style="color:#ffd700;margin:0;">${escapeHtml(post.title)}</h2>
+                    <h2 style="color:var(--accent-color,#ffd700);margin:0;">${escapeHtml(post.title)}</h2>
                     <div style="display:flex;gap:8px;">
                         <button class="post-btn" onclick="copyPostLink('${post.id}')" style="font-size:12px;padding:4px 12px;">🔗 复制链接</button>
                         ${isOwner ? `<button class="post-btn" onclick="deletePost('${post.id}')" style="font-size:12px;padding:4px 12px;background:#dc3545;color:white;">🗑️ 删除</button>` : ''}
                     </div>
                 </div>
-                <div style="font-size:12px;color:#888;margin:8px 0;">
+                <div style="font-size:12px;color:var(--text-secondary,#888);margin:8px 0;">
                     👤 ${escapeHtml(post.author)} · ${fmtDate(post.createdAt)}
                     ${post.allowReply === false ? ' · 🔒 禁止回复' : ''}
                     ${post.allowReply !== false ? ' · 💬 回复数: ' + (post.replies ? post.replies.length : 0) : ''}
@@ -424,19 +464,19 @@
                 </div>
             `).join('');
         } else {
-            repliesHtml = '<div style="color:#666;padding:12px 0;">暂无回复</div>';
+            repliesHtml = '<div style="color:var(--text-secondary,#666);padding:12px 0;">暂无回复</div>';
         }
 
         replySection.innerHTML = `
             <div class="card">
-                <h3 style="color:#ffd700;margin-bottom:12px;">💬 回复 (${post.replies ? post.replies.length : 0})</h3>
+                <h3 style="color:var(--accent-color,#ffd700);margin-bottom:12px;">💬 回复 (${post.replies ? post.replies.length : 0})</h3>
                 <div id="repliesContainer">${repliesHtml}</div>
                 ${canReply ? `
                     <div class="reply-input-area">
                         <textarea id="replyInput" placeholder="回复内容（支持 Markdown）" rows="2"></textarea>
                         <button onclick="submitReply('${post.id}')">发送回复</button>
                     </div>
-                ` : `<div style="color:#888;padding:8px 0;">🔒 此帖子已禁止回复</div>`}
+                ` : `<div style="color:var(--text-secondary,#888);padding:8px 0;">🔒 此帖子已禁止回复</div>`}
             </div>
         `;
     }
