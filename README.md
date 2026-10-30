@@ -145,66 +145,107 @@ NFLSHC Chat 是一个为南京外国语学校淮安分校（NFLSHC）学生打�
 
 ## 📁 项目结构
 
+仓库当前共 **167 个文件**：根目录 46 个页面（另加 StarOffice 的 4 个 HTML，共 50 个），其余是样式、脚本、文档与素材。全部纯静态，无构建步骤。
+
 ```
 nflshcchat/
-├── index.html              # 入口 / 登录页
-├── register.html           # 注册页
-├── chat.html               # 聊天主页面（核心，108KB）
-│   ├── 消息收发与渲染
-│   ├── 引用回复 / 消息置顶
-│   ├── 代码高亮（highlight.js）
-│   ├── 语音消息（MediaRecorder）
-│   └── 用户等级 / 头像缓存
-├── calendar.html           # 课程表 / 日历
-├── polls.html              # 投票系统
-├── posts.html              # 动态 / 帖子
-├── articles.html           # 文章发布
-├── theme.html              # 主题切换
-├── profile.html            # 个人资料编辑
-├── friends.html            # 好友系统
-├── dashboard.html          # 数据仪表盘（Chart.js）
-├── search.html             # 全局搜索
-├── favorites.html          # 收藏管理
-├── export.html             # 数据导出
-├── about.html              # 关于页面（校歌 / 宣传片）
-├── notice.html             # 公告系统
-├── suggestions.html        # 建议反馈
-├── showcase.html           # 动画展示页
-├── stats.html              # 数据统计
-├── report.html             # 举报管理
-├── hzyai.html              # AI 对话 / 天气查询（HZYAI）
-├── hzyai-share.html        # HZYAI 分享页
-├── hzyai-worker/           # HZYAI 专用 Cloudflare Worker
-├── music.html              # 音乐播放
-├── music-play.html         # 音乐播放器
-├── music-make.html         # 音乐创作
-├── word-game.html          # 文字游戏
-├── admin.html              # 管理面板
-├── admin-profile.html      # 管理员资料
-├── admin-suggestions.html  # 建议管理
-├── ai-profile.html         # AI 个人资料
-├── presentation.html       # 演示页
-├── offline.html            # 离线 fallback
-├── 404.html                # 404 页面
-├── backend/                # 后端辅助脚本
+├── 【登录与入口】
+│   ├── index.html              登录页（含注册入口 / 二维码登录 / WebAuthn）
+│   ├── register.html           注册页
+│   ├── oauth-callback.html     OAuth 开放平台授权回调
+│   └── pages.html              全部功能导航（可搜索）
+├── 【聊天与协作】
+│   ├── chat.html               聊天主界面（180KB，最核心）
+│   │     ├── 消息收发 / Markdown 渲染 / 引用回复 / 消息撤回
+│   │     ├── 消息置顶 / 表情回应 / 收藏 / 通知面板
+│   │     ├── 语音消息（MediaRecorder）/ 附件上传与粘贴拖拽
+│   │     ├── 代码高亮（highlight.js）/ 实时预览
+│   │     └── 用户等级 / 头像缓存 / 1v1 音视频通话
+│   ├── meeting.html            会议中心（快速会议 / 预定 / 会议编号加入）
+│   ├── meeting-room.html       会议中（音视频 / 屏幕共享 / 白板 / 会中聊天 / 纪要）
+│   ├── notes.html              笔记（Markdown 编辑 + 预览 + 共享，含会议笔记）
+│   ├── benben.html             🐂 犇犇（灌水吐槽板：@提醒 / 楼中楼回复 / 合并单元格表格）
+│   ├── calendar.html           日历 / 课程表（含提醒）
+│   ├── polls.html              投票中心
+│   ├── posts.html              帖子（Markdown + 回复 + 表情回应）
+│   ├── articles.html           文章（可见性设置 + Markdown + 回复）
+│   ├── notice.html             公告（管理员编辑，Markdown）
+│   ├── suggestions.html        意见反馈
+│   └── report.html             举报中心
+├── 【账号与个人】
+│   ├── profile.html            个人资料（昵称 / 签名 / 头像）
+│   ├── admin-profile.html      管理员中心
+│   ├── ai-profile.html         AI 小助手资料
+│   ├── security.html           账号与安全（改密 / 通行密钥 / 登录设备 / 注销）
+│   ├── theme.html              主题设置（5 套主题 + 晨曦白光）
+│   └── friends.html            好友 / favorites.html 收藏 / search.html 消息搜索
+├── 【数据与运维】
+│   ├── dashboard.html          个人数据仪表盘（Chart.js）
+│   ├── stats.html              群聊统计
+│   ├── health.html             服务健康看板
+│   ├── export.html             数据导出（JSON / HTML）
+│   └── image-host.html         图床（上传 / 直链 / 文件托管站连通性检测）
+├── 【娱乐与创作】
+│   ├── music.html              音乐库
+│   ├── music-play.html         🎵 音乐创作室（多人实时合奏）
+│   ├── music-make.html         声音画布（点击即兴创作）
+│   ├── word-game.html          词语游戏
+│   ├── hzyai.html              跳转 HZYAI（chatai.bot.cd）
+│   ├── hzyai-share.html        HZYAI 对话分享跳转
+│   └── study.html              HZYAI 学习（讲题 + 错题本）
+├── 【展示与管理】
+│   ├── showcase.html           欢迎页（动画展示）
+│   ├── about.html              宣传片 / 关于本站（LOGO 动画、校歌、技术栈）
+│   ├── presentation.html       技术分享演示稿（Cloudflare D1 Serverless Chat）
+│   ├── admin.html              管理员后台
+│   ├── admin-suggestions.html  建议审核
+│   └── privacy.html / terms.html
+├── 【异常兜底】
+│   ├── 404.html                404
+│   ├── offline.html            离线页（PWA）
+│   └── pwa-reset.html          修复应用（清缓存 / 注销 Service Worker）
 ├── css/
-│   └── themes.css          # 5 套主题样式
-├── js/                     # 公共 JS 模块
-├── assets/                 # 图片 / 字体等静态资源
-├── shortcuts.js            # 键盘快捷键
-├── patches.css             # 样式补丁
-├── sw.js                   # Service Worker（PWA 离线缓存）
-├── manifest.json           # PWA 应用清单
-├── LOGO.png                # 项目 Logo
-├── HZYAI LOGO.png          # AI 功能 Logo
-├── NFLSHC 校歌.mp3          # 校歌音频
-└── NFLSHC Chat.apk         # Android 客户端
+│   └── themes.css              5 套主题变量（含表格线、代码块配色）
+├── js/
+│   ├── theme.js                主题切换 + 给 Worker 请求自动附加 Authorization
+│   ├── sanitize.js             Markdown HTML 白名单（v2：含表格合并单元格）
+│   ├── marked.min.js           Markdown 渲染器
+│   └── qrcode.js               二维码（登录 / 名片分享）
+├── docs/                       开发者文档
+│   ├── API.md                  开放 API 与 SDK 接入
+│   ├── FEATURES.md             全部功能与实现细节（含安全策略、合并单元格）
+│   ├── FILE-HOST.md            文件托管站（协议 / 缓存 / 限流处置）
+│   ├── GOOGLE-LOGIN.md         Google 登录接入
+│   ├── MIRROR-NODE.md          镜像 / 备份节点
+│   └── STAR_OFFICE_UI_OVERVIEW.md
+├── sdk/                        开放平台 SDK：js/nflshc.js、python/nflshc.py
+├── scripts/                    Python 运维脚本：security_check.py、smoke_test.py、gemini_image_generate.py
+├── backend/                    StarOffice 后端（app.py、memo_utils.py、store_utils.py、security_utils.py、requirements.txt、run.sh）
+├── frontend/                   StarOffice 像素办公室前端（index.html、game.js、layout.js、精灵图 / 字体 / Phaser）
+├── desktop-pet/                桌面宠物（Electron）：package.json、README.md、STATE_API.md
+├── assets/room-reference.png   房间参考图
+├── sw.js                       Service Worker（PWA 离线缓存，预缓存白名单脚本与页面）
+├── manifest.json               PWA 应用清单
+├── shortcuts.js                键盘快捷键
+├── patches.css                 全局样式补丁
+├── favicon.ico / favicon.svg / icon-192.png / icon-512.png / apple-touch-icon.png
+├── CNAME / .nojekyll / sitemap.xml
+├── .env.example / package.json / pyproject.toml / railway.json / Dockerfile     配置与部署样例
+├── join-keys.sample.json / state.sample.json / runtime-config.sample.json      配置示例
+├── asset-defaults.json / asset-positions.json                                  StarOffice 素材默认值与坐标
+├── README.md / README-staroffice.md / INTEGRATION.md / SKILL.md
+└── 素材：LOGO.png、NFLSHC.png、NFLSHC 校歌.mp3、群聊.png、微信公众号.png、
+         NFLSHC Chat.apk / NFLSHC Chat pro.apk（Android 安装包）、
+         调查问卷截图、Be a Website Developer.pptx
 ```
 
-> **后端不在本仓库**：主站后端是 Cloudflare Worker（本机工作副本中的 `worker.js` + `wrangler.toml`）。
-> 按项目约定，**任何 Cloudflare Workers 的源码与部署配置都不进仓库**，只在本地维护并 `wrangler deploy` 发布。
-> 其对外接口契约、数据库对象与接入约定见 [`docs/FEATURES.md`](docs/FEATURES.md)，
-> 文件托管（自建文件站、媒体直链、缓存与删除语义）见 [`docs/FILE-HOST.md`](docs/FILE-HOST.md)。
+> **不在本仓库里的（按项目约定只在本地维护，不提交）**
+> 主站后端 `worker.js` + `wrangler.toml`、文件托管站 `byethost/`、前置代理 Worker `nflshcfile-proxy/`、
+> 镜像节点 Worker `nflshc-mirror/`、AI 网关 `hzyai-worker/`、开发与测试工具 `dev/`、
+> 数据迁移快照 `issues_raw.json` / `issues_normalized.json`、以及本机密钥类文件。
+> 原因：这些含有密钥或属于部署产物；仓库只放**前端页面 + 文档 + SDK**。
+> 接口契约见 [`docs/FEATURES.md`](docs/FEATURES.md) 与 [`docs/API.md`](docs/API.md)，
+> 文件托管（媒体直链、缓存与删除语义）见 [`docs/FILE-HOST.md`](docs/FILE-HOST.md)。
 
 ---
 
