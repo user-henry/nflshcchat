@@ -1,3 +1,5 @@
+**简体中文** | [English](README.en.md)
+
 # NFLSHC Chat 🎓💬
 
 > 南外淮安分校学生聊天平台 — 纯前端 + Cloudflare D1 驱动，零服务器、零数据库
@@ -304,4 +306,3 @@ python3 -m http.server 8080
 ## 📄 开源协议
 
 MIT License — 欢迎学习和参考，但请注意本项目仅适用于教育和学习目的，不建议用于生产环境。
-
