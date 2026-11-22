@@ -436,3 +436,29 @@ npx wrangler secret put FILES_SSO_SECRET     # 必须与文件站配置项 sso_s
   已在 `.gitignore` 中排除，切勿提交。
 - 文件站的 `config.php`（数据库口令 + `sso_secret`）同样不入库，只通过 FTP 上传。
 - 所有跨站写操作都要求 `Authorization: Bearer <token>`。
+
+## 20. 账号体系打通与 AI 能力开放（v2.5.4+）
+
+### 20.1 文件站账号与主站共用一套
+
+图床 / 群相册 / 消息附件都落在文件站，所以两边的账号必须一致：
+
+- **密码哈希兼容**：主站是 SHA-256 十六进制，文件站自建是 bcrypt；`lib.php` 两种都认，
+  导入账号首次登录后自动升级为 bcrypt。
+- **双向注册**：主站注册（含 Google 登录新建）→ Worker 用 `sso_secret` 签 `X-Master-Ticket`
+  调 `master_sync_user`；文件站注册 → 用同密钥签 `X-Files-Ticket` 调主站 `POST /api/files/account`（幂等）。
+- **封禁同步**：主站是唯一权威，封禁/解封/系统冻结都会调 `master_set_flags`；
+  文件站登录与上传都检查 `is_banned` / `frozen`。
+- **登录失败策略**：与主站一致（连错 20 次锁 5 分钟、连错 50 次冻结），阈值可在文件站 `config.php` 调。
+- **一次性修好的历史坑**：`admin` 等老账号此前只在主站存在，却有以他们名义上传的文件 ——
+  已用 `dev/tools/tools-filehost-account-sync.mjs` 全量导入（34 个账号），现在可以用主站密码登录文件站。
+- 细节与排障见 [`FILE-HOST.md`](FILE-HOST.md) 第 11 节。
+
+### 20.2 AI 能力以 OAuth scope 开放
+
+- 新增 4 个权限：`ai:chat`（对话/视觉）、`ai:image`（绘图）、`ai:video`（视频）、`ai:stt`（语音转写与合成）；
+- 开发者平台创建应用时可勾选，授权页用户可逐项同意（两处 UI 都由 `/api/oauth/scopes` 驱动，AI 权限带 🤖/AI 标记）；
+- `hzyai-worker` 网关按端点校验 scope（`/chat`、`/vision`、`/sizhi`、`/bigmodel` … → `ai:chat`；`/image` → `ai:image`；
+  `/video` → `ai:video`；`/stt`、`/tts` → `ai:stt`），令牌自省走 `GET /api/oauth/tokeninfo`（缓存 60 秒）；
+- 没带令牌时保持站内第一方页面的旧行为，`AI_REQUIRE_TOKEN=1` 可切换为严格模式；
+- 开发者文档：`platform.nflshcchat.cc.cd/guide.html` 第 ⑥ 节（curl / JS / Python 三种可复制示例 + 令牌自检 + 错误码）。
