@@ -462,3 +462,32 @@ npx wrangler secret put FILES_SSO_SECRET     # 必须与文件站配置项 sso_s
   `/video` → `ai:video`；`/stt`、`/tts` → `ai:stt`），令牌自省走 `GET /api/oauth/tokeninfo`（缓存 60 秒）；
 - 没带令牌时保持站内第一方页面的旧行为，`AI_REQUIRE_TOKEN=1` 可切换为严格模式；
 - 开发者文档：`platform.nflshcchat.cc.cd/guide.html` 第 ⑥ 节（curl / JS / Python 三种可复制示例 + 令牌自检 + 错误码）。
+
+### 20.3 谁能调用 AI（访问策略）
+
+| 调用方 | 需要什么 | 说明 |
+|---|---|---|
+| 主站页面（`nflshcchat.cc.cd`、其子域） | 不需要令牌 | 浏览器请求带 `Origin`，网关按白名单放行（域名列表可用 `AI_ALLOWED_ORIGINS` 覆盖） |
+| HZYAI 站点（`chatai.bot.cd`、其子域） | 不需要令牌 | 同上；`localhost` / `127.0.0.1` 也放行，方便本地调试 |
+| 主站 Worker 服务端调用 | 不需要令牌 | 无 `Origin` 的请求视为服务端调用，但按 IP 限流 |
+| 第三方应用 / 脚本 | **必须**带 `Authorization: Bearer <access_token>` | 令牌里要有对应 `ai:*` scope，否则 `403 insufficient_scope`；令牌无效/过期/撤销 → `401 invalid_token` |
+| 其它站点（浏览器） | 必须带令牌 | 匿名请求来自非白名单 `Origin` → `403 origin_not_allowed` |
+
+补充：
+- 匿名调用有**每 IP 每分钟 120 次**的软上限（`AI_ANON_LIMIT_PER_MIN` 可调），超出返回 `429 rate_limited`；
+- 想要「一律要求令牌」，给网关加环境变量 `AI_REQUIRE_TOKEN=1` 即可（此时主站页面也必须带令牌，属严格模式）；
+- `GET /health` 会回显当前策略（`aiScopes.strictMode` / `anonymousOrigins` / `anonymousLimitPerMin`）。
+
+### 20.4 模型目录刷新（2026-11-22）
+
+Cloudflare 在 2026-11-20 一次性下架了 24 个模型（请求会返回 `410 Gone` / 错误码 `5028`）。网关处理方式：
+
+- 从白名单移除 13 个本项目用到的：`llama-3.2-3b/1b`、`llama-3.1-8b-instruct-fp8`、`llama-2-7b-chat-lora`、
+  `deepseek-r1-distill-qwen-32b`、`qwq-32b`、`qwen3-30b-a3b-fp8`、`gemma-7b/2b-it-lora`、`nemotron-3-120b-a12b`、
+  `whisper-tiny-en`、`llava-1.5-7b-hf`、`embeddinggemma-300m`（另含 `dreamshaper-8-lcm` 等图像模型）；
+- 这些名字**保留自动重定向**：老页面/老文档仍写旧 id 时，网关会改调可用的替代模型（如 `llama-3.2-3b` → `llama-3.3-70b`、
+  `qwq-32b` → `qwen3.8-27b`、`whisper-tiny-en` → `whisper`、SDXL/DreamShaper → `flux-1-schnell`），不会直接 410；
+- 官方 changelog 推荐的 `@cf/deepseek-ai/deepseek-v4.1-flash-1017` 与 `@cf/zai-org/glm-5.3` **在本账号的 AI 绑定下实测返回 502**
+  （尚未对当前账号开放），因此暂不放进白名单，请求它们会自动落到 `qwen3.8-27b` / `glm-4.7-flash`；
+- 目录现状：`OFFICIAL_CF_MODELS` 共 **29** 个模型，`GET /health` 里的 `modelCount` / `modelCatalog=cloudflare-2026-11-22` 可核对；
+- `chatai`（`chatai.bot.cd`）的模型下拉同步清理完毕，线上只保留这 29 个可用模型。
