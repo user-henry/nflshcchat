@@ -174,10 +174,43 @@ curl "https://worker.nflshcchat.cc.cd/api/oauth/userinfo?access_token=<access_to
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/oauth/scopes` | 全部可用权限说明（公开） |
+| GET | `/api/oauth/scopes` | 全部可用权限说明（公开），含 AI 权限 `ai:chat` / `ai:image` / `ai:video` / `ai:stt` |
 | GET | `/api/oauth/authorize-info` | 授权页展示用的应用信息 |
 | GET | `/api/oauth/grants` | 我授权过的应用（用户视角，可撤销） |
+| GET/POST | `/api/oauth/tokeninfo` | **令牌自省**：`?access_token=` → `{ ok, active, username, scopes[], clientId, expiresAt }`（不含隐私字段；AI 网关用它校验 scope） |
 | POST | `/api/oauth/check` | 开发者校验某用户在自己项目内的状态（封禁/授权） |
+
+### AI 能力：`ai:*` scope 与 hzyai-worker 网关
+
+网关地址 `https://hzyai-worker.nflshcchat.cc.cd`，**鉴权直接用 OAuth 的 `access_token`**（`Authorization: Bearer`），没有独立密钥。
+
+| 端点 | 能力 | 需要的 scope |
+|---|---|---|
+| `POST /chat` | 文本对话 / 讲题（`{ messages, model?, max_tokens? }` → `{ response }`） | `ai:chat` |
+| `POST /vision` | 图片理解（`{ image, prompt }`） | `ai:chat` |
+| `POST /image` | 文生图 / 图生图（`{ prompt, width?, height? }` → 二进制图片） | `ai:image` |
+| `POST /video` | 视频生成 | `ai:video` |
+| `POST /stt` / `POST /tts` | 语音转文字 / 文字转语音 | `ai:stt` |
+| `GET /ai/scopes` | 自检：该令牌能调用哪些 AI 端点（返回 `scopes` / `canCall` / `endpoints`） | 带令牌即可 |
+
+校验规则：
+
+- 带 `Authorization: Bearer` → 网关用 `/api/oauth/tokeninfo` 自省（结果缓存 60 秒），
+  **没有对应 scope 返回 `403 { "code": "insufficient_scope", "requiredScope": "ai:chat", "grantedScopes": [...] }`**，
+  令牌无效/过期/被撤销返回 `401 { "code": "invalid_token" }`；
+- 不带令牌 → 保持站内第一方页面的旧行为；把网关环境变量 `AI_REQUIRE_TOKEN=1` 打开即严格模式（一律要求令牌）。
+
+```bash
+# 对话
+curl -X POST https://hzyai-worker.nflshcchat.cc.cd/chat \
+  -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"你好"}],"max_tokens":256}'
+# 先自检令牌能调什么
+curl https://hzyai-worker.nflshcchat.cc.cd/ai/scopes -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+> 开发者侧示例（一键复制）见 `platform.nflshcchat.cc.cd/guide.html` 的「⑥ 调用 AI 能力」。
+> 统计口径：令牌调用的 scope 可在 `oauth_tokens.scopes` 中核对，按 scope 拆分调用量的看板在 `health.html` 里逐步补。 
 
 ### 机器人接口
 
