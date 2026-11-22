@@ -193,6 +193,17 @@ curl "https://worker.nflshcchat.cc.cd/api/oauth/userinfo?access_token=<access_to
 | `POST /stt` / `POST /tts` | 语音转文字 / 文字转语音 | `ai:stt` |
 | `GET /ai/scopes` | 自检：该令牌能调用哪些 AI 端点（返回 `scopes` / `canCall` / `endpoints`） | 带令牌即可 |
 
+访问策略（谁可以匿名调用）：
+
+| 调用方 | 是否要令牌 |
+|---|---|
+| `nflshcchat.cc.cd` / `chatai.bot.cd` 及其子域（浏览器，含 `localhost` 调试） | 不要 |
+| 主站 Worker 的服务端调用（无 `Origin`） | 不要（按 IP 限流 120 次/分钟） |
+| 其它站点或第三方脚本 | **要**：必须带含对应 `ai:*` scope 的 `access_token` |
+
+匿名请求若来自非白名单 `Origin` → `403 origin_not_allowed`；匿名调用超过每分钟上限 → `429 rate_limited`；
+网关设置环境变量 `AI_REQUIRE_TOKEN=1` 可切换严格模式（任何人包括主站页面都必须带令牌）。
+
 校验规则：
 
 - 带 `Authorization: Bearer` → 网关用 `/api/oauth/tokeninfo` 自省（结果缓存 60 秒），
