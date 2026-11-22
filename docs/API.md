@@ -220,7 +220,9 @@ curl -X POST https://hzyai-worker.nflshcchat.cc.cd/chat \
 curl https://hzyai-worker.nflshcchat.cc.cd/ai/scopes -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
-> 开发者侧示例（一键复制）见 `platform.nflshcchat.cc.cd/guide.html` 的「⑥ 调用 AI 能力」。
+> 开发者侧示例（一键复制）见 platform.nflshcchat.cc.cd/guide.html 的「⑥ 调用 AI 能力」。
+> 调用量统计：网关按 scope 记到 i_usage 表，管理端 GET /api/admin/health 返回 iUsage.today / iUsage.week
+> （按 scope + 来源聚合），健康看板 health.html 直接展示。
 > 统计口径：令牌调用的 scope 可在 `oauth_tokens.scopes` 中核对，按 scope 拆分调用量的看板在 `health.html` 里逐步补。 
 
 ### 机器人接口
