@@ -491,3 +491,19 @@ Cloudflare 在 2026-11-20 一次性下架了 24 个模型（请求会返回 `410
   （尚未对当前账号开放），因此暂不放进白名单，请求它们会自动落到 `qwen3.8-27b` / `glm-4.7-flash`；
 - 目录现状：`OFFICIAL_CF_MODELS` 共 **29** 个模型，`GET /health` 里的 `modelCount` / `modelCatalog=cloudflare-2026-11-22` 可核对；
 - `chatai`（`chatai.bot.cd`）的模型下拉同步清理完毕，线上只保留这 29 个可用模型。
+
+### 20.5 按 scope 拆分调用量（网关埋点 + 健康看板）
+
+网关现在会记录每一次 AI 调用，**按 scope 拆分**并落到主站同一个 D1：
+
+- 表结构：`ai_usage(scope, bucket, source, calls, errors, last_at)`，
+  `bucket` = UTC 日期、`source` = `token`（第三方令牌）/ `anon`（第一方匿名）/ `denied`（被拒或限流）；
+- 写入方式：网关有 `DB` 绑定，每次调用做一次 `INSERT … ON CONFLICT DO UPDATE` 累加（用 `ctx.waitUntil` 异步落库，
+  不阻塞 AI 响应）；被 scope 校验拒绝的请求记到 `denied` 的 `errors`；
+- 读取方式：主站 `GET /api/admin/health` 返回值里新增 `aiUsage: { today, week }`（按 scope + 来源聚合）；
+- 展示：`health.html` 新增「🤖 AI 调用（按 scope 拆分）」区块，显示**今日 / 近 7 天**的成功与被拒次数，
+  并区分「开发者令牌」「第一方匿名」「被拒」三种来源；
+- 回归：`node dev/tests/test-health-ai-usage.mjs <临时管理员密码哈希>`（无头浏览器渲染断言）。
+
+> 目前只统计「次数」，不记录调用内容、模型名与用户身份，够看趋势与配额即可；要做更细的分析（按模型 / 按应用）
+> 再加列即可，表很小（每 scope×每天×每来源一行）。
