@@ -116,6 +116,9 @@
             <h3 class="sec">🔌 服务连通性</h3>
             <div class="panel" id="services"><div class="muted">加载中… <span class="spin"></span></div></div>
 
+            <h3 class="sec">🤖 AI 调用（按 scope 拆分）</h3>
+            <div class="panel" id="aiUsage"><div class="muted">加载中… <span class="spin"></span></div></div>
+
             <h3 class="sec">⚠️ 最近错误（最多 10 条）</h3>
             <div class="panel" id="recentErrors"><div class="muted">加载中… <span class="spin"></span></div></div>
 
@@ -190,6 +193,50 @@
                     <span class="dt">HTTP ${escapeHtml(s.status)} · ${escapeHtml(s.ms)} ms</span>
                     ${s.detail ? `<span class="dt">${escapeHtml(s.detail)}</span>` : ''}
                 </div>`).join('');
+        }
+
+        // ---------- AI 调用（按 scope 拆分） ----------
+        // 数据来源：hzyai-worker 网关写入 ai_usage（scope + 日期 + 来源），主站 /api/admin/health 汇总
+        function renderAiUsage(u) {
+            const box = document.getElementById('aiUsage');
+            if (!u || u.ok === false) {
+                box.innerHTML = '<div class="err">加载失败：' + escapeHtml((u && u.error) || '未知错误') + '</div>';
+                return;
+            }
+            const today = u.today || [], week = u.week || [];
+            if (!week.length) {
+                box.innerHTML = '<div class="muted">还没有 AI 调用记录（网关接到第一次调用后就会出现在这里）。</div>';
+                return;
+            }
+            const SCOPE_NAME = { 'ai:chat': '对话 / 视觉', 'ai:image': '绘图', 'ai:video': '视频', 'ai:stt': '语音' };
+            const SOURCE_NAME = {
+                token: '<span class="chip on">开发者令牌</span>',
+                anon: '<span class="chip">第一方匿名</span>',
+                denied: '<span class="chip off">被拒</span>'
+            };
+            const sum = (list, k) => list.reduce((s, r) => s + (r[k] || 0), 0);
+            const head = `
+                <div class="svc" style="border-bottom:1px dashed var(--border-color);padding-bottom:8px;margin-bottom:8px;">
+                    <span class="nm">📅 今日</span>
+                    <span class="chip on">成功 ${sum(today, 'calls')}</span>
+                    <span class="chip off">被拒/错误 ${sum(today, 'errors')}</span>
+                    <span class="dt">近 7 天：成功 ${sum(week, 'calls')} · 被拒/错误 ${sum(week, 'errors')}</span>
+                </div>`;
+            const rows = week.map(r => {
+                const t = today.filter(x => x.scope === r.scope && x.source === r.source)[0] || {};
+                return `
+                <div class="svc">
+                    <span class="nm">${escapeHtml(r.scope)}${SCOPE_NAME[r.scope] ? ' <span class="muted" style="font-size:12px;">（' + SCOPE_NAME[r.scope] + '）</span>' : ''}</span>
+                    ${SOURCE_NAME[r.source] || escapeHtml(r.source)}
+                    <span class="dt">7 天：${r.calls} 次${r.errors ? ' · 错误 ' + r.errors : ''}</span>
+                    <span class="dt">今日：${t.calls || 0} 次</span>
+                </div>`;
+            }).join('');
+            box.innerHTML = head + rows +
+                `<div class="muted" style="font-size:12px;margin-top:8px;">
+                    <b>开发者令牌</b>= 第三方应用带 access_token 调用；<b>第一方匿名</b>= 主站 / HZYAI 页面直接调用；
+                    <b>被拒</b>= 缺 scope、令牌无效/过期，或来源域名不在白名单。
+                 </div>`;
         }
 
         // ---------- 错误表格 ----------
@@ -293,6 +340,7 @@
                 gl.className = 'chip ' + (data.googleLogin ? 'on' : 'off');
                 renderTiles(data.counts);
                 renderServices(data.services);
+                renderAiUsage(data.aiUsage);
                 renderRecentErrors(data.recentErrors);
                 await loadErrors();
             } catch (e) {
