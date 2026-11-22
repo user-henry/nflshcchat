@@ -315,3 +315,62 @@ node dev/tools/tools-filehost-csp.mjs    # 按类型抽一个公开文件，校�
 > 就始终带着「出口 IP 被主机风控」的风险；要彻底规避，需要把文件站迁出这类共享虚拟主机，
 > 或者改用对象存储（R2/S3 之类）作为文件后端。
 
+
+---
+
+## 11. 账号体系与主站打通（v2）
+
+文件站的图床、群相册、消息附件都依赖它，所以**账号必须和主站是同一套**，否则会出现「主站有文件、文件站没账号」的尴尬（历史上 `admin` 就踩过这个坑）。
+
+### 11.1 密码哈希兼容
+
+| 来源 | 存储 | 校验 |
+|---|---|---|
+| 主站导入 | `pass_hash` = 主站 SHA-256 十六进制，`pass_algo='sha256'` | `hash('sha256', $plain)` 比对 |
+| 文件站自建 | bcrypt，`pass_algo='bcrypt'` | `password_verify()` |
+| 导入账号首次登录 | 登录成功后**自动升级为 bcrypt** | 之后按 bcrypt 校验 |
+
+`lib.php` 的 `verify_password_hash()` / `maybe_rehash_password()` 负责这两件事，`users` 表因此多了
+`pass_algo`、`fail_count`、`locked_until`、`frozen`、`synced_at` 五列（`ensure_schema()` 自动补列）。
+
+### 11.2 双向注册同步
+
+| 方向 | 触发 | 接口 |
+|---|---|---|
+| 主站 → 文件站 | 主站注册（`POST /api/legacy/issues` 的 users、Google 登录新建账号） | Worker 用 `sso_secret` 签 `X-Master-Ticket` 调 `api.php?a=master_sync_user` |
+| 文件站 → 主站 | 文件站 `register` | 文件站用同一密钥签 `X-Files-Ticket` 调 `POST /api/files/account`（主站已存在时 `created=false`，幂等） |
+
+票据格式（两边一致）：`base64(用户名)|毫秒时间戳|HMAC-SHA256(secret, "用户名|时间戳")`，5 分钟有效。
+
+### 11.3 封禁 / 解封同步
+
+- 主站是封禁的**唯一权威**：管理员封禁/解封、登录失败冻结、批量注册处罚都会调
+  `api.php?a=master_set_flags { username, banned, frozen }`，文件站只改标记不动密码；
+- 文件站登录与上传都会检查 `is_banned` / `frozen`，被封禁用户直接 403；
+- 解封（`banned=false,frozen=false`）时顺带清空 `fail_count` 与 `locked_until`。
+- 管理端「解除登录锁定」可用 `{ resetFails: true }`。
+
+### 11.4 登录失败策略（与主站一致）
+
+| 阈值 | 行为 | 默认值（`config.php` 可覆盖） |
+|---|---|---|
+| 连错 N 次 | 锁定 M 秒（`429` + `locked` 秒数） | `login_lock_threshold=20`、`login_lock_seconds=300` |
+| 连错 F 次 | 冻结账号（`is_banned=1`、`frozen=1`），之后即使密码正确也 403 | `login_freeze_threshold=50` |
+
+> 锁定期间不重复计数（与主站一致）：每过一个窗口再错才会继续累加，所以真正触发冻结需要「跨多个窗口持续猜密码」。
+> 自测时把 `login_freeze_threshold` / `login_lock_seconds` 临时调小即可（已用它验证过冻结链路）。
+
+### 11.5 全量导入与核对
+
+```bash
+# 1) 导出主站用户
+npx wrangler d1 execute nflshcchat --remote --json \
+  --command "SELECT username, password, is_banned, raw_json FROM users" > dev/tools/_d1_users.json
+# 2) 全量推到文件站（幂等，可重复执行）
+node dev/tools/tools-filehost-account-sync.mjs
+# 3) 核对：主站每个账号在文件站都存在
+node dev/tools/tools-filehost-account-sync.mjs --verify
+```
+
+回归：`node dev/tests/test-filehost-account-sync.mjs`（双向注册、封禁同步、锁定阈值）、
+`node dev/tests/test-filehost-freeze.mjs`（冻结链路，需临时调小阈值）。
